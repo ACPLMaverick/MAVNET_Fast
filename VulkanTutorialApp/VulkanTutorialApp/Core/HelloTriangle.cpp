@@ -10,6 +10,8 @@ namespace Core
 		, _physicalDevice(VK_NULL_HANDLE)
 		, _device(VK_NULL_HANDLE)
 		, _graphicsQueue(VK_NULL_HANDLE)
+		, _presentQueue(VK_NULL_HANDLE)
+		, _surface(VK_NULL_HANDLE)
 	{
 	}
 
@@ -47,6 +49,7 @@ namespace Core
 	{
 		CreateInstance();
 		SetupDebugCallback();
+		CreateSurface();
 		PickPhysicalDevice();
 		CreateLogicalDeviceAndGetQueues();
 	}
@@ -165,8 +168,12 @@ namespace Core
 		createInfo.pfnCallback = DebugCallback;
 		createInfo.pUserData = this;
 
-		auto func = GetVkProc(vkCreateDebugReportCallbackEXT);
-		JE_AssertThrowVkResult(func(_instance, &createInfo, _pAllocator, &_debugCallback));
+		JE_AssertThrowVkResult(CallVkProc(vkCreateDebugReportCallbackEXT, _instance, &createInfo, _pAllocator, &_debugCallback));
+	}
+
+	void HelloTriangle::CreateSurface()
+	{
+		JE_AssertThrowVkResult(glfwCreateWindowSurface(_instance, _pWindow, _pAllocator, &_surface));
 	}
 
 	void HelloTriangle::PickPhysicalDevice()
@@ -217,6 +224,9 @@ namespace Core
 		if (!queueFamilyIndices.IsComplete())
 			rating = 0;
 
+		if (!CheckDeviceExtensionSupport(physicalDevice))
+			rating = 0;
+
 		return rating;
 	}
 
@@ -234,9 +244,19 @@ namespace Core
 		int32_t i = 0;
 		for (const auto& queueFamily : queueFamilies)
 		{
-			if (queueFamily.queueCount > 0 && queueFamily.queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))
+			if (queueFamily.queueCount > 0)
 			{
-				outIndices.GraphicsFamily = i;
+				if (queueFamily.queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))
+				{
+					outIndices.GraphicsFamily = i;
+				}
+
+				VkBool32 presentSupport = false;
+				JE_AssertThrowVkResult(vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, _surface, &presentSupport));
+				if (presentSupport)
+				{
+					outIndices.PresentFamily = i;
+				}
 			}
 
 			if (outIndices.IsComplete())
@@ -248,29 +268,52 @@ namespace Core
 		}
 	}
 
+	bool HelloTriangle::CheckDeviceExtensionSupport(VkPhysicalDevice physicalDevice)
+	{
+		uint32_t extensionCount;
+		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+		std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
+
+		std::set<std::string> requiredExtensions(_deviceExtensions.begin(), _deviceExtensions.end());
+
+		for (const auto& extension : availableExtensions)
+		{
+			requiredExtensions.erase(extension.extensionName);
+		}
+
+		return requiredExtensions.empty();
+	}
+
 	void HelloTriangle::CreateLogicalDeviceAndGetQueues()
 	{
 		QueueFamilyIndices indices;
 		FindQueueFamilies(_physicalDevice, indices);
 
-		VkDeviceQueueCreateInfo queueCreateInfo = {};
-		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfo.queueFamilyIndex = indices.GraphicsFamily;
-		queueCreateInfo.queueCount = 1;
+		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+		std::set<int32_t> uniqueQueueFamilies = { indices.GraphicsFamily, indices.PresentFamily };
 
 		float queuePriority = 1.0f;
-		queueCreateInfo.pQueuePriorities = &queuePriority;
-
+		for (int32_t queueFamily : uniqueQueueFamilies)
+		{
+			VkDeviceQueueCreateInfo queueCreateInfo = {};
+			queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			queueCreateInfo.queueFamilyIndex = queueFamily;
+			queueCreateInfo.queueCount = 1;
+			queueCreateInfo.pQueuePriorities = &queuePriority;
+			queueCreateInfos.push_back(queueCreateInfo);
+		}
 
 		VkPhysicalDeviceFeatures deviceFeatures = {};
 		// TODO: Enable more features.
 
 		VkDeviceCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-		createInfo.pQueueCreateInfos = &queueCreateInfo;
-		createInfo.queueCreateInfoCount = 1;
+		createInfo.pQueueCreateInfos = queueCreateInfos.data();
+		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 		createInfo.pEnabledFeatures = &deviceFeatures;
-		createInfo.enabledExtensionCount = 0;	// RLY?
+		createInfo.enabledExtensionCount = static_cast<uint32_t>(_deviceExtensions.size());
+		createInfo.ppEnabledExtensionNames = _deviceExtensions.data();
 
 		if (_bEnableValidationLayers)
 		{
@@ -285,6 +328,7 @@ namespace Core
 		JE_AssertThrowVkResult(vkCreateDevice(_physicalDevice, &createInfo, _pAllocator, &_device));
 
 		vkGetDeviceQueue(_device, indices.GraphicsFamily, 0, &_graphicsQueue);
+		vkGetDeviceQueue(_device, indices.PresentFamily, 0, &_presentQueue);
 	}
 
 	void HelloTriangle::MainLoop()
@@ -301,6 +345,8 @@ namespace Core
 
 		CleanupDebugCallback();
 
+		vkDestroySurfaceKHR(_instance, _surface, _pAllocator);
+
 		vkDestroyInstance(_instance, _pAllocator);
 
 		glfwDestroyWindow(_pWindow);
@@ -312,7 +358,6 @@ namespace Core
 		if (!_bEnableValidationLayers)
 			return;
 
-		auto func = GetVkProc(vkDestroyDebugReportCallbackEXT);
-		func(_instance, _debugCallback, _pAllocator);
+		CallVkProc(vkDestroyDebugReportCallbackEXT, _instance, _debugCallback, _pAllocator);
 	}
 }

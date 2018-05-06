@@ -19,6 +19,11 @@ namespace Core
 			"VK_LAYER_LUNARG_standard_validation"
 		};
 
+		const std::vector<const char*> _deviceExtensions = 
+		{
+			VK_KHR_SWAPCHAIN_EXTENSION_NAME
+		};
+
 #if NDEBUG
 		const bool _bEnableValidationLayers = false;
 #else
@@ -36,10 +41,11 @@ namespace Core
 		struct QueueFamilyIndices
 		{
 			int32_t GraphicsFamily = -1;
+			int32_t PresentFamily = -1;	// Families used for rendering and presentation may differ.
 
 			bool IsComplete()
 			{
-				return GraphicsFamily >= 0;
+				return GraphicsFamily >= 0 && PresentFamily >= 0;
 			}
 		};
 
@@ -64,9 +70,11 @@ namespace Core
 				bool CheckValidationLayerSupport();
 				void GetRequiredExtensions(std::vector<const char*>& outExtensions);
 			void SetupDebugCallback();
+			void CreateSurface();
 			void PickPhysicalDevice();
 				uint32_t RateDeviceSuitability(VkPhysicalDevice physicalDevice);
 				void FindQueueFamilies(VkPhysicalDevice physicalDevice, QueueFamilyIndices& outIndices);
+				bool CheckDeviceExtensionSupport(VkPhysicalDevice physicalDevice);
 			void CreateLogicalDeviceAndGetQueues();
 
 		void MainLoop();
@@ -77,17 +85,20 @@ namespace Core
 
 		PFN_vkVoidFunction GetVkProcVoid(const char* procName)
 		{
-			JE_AssertThrowDefault(procName != nullptr && _instance != nullptr);
+			JE_AssertThrow(procName != nullptr, "Null argument.");
+			JE_AssertThrow(_instance != nullptr, "Instance not initialized.");
 			PFN_vkVoidFunction ret = vkGetInstanceProcAddr(_instance, procName);
-			JE_AssertThrowDefault(ret != nullptr);
+			JE_AssertThrow(ret != nullptr, "Bad input function name, returned nullptr.");
 			return ret;
 		}
 
-		#define GetVkProc(procType) GetVkProcInternal<PFN_##procType>(#procType)
 		template <typename FuncT> FuncT GetVkProcInternal(const char* procName)
 		{
 			return reinterpret_cast<FuncT>(GetVkProcVoid(procName));
 		}
+
+		#define GetVkProc(procType) GetVkProcInternal<PFN_##procType>(#procType)
+		#define CallVkProc(procType, ...) (*(GetVkProc(procType)))(__VA_ARGS__)
 
 
 		GLFWwindow* _pWindow;
@@ -96,7 +107,11 @@ namespace Core
 		VkInstance _instance;
 		VkDebugReportCallbackEXT _debugCallback;
 		VkPhysicalDevice _physicalDevice;
+		
 		VkDevice _device;
 		VkQueue _graphicsQueue;
+		VkQueue _presentQueue;
+
+		VkSurfaceKHR _surface;
 	};
 }
