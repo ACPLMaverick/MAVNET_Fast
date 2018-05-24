@@ -88,6 +88,7 @@ namespace Core
 				VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 				VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 			void RetrieveSwapChainImages();
+			void CreateSwapChainImageViews();
 
 		void MainLoop();
 
@@ -128,6 +129,7 @@ namespace Core
 
 		VkSwapchainKHR _swapChain;
 		std::vector<VkImage> _swapChainImages;
+		std::vector<VkImageView> _swapChainImageViews;
 		VkFormat _swapChainFormat;
 		VkExtent2D _swapChainExtent;
 	};
