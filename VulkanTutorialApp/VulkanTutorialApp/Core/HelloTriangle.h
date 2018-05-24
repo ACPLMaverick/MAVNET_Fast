@@ -49,6 +49,12 @@ namespace Core
 			}
 		};
 
+		struct SwapChainSupportDetails
+		{
+			VkSurfaceCapabilitiesKHR Capabilities;
+			std::vector<VkSurfaceFormatKHR> Formats;
+			std::vector<VkPresentModeKHR> PresentModes;
+		};
 
 		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback
 		(
@@ -75,7 +81,13 @@ namespace Core
 				uint32_t RateDeviceSuitability(VkPhysicalDevice physicalDevice);
 				void FindQueueFamilies(VkPhysicalDevice physicalDevice, QueueFamilyIndices& outIndices);
 				bool CheckDeviceExtensionSupport(VkPhysicalDevice physicalDevice);
+				void QuerySwapChainSupport(VkPhysicalDevice physicalDevice, SwapChainSupportDetails& outSupportDetails);
 			void CreateLogicalDeviceAndGetQueues();
+			void CreateSwapChain();
+				VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+				VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+				VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+			void RetrieveSwapChainImages();
 
 		void MainLoop();
 
@@ -113,5 +125,10 @@ namespace Core
 		VkQueue _presentQueue;
 
 		VkSurfaceKHR _surface;
+
+		VkSwapchainKHR _swapChain;
+		std::vector<VkImage> _swapChainImages;
+		VkFormat _swapChainFormat;
+		VkExtent2D _swapChainExtent;
 	};
 }

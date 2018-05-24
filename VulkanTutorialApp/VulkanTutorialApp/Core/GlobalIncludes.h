@@ -28,7 +28,9 @@ if((expr) != VkResult::VK_SUCCESS) \
 	JE_AssertThrow(false, #expr); \
 }
 
-#define JE_Print(text) std::cout << (text) << std::endl
-#define JE_PrintErr(text) std::cerr << (text) << std::endl
+#define JE_Print(text) std::cout << (text)
+#define JE_PrintLine(text) std::cout << (text) << std::endl
+#define JE_PrintErr(text) std::cerr << (text)
+#define JE_PrintLineErr(text) std::cerr << (text) << std::endl
 
 #define JE_VA_ARGS_COUNT(...) std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value
