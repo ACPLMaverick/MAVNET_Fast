@@ -30,6 +30,8 @@ namespace Core
 		const bool _bEnableValidationLayers = true;
 #endif
 
+		const VkClearValue _clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+
 		enum ShaderType
 		{
 			Vertex,
@@ -104,6 +106,9 @@ namespace Core
 			void CreateRenderPass();
 			void CreateGraphicsPipeline();
 				VkShaderModule CreateShaderModule(const std::vector<uint8_t> code);
+			void CreateFramebuffers();
+			void CreateCommandPool();
+			void CreateCommandBuffers();
 
 		void MainLoop();
 
@@ -155,5 +160,10 @@ namespace Core
 		VkRenderPass _renderPass;
 		VkPipelineLayout _pipelineLayout;
 		VkPipeline _graphicsPipeline;
+
+		std::vector<VkFramebuffer> _swapChainFramebuffers;
+
+		VkCommandPool _commandPool;
+		std::vector<VkCommandBuffer> _commandBuffers;
 	};
 }

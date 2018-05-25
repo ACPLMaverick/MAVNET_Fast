@@ -31,6 +31,7 @@ namespace Core
 		, _renderPass(VK_NULL_HANDLE)
 		, _pipelineLayout(VK_NULL_HANDLE)
 		, _graphicsPipeline(VK_NULL_HANDLE)
+		, _commandPool(VK_NULL_HANDLE)
 	{
 	}
 
@@ -72,9 +73,13 @@ namespace Core
 		PickPhysicalDevice();
 		CreateLogicalDeviceAndGetQueues();
 		CreateSwapChain();
+		RetrieveSwapChainImages();
 		CreateSwapChainImageViews();
 		CreateRenderPass();
 		CreateGraphicsPipeline();
+		CreateFramebuffers();
+		CreateCommandPool();
+		CreateCommandBuffers();
 	}
 
 	void HelloTriangle::CreateInstance()
@@ -781,6 +786,81 @@ namespace Core
 		return shaderModule;
 	}
 
+	void HelloTriangle::CreateFramebuffers()
+	{
+		_swapChainFramebuffers.resize(_swapChainImageViews.size());
+
+		for (size_t i = 0; i < _swapChainImageViews.size(); ++i)
+		{
+			VkFramebufferCreateInfo framebufferInfo = {};
+			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferInfo.renderPass = _renderPass;
+			framebufferInfo.attachmentCount = 1;
+			framebufferInfo.pAttachments = &_swapChainImageViews[i];
+			framebufferInfo.width = _swapChainExtent.width;
+			framebufferInfo.height = _swapChainExtent.height;
+			framebufferInfo.layers = 1;
+
+			JE_AssertThrowVkResult(vkCreateFramebuffer(_device, &framebufferInfo, _pAllocator, &_swapChainFramebuffers[i]));
+		}
+	}
+
+	void HelloTriangle::CreateCommandPool()
+	{
+		QueueFamilyIndices queueFamilyIndices;
+		FindQueueFamilies(_physicalDevice, queueFamilyIndices);
+
+		VkCommandPoolCreateInfo poolInfo = {};
+		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		poolInfo.queueFamilyIndex = queueFamilyIndices.GraphicsFamily;
+		poolInfo.flags = 0;
+
+		JE_AssertThrowVkResult(vkCreateCommandPool(_device, &poolInfo, _pAllocator, &_commandPool));
+	}
+
+	void HelloTriangle::CreateCommandBuffers()
+	{
+		// Because one of the drawing commands involves binding the right VkFramebuffer, we'll actually have to record a command buffer for every image in the swap chain once again.
+
+		_commandBuffers.resize(_swapChainFramebuffers.size());
+
+		VkCommandBufferAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.commandPool = _commandPool;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = static_cast<uint32_t>(_commandBuffers.size());
+
+		JE_AssertThrowVkResult(vkAllocateCommandBuffers(_device, &allocInfo, _commandBuffers.data()));
+
+		for (size_t i = 0; i < _commandBuffers.size(); i++) 
+		{
+			VkCommandBufferBeginInfo beginInfo = {};
+			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+			beginInfo.pInheritanceInfo = nullptr;
+
+			JE_AssertThrowVkResult(vkBeginCommandBuffer(_commandBuffers[i], &beginInfo));
+
+			VkRenderPassBeginInfo renderPassInfo = {};
+			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			renderPassInfo.renderPass = _renderPass;
+			renderPassInfo.framebuffer = _swapChainFramebuffers[i];
+			renderPassInfo.renderArea.offset = { 0, 0 };
+			renderPassInfo.renderArea.extent = _swapChainExtent;
+			renderPassInfo.clearValueCount = 1;
+			renderPassInfo.pClearValues = &_clearColor;
+
+			vkCmdBeginRenderPass(_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+			vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
+			vkCmdDraw(_commandBuffers[i], 3, 1, 0, 0);
+
+			vkCmdEndRenderPass(_commandBuffers[i]);
+
+			JE_AssertThrowVkResult(vkEndCommandBuffer(_commandBuffers[i]));
+		}
+	}
+
 	void HelloTriangle::MainLoop()
 	{
 		while (!glfwWindowShouldClose(_pWindow))
@@ -791,6 +871,13 @@ namespace Core
 
 	void HelloTriangle::Cleanup()
 	{
+		vkDestroyCommandPool(_device, _commandPool, _pAllocator);
+
+		for (auto framebuffer : _swapChainFramebuffers)
+		{
+			vkDestroyFramebuffer(_device, framebuffer, _pAllocator);
+		}
+
 		vkDestroyPipeline(_device, _graphicsPipeline, _pAllocator);
 
 		vkDestroyPipelineLayout(_device, _pipelineLayout, _pAllocator);
