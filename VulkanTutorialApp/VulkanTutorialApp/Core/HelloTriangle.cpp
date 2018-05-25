@@ -1,7 +1,5 @@
 #include "HelloTriangle.h"
 
-#include <glm/glm.hpp>
-
 #include <fstream>
 
 namespace Core
@@ -33,6 +31,10 @@ namespace Core
 		, _graphicsPipeline(VK_NULL_HANDLE)
 		, _commandPool(VK_NULL_HANDLE)
 		, _currentFrame(0)
+		, _vertexBufferMemory(VK_NULL_HANDLE)
+		, _indexBufferMemory(VK_NULL_HANDLE)
+		, _vertexBuffer(VK_NULL_HANDLE)
+		, _indexBuffer(VK_NULL_HANDLE)
 		, _bMinimized(false)
 	{
 	}
@@ -75,6 +77,7 @@ namespace Core
 		PickPhysicalDevice();
 		CreateLogicalDeviceAndGetQueues();
 		CreateCommandPool();
+		CreateVertexBuffer();
 
 		RecreateSwapChain();
 	}
@@ -621,12 +624,17 @@ namespace Core
 		
 		// Vertex input state creation info.
 
+		VkVertexInputBindingDescription bindingDescription;
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+		VertexTutorial::GetBindingDescription(bindingDescription);
+		VertexTutorial::GetAttributeDescription(attributeDescriptions);
+
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertexInputInfo.vertexBindingDescriptionCount = 0;
-		vertexInputInfo.pVertexAttributeDescriptions = nullptr;
-		vertexInputInfo.vertexAttributeDescriptionCount = 0;
-		vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+		vertexInputInfo.vertexBindingDescriptionCount = 1;
+		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 		
 		// Input assembly creation info.
@@ -828,6 +836,35 @@ namespace Core
 		JE_AssertThrowVkResult(vkCreateCommandPool(_device, &poolInfo, _pAllocator, &_commandPool));
 	}
 
+	void HelloTriangle::CreateVertexBuffer()
+	{
+		VkBufferCreateInfo bufferInfo = {};
+		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferInfo.size = JE_VectorSize(_vertices);
+		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+		JE_AssertThrowVkResult(vkCreateBuffer(_device, &bufferInfo, _pAllocator, &_vertexBuffer));
+
+		// Vertex buffer memory allocation.
+
+		VkMemoryRequirements memRequirements;
+		vkGetBufferMemoryRequirements(_device, _vertexBuffer, &memRequirements);
+
+		VkMemoryAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		allocInfo.allocationSize = memRequirements.size;
+		allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+		JE_AssertThrowVkResult(vkAllocateMemory(_device, &allocInfo, _pAllocator, &_vertexBufferMemory));
+		JE_AssertThrowVkResult(vkBindBufferMemory(_device, _vertexBuffer, _vertexBufferMemory, 0));
+
+		void* mem;
+		JE_AssertThrowVkResult(vkMapMemory(_device, _vertexBufferMemory, 0, bufferInfo.size, 0, &mem));
+		memcpy(mem, _vertices.data(), static_cast<size_t>(bufferInfo.size));
+		vkUnmapMemory(_device, _vertexBufferMemory);
+	}
+
 	void HelloTriangle::CreateCommandBuffers()
 	{
 		// Because one of the drawing commands involves binding the right VkFramebuffer, we'll actually have to record a command buffer for every image in the swap chain once again.
@@ -863,7 +900,10 @@ namespace Core
 			vkCmdBeginRenderPass(_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 			vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
-			vkCmdDraw(_commandBuffers[i], 3, 1, 0, 0);
+
+			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindVertexBuffers(_commandBuffers[i], 0, 1, &_vertexBuffer, offsets);
+			vkCmdDraw(_commandBuffers[i], static_cast<uint32_t>(_vertices.size()), 1, 0, 0);
 
 			vkCmdEndRenderPass(_commandBuffers[i]);
 
@@ -1008,8 +1048,30 @@ namespace Core
 		}
 	}
 
+	uint32_t HelloTriangle::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+	{
+		VkPhysicalDeviceMemoryProperties memProperties;
+		vkGetPhysicalDeviceMemoryProperties(_physicalDevice, &memProperties);
+
+		for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i)
+		{
+			if (
+				typeFilter & (1 << i)
+				&& (memProperties.memoryTypes[i].propertyFlags & properties) == properties
+				)
+			{
+				return i;
+			}
+		}
+
+		JE_AssertThrow(false, "Failed to find suitable memory type!");
+	}
+
 	void HelloTriangle::Cleanup()
 	{
+		vkDestroyBuffer(_device, _vertexBuffer, _pAllocator);
+		vkFreeMemory(_device, _vertexBufferMemory, _pAllocator);
+
 		CleanupSwapChain();
 
 		vkDestroyCommandPool(_device, _commandPool, _pAllocator);
@@ -1098,5 +1160,27 @@ namespace Core
 	void HelloTriangle::LoadShader(const std::string& shaderName, ShaderType shaderType, std::vector<uint8_t>& outData)
 	{
 		LoadFile("Shaders\\Binary\\" + shaderName + ShaderTypeToExtension[shaderType] + ".spv", outData);
+	}
+
+	void HelloTriangle::VertexTutorial::GetBindingDescription(VkVertexInputBindingDescription& outDescription)
+	{
+		outDescription.binding = 0;
+		outDescription.stride = sizeof(VertexTutorial);
+		outDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+	}
+
+	void HelloTriangle::VertexTutorial::GetAttributeDescription(std::vector<VkVertexInputAttributeDescription>& outDescriptions)
+	{
+		outDescriptions.resize(COMPONENT_NUMBER);
+
+		outDescriptions[0].binding = 0;
+		outDescriptions[0].location = 0;
+		outDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+		outDescriptions[0].offset = offsetof(VertexTutorial, Position);
+
+		outDescriptions[1].binding = 0;
+		outDescriptions[1].location = 1;
+		outDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+		outDescriptions[1].offset = offsetof(VertexTutorial, Color);
 	}
 }

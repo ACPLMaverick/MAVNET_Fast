@@ -65,17 +65,23 @@ namespace Core
 			std::vector<VkPresentModeKHR> PresentModes;
 		};
 
-		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback
-		(
-			VkDebugReportFlagsEXT flags,
-			VkDebugReportObjectTypeEXT objType,
-			uint64_t obj,
-			size_t location,
-			int32_t code,
-			const char* layerPrefix,
-			const char* msg,
-			void* userData
-		);
+		struct VertexTutorial
+		{
+			static const size_t COMPONENT_NUMBER = 2;
+
+			glm::vec3 Position;
+			glm::vec3 Color;
+
+			static void GetBindingDescription(VkVertexInputBindingDescription& outDescription);
+			static void GetAttributeDescription(std::vector<VkVertexInputAttributeDescription>& outDescriptions);
+		};
+
+		const std::vector<VertexTutorial> _vertices =
+		{
+			{ { 0.0f, -0.5f, 0.0f }, { 0.0f, 1.0f, 1.0f } },
+			{ { 0.5f, 0.5f, 0.0f }, { 1.0f, 0.0f, 1.0f } },
+			{ { -0.5f, 0.5f, 0.0f }, { 1.0f, 1.0f, 0.0f } }
+		};
 
 	public:
 		HelloTriangle();
@@ -110,6 +116,7 @@ namespace Core
 				VkShaderModule CreateShaderModule(const std::vector<uint8_t> code);
 			void CreateFramebuffers();
 			void CreateCommandPool();
+			void CreateVertexBuffer();
 			void CreateCommandBuffers();
 			void CreateSyncObjects();
 
@@ -118,6 +125,7 @@ namespace Core
 			void CheckForMinimized();
 
 		void RecreateSwapChain();
+		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 		void Cleanup();
 			void CleanupDebugCallback();
@@ -143,6 +151,18 @@ namespace Core
 
 		#define GetVkProc(procType) GetVkProcInternal<PFN_##procType>(#procType)
 		#define CallVkProc(procType, ...) (*(GetVkProc(procType)))(__VA_ARGS__)
+
+		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback
+		(
+			VkDebugReportFlagsEXT flags,
+			VkDebugReportObjectTypeEXT objType,
+			uint64_t obj,
+			size_t location,
+			int32_t code,
+			const char* layerPrefix,
+			const char* msg,
+			void* userData
+		);
 
 
 		GLFWwindow* _pWindow;
@@ -179,6 +199,12 @@ namespace Core
 		std::vector<VkFence> _fencesInFlight;
 
 		uint32_t _currentFrame;
+
+		VkDeviceMemory _vertexBufferMemory;
+		VkDeviceMemory _indexBufferMemory;
+
+		VkBuffer _vertexBuffer;
+		VkBuffer _indexBuffer;
 
 		bool _bMinimized;
 	};

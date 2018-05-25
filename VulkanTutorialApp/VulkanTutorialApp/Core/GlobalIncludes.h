@@ -3,6 +3,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <glm/glm.hpp>
+
 #include <iostream>
 #include <stdexcept>
 #include <functional>
@@ -16,6 +18,7 @@
 #include <stack>
 #include <set>
 #include <tuple>
+#include <array>
 
 #include <cassert>
 #define JE_Assert(val) assert(val)
@@ -32,5 +35,7 @@ if((expr) != VkResult::VK_SUCCESS) \
 #define JE_PrintLine(text) std::cout << (text) << std::endl
 #define JE_PrintErr(text) std::cerr << (text)
 #define JE_PrintLineErr(text) std::cerr << (text) << std::endl
+
+#define JE_VectorSize(arrayName) (sizeof((arrayName)[0]) * (arrayName).size())
 
 #define JE_VA_ARGS_COUNT(...) std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value
