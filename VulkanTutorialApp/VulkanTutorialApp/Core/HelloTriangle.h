@@ -30,13 +30,18 @@ namespace Core
 		const bool _bEnableValidationLayers = true;
 #endif
 
-	public:
-		HelloTriangle();
-		~HelloTriangle();
+		enum ShaderType
+		{
+			Vertex,
+			TesselationControl,
+			TesselationEvaluation,
+			Geometry,
+			Fragment,
+			Compute,
+			NUM
+		};
 
-		void Run();
-
-	private:
+		static const char* ShaderTypeToExtension[ShaderType::NUM];
 
 		struct QueueFamilyIndices
 		{
@@ -68,6 +73,13 @@ namespace Core
 			void* userData
 		);
 
+	public:
+		HelloTriangle();
+		~HelloTriangle();
+
+		void Run();
+
+	private:
 
 		void InitWindow();
 
@@ -89,12 +101,18 @@ namespace Core
 				VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 			void RetrieveSwapChainImages();
 			void CreateSwapChainImageViews();
+			void CreateRenderPass();
+			void CreateGraphicsPipeline();
+				VkShaderModule CreateShaderModule(const std::vector<uint8_t> code);
 
 		void MainLoop();
 
 		void Cleanup();
 			void CleanupDebugCallback();
 
+
+		static void LoadFile(const std::string& fileName, std::vector<uint8_t>& outData);
+		static void LoadShader(const std::string& shaderName, ShaderType shaderType, std::vector<uint8_t>& outData);
 
 		PFN_vkVoidFunction GetVkProcVoid(const char* procName)
 		{
@@ -117,6 +135,7 @@ namespace Core
 		GLFWwindow* _pWindow;
 
 		VkAllocationCallbacks* _pAllocator;
+		VkPipelineCache* _pPipelineCache;
 		VkInstance _instance;
 		VkDebugReportCallbackEXT _debugCallback;
 		VkPhysicalDevice _physicalDevice;
@@ -132,5 +151,9 @@ namespace Core
 		std::vector<VkImageView> _swapChainImageViews;
 		VkFormat _swapChainFormat;
 		VkExtent2D _swapChainExtent;
+
+		VkRenderPass _renderPass;
+		VkPipelineLayout _pipelineLayout;
+		VkPipeline _graphicsPipeline;
 	};
 }

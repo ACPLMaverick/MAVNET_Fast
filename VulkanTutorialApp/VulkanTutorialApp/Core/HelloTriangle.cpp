@@ -2,11 +2,24 @@
 
 #include <glm/glm.hpp>
 
+#include <fstream>
+
 namespace Core
 {
+	const char* HelloTriangle::ShaderTypeToExtension[]
+	{
+		".vert",
+		".tesc",
+		".tese",
+		".geom",
+		".frag",
+		".comp"
+	};
+
 	HelloTriangle::HelloTriangle() : 
 		  _pWindow(nullptr)
 		, _pAllocator(VK_NULL_HANDLE)
+		, _pPipelineCache(VK_NULL_HANDLE)
 		, _instance(VK_NULL_HANDLE)
 		, _debugCallback(VK_NULL_HANDLE)
 		, _physicalDevice(VK_NULL_HANDLE)
@@ -15,6 +28,9 @@ namespace Core
 		, _presentQueue(VK_NULL_HANDLE)
 		, _surface(VK_NULL_HANDLE)
 		, _swapChain(VK_NULL_HANDLE)
+		, _renderPass(VK_NULL_HANDLE)
+		, _pipelineLayout(VK_NULL_HANDLE)
+		, _graphicsPipeline(VK_NULL_HANDLE)
 	{
 	}
 
@@ -57,6 +73,8 @@ namespace Core
 		CreateLogicalDeviceAndGetQueues();
 		CreateSwapChain();
 		CreateSwapChainImageViews();
+		CreateRenderPass();
+		CreateGraphicsPipeline();
 	}
 
 	void HelloTriangle::CreateInstance()
@@ -530,6 +548,239 @@ namespace Core
 		}
 	}
 
+	void HelloTriangle::CreateRenderPass()
+	{
+		VkAttachmentDescription colorAttachment = {};
+		colorAttachment.format = _swapChainFormat;
+		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+		VkAttachmentReference colorAttachmentRef = {};
+		colorAttachmentRef.attachment = 0;
+		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		VkSubpassDescription subpass = {};
+		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpass.colorAttachmentCount = 1;
+		subpass.pColorAttachments = &colorAttachmentRef;
+
+		VkRenderPassCreateInfo renderPassInfo = {};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+		renderPassInfo.attachmentCount = 1;
+		renderPassInfo.pAttachments = &colorAttachment;
+		renderPassInfo.subpassCount = 1;
+		renderPassInfo.pSubpasses = &subpass;
+
+		JE_AssertThrowVkResult(vkCreateRenderPass(_device, &renderPassInfo, _pAllocator, &_renderPass));
+	}
+
+	void HelloTriangle::CreateGraphicsPipeline()
+	{
+		// Shader modules.
+
+		std::vector<uint8_t> vertShaderData, fragShaderData;
+
+		LoadShader("TutorialShader", ShaderType::Vertex, vertShaderData);
+		LoadShader("TutorialShader", ShaderType::Fragment, fragShaderData);
+
+		VkShaderModule vertShaderModule = CreateShaderModule(vertShaderData);
+		VkShaderModule fragShaderModule = CreateShaderModule(fragShaderData);
+
+		VkPipelineShaderStageCreateInfo shaderStages[2] = {};
+
+		shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+		shaderStages[0].module = vertShaderModule;
+		shaderStages[0].pName = "main";	// It's possible to combine multiple fragment shaders into a single shader module and use different entry points to differentiate between their behaviors. 
+		shaderStages[0].pSpecializationInfo = nullptr; //  It allows you to specify values for shader constants. You can use a single shader module where its behavior can be configured at pipeline creation by specifying different values for the constants used in it. 
+
+		shaderStages[1] = shaderStages[0];
+		shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		shaderStages[1].module = fragShaderModule;
+
+		
+		// Vertex input state creation info.
+
+		VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
+		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		vertexInputInfo.vertexBindingDescriptionCount = 0;
+		vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+		vertexInputInfo.vertexAttributeDescriptionCount = 0;
+		vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+
+		
+		// Input assembly creation info.
+
+		VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
+		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;	// TODO: check what with adjacency means
+		inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+
+		// Viewport creation info.
+
+		VkViewport viewport = {};
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = static_cast<float>(_swapChainExtent.width);
+		viewport.height = static_cast<float>(_swapChainExtent.height);
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+
+		VkRect2D scissor = {};
+		scissor.offset = { 0, 0 };
+		scissor.extent = _swapChainExtent;
+
+		VkPipelineViewportStateCreateInfo viewportState = {};
+		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		viewportState.viewportCount = 1;
+		viewportState.pViewports = &viewport;
+		viewportState.scissorCount = 1;
+		viewportState.pScissors = &scissor;
+
+
+		// Rasterizer state creation info.
+
+		VkPipelineRasterizationStateCreateInfo rasterizer = {};
+		rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		rasterizer.depthClampEnable = VK_FALSE;	// This is useful in some special cases like shadow maps. 
+		rasterizer.rasterizerDiscardEnable = VK_FALSE; // If is set to VK_TRUE, then geometry never passes through the rasterizer stage. This basically disables any output to the framebuffer.
+		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+		rasterizer.lineWidth = 1.0f;
+		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+		rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+		rasterizer.depthBiasEnable = VK_FALSE;
+		rasterizer.depthBiasConstantFactor = 0.0f;
+		rasterizer.depthBiasClamp = 0.0f;
+		rasterizer.depthBiasSlopeFactor = 0.0f;
+
+
+		// Multisampling info.
+
+		VkPipelineMultisampleStateCreateInfo multisampling = {};
+		multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisampling.sampleShadingEnable = VK_FALSE;
+		multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+		multisampling.minSampleShading = 1.0f;
+		multisampling.pSampleMask = nullptr;
+		multisampling.alphaToCoverageEnable = VK_FALSE;
+		multisampling.alphaToOneEnable = VK_FALSE;
+
+
+		// Depth and stencil info.
+
+		// TODO: implement
+
+		VkPipelineDepthStencilStateCreateInfo* pDepthStencil = nullptr;
+
+
+		// Color blend attachment state (configuration per attached framebuffer).
+
+		VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
+
+		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		colorBlendAttachment.blendEnable = VK_FALSE;
+
+		colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+		colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+		colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+		colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+		colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+		colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+
+
+		// Color blend state create info.
+
+		VkPipelineColorBlendStateCreateInfo colorBlending = {};
+		colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		colorBlending.logicOpEnable = VK_FALSE;	// If set to true, this overwrites attachment state settings.
+		colorBlending.logicOp = VK_LOGIC_OP_COPY;
+		colorBlending.attachmentCount = 1;
+		colorBlending.pAttachments = &colorBlendAttachment;
+		colorBlending.blendConstants[0] = 0.0f;
+		colorBlending.blendConstants[1] = 0.0f;
+		colorBlending.blendConstants[2] = 0.0f;
+		colorBlending.blendConstants[3] = 0.0f;
+
+
+		// Dynamic state info (states which you want to change in runtime).
+
+		// Just for testin'.
+
+		VkDynamicState dynamicStates[] = 
+		{
+			VK_DYNAMIC_STATE_VIEWPORT,
+			VK_DYNAMIC_STATE_LINE_WIDTH
+		};
+
+		VkPipelineDynamicStateCreateInfo dynamicState = {};
+		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamicState.dynamicStateCount = 2;
+		dynamicState.pDynamicStates = dynamicStates;
+
+
+		// Pipeline layout create info.
+
+		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		pipelineLayoutInfo.setLayoutCount = 0;
+		pipelineLayoutInfo.pSetLayouts = nullptr;
+		pipelineLayoutInfo.pushConstantRangeCount = 0;
+		pipelineLayoutInfo.pPushConstantRanges = nullptr;
+
+		JE_AssertThrowVkResult(vkCreatePipelineLayout(_device, &pipelineLayoutInfo, _pAllocator, &_pipelineLayout));
+
+
+		// Finally create graphics pipeline, yay.
+
+		VkGraphicsPipelineCreateInfo pipelineInfo = {};
+		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		
+		pipelineInfo.stageCount = 2;
+		pipelineInfo.pStages = shaderStages;
+		
+		pipelineInfo.pVertexInputState = &vertexInputInfo;
+		pipelineInfo.pInputAssemblyState = &inputAssembly;
+		pipelineInfo.pViewportState = &viewportState;
+		pipelineInfo.pRasterizationState = &rasterizer;
+		pipelineInfo.pMultisampleState = &multisampling;
+		pipelineInfo.pDepthStencilState = pDepthStencil;
+		pipelineInfo.pColorBlendState = &colorBlending;
+		pipelineInfo.pDynamicState = nullptr;
+
+		pipelineInfo.layout = _pipelineLayout;
+		pipelineInfo.renderPass = _renderPass;
+		pipelineInfo.subpass = 0;
+
+		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+		pipelineInfo.basePipelineIndex = -1;
+		//pipelineInfo.flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT; // You can use this to derive from existing pipeline which is faster than creating one from scratch.
+
+		JE_AssertThrowVkResult(vkCreateGraphicsPipelines(_device, nullptr, 1, &pipelineInfo, _pAllocator, &_graphicsPipeline));
+
+		// Shader modules cleanup.
+
+		vkDestroyShaderModule(_device, vertShaderModule, _pAllocator);
+		vkDestroyShaderModule(_device, fragShaderModule, _pAllocator);
+	}
+
+	VkShaderModule HelloTriangle::CreateShaderModule(const std::vector<uint8_t> code)
+	{
+		VkShaderModuleCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		createInfo.codeSize = code.size();
+		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+		VkShaderModule shaderModule;
+		JE_AssertThrowVkResult(vkCreateShaderModule(_device, &createInfo, _pAllocator, &shaderModule));
+		return shaderModule;
+	}
+
 	void HelloTriangle::MainLoop()
 	{
 		while (!glfwWindowShouldClose(_pWindow))
@@ -540,6 +791,12 @@ namespace Core
 
 	void HelloTriangle::Cleanup()
 	{
+		vkDestroyPipeline(_device, _graphicsPipeline, _pAllocator);
+
+		vkDestroyPipelineLayout(_device, _pipelineLayout, _pAllocator);
+		
+		vkDestroyRenderPass(_device, _renderPass, _pAllocator);
+
 		for (auto imageView : _swapChainImageViews)
 		{
 			vkDestroyImageView(_device, imageView, _pAllocator);
@@ -565,5 +822,28 @@ namespace Core
 			return;
 
 		CallVkProc(vkDestroyDebugReportCallbackEXT, _instance, _debugCallback, _pAllocator);
+	}
+
+	void HelloTriangle::LoadFile(const std::string & fileName, std::vector<uint8_t>& outData)
+	{
+		std::ifstream file(fileName, std::ios::ate | std::ios::binary);
+
+		JE_AssertThrow(file.is_open(), "Failed to open requested file!");
+
+		// (ate) The advantage of starting to read at the end of the file is that we can use the read position to determine the size of the file and allocate a buffer
+
+		size_t fileSize = static_cast<size_t>(file.tellg());
+		outData.clear();
+		outData.resize(fileSize);
+
+		file.seekg(0);
+		file.read(reinterpret_cast<char*>(outData.data()), fileSize);
+
+		file.close();
+	}
+
+	void HelloTriangle::LoadShader(const std::string& shaderName, ShaderType shaderType, std::vector<uint8_t>& outData)
+	{
+		LoadFile("Shaders\\Binary\\" + shaderName + ShaderTypeToExtension[shaderType] + ".spv", outData);
 	}
 }

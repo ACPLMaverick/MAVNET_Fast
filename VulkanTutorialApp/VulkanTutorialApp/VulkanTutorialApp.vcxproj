@@ -95,6 +95,9 @@
       <AdditionalLibraryDirectories>$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\lib-vc2015;C:\VulkanSDK\1.1.73.0\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>CALL .\Scripts\CompileShaders.bat</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -125,6 +128,9 @@
       <AdditionalLibraryDirectories>$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\lib-vc2015;C:\VulkanSDK\1.1.73.0\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>CALL .\Scripts\CompileShaders.bat</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Core\main.cpp" />
@@ -133,6 +139,11 @@
   <ItemGroup>
     <ClInclude Include="Core\GlobalIncludes.h" />
     <ClInclude Include="Core\HelloTriangle.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Scripts\CompileShaders.bat" />
+    <None Include="Shaders\Source\TutorialShader.frag" />
+    <None Include="Shaders\Source\TutorialShader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
