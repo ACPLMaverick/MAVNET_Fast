@@ -39,4 +39,5 @@
 *.ilk
 *.pdb
 *.vcxproj.user
+*.spv
 VulkanTutorialApp/VulkanTutorialApp/x64/

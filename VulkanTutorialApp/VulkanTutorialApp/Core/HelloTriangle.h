@@ -32,6 +32,8 @@ namespace Core
 
 		const VkClearValue _clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 
+		const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+
 		enum ShaderType
 		{
 			Vertex,
@@ -109,8 +111,10 @@ namespace Core
 			void CreateFramebuffers();
 			void CreateCommandPool();
 			void CreateCommandBuffers();
+			void CreateSyncObjects();
 
 		void MainLoop();
+			void DrawFrame();
 
 		void Cleanup();
 			void CleanupDebugCallback();
@@ -165,5 +169,11 @@ namespace Core
 
 		VkCommandPool _commandPool;
 		std::vector<VkCommandBuffer> _commandBuffers;
+
+		std::vector<VkSemaphore> _semsImageAvailable;
+		std::vector<VkSemaphore> _semsRenderFinished;
+		std::vector<VkFence> _fencesInFlight;
+
+		uint32_t _currentFrame;
 	};
 }

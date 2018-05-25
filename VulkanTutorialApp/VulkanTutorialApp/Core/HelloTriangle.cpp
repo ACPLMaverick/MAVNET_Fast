@@ -32,6 +32,7 @@ namespace Core
 		, _pipelineLayout(VK_NULL_HANDLE)
 		, _graphicsPipeline(VK_NULL_HANDLE)
 		, _commandPool(VK_NULL_HANDLE)
+		, _currentFrame(0)
 	{
 	}
 
@@ -80,6 +81,7 @@ namespace Core
 		CreateFramebuffers();
 		CreateCommandPool();
 		CreateCommandBuffers();
+		CreateSyncObjects();
 	}
 
 	void HelloTriangle::CreateInstance()
@@ -574,12 +576,22 @@ namespace Core
 		subpass.colorAttachmentCount = 1;
 		subpass.pColorAttachments = &colorAttachmentRef;
 
+		VkSubpassDependency dependency = {};
+		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+		dependency.dstSubpass = 0;
+		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependency.srcAccessMask = 0;
+		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
 		VkRenderPassCreateInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		renderPassInfo.attachmentCount = 1;
 		renderPassInfo.pAttachments = &colorAttachment;
 		renderPassInfo.subpassCount = 1;
 		renderPassInfo.pSubpasses = &subpass;
+		renderPassInfo.dependencyCount = 1;
+		renderPassInfo.pDependencies = &dependency;
 
 		JE_AssertThrowVkResult(vkCreateRenderPass(_device, &renderPassInfo, _pAllocator, &_renderPass));
 	}
@@ -861,16 +873,85 @@ namespace Core
 		}
 	}
 
+	void HelloTriangle::CreateSyncObjects()
+	{
+		VkSemaphoreCreateInfo semaphoreInfo = {};
+		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+		VkFenceCreateInfo fenceInfo = {};
+		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+		_semsImageAvailable.resize(MAX_FRAMES_IN_FLIGHT);
+		_semsRenderFinished.resize(MAX_FRAMES_IN_FLIGHT);
+		_fencesInFlight.resize(MAX_FRAMES_IN_FLIGHT);
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			JE_AssertThrowVkResult(vkCreateSemaphore(_device, &semaphoreInfo, _pAllocator, &_semsImageAvailable[i]));
+			JE_AssertThrowVkResult(vkCreateSemaphore(_device, &semaphoreInfo, _pAllocator, &_semsRenderFinished[i]));
+			JE_AssertThrowVkResult(vkCreateFence(_device, &fenceInfo, _pAllocator, &_fencesInFlight[i]));
+		}
+	}
+
 	void HelloTriangle::MainLoop()
 	{
 		while (!glfwWindowShouldClose(_pWindow))
 		{
 			glfwPollEvents();
+			DrawFrame();
 		}
+
+		vkDeviceWaitIdle(_device);
+	}
+
+	void HelloTriangle::DrawFrame()
+	{
+		vkWaitForFences(_device, 1, &_fencesInFlight[_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+		vkResetFences(_device, 1, &_fencesInFlight[_currentFrame]);
+
+		uint32_t imageIndex;
+		vkAcquireNextImageKHR(_device, _swapChain, std::numeric_limits<uint64_t>::max(), _semsImageAvailable[_currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+		VkSubmitInfo submitInfo = {};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = &_semsImageAvailable[_currentFrame];
+		submitInfo.pWaitDstStageMask = waitStages;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &_commandBuffers[imageIndex];
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = &_semsRenderFinished[_currentFrame];
+
+		JE_AssertThrowVkResult(vkQueueSubmit(_graphicsQueue, 1, &submitInfo, _fencesInFlight[_currentFrame]));
+
+		VkPresentInfoKHR presentInfo = {};
+		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		presentInfo.waitSemaphoreCount = 1;
+		presentInfo.pWaitSemaphores = &_semsRenderFinished[_currentFrame];
+		presentInfo.swapchainCount = 1;
+		presentInfo.pSwapchains = &_swapChain;
+		presentInfo.pImageIndices = &imageIndex;
+		presentInfo.pResults = nullptr;
+		
+		vkQueuePresentKHR(_presentQueue, &presentInfo);
+
+		// vkQueueWaitIdle(_presentQueue); // Do not use it because this prevents only one queue being processed at a time.
+
+
+		_currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
 	void HelloTriangle::Cleanup()
 	{
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			vkDestroyFence(_device, _fencesInFlight[i], _pAllocator);
+			vkDestroySemaphore(_device, _semsImageAvailable[i], _pAllocator);
+			vkDestroySemaphore(_device, _semsRenderFinished[i], _pAllocator);
+		}
+
 		vkDestroyCommandPool(_device, _commandPool, _pAllocator);
 
 		for (auto framebuffer : _swapChainFramebuffers)
