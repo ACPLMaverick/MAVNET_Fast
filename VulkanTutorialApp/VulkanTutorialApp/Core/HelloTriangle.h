@@ -116,8 +116,11 @@ namespace Core
 		void MainLoop();
 			void DrawFrame();
 
+		void RecreateSwapChain();
+
 		void Cleanup();
 			void CleanupDebugCallback();
+			void CleanupSwapChain();
 
 
 		static void LoadFile(const std::string& fileName, std::vector<uint8_t>& outData);

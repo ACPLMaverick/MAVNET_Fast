@@ -61,7 +61,7 @@ namespace Core
 	{
 		glfwInit();
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
 		_pWindow = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_NAME, nullptr, nullptr);
 	}
@@ -73,15 +73,10 @@ namespace Core
 		CreateSurface();
 		PickPhysicalDevice();
 		CreateLogicalDeviceAndGetQueues();
-		CreateSwapChain();
-		RetrieveSwapChainImages();
-		CreateSwapChainImageViews();
-		CreateRenderPass();
-		CreateGraphicsPipeline();
-		CreateFramebuffers();
 		CreateCommandPool();
-		CreateCommandBuffers();
 		CreateSyncObjects();
+
+		RecreateSwapChain();
 	}
 
 	void HelloTriangle::CreateInstance()
@@ -911,7 +906,17 @@ namespace Core
 		vkResetFences(_device, 1, &_fencesInFlight[_currentFrame]);
 
 		uint32_t imageIndex;
-		vkAcquireNextImageKHR(_device, _swapChain, std::numeric_limits<uint64_t>::max(), _semsImageAvailable[_currentFrame], VK_NULL_HANDLE, &imageIndex);
+		VkResult result = vkAcquireNextImageKHR(_device, _swapChain, std::numeric_limits<uint64_t>::max(), _semsImageAvailable[_currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+		if (result == VK_ERROR_OUT_OF_DATE_KHR)
+		{
+			RecreateSwapChain();
+			return;
+		}
+		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+		{
+			JE_AssertThrowVkResult(result);
+		}
 
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -935,7 +940,17 @@ namespace Core
 		presentInfo.pImageIndices = &imageIndex;
 		presentInfo.pResults = nullptr;
 		
-		vkQueuePresentKHR(_presentQueue, &presentInfo);
+		result = vkQueuePresentKHR(_presentQueue, &presentInfo);
+
+		if (result == VK_ERROR_OUT_OF_DATE_KHR)
+		{
+			RecreateSwapChain();
+			return;
+		}
+		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+		{
+			JE_AssertThrowVkResult(result);
+		}
 
 		// vkQueueWaitIdle(_presentQueue); // Do not use it because this prevents only one queue being processed at a time.
 
@@ -943,8 +958,25 @@ namespace Core
 		_currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
+	void HelloTriangle::RecreateSwapChain()
+	{
+		vkDeviceWaitIdle(_device);
+
+		CleanupSwapChain();
+
+		CreateSwapChain();
+		RetrieveSwapChainImages();
+		CreateSwapChainImageViews();
+		CreateRenderPass();
+		CreateGraphicsPipeline();
+		CreateFramebuffers();
+		CreateCommandBuffers();
+	}
+
 	void HelloTriangle::Cleanup()
 	{
+		CleanupSwapChain();
+
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			vkDestroyFence(_device, _fencesInFlight[i], _pAllocator);
@@ -953,24 +985,6 @@ namespace Core
 		}
 
 		vkDestroyCommandPool(_device, _commandPool, _pAllocator);
-
-		for (auto framebuffer : _swapChainFramebuffers)
-		{
-			vkDestroyFramebuffer(_device, framebuffer, _pAllocator);
-		}
-
-		vkDestroyPipeline(_device, _graphicsPipeline, _pAllocator);
-
-		vkDestroyPipelineLayout(_device, _pipelineLayout, _pAllocator);
-		
-		vkDestroyRenderPass(_device, _renderPass, _pAllocator);
-
-		for (auto imageView : _swapChainImageViews)
-		{
-			vkDestroyImageView(_device, imageView, _pAllocator);
-		}
-
-		vkDestroySwapchainKHR(_device, _swapChain, _pAllocator);
 
 		vkDestroyDevice(_device, _pAllocator);
 
@@ -990,6 +1004,29 @@ namespace Core
 			return;
 
 		CallVkProc(vkDestroyDebugReportCallbackEXT, _instance, _debugCallback, _pAllocator);
+	}
+
+	void HelloTriangle::CleanupSwapChain()
+	{
+		vkFreeCommandBuffers(_device, _commandPool, static_cast<uint32_t>(_commandBuffers.size()), _commandBuffers.data());
+
+		for (auto framebuffer : _swapChainFramebuffers)
+		{
+			vkDestroyFramebuffer(_device, framebuffer, _pAllocator);
+		}
+
+		vkDestroyPipeline(_device, _graphicsPipeline, _pAllocator);
+
+		vkDestroyPipelineLayout(_device, _pipelineLayout, _pAllocator);
+
+		vkDestroyRenderPass(_device, _renderPass, _pAllocator);
+
+		for (auto imageView : _swapChainImageViews)
+		{
+			vkDestroyImageView(_device, imageView, _pAllocator);
+		}
+
+		vkDestroySwapchainKHR(_device, _swapChain, _pAllocator);
 	}
 
 	void HelloTriangle::LoadFile(const std::string & fileName, std::vector<uint8_t>& outData)
