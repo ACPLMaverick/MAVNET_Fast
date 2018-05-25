@@ -33,6 +33,7 @@ namespace Core
 		, _graphicsPipeline(VK_NULL_HANDLE)
 		, _commandPool(VK_NULL_HANDLE)
 		, _currentFrame(0)
+		, _bMinimized(false)
 	{
 	}
 
@@ -74,7 +75,6 @@ namespace Core
 		PickPhysicalDevice();
 		CreateLogicalDeviceAndGetQueues();
 		CreateCommandPool();
-		CreateSyncObjects();
 
 		RecreateSwapChain();
 	}
@@ -392,6 +392,9 @@ namespace Core
 
 	void HelloTriangle::CreateSwapChain()
 	{
+		if (_swapChain != VK_NULL_HANDLE)
+			return;
+
 		SwapChainSupportDetails swapChainSupport;
 		QuerySwapChainSupport(_physicalDevice, swapChainSupport);
 
@@ -894,7 +897,18 @@ namespace Core
 		while (!glfwWindowShouldClose(_pWindow))
 		{
 			glfwPollEvents();
-			DrawFrame();
+			if (!_bMinimized)
+			{
+				DrawFrame();
+			}
+			else
+			{
+				CheckForMinimized();
+				if (!_bMinimized)
+				{
+					RecreateSwapChain();
+				}
+			}
 		}
 
 		vkDeviceWaitIdle(_device);
@@ -910,6 +924,7 @@ namespace Core
 
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		{
+			CheckForMinimized();
 			RecreateSwapChain();
 			return;
 		}
@@ -944,6 +959,7 @@ namespace Core
 
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		{
+			CheckForMinimized();
 			RecreateSwapChain();
 			return;
 		}
@@ -958,31 +974,43 @@ namespace Core
 		_currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
+	void HelloTriangle::CheckForMinimized()
+	{
+		VkSurfaceCapabilitiesKHR capabilities;
+		JE_AssertThrowVkResult(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_physicalDevice, _surface, &capabilities));
+		
+		if (capabilities.currentExtent.width == 0 || capabilities.currentExtent.height == 0)
+		{
+			_bMinimized = true;
+		}
+		else
+		{
+			_bMinimized = false;
+		}
+	}
+
 	void HelloTriangle::RecreateSwapChain()
 	{
 		vkDeviceWaitIdle(_device);
 
 		CleanupSwapChain();
 
-		CreateSwapChain();
-		RetrieveSwapChainImages();
-		CreateSwapChainImageViews();
-		CreateRenderPass();
-		CreateGraphicsPipeline();
-		CreateFramebuffers();
-		CreateCommandBuffers();
+		if (!_bMinimized)
+		{
+			CreateSyncObjects();
+			CreateSwapChain();
+			RetrieveSwapChainImages();
+			CreateSwapChainImageViews();
+			CreateRenderPass();
+			CreateGraphicsPipeline();
+			CreateFramebuffers();
+			CreateCommandBuffers();
+		}
 	}
 
 	void HelloTriangle::Cleanup()
 	{
 		CleanupSwapChain();
-
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-		{
-			vkDestroyFence(_device, _fencesInFlight[i], _pAllocator);
-			vkDestroySemaphore(_device, _semsImageAvailable[i], _pAllocator);
-			vkDestroySemaphore(_device, _semsRenderFinished[i], _pAllocator);
-		}
 
 		vkDestroyCommandPool(_device, _commandPool, _pAllocator);
 
@@ -1008,25 +1036,45 @@ namespace Core
 
 	void HelloTriangle::CleanupSwapChain()
 	{
+		if (_renderPass == VK_NULL_HANDLE)
+			return;
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			vkDestroyFence(_device, _fencesInFlight[i], _pAllocator);
+			vkDestroySemaphore(_device, _semsImageAvailable[i], _pAllocator);
+			vkDestroySemaphore(_device, _semsRenderFinished[i], _pAllocator);
+		}
+
 		vkFreeCommandBuffers(_device, _commandPool, static_cast<uint32_t>(_commandBuffers.size()), _commandBuffers.data());
+		_commandBuffers.clear();
 
 		for (auto framebuffer : _swapChainFramebuffers)
 		{
 			vkDestroyFramebuffer(_device, framebuffer, _pAllocator);
 		}
+		_swapChainFramebuffers.clear();
 
 		vkDestroyPipeline(_device, _graphicsPipeline, _pAllocator);
+		_graphicsPipeline = VK_NULL_HANDLE;
 
 		vkDestroyPipelineLayout(_device, _pipelineLayout, _pAllocator);
+		_pipelineLayout = VK_NULL_HANDLE;
 
 		vkDestroyRenderPass(_device, _renderPass, _pAllocator);
+		_renderPass = VK_NULL_HANDLE;
 
 		for (auto imageView : _swapChainImageViews)
 		{
 			vkDestroyImageView(_device, imageView, _pAllocator);
 		}
+		_swapChainImageViews.clear();
 
-		vkDestroySwapchainKHR(_device, _swapChain, _pAllocator);
+		if (!_bMinimized)
+		{
+			vkDestroySwapchainKHR(_device, _swapChain, _pAllocator);
+			_swapChain = VK_NULL_HANDLE;
+		}
 	}
 
 	void HelloTriangle::LoadFile(const std::string & fileName, std::vector<uint8_t>& outData)

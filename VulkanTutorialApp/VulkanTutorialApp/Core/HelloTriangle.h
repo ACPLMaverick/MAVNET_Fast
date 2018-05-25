@@ -115,6 +115,7 @@ namespace Core
 
 		void MainLoop();
 			void DrawFrame();
+			void CheckForMinimized();
 
 		void RecreateSwapChain();
 
@@ -178,5 +179,7 @@ namespace Core
 		std::vector<VkFence> _fencesInFlight;
 
 		uint32_t _currentFrame;
+
+		bool _bMinimized;
 	};
 }
