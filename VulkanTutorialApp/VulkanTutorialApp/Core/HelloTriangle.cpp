@@ -80,6 +80,7 @@ namespace Core
 		CreateLogicalDeviceAndGetQueues();
 		CreateCommandPool();
 		CreateVertexBuffer();
+		CreateIndexBuffer();
 
 		RecreateSwapChain();
 	}
@@ -869,6 +870,33 @@ namespace Core
 #endif
 	}
 
+	void HelloTriangle::CreateIndexBuffer()
+	{
+#if USE_STAGING_BUFFER
+		VkDeviceSize bufferSize = JE_VectorSizeBytes(_indices);
+
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+
+		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_indices.data()), stagingBufferMemory, static_cast<size_t>(bufferSize));
+
+		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _indexBuffer, _indexBufferMemory);
+
+		CopyBuffer_GPU_GPU(stagingBuffer, _indexBuffer, bufferSize);
+
+		vkDestroyBuffer(_device, stagingBuffer, _pAllocator);
+		vkFreeMemory(_device, stagingBufferMemory, _pAllocator);
+#else
+		VkDeviceSize bufferSize = JE_VectorSizeBytes(_indices);
+
+		CreateBuffer(bufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, _indexBuffer, _indexBufferMemory);
+
+		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_indices.data()), _indexBufferMemory, static_cast<size_t>(bufferSize));
+#endif
+	}
+
 	void HelloTriangle::CreateCommandBuffers()
 	{
 		// Because one of the drawing commands involves binding the right VkFramebuffer, we'll actually have to record a command buffer for every image in the swap chain once again.
@@ -907,7 +935,8 @@ namespace Core
 
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(_commandBuffers[i], 0, 1, &_vertexBuffer, offsets);
-			vkCmdDraw(_commandBuffers[i], static_cast<uint32_t>(_vertices.size()), 1, 0, 0);
+			vkCmdBindIndexBuffer(_commandBuffers[i], _indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+			vkCmdDrawIndexed(_commandBuffers[i], static_cast<uint32_t>(_indices.size()), 1, 0, 0, 0);
 
 			vkCmdEndRenderPass(_commandBuffers[i]);
 
@@ -1081,7 +1110,7 @@ namespace Core
 
 		JE_AssertThrowVkResult(vkCreateBuffer(_device, &bufferInfo, _pAllocator, &outBuffer));
 
-		// Vertex buffer memory allocation.
+		// Buffer memory allocation.
 
 		VkMemoryRequirements memRequirements;
 		vkGetBufferMemoryRequirements(_device, outBuffer, &memRequirements);
@@ -1099,7 +1128,7 @@ namespace Core
 	{
 		void* mem;
 		JE_AssertThrowVkResult(vkMapMemory(_device, dstMemory, 0, copySize, 0, &mem));
-		memcpy(mem, _vertices.data(), copySize);
+		memcpy(mem, srcData, copySize);
 		vkUnmapMemory(_device, dstMemory);
 	}
 
@@ -1142,6 +1171,9 @@ namespace Core
 
 	void HelloTriangle::Cleanup()
 	{
+		vkDestroyBuffer(_device, _indexBuffer, _pAllocator);
+		vkFreeMemory(_device, _indexBufferMemory, _pAllocator);
+
 		vkDestroyBuffer(_device, _vertexBuffer, _pAllocator);
 		vkFreeMemory(_device, _vertexBufferMemory, _pAllocator);
 

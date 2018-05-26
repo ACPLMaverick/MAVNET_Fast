@@ -76,11 +76,17 @@ namespace Core
 			static void GetAttributeDescription(std::vector<VkVertexInputAttributeDescription>& outDescriptions);
 		};
 
-		const std::vector<VertexTutorial> _vertices =
+		const std::vector<VertexTutorial> _vertices = 
 		{
-			{ { 0.0f, -0.5f, 0.0f }, { 0.0f, 1.0f, 1.0f } },
-			{ { 0.5f, 0.5f, 0.0f }, { 1.0f, 0.0f, 1.0f } },
-			{ { -0.5f, 0.5f, 0.0f }, { 1.0f, 1.0f, 0.0f } }
+			{ { -0.5f, -0.5f, 0.0f },{ 1.0f, 0.0f, 0.0f } },
+			{ { 0.5f, -0.5f, 0.0f },{ 0.0f, 1.0f, 0.0f } },
+			{ { 0.5f, 0.5f, 0.0f },{ 0.0f, 0.0f, 1.0f } },
+			{ { -0.5f, 0.5f, 0.0f },{ 1.0f, 1.0f, 1.0f } }
+		};
+
+		const std::vector<uint16_t> _indices =
+		{
+			0, 1, 2, 2, 3, 0
 		};
 
 	public:
@@ -117,6 +123,7 @@ namespace Core
 			void CreateFramebuffers();
 			void CreateCommandPool();
 			void CreateVertexBuffer();
+			void CreateIndexBuffer();
 			void CreateCommandBuffers();
 			void CreateSyncObjects();
 
