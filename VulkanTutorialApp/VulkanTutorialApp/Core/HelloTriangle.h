@@ -126,6 +126,9 @@ namespace Core
 
 		void RecreateSwapChain();
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& outBuffer, VkDeviceMemory& outBufferMemory);
+		void CopyBuffer_CPU_GPU(const void* srcData, VkDeviceMemory dstMemory, size_t copySize);
+		void CopyBuffer_GPU_GPU(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize copySize);
 
 		void Cleanup();
 			void CleanupDebugCallback();
@@ -192,6 +195,7 @@ namespace Core
 		std::vector<VkFramebuffer> _swapChainFramebuffers;
 
 		VkCommandPool _commandPool;
+		VkCommandPool _commandPoolTransient;
 		std::vector<VkCommandBuffer> _commandBuffers;
 
 		std::vector<VkSemaphore> _semsImageAvailable;

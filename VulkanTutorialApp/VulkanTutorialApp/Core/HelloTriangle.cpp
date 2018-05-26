@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+#define USE_STAGING_BUFFER 1
+
 namespace Core
 {
 	const char* HelloTriangle::ShaderTypeToExtension[]
@@ -834,35 +836,37 @@ namespace Core
 		poolInfo.flags = 0;
 
 		JE_AssertThrowVkResult(vkCreateCommandPool(_device, &poolInfo, _pAllocator, &_commandPool));
+
+		poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+
+		JE_AssertThrowVkResult(vkCreateCommandPool(_device, &poolInfo, _pAllocator, &_commandPoolTransient));
 	}
 
 	void HelloTriangle::CreateVertexBuffer()
 	{
-		VkBufferCreateInfo bufferInfo = {};
-		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = JE_VectorSizeBytes(_vertices);
-		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+#if USE_STAGING_BUFFER
+		VkDeviceSize bufferSize = JE_VectorSizeBytes(_vertices);
 
-		JE_AssertThrowVkResult(vkCreateBuffer(_device, &bufferInfo, _pAllocator, &_vertexBuffer));
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
 
-		// Vertex buffer memory allocation.
+		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
-		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(_device, _vertexBuffer, &memRequirements);
+		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_vertices.data()), stagingBufferMemory, static_cast<size_t>(bufferSize));
 
-		VkMemoryAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _vertexBuffer, _vertexBufferMemory);
 
-		JE_AssertThrowVkResult(vkAllocateMemory(_device, &allocInfo, _pAllocator, &_vertexBufferMemory));
-		JE_AssertThrowVkResult(vkBindBufferMemory(_device, _vertexBuffer, _vertexBufferMemory, 0));
+		CopyBuffer_GPU_GPU(stagingBuffer, _vertexBuffer, bufferSize);
 
-		void* mem;
-		JE_AssertThrowVkResult(vkMapMemory(_device, _vertexBufferMemory, 0, bufferInfo.size, 0, &mem));
-		memcpy(mem, _vertices.data(), static_cast<size_t>(bufferInfo.size));
-		vkUnmapMemory(_device, _vertexBufferMemory);
+		vkDestroyBuffer(_device, stagingBuffer, _pAllocator);
+		vkFreeMemory(_device, stagingBufferMemory, _pAllocator);
+#else
+		VkDeviceSize bufferSize = JE_VectorSizeBytes(_vertices);
+
+		CreateBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, _vertexBuffer, _vertexBufferMemory);
+
+		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_vertices.data()), _vertexBufferMemory, static_cast<size_t>(bufferSize));
+#endif
 	}
 
 	void HelloTriangle::CreateCommandBuffers()
@@ -1067,6 +1071,75 @@ namespace Core
 		JE_AssertThrow(false, "Failed to find suitable memory type!");
 	}
 
+	void HelloTriangle::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer & outBuffer, VkDeviceMemory & outBufferMemory)
+	{
+		VkBufferCreateInfo bufferInfo = {};
+		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferInfo.size = size;
+		bufferInfo.usage = usage;
+		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+		JE_AssertThrowVkResult(vkCreateBuffer(_device, &bufferInfo, _pAllocator, &outBuffer));
+
+		// Vertex buffer memory allocation.
+
+		VkMemoryRequirements memRequirements;
+		vkGetBufferMemoryRequirements(_device, outBuffer, &memRequirements);
+
+		VkMemoryAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		allocInfo.allocationSize = memRequirements.size;
+		allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+
+		JE_AssertThrowVkResult(vkAllocateMemory(_device, &allocInfo, _pAllocator, &outBufferMemory));
+		JE_AssertThrowVkResult(vkBindBufferMemory(_device, outBuffer, outBufferMemory, 0));
+	}
+
+	void HelloTriangle::CopyBuffer_CPU_GPU(const void * srcData, VkDeviceMemory dstMemory, size_t copySize)
+	{
+		void* mem;
+		JE_AssertThrowVkResult(vkMapMemory(_device, dstMemory, 0, copySize, 0, &mem));
+		memcpy(mem, _vertices.data(), copySize);
+		vkUnmapMemory(_device, dstMemory);
+	}
+
+	void HelloTriangle::CopyBuffer_GPU_GPU(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize copySize)
+	{
+		VkCommandBufferAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandPool = _commandPoolTransient;
+		allocInfo.commandBufferCount = 1;
+
+		VkCommandBuffer commandBuffer;
+		JE_AssertThrowVkResult(vkAllocateCommandBuffers(_device, &allocInfo, &commandBuffer));
+
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+		VkBufferCopy copyRegion = {};
+		copyRegion.srcOffset = 0;
+		copyRegion.dstOffset = 0;
+		copyRegion.size = copySize;
+		
+		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+		JE_AssertThrowVkResult(vkEndCommandBuffer(commandBuffer));
+
+		VkSubmitInfo submitInfo = {};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffer;
+
+		JE_AssertThrowVkResult(vkQueueSubmit(_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE));
+		JE_AssertThrowVkResult(vkQueueWaitIdle(_graphicsQueue));
+
+		vkFreeCommandBuffers(_device, _commandPoolTransient, 1, &commandBuffer);
+	}
+
 	void HelloTriangle::Cleanup()
 	{
 		vkDestroyBuffer(_device, _vertexBuffer, _pAllocator);
@@ -1074,6 +1147,7 @@ namespace Core
 
 		CleanupSwapChain();
 
+		vkDestroyCommandPool(_device, _commandPoolTransient, _pAllocator);
 		vkDestroyCommandPool(_device, _commandPool, _pAllocator);
 
 		vkDestroyDevice(_device, _pAllocator);
