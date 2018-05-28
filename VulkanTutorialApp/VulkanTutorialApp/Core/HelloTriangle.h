@@ -161,6 +161,8 @@ namespace Core
 			void CreateCommandPool();
 			void CreateDescriptorPool();
 			void CreateTextureImage();
+			void CreateTextureImageView();
+			void CreateTextureSampler();
 			void CreateVertexBuffer();
 			void CreateIndexBuffer();
 			void CreateUniformBuffer();
@@ -185,6 +187,7 @@ namespace Core
 		void CopyBuffer_GPU_GPU(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize copySize);
 		void CreateImage(TextureInfo& texInfo, VkFormat format, VkImageTiling tiling, VkImageLayout initialLayout, VkImageUsageFlags usage, VkMemoryPropertyFlags memProperties, VkImage& outImage, VkDeviceMemory& outMemory);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, TextureInfo& texInfo);
+		VkImageView CreateImageView(VkImage image, VkFormat format);
 
 		void Cleanup();
 			void CleanupDebugCallback();
@@ -278,6 +281,8 @@ namespace Core
 		VkBuffer _uniformBuffer;
 
 		VkImage _textureImage;
+		VkImageView _textureImageView;
+		VkSampler _textureSampler;
 
 		bool _bMinimized;
 	};
