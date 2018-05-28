@@ -117,12 +117,18 @@ namespace Core
 			{ { -0.5f, -0.5f, 0.0f },{ 2.0f, 0.0f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 1.0f } },
 			{ { 0.5f, -0.5f, 0.0f },{ 0.0f, 2.0f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 1.0f } },
 			{ { 0.5f, 0.5f, 0.0f },{ 0.0f, 0.0f, 2.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f } },
-			{ { -0.5f, 0.5f, 0.0f },{ 2.0f, 2.0f, 2.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f } }
+			{ { -0.5f, 0.5f, 0.0f },{ 2.0f, 2.0f, 2.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f } },
+
+			{ { -0.5f, -0.5f, -0.5f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 1.0f } },
+			{ { 0.5f, -0.5f, -0.5f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 1.0f } },
+			{ { 0.5f, 0.5f, -0.5f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f } },
+			{ { -0.5f, 0.5f, -0.5f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f } }
 		};
 
 		const std::vector<uint16_t> _indices =
 		{
-			0, 1, 2, 2, 3, 0
+			0, 1, 2, 2, 3, 0,
+			4, 5, 6, 6, 7, 4
 		};
 
 	public:
@@ -163,6 +169,7 @@ namespace Core
 			void CreateTextureImage();
 			void CreateTextureImageView();
 			void CreateTextureSampler();
+			void CreateDepthResources();
 			void CreateVertexBuffer();
 			void CreateIndexBuffer();
 			void CreateUniformBuffer();
@@ -178,7 +185,11 @@ namespace Core
 		VkCommandBuffer BeginSingleTimeCommands();
 		void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 		
-		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+		void TransitionImageLayout(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
+
+		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidateFormats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags);
+		VkFormat FindDepthFormat();
+		bool HasStencilComponent(VkFormat format);
 
 		void RecreateSwapChain();
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -187,7 +198,7 @@ namespace Core
 		void CopyBuffer_GPU_GPU(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize copySize);
 		void CreateImage(TextureInfo& texInfo, VkFormat format, VkImageTiling tiling, VkImageLayout initialLayout, VkImageUsageFlags usage, VkMemoryPropertyFlags memProperties, VkImage& outImage, VkDeviceMemory& outMemory);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, TextureInfo& texInfo);
-		VkImageView CreateImageView(VkImage image, VkFormat format);
+		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
 		void Cleanup();
 			void CleanupDebugCallback();
@@ -275,6 +286,7 @@ namespace Core
 		VkDeviceMemory _indexBufferMemory;
 		VkDeviceMemory _uniformBufferMemory;
 		VkDeviceMemory _textureImageMemory;
+		VkDeviceMemory _depthImageMemory;
 
 		VkBuffer _vertexBuffer;
 		VkBuffer _indexBuffer;
@@ -283,6 +295,9 @@ namespace Core
 		VkImage _textureImage;
 		VkImageView _textureImageView;
 		VkSampler _textureSampler;
+
+		VkImage _depthImage;
+		VkImageView _depthImageView;
 
 		bool _bMinimized;
 	};

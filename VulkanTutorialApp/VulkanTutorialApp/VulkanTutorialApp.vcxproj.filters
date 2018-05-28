@@ -34,10 +34,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\Source\TutorialShader.frag" />
-    <None Include="Shaders\Source\TutorialShader.vert" />
     <None Include="Scripts\CompileShaders.bat">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="Resources\Shaders\Source\TutorialShader.frag" />
+    <None Include="Resources\Shaders\Source\TutorialShader.vert" />
   </ItemGroup>
 </Project>
