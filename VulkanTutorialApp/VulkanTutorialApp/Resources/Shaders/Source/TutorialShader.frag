@@ -6,9 +6,12 @@ layout(location = 1) in vec3 inWVPosition;
 layout(location = 2) in vec3 inNormal;
 layout(location = 3) in vec2 inUv;
 
+layout(binding = 1) uniform sampler2D texSampler;
+
 layout(location = 0) out vec4 outColor;
 
 void main()
 {
-	outColor = vec4(inColor, 1.0f);
+	vec4 tex = texture(texSampler, inUv);
+	outColor = vec4(tex.xyz * inColor, 1.0f);
 }

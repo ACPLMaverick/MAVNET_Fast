@@ -608,10 +608,19 @@ namespace Core
 		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		uboLayoutBinding.pImmutableSamplers = nullptr; // TODO: For textures probably.
 
+		VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
+		samplerLayoutBinding.binding = 1;
+		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		samplerLayoutBinding.descriptorCount = 1;
+		samplerLayoutBinding.pImmutableSamplers = nullptr;
+		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
+
 		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		layoutInfo.bindingCount = 1;
-		layoutInfo.pBindings = &uboLayoutBinding;
+		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		layoutInfo.pBindings = bindings.data();
 
 		JE_AssertThrowVkResult(vkCreateDescriptorSetLayout(_device, &layoutInfo, _pAllocator, &_descriptorSetLayout));
 	}
@@ -861,14 +870,16 @@ namespace Core
 
 	void HelloTriangle::CreateDescriptorPool()
 	{
-		VkDescriptorPoolSize poolSize = {};
-		poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSize.descriptorCount = 1;
+		std::array<VkDescriptorPoolSize, 2> poolSizes = {};
+		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSizes[0].descriptorCount = 1;
+		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		poolSizes[1].descriptorCount = 1;
 
 		VkDescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		poolInfo.poolSizeCount = 1;
-		poolInfo.pPoolSizes = &poolSize;
+		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+		poolInfo.pPoolSizes = poolSizes.data();
 		poolInfo.maxSets = 1;
 
 		JE_AssertThrowVkResult(vkCreateDescriptorPool(_device, &poolInfo, _pAllocator, &_descriptorPool));
@@ -1056,18 +1067,34 @@ namespace Core
 		bufferInfo.offset = 0;
 		bufferInfo.range = sizeof(UniformBufferObject); // If you're overwriting the whole buffer, like we are in this case, then it is is also possible to use the VK_WHOLE_SIZE value for the range. 
 
-		VkWriteDescriptorSet descriptorWrite = {};
-		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrite.dstSet = _descriptorSet;
-		descriptorWrite.dstBinding = 0;
-		descriptorWrite.dstArrayElement = 0;
-		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrite.descriptorCount = 1;
-		descriptorWrite.pBufferInfo = &bufferInfo;
-		descriptorWrite.pImageInfo = nullptr;
-		descriptorWrite.pTexelBufferView = nullptr;
+		VkDescriptorImageInfo imageInfo = {};
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = _textureImageView;
+		imageInfo.sampler = _textureSampler;
 
-		vkUpdateDescriptorSets(_device, 1, &descriptorWrite, 0, nullptr);
+		std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
+
+		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[0].dstSet = _descriptorSet;
+		descriptorWrites[0].dstBinding = 0;
+		descriptorWrites[0].dstArrayElement = 0;
+		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrites[0].descriptorCount = 1;
+		descriptorWrites[0].pBufferInfo = &bufferInfo;
+		descriptorWrites[0].pImageInfo = nullptr;
+		descriptorWrites[0].pTexelBufferView = nullptr;
+
+		descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[1].dstSet = _descriptorSet;
+		descriptorWrites[1].dstBinding = 1;
+		descriptorWrites[1].dstArrayElement = 0;
+		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrites[1].descriptorCount = 1;
+		descriptorWrites[1].pBufferInfo = nullptr;
+		descriptorWrites[1].pImageInfo = &imageInfo;
+		descriptorWrites[1].pTexelBufferView = nullptr;
+
+		vkUpdateDescriptorSets(_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
  	}
 
 	void HelloTriangle::CreateSyncObjects()
@@ -1207,9 +1234,9 @@ namespace Core
 
 		proj[1][1] *= -1.0f; //GLM was originally designed for OpenGL, where the Y coordinate of the clip coordinates is inverted.The easiest way to compensate for that is to flip the sign on the scaling factor of the Y axis in the projection matrix.
 
-		mv_translation = view * mv_translation * rotation * scale;
+		mv_translation = mv_translation * rotation * scale;
 
-		_ubo.MVP = proj * mv_translation;
+		_ubo.MVP = proj * view * mv_translation;
 		_ubo.MV = mv_translation;
 		_ubo.MVInverseTranspose = glm::transpose(glm::inverse(mv_translation));
 
@@ -1604,36 +1631,9 @@ namespace Core
 
 		outTextureInfo.Width = width;
 		outTextureInfo.Height = height;
-		outTextureInfo.Channels = chnls;
-		outTextureInfo.SizeBytes = width * height * chnls;
+		outTextureInfo.Channels = desiredChannels;
+		outTextureInfo.SizeBytes = width * height * outTextureInfo.Channels;
 		outTextureInfo.bAllocatedByStbi = true;
-
-		if (desiredChannels == 4 && chnls == 3)
-		{
-			outTextureInfo.bAllocatedByStbi = false;
-			outTextureInfo.Channels = 4;
-
-			uint32_t sizePixel = outTextureInfo.Channels;
-			outTextureInfo.SizeBytes = width * height * sizePixel;
-
-			uint8_t* oldData = outTextureInfo.Data;
-			outTextureInfo.Data = reinterpret_cast<uint8_t*>(malloc(outTextureInfo.SizeBytes));
-
-			for (size_t iOld = 0, iNew = 0; iNew < outTextureInfo.SizeBytes; iOld += 3, iNew += 4)
-			{
-				uint8_t* srcPtr = oldData + iOld;
-				uint8_t* dstPtr = outTextureInfo.Data + iNew;
-
-				memcpy(dstPtr, srcPtr, 3);
-				*(dstPtr + 3) = 0;
-			}
-
-			stbi_image_free(oldData);
-		}
-		else if (desiredChannels != chnls)
-		{
-			JE_AssertThrow(false, "Channel number not supported!");
-		}
 	}
 
 	void HelloTriangle::UnloadTexture(TextureInfo& texInfo)
