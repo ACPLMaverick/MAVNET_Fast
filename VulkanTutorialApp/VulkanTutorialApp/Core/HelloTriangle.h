@@ -65,23 +65,39 @@ namespace Core
 			std::vector<VkPresentModeKHR> PresentModes;
 		};
 
-		struct VertexTutorial
+		struct alignas(16) VertexTutorial
 		{
-			static const size_t COMPONENT_NUMBER = 2;
+			static const size_t COMPONENT_NUMBER = 4;
 
 			glm::vec3 Position;
 			glm::vec3 Color;
+			glm::vec3 Normal;
+			glm::vec2 Uv;
 
 			static void GetBindingDescription(VkVertexInputBindingDescription& outDescription);
 			static void GetAttributeDescription(std::vector<VkVertexInputAttributeDescription>& outDescriptions);
 		};
 
+		struct UniformBufferObject
+		{
+			glm::mat4 MVP;
+			glm::mat4 MV;
+			glm::mat4 MVInverseTranspose;
+
+			UniformBufferObject()
+				: MVP(glm::mat4(1.0f))
+				, MV(glm::mat4(1.0f))
+				, MVInverseTranspose(glm::mat4(1.0f))
+			{
+			}
+		};
+
 		const std::vector<VertexTutorial> _vertices = 
 		{
-			{ { -0.5f, -0.5f, 0.0f },{ 1.0f, 0.0f, 0.0f } },
-			{ { 0.5f, -0.5f, 0.0f },{ 0.0f, 1.0f, 0.0f } },
-			{ { 0.5f, 0.5f, 0.0f },{ 0.0f, 0.0f, 1.0f } },
-			{ { -0.5f, 0.5f, 0.0f },{ 1.0f, 1.0f, 1.0f } }
+			{ { -0.5f, -0.5f, 0.0f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f } },
+			{ { 0.5f, -0.5f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f } },
+			{ { 0.5f, 0.5f, 0.0f },{ 0.0f, 0.0f, 1.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 1.0f } },
+			{ { -0.5f, 0.5f, 0.0f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 1.0f } }
 		};
 
 		const std::vector<uint16_t> _indices =
@@ -118,18 +134,23 @@ namespace Core
 			void RetrieveSwapChainImages();
 			void CreateSwapChainImageViews();
 			void CreateRenderPass();
+			void CreateDescriptorSetLayout();
 			void CreateGraphicsPipeline();
 				VkShaderModule CreateShaderModule(const std::vector<uint8_t> code);
 			void CreateFramebuffers();
 			void CreateCommandPool();
+			void CreateDescriptorPool();
 			void CreateVertexBuffer();
 			void CreateIndexBuffer();
+			void CreateUniformBuffer();
 			void CreateCommandBuffers();
+			void CreateDescriptorSet();
 			void CreateSyncObjects();
 
 		void MainLoop();
 			void DrawFrame();
 			void CheckForMinimized();
+			void UpdateUniformBuffer();
 
 		void RecreateSwapChain();
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -196,6 +217,7 @@ namespace Core
 		VkExtent2D _swapChainExtent;
 
 		VkRenderPass _renderPass;
+		VkDescriptorSetLayout _descriptorSetLayout;
 		VkPipelineLayout _pipelineLayout;
 		VkPipeline _graphicsPipeline;
 
@@ -205,17 +227,24 @@ namespace Core
 		VkCommandPool _commandPoolTransient;
 		std::vector<VkCommandBuffer> _commandBuffers;
 
+		VkDescriptorPool _descriptorPool;
+
 		std::vector<VkSemaphore> _semsImageAvailable;
 		std::vector<VkSemaphore> _semsRenderFinished;
 		std::vector<VkFence> _fencesInFlight;
 
 		uint32_t _currentFrame;
+		UniformBufferObject _ubo;
+
+		VkDescriptorSet _descriptorSet;
 
 		VkDeviceMemory _vertexBufferMemory;
 		VkDeviceMemory _indexBufferMemory;
+		VkDeviceMemory _uniformBufferMemory;
 
 		VkBuffer _vertexBuffer;
 		VkBuffer _indexBuffer;
+		VkBuffer _uniformBuffer;
 
 		bool _bMinimized;
 	};

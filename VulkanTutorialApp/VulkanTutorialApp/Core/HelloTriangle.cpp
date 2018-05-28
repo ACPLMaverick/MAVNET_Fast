@@ -32,11 +32,15 @@ namespace Core
 		, _pipelineLayout(VK_NULL_HANDLE)
 		, _graphicsPipeline(VK_NULL_HANDLE)
 		, _commandPool(VK_NULL_HANDLE)
+		, _descriptorPool(VK_NULL_HANDLE)
 		, _currentFrame(0)
+		, _descriptorSet(VK_NULL_HANDLE)
 		, _vertexBufferMemory(VK_NULL_HANDLE)
 		, _indexBufferMemory(VK_NULL_HANDLE)
+		, _uniformBufferMemory(VK_NULL_HANDLE)
 		, _vertexBuffer(VK_NULL_HANDLE)
 		, _indexBuffer(VK_NULL_HANDLE)
+		, _uniformBuffer(VK_NULL_HANDLE)
 		, _bMinimized(false)
 	{
 	}
@@ -79,8 +83,12 @@ namespace Core
 		PickPhysicalDevice();
 		CreateLogicalDeviceAndGetQueues();
 		CreateCommandPool();
+		CreateDescriptorPool();
 		CreateVertexBuffer();
 		CreateIndexBuffer();
+		CreateUniformBuffer();
+		CreateDescriptorSetLayout();
+		CreateDescriptorSet();
 
 		RecreateSwapChain();
 	}
@@ -600,6 +608,23 @@ namespace Core
 		JE_AssertThrowVkResult(vkCreateRenderPass(_device, &renderPassInfo, _pAllocator, &_renderPass));
 	}
 
+	void HelloTriangle::CreateDescriptorSetLayout()
+	{
+		VkDescriptorSetLayoutBinding uboLayoutBinding = {};
+		uboLayoutBinding.binding = 0;
+		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		uboLayoutBinding.descriptorCount = 1;
+		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		uboLayoutBinding.pImmutableSamplers = nullptr; // TODO: For textures probably.
+
+		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		layoutInfo.bindingCount = 1;
+		layoutInfo.pBindings = &uboLayoutBinding;
+
+		JE_AssertThrowVkResult(vkCreateDescriptorSetLayout(_device, &layoutInfo, _pAllocator, &_descriptorSetLayout));
+	}
+
 	void HelloTriangle::CreateGraphicsPipeline()
 	{
 		// Shader modules.
@@ -679,7 +704,7 @@ namespace Core
 		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 		rasterizer.lineWidth = 1.0f;
 		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-		rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+		rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 		rasterizer.depthBiasEnable = VK_FALSE;
 		rasterizer.depthBiasConstantFactor = 0.0f;
 		rasterizer.depthBiasClamp = 0.0f;
@@ -754,8 +779,8 @@ namespace Core
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.setLayoutCount = 0;
-		pipelineLayoutInfo.pSetLayouts = nullptr;
+		pipelineLayoutInfo.setLayoutCount = 1;
+		pipelineLayoutInfo.pSetLayouts = &_descriptorSetLayout;
 		pipelineLayoutInfo.pushConstantRangeCount = 0;
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
@@ -843,6 +868,21 @@ namespace Core
 		JE_AssertThrowVkResult(vkCreateCommandPool(_device, &poolInfo, _pAllocator, &_commandPoolTransient));
 	}
 
+	void HelloTriangle::CreateDescriptorPool()
+	{
+		VkDescriptorPoolSize poolSize = {};
+		poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSize.descriptorCount = 1;
+
+		VkDescriptorPoolCreateInfo poolInfo = {};
+		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolInfo.poolSizeCount = 1;
+		poolInfo.pPoolSizes = &poolSize;
+		poolInfo.maxSets = 1;
+
+		JE_AssertThrowVkResult(vkCreateDescriptorPool(_device, &poolInfo, _pAllocator, &_descriptorPool));
+	}
+
 	void HelloTriangle::CreateVertexBuffer()
 	{
 #if USE_STAGING_BUFFER
@@ -897,6 +937,12 @@ namespace Core
 #endif
 	}
 
+	void HelloTriangle::CreateUniformBuffer()
+	{
+		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+		CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, _uniformBuffer, _uniformBufferMemory);
+	}
+
 	void HelloTriangle::CreateCommandBuffers()
 	{
 		// Because one of the drawing commands involves binding the right VkFramebuffer, we'll actually have to record a command buffer for every image in the swap chain once again.
@@ -934,6 +980,7 @@ namespace Core
 			vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
 
 			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindDescriptorSets(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _pipelineLayout, 0, 1, &_descriptorSet, 0, nullptr);
 			vkCmdBindVertexBuffers(_commandBuffers[i], 0, 1, &_vertexBuffer, offsets);
 			vkCmdBindIndexBuffer(_commandBuffers[i], _indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 			vkCmdDrawIndexed(_commandBuffers[i], static_cast<uint32_t>(_indices.size()), 1, 0, 0, 0);
@@ -943,6 +990,35 @@ namespace Core
 			JE_AssertThrowVkResult(vkEndCommandBuffer(_commandBuffers[i]));
 		}
 	}
+
+	void HelloTriangle::CreateDescriptorSet()
+	{
+		VkDescriptorSetAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocInfo.descriptorPool = _descriptorPool;
+		allocInfo.descriptorSetCount = 1;
+		allocInfo.pSetLayouts = &_descriptorSetLayout;
+
+		JE_AssertThrowVkResult(vkAllocateDescriptorSets(_device, &allocInfo, &_descriptorSet));
+
+		VkDescriptorBufferInfo bufferInfo = {};
+		bufferInfo.buffer = _uniformBuffer;
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(UniformBufferObject); // If you're overwriting the whole buffer, like we are in this case, then it is is also possible to use the VK_WHOLE_SIZE value for the range. 
+
+		VkWriteDescriptorSet descriptorWrite = {};
+		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet = _descriptorSet;
+		descriptorWrite.dstBinding = 0;
+		descriptorWrite.dstArrayElement = 0;
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrite.descriptorCount = 1;
+		descriptorWrite.pBufferInfo = &bufferInfo;
+		descriptorWrite.pImageInfo = nullptr;
+		descriptorWrite.pTexelBufferView = nullptr;
+
+		vkUpdateDescriptorSets(_device, 1, &descriptorWrite, 0, nullptr);
+ 	}
 
 	void HelloTriangle::CreateSyncObjects()
 	{
@@ -972,6 +1048,7 @@ namespace Core
 			glfwPollEvents();
 			if (!_bMinimized)
 			{
+				UpdateUniformBuffer();
 				DrawFrame();
 			}
 			else
@@ -1060,6 +1137,33 @@ namespace Core
 		{
 			_bMinimized = false;
 		}
+	}
+
+	void HelloTriangle::UpdateUniformBuffer()
+	{
+		static auto startTime = std::chrono::high_resolution_clock::now();
+
+		auto currentTime = std::chrono::high_resolution_clock::now();
+
+		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+		glm::mat4 mv_translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 2.0f, 1.0f));
+		
+		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+		glm::mat4 proj = glm::perspective(glm::radians(45.0f), static_cast<float>(_swapChainExtent.width) / static_cast<float>(_swapChainExtent.height), 0.1f, 25.0f);
+
+		proj[1][1] *= -1.0f; //GLM was originally designed for OpenGL, where the Y coordinate of the clip coordinates is inverted.The easiest way to compensate for that is to flip the sign on the scaling factor of the Y axis in the projection matrix.
+
+		mv_translation = view * mv_translation * rotation * scale;
+
+		_ubo.MVP = proj * mv_translation;
+		_ubo.MV = mv_translation;
+		_ubo.MVInverseTranspose = glm::transpose(glm::inverse(mv_translation));
+
+		CopyBuffer_CPU_GPU(reinterpret_cast<void*>(&_ubo), _uniformBufferMemory, sizeof(_ubo));
 	}
 
 	void HelloTriangle::RecreateSwapChain()
@@ -1171,6 +1275,9 @@ namespace Core
 
 	void HelloTriangle::Cleanup()
 	{
+		vkDestroyBuffer(_device, _uniformBuffer, _pAllocator);
+		vkFreeMemory(_device, _uniformBufferMemory, _pAllocator);
+
 		vkDestroyBuffer(_device, _indexBuffer, _pAllocator);
 		vkFreeMemory(_device, _indexBufferMemory, _pAllocator);
 
@@ -1178,6 +1285,10 @@ namespace Core
 		vkFreeMemory(_device, _vertexBufferMemory, _pAllocator);
 
 		CleanupSwapChain();
+
+		vkDestroyDescriptorPool(_device, _descriptorPool, _pAllocator);
+
+		vkDestroyDescriptorSetLayout(_device, _descriptorSetLayout, _pAllocator);
 
 		vkDestroyCommandPool(_device, _commandPoolTransient, _pAllocator);
 		vkDestroyCommandPool(_device, _commandPool, _pAllocator);
@@ -1288,5 +1399,15 @@ namespace Core
 		outDescriptions[1].location = 1;
 		outDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		outDescriptions[1].offset = offsetof(VertexTutorial, Color);
+
+		outDescriptions[2].binding = 0;
+		outDescriptions[2].location = 2;
+		outDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
+		outDescriptions[2].offset = offsetof(VertexTutorial, Normal);
+
+		outDescriptions[3].binding = 0;
+		outDescriptions[3].location = 3;
+		outDescriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
+		outDescriptions[3].offset = offsetof(VertexTutorial, Uv);
 	}
 }
