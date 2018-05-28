@@ -1,5 +1,5 @@
 @echo off
-cd Shaders
+cd Resources\Shaders
 
 set vkPath = ""
 

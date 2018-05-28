@@ -92,6 +92,26 @@ namespace Core
 			}
 		};
 
+		struct TextureInfo
+		{
+			uint32_t SizeBytes;
+			uint16_t Width;
+			uint16_t Height;
+			uint16_t Channels;
+			uint8_t* Data;
+			bool bAllocatedByStbi;
+
+			TextureInfo()
+				: Width(0)
+				, Height(0)
+				, Channels(0)
+				, Data(nullptr)
+				, bAllocatedByStbi(false)
+			{
+
+			}
+		};
+
 		const std::vector<VertexTutorial> _vertices = 
 		{
 			{ { -0.5f, -0.5f, 0.0f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f } },
@@ -140,6 +160,7 @@ namespace Core
 			void CreateFramebuffers();
 			void CreateCommandPool();
 			void CreateDescriptorPool();
+			void CreateTextureImage();
 			void CreateVertexBuffer();
 			void CreateIndexBuffer();
 			void CreateUniformBuffer();
@@ -152,11 +173,18 @@ namespace Core
 			void CheckForMinimized();
 			void UpdateUniformBuffer();
 
+		VkCommandBuffer BeginSingleTimeCommands();
+		void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+		
+		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+
 		void RecreateSwapChain();
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& outBuffer, VkDeviceMemory& outBufferMemory);
 		void CopyBuffer_CPU_GPU(const void* srcData, VkDeviceMemory dstMemory, size_t copySize);
 		void CopyBuffer_GPU_GPU(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize copySize);
+		void CreateImage(TextureInfo& texInfo, VkFormat format, VkImageTiling tiling, VkImageLayout initialLayout, VkImageUsageFlags usage, VkMemoryPropertyFlags memProperties, VkImage& outImage, VkDeviceMemory& outMemory);
+		void CopyBufferToImage(VkBuffer buffer, VkImage image, TextureInfo& texInfo);
 
 		void Cleanup();
 			void CleanupDebugCallback();
@@ -165,6 +193,8 @@ namespace Core
 
 		static void LoadFile(const std::string& fileName, std::vector<uint8_t>& outData);
 		static void LoadShader(const std::string& shaderName, ShaderType shaderType, std::vector<uint8_t>& outData);
+		static void LoadTexture(const std::string& textureName, uint32_t desiredChannels, TextureInfo& outTextureInfo);
+		static void UnloadTexture(TextureInfo& texInfo);
 
 		PFN_vkVoidFunction GetVkProcVoid(const char* procName)
 		{
@@ -241,10 +271,13 @@ namespace Core
 		VkDeviceMemory _vertexBufferMemory;
 		VkDeviceMemory _indexBufferMemory;
 		VkDeviceMemory _uniformBufferMemory;
+		VkDeviceMemory _textureImageMemory;
 
 		VkBuffer _vertexBuffer;
 		VkBuffer _indexBuffer;
 		VkBuffer _uniformBuffer;
+
+		VkImage _textureImage;
 
 		bool _bMinimized;
 	};
