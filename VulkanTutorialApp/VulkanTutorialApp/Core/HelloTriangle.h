@@ -106,18 +106,21 @@ namespace Core
 
 		struct TextureInfo
 		{
+			uint8_t* Data;
 			uint32_t SizeBytes;
 			uint16_t Width;
 			uint16_t Height;
 			uint16_t Channels;
-			uint8_t* Data;
+			uint8_t MipCount;
 			bool bAllocatedByStbi;
 
 			TextureInfo()
-				: Width(0)
+				: Data(nullptr)
+				, SizeBytes(0)
+				, Width(0)
 				, Height(0)
 				, Channels(0)
-				, Data(nullptr)
+				, MipCount(1)
 				, bAllocatedByStbi(false)
 			{
 
@@ -176,9 +179,9 @@ namespace Core
 			void CreateFramebuffers();
 			void CreateCommandPool();
 			void CreateDescriptorPool();
-			void CreateTextureImage();
-			void CreateTextureImageView();
-			void CreateTextureSampler();
+			void CreateTextureImage(TextureInfo& texInfo);
+			void CreateTextureImageView(const TextureInfo& texInfo);
+			void CreateTextureSampler(const TextureInfo& texInfo);
 			void CreateDepthResources();
 			void CreateVertexBuffer();
 			void CreateIndexBuffer();
@@ -195,7 +198,9 @@ namespace Core
 		VkCommandBuffer BeginSingleTimeCommands();
 		void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 		
-		void TransitionImageLayout(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
+		void TransitionImageLayout(const TextureInfo& texInfo, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
+
+		void GenerateMipmaps(const TextureInfo& texInfo, VkImage image);
 
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidateFormats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags);
 		VkFormat FindDepthFormat();
@@ -206,9 +211,9 @@ namespace Core
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& outBuffer, VkDeviceMemory& outBufferMemory);
 		void CopyBuffer_CPU_GPU(const void* srcData, VkDeviceMemory dstMemory, size_t copySize);
 		void CopyBuffer_GPU_GPU(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize copySize);
-		void CreateImage(TextureInfo& texInfo, VkFormat format, VkImageTiling tiling, VkImageLayout initialLayout, VkImageUsageFlags usage, VkMemoryPropertyFlags memProperties, VkImage& outImage, VkDeviceMemory& outMemory);
-		void CopyBufferToImage(VkBuffer buffer, VkImage image, TextureInfo& texInfo);
-		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+		void CreateImage(const TextureInfo& texInfo, VkFormat format, VkImageTiling tiling, VkImageLayout initialLayout, VkImageUsageFlags usage, VkMemoryPropertyFlags memProperties, VkImage& outImage, VkDeviceMemory& outMemory);
+		void CopyBufferToImage(VkBuffer buffer, VkImage image, const TextureInfo& texInfo);
+		VkImageView CreateImageView(const TextureInfo& texInfo, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
 		void Cleanup();
 			void CleanupDebugCallback();
