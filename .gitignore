@@ -1,11 +1,12 @@
 # Prerequisites
 *.d
 
+!Meshes/Source/*.obj
+
 # Compiled Object files
 *.slo
 *.lo
 *.o
-*.obj
 
 # Precompiled Headers
 *.gch
@@ -33,6 +34,7 @@
 
 # My own shit
 !Libraries/
+
 !.dll
 !.lib
 .vs
@@ -41,3 +43,4 @@
 *.vcxproj.user
 *.spv
 VulkanTutorialApp/VulkanTutorialApp/x64/
+VulkanTutorialApp/x64/

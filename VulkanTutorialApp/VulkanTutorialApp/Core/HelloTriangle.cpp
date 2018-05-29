@@ -91,8 +91,12 @@ namespace Core
 		CreateTextureImage();
 		CreateTextureImageView();
 		CreateTextureSampler();
+
+		LoadModel(MODEL_NAME_MESH, _modelInfo);
 		CreateVertexBuffer();
 		CreateIndexBuffer();
+		UnloadModel(_modelInfo);
+
 		CreateUniformBuffer();
 		CreateDescriptorSetLayout();
 		CreateDescriptorSet();
@@ -918,7 +922,7 @@ namespace Core
 	void HelloTriangle::CreateTextureImage()
 	{
 		TextureInfo texInfo;
-		LoadTexture("texture.jpg", 4, texInfo);
+		LoadTexture(MODEL_NAME_TEXTURE, 4, texInfo);
 		JE_Assert(texInfo.Data != nullptr);
 
 		VkDeviceSize imageSize = texInfo.Width * texInfo.Height * texInfo.Channels;
@@ -988,15 +992,16 @@ namespace Core
 
 	void HelloTriangle::CreateVertexBuffer()
 	{
+		JE_Assert(_modelInfo.IsLoaded());
 #if USE_STAGING_BUFFER
-		VkDeviceSize bufferSize = JE_VectorSizeBytes(_vertices);
+		VkDeviceSize bufferSize = JE_VectorSizeBytes(_modelInfo.Vertices);
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
 
 		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
-		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_vertices.data()), stagingBufferMemory, static_cast<size_t>(bufferSize));
+		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_modelInfo.Vertices.data()), stagingBufferMemory, static_cast<size_t>(bufferSize));
 
 		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _vertexBuffer, _vertexBufferMemory);
 
@@ -1005,25 +1010,26 @@ namespace Core
 		vkDestroyBuffer(_device, stagingBuffer, _pAllocator);
 		vkFreeMemory(_device, stagingBufferMemory, _pAllocator);
 #else
-		VkDeviceSize bufferSize = JE_VectorSizeBytes(_vertices);
+		VkDeviceSize bufferSize = JE_VectorSizeBytes(_modelInfo.Vertices);
 
 		CreateBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, _vertexBuffer, _vertexBufferMemory);
 
-		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_vertices.data()), _vertexBufferMemory, static_cast<size_t>(bufferSize));
+		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_modelInfo.Vertices.data()), _vertexBufferMemory, static_cast<size_t>(bufferSize));
 #endif
 	}
 
 	void HelloTriangle::CreateIndexBuffer()
 	{
+		JE_Assert(_modelInfo.IsLoaded());
 #if USE_STAGING_BUFFER
-		VkDeviceSize bufferSize = JE_VectorSizeBytes(_indices);
+		VkDeviceSize bufferSize = JE_VectorSizeBytes(_modelInfo.Indices);
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
 
 		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
-		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_indices.data()), stagingBufferMemory, static_cast<size_t>(bufferSize));
+		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_modelInfo.Indices.data()), stagingBufferMemory, static_cast<size_t>(bufferSize));
 
 		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _indexBuffer, _indexBufferMemory);
 
@@ -1032,11 +1038,11 @@ namespace Core
 		vkDestroyBuffer(_device, stagingBuffer, _pAllocator);
 		vkFreeMemory(_device, stagingBufferMemory, _pAllocator);
 #else
-		VkDeviceSize bufferSize = JE_VectorSizeBytes(_indices);
+		VkDeviceSize bufferSize = JE_VectorSizeBytes(_modelInfo.Indices);
 
 		CreateBuffer(bufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, _indexBuffer, _indexBufferMemory);
 
-		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_indices.data()), _indexBufferMemory, static_cast<size_t>(bufferSize));
+		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_modelInfo.Indices.data()), _indexBufferMemory, static_cast<size_t>(bufferSize));
 #endif
 	}
 
@@ -1089,8 +1095,8 @@ namespace Core
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindDescriptorSets(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _pipelineLayout, 0, 1, &_descriptorSet, 0, nullptr);
 			vkCmdBindVertexBuffers(_commandBuffers[i], 0, 1, &_vertexBuffer, offsets);
-			vkCmdBindIndexBuffer(_commandBuffers[i], _indexBuffer, 0, VK_INDEX_TYPE_UINT16);
-			vkCmdDrawIndexed(_commandBuffers[i], static_cast<uint32_t>(_indices.size()), 1, 0, 0, 0);
+			vkCmdBindIndexBuffer(_commandBuffers[i], _indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdDrawIndexed(_commandBuffers[i], static_cast<uint32_t>(_modelInfo.IndexCount), 1, 0, 0, 0);
 
 			vkCmdEndRenderPass(_commandBuffers[i]);
 
@@ -1274,7 +1280,7 @@ namespace Core
 		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 		
-		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -2.5f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 		glm::mat4 proj = glm::perspective(glm::radians(45.0f), static_cast<float>(_swapChainExtent.width) / static_cast<float>(_swapChainExtent.height), 0.1f, 25.0f);
 
@@ -1772,6 +1778,80 @@ namespace Core
 		{
 			free(texInfo.Data);
 		}
+	}
+
+	void HelloTriangle::LoadModel(const std::string& modelName, ModelInfo & outModelInfo)
+	{
+		JE_Assert(!outModelInfo.IsLoaded());
+
+		const std::string finalPath = ("Resources\\Meshes\\Source\\" + modelName);
+
+		tinyobj::attrib_t attrib;
+		std::vector<tinyobj::shape_t> shapes;
+		std::vector<tinyobj::material_t> materials;
+		std::string err;
+
+		JE_AssertThrow(tinyobj::LoadObj(&attrib, &shapes, &materials, &err, finalPath.c_str()), err);
+
+		glm::vec3 dummyNormal = glm::vec3(0.0f, 0.0f, 1.0f);
+		const bool bIncludeNormals = attrib.normals.size();
+
+		std::unordered_map<VertexTutorial, uint32_t> uniqueVertices = {};
+
+		for (const auto& shape : shapes)
+		{
+			for (const auto& index : shape.mesh.indices)
+			{
+				VertexTutorial vertex = {};
+
+				vertex.Position = 
+				{
+					attrib.vertices[3 * index.vertex_index + 0],
+					attrib.vertices[3 * index.vertex_index + 1],
+					attrib.vertices[3 * index.vertex_index + 2]
+				};
+
+				vertex.Color = glm::vec3(1.0f, 1.0f, 1.0f);
+
+				if (bIncludeNormals)
+				{
+					vertex.Normal =
+					{
+						attrib.normals[3 * index.normal_index + 0],
+						attrib.normals[3 * index.normal_index + 1],
+						attrib.normals[3 * index.normal_index + 2]
+					};
+				}
+				else
+				{
+					vertex.Normal = dummyNormal;
+				}
+
+				vertex.Uv =
+				{
+					attrib.texcoords[2 * index.texcoord_index + 0],
+					1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+				};
+
+				if (uniqueVertices.count(vertex) == 0)
+				{
+					uniqueVertices[vertex] = static_cast<uint32_t>(outModelInfo.Vertices.size());
+					outModelInfo.Vertices.push_back(vertex);
+				}
+
+				outModelInfo.Indices.push_back(uniqueVertices[vertex]);
+			}
+		}
+
+		outModelInfo.IndexCount = static_cast<uint32_t>(outModelInfo.Indices.size());
+	}
+
+	void HelloTriangle::UnloadModel(ModelInfo & modelInfo)
+	{
+		JE_Assert(modelInfo.IsLoaded());
+
+		modelInfo.Vertices.clear();
+		modelInfo.Indices.clear();
 	}
 
 	void HelloTriangle::VertexTutorial::GetBindingDescription(VkVertexInputBindingDescription& outDescription)

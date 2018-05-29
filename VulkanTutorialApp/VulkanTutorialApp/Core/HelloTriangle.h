@@ -12,6 +12,28 @@ namespace Core
 		const int32_t WINDOW_HEIGHT = 600;
 		const char* WINDOW_NAME = "Vulkan - HelloTriangle";
 
+		struct alignas(16) VertexTutorial
+		{
+			static const size_t COMPONENT_NUMBER = 4;
+
+			glm::vec3 Position;
+			glm::vec3 Color;
+			glm::vec3 Normal;
+			glm::vec2 Uv;
+
+			static void GetBindingDescription(VkVertexInputBindingDescription& outDescription);
+			static void GetAttributeDescription(std::vector<VkVertexInputAttributeDescription>& outDescriptions);
+
+			bool operator==(const VertexTutorial& other) const
+			{
+				return
+					Position == other.Position
+					&& Color == other.Color
+					&& Normal == other.Normal
+					&& Uv == other.Uv;
+			}
+		};
+
 	private:
 
 		const std::vector<const char*> _validationLayers =
@@ -33,6 +55,9 @@ namespace Core
 		const VkClearValue _clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 
 		const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+
+		const std::string MODEL_NAME_MESH = "chalet.obj";
+		const std::string MODEL_NAME_TEXTURE = "chalet.jpg";
 
 		enum ShaderType
 		{
@@ -63,19 +88,6 @@ namespace Core
 			VkSurfaceCapabilitiesKHR Capabilities;
 			std::vector<VkSurfaceFormatKHR> Formats;
 			std::vector<VkPresentModeKHR> PresentModes;
-		};
-
-		struct alignas(16) VertexTutorial
-		{
-			static const size_t COMPONENT_NUMBER = 4;
-
-			glm::vec3 Position;
-			glm::vec3 Color;
-			glm::vec3 Normal;
-			glm::vec2 Uv;
-
-			static void GetBindingDescription(VkVertexInputBindingDescription& outDescription);
-			static void GetAttributeDescription(std::vector<VkVertexInputAttributeDescription>& outDescriptions);
 		};
 
 		struct UniformBufferObject
@@ -112,23 +124,21 @@ namespace Core
 			}
 		};
 
-		const std::vector<VertexTutorial> _vertices = 
+		struct ModelInfo
 		{
-			{ { -0.5f, -0.5f, 0.0f },{ 2.0f, 0.0f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 1.0f } },
-			{ { 0.5f, -0.5f, 0.0f },{ 0.0f, 2.0f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 1.0f } },
-			{ { 0.5f, 0.5f, 0.0f },{ 0.0f, 0.0f, 2.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f } },
-			{ { -0.5f, 0.5f, 0.0f },{ 2.0f, 2.0f, 2.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f } },
+			std::vector<VertexTutorial> Vertices;
+			std::vector<uint32_t> Indices;
 
-			{ { -0.5f, -0.5f, -0.5f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 1.0f } },
-			{ { 0.5f, -0.5f, -0.5f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 1.0f } },
-			{ { 0.5f, 0.5f, -0.5f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f, 0.0f },{ 1.0f, 0.0f } },
-			{ { -0.5f, 0.5f, -0.5f },{ 1.0f, 1.0f, 1.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f } }
-		};
+			uint32_t IndexCount;
 
-		const std::vector<uint16_t> _indices =
-		{
-			0, 1, 2, 2, 3, 0,
-			4, 5, 6, 6, 7, 4
+			ModelInfo()
+				: IndexCount(0)
+			{
+				Vertices.clear();
+				Indices.clear();
+			}
+
+			bool IsLoaded() { return (!Vertices.empty() || !Indices.empty()); }
 		};
 
 	public:
@@ -209,6 +219,8 @@ namespace Core
 		static void LoadShader(const std::string& shaderName, ShaderType shaderType, std::vector<uint8_t>& outData);
 		static void LoadTexture(const std::string& textureName, uint32_t desiredChannels, TextureInfo& outTextureInfo);
 		static void UnloadTexture(TextureInfo& texInfo);
+		static void LoadModel(const std::string& modelName, ModelInfo& outModelInfo);
+		static void UnloadModel(ModelInfo& modelInfo);
 
 		PFN_vkVoidFunction GetVkProcVoid(const char* procName)
 		{
@@ -288,6 +300,8 @@ namespace Core
 		VkDeviceMemory _textureImageMemory;
 		VkDeviceMemory _depthImageMemory;
 
+		ModelInfo _modelInfo;
+
 		VkBuffer _vertexBuffer;
 		VkBuffer _indexBuffer;
 		VkBuffer _uniformBuffer;
@@ -300,5 +314,20 @@ namespace Core
 		VkImageView _depthImageView;
 
 		bool _bMinimized;
+	};
+}
+
+namespace std
+{
+	template<> struct hash<Core::HelloTriangle::VertexTutorial>
+	{
+		size_t operator()(const Core::HelloTriangle::VertexTutorial& vertex) const
+		{
+			return ((hash<glm::vec3>()(vertex.Position) ^
+				(hash<glm::vec3>()(vertex.Color) << 1)) >> 1) ^
+				((hash<glm::vec3>()(vertex.Normal) << 2) >> 2) ^
+				(hash<glm::vec2>()(vertex.Uv) << 1);
+
+		}
 	};
 }

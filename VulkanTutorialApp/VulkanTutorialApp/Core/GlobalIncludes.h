@@ -5,10 +5,14 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/hash.hpp>
 
 #include <stb_image.h>
+
+#include <tiny_obj_loader.h>
 
 #include <iostream>
 #include <stdexcept>
@@ -20,6 +24,7 @@
 
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <stack>
 #include <set>
 #include <tuple>
