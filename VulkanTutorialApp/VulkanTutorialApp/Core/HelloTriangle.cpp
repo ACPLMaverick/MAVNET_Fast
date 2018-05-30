@@ -4,6 +4,8 @@
 
 #define USE_STAGING_BUFFER 1
 
+static const std::string RESOURCE_PATH = "..\\..\\JadeEngine\\JadeEngine\\Resources\\";
+
 namespace Core
 {
 	const char* HelloTriangle::ShaderTypeToExtension[]
@@ -1928,7 +1930,7 @@ namespace Core
 
 	void HelloTriangle::LoadShader(const std::string& shaderName, ShaderType shaderType, std::vector<uint8_t>& outData)
 	{
-		LoadFile("Resources\\Shaders\\Binary\\" + shaderName + ShaderTypeToExtension[shaderType] + ".spv", outData);
+		LoadFile(RESOURCE_PATH + "Shaders\\Binary\\" + shaderName + ShaderTypeToExtension[shaderType] + ".spv", outData);
 	}
 
 	void HelloTriangle::LoadTexture(const std::string & textureName, uint32_t desiredChannels, TextureInfo& outTextureInfo)
@@ -1936,7 +1938,7 @@ namespace Core
 		int width, height, chnls;
 		outTextureInfo.Data = stbi_load
 		(
-			("Resources\\Textures\\Source\\" + textureName).c_str(), 
+			(RESOURCE_PATH + "Textures\\Source\\" + textureName).c_str(),
 			&width,
 			&height,
 			&chnls,
@@ -1970,7 +1972,7 @@ namespace Core
 	{
 		JE_Assert(!outModelInfo.IsLoaded());
 
-		const std::string finalPath = ("Resources\\Meshes\\Source\\" + modelName);
+		const std::string finalPath = (RESOURCE_PATH + "Meshes\\Source\\" + modelName);
 
 		tinyobj::attrib_t attrib;
 		std::vector<tinyobj::shape_t> shapes;
