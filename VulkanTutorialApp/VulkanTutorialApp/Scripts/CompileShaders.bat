@@ -1,7 +1,4 @@
 @echo off
 cd Resources\Shaders
 
-set vkPath = ""
-
-rem for %%I in (Source\*.*) do echo %%~nxI
-for %%I in (Source\*.*) do C:\VulkanSDK\1.1.73.0\Bin\glslangValidator.exe -V Source\%%~nxI -o Binary\%%~nxI.spv
+for %%I in (Source\*.*) do %VK_SDK_PATH%\Bin\glslangValidator.exe -V Source\%%~nxI -o Binary\%%~nxI.spv
