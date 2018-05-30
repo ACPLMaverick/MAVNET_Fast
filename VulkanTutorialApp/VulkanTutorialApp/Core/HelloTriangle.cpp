@@ -16,6 +16,8 @@ namespace Core
 		".comp"
 	};
 
+	HelloTriangle* HelloTriangle::_singletonInstance = nullptr;
+
 	HelloTriangle::HelloTriangle() : 
 		  _pWindow(nullptr)
 		, _pAllocator(VK_NULL_HANDLE)
@@ -47,6 +49,8 @@ namespace Core
 		, _textureSampler(VK_NULL_HANDLE)
 		, _bMinimized(false)
 	{
+		JE_AssertThrow(HelloTriangle::_singletonInstance == nullptr, "HelloTriangle can only have one instance!");
+		HelloTriangle::_singletonInstance = this;
 	}
 
 	HelloTriangle::~HelloTriangle()
@@ -102,8 +106,14 @@ namespace Core
 		CreateUniformBuffer();
 		CreateDescriptorSetLayout();
 		CreateDescriptorSet();
+		CreatePushConstantRange();
+
+		InitObjects();
 
 		RecreateSwapChain();
+
+		_camera.SetDimension(static_cast<float>(_swapChainExtent.width) / _swapChainExtent.height);
+		_camera.Update();
 	}
 
 	void HelloTriangle::CreateInstance()
@@ -566,6 +576,40 @@ namespace Core
 		}
 	}
 
+	void HelloTriangle::InitObjects()
+	{
+		glm::vec3 pos(0.0f, -2.2f, 1.2f);
+		glm::vec3 tgt(0.0f, 0.0f, 0.3f);
+		_camera.Initialize
+		(
+			&pos,
+			&tgt,
+			45.0f,
+			static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT),
+			0.5f,
+			3.0f
+		);
+
+		glm::vec3 col(1.0f, 1.0f, 0.0f);
+		glm::vec3 dir(-1.0f, 1.0f, -1.0f);
+		dir = glm::normalize(dir);
+		_lightDirectional.Initialize
+		(
+			&col,
+			&dir
+		);
+
+		col.r = _clearColor.color.float32[0];
+		col.g = _clearColor.color.float32[1];
+		col.b = _clearColor.color.float32[2];
+		_fog.Initialize(&col, 2.3f, 3.0f);
+	}
+
+	void HelloTriangle::RefreshCameraProj(uint32_t newWidth, uint32_t newHeight)
+	{
+		_camera.SetDimension(static_cast<float>(newWidth) / static_cast<float>(newHeight));
+	}
+
 	void HelloTriangle::CreateRenderPass()
 	{
 		VkAttachmentDescription colorAttachment = {};
@@ -813,8 +857,8 @@ namespace Core
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = 1;
 		pipelineLayoutInfo.pSetLayouts = &_descriptorSetLayout;
-		pipelineLayoutInfo.pushConstantRangeCount = 0;
-		pipelineLayoutInfo.pPushConstantRanges = nullptr;
+		pipelineLayoutInfo.pushConstantRangeCount = 1;
+		pipelineLayoutInfo.pPushConstantRanges = &_pushConstantRange;
 
 		JE_AssertThrowVkResult(vkCreatePipelineLayout(_device, &pipelineLayoutInfo, _pAllocator, &_pipelineLayout));
 
@@ -1097,6 +1141,14 @@ namespace Core
 
 			vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
 
+			PushConstantObject pco;
+			pco.FogColor = *_fog.GetColor();
+			pco.FogDepthNear = _fog.GetStartDepth();
+			pco.FogDepthFar = _fog.GetEndDepth();
+			pco.LightColor = *_lightDirectional.GetColor();
+			pco.LightDirectionV = *_lightDirectional.GetDirectionV();
+			vkCmdPushConstants(_commandBuffers[i], _pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantObject), &pco);
+
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindDescriptorSets(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _pipelineLayout, 0, 1, &_descriptorSet, 0, nullptr);
 			vkCmdBindVertexBuffers(_commandBuffers[i], 0, 1, &_vertexBuffer, offsets);
@@ -1154,6 +1206,13 @@ namespace Core
 		vkUpdateDescriptorSets(_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
  	}
 
+	void HelloTriangle::CreatePushConstantRange()
+	{
+		_pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		_pushConstantRange.offset = 0;
+		_pushConstantRange.size = sizeof(PushConstantObject);
+	}
+
 	void HelloTriangle::CreateSyncObjects()
 	{
 		VkSemaphoreCreateInfo semaphoreInfo = {};
@@ -1182,6 +1241,7 @@ namespace Core
 			glfwPollEvents();
 			if (!_bMinimized)
 			{
+				UpdateObjects();
 				UpdateUniformBuffer();
 				DrawFrame();
 			}
@@ -1196,6 +1256,13 @@ namespace Core
 		}
 
 		vkDeviceWaitIdle(_device);
+	}
+
+	void HelloTriangle::UpdateObjects()
+	{
+		_fog.Update();
+		_lightDirectional.Update();
+		_camera.Update();
 	}
 
 	void HelloTriangle::DrawFrame()
@@ -1269,6 +1336,7 @@ namespace Core
 		}
 		else
 		{
+			RefreshCameraProj(capabilities.currentExtent.width, capabilities.currentExtent.height);
 			_bMinimized = false;
 		}
 	}
@@ -1284,16 +1352,10 @@ namespace Core
 		glm::mat4 mv_translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
-		
-		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, -2.5f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-		glm::mat4 proj = glm::perspective(glm::radians(45.0f), static_cast<float>(_swapChainExtent.width) / static_cast<float>(_swapChainExtent.height), 0.1f, 25.0f);
-
-		proj[1][1] *= -1.0f; //GLM was originally designed for OpenGL, where the Y coordinate of the clip coordinates is inverted.The easiest way to compensate for that is to flip the sign on the scaling factor of the Y axis in the projection matrix.
 
 		mv_translation = mv_translation * rotation * scale;
 
-		_ubo.MVP = proj * view * mv_translation;
+		_ubo.MVP = *_camera.GetViewProj() * mv_translation;
 		_ubo.MV = mv_translation;
 		_ubo.MVInverseTranspose = glm::transpose(glm::inverse(mv_translation));
 
@@ -1726,6 +1788,8 @@ namespace Core
 
 	void HelloTriangle::Cleanup()
 	{
+		CleanupObjects();
+
 		vkDestroySampler(_device, _textureSampler, _pAllocator);
 		_textureSampler = VK_NULL_HANDLE;
 		vkDestroyImageView(_device, _textureImageView, _pAllocator);
@@ -1777,6 +1841,13 @@ namespace Core
 
 		glfwDestroyWindow(_pWindow);
 		glfwTerminate();
+	}
+
+	void HelloTriangle::CleanupObjects()
+	{
+		_camera.Shutdown();
+		_lightDirectional.Shutdown();
+		_fog.Shutdown();
 	}
 
 	void HelloTriangle::CleanupDebugCallback()

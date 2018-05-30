@@ -2,6 +2,10 @@
 
 #include "GlobalIncludes.h"
 
+#include "Camera.h"
+#include "LightDirectional.h"
+#include "Fog.h"
+
 namespace Core
 {
 	class HelloTriangle
@@ -52,7 +56,7 @@ namespace Core
 		const bool _bEnableValidationLayers = true;
 #endif
 
-		const VkClearValue _clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+		const VkClearValue _clearColor = { 0.2f, 0.2f, 0.2f, 1.0f };
 
 		const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -90,7 +94,7 @@ namespace Core
 			std::vector<VkPresentModeKHR> PresentModes;
 		};
 
-		struct UniformBufferObject
+		struct alignas(16) UniformBufferObject
 		{
 			glm::mat4 MVP;
 			glm::mat4 MV;
@@ -102,6 +106,16 @@ namespace Core
 				, MVInverseTranspose(glm::mat4(1.0f))
 			{
 			}
+		};
+
+		struct alignas(4) PushConstantObject
+		{
+			glm::vec3 LightColor;
+			float Padding01;
+			glm::vec3 LightDirectionV;
+			float FogDepthNear;
+			glm::vec3 FogColor;
+			float FogDepthFar;
 		};
 
 		struct TextureInfo
@@ -150,7 +164,13 @@ namespace Core
 
 		void Run();
 
+		static HelloTriangle* GetInstance() { JE_Assert(_singletonInstance != nullptr); return _singletonInstance; }
+
+		const Camera* GetCamera() const { return &_camera; }
+
 	private:
+
+		static HelloTriangle* _singletonInstance;
 
 		void InitWindow();
 
@@ -172,6 +192,10 @@ namespace Core
 				VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 			void RetrieveSwapChainImages();
 			void CreateSwapChainImageViews();
+
+			void InitObjects();
+			void RefreshCameraProj(uint32_t newWidth, uint32_t newHeight);
+
 			void CreateRenderPass();
 			void CreateDescriptorSetLayout();
 			void CreateGraphicsPipeline();
@@ -188,9 +212,11 @@ namespace Core
 			void CreateUniformBuffer();
 			void CreateCommandBuffers();
 			void CreateDescriptorSet();
+			void CreatePushConstantRange();
 			void CreateSyncObjects();
 
 		void MainLoop();
+			void UpdateObjects();
 			void DrawFrame();
 			void CheckForMinimized();
 			void UpdateUniformBuffer();
@@ -216,6 +242,7 @@ namespace Core
 		VkImageView CreateImageView(const TextureInfo& texInfo, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
 		void Cleanup();
+			void CleanupObjects();
 			void CleanupDebugCallback();
 			void CleanupSwapChain();
 
@@ -297,7 +324,13 @@ namespace Core
 		uint32_t _currentFrame;
 		UniformBufferObject _ubo;
 
+		Camera _camera;
+		LightDirectional _lightDirectional;
+		Fog _fog;
+
 		VkDescriptorSet _descriptorSet;
+
+		VkPushConstantRange _pushConstantRange;
 
 		VkDeviceMemory _vertexBufferMemory;
 		VkDeviceMemory _indexBufferMemory;

@@ -14,8 +14,8 @@ layout(set = 0, binding = 0) uniform UniformBufferObject
 	mat4 MVInverseTranspose;
 } ubo;
 
-layout(location = 0) out vec3 outColor;
-layout(location = 1) out vec3 outWVPosition;
+layout(location = 0) out vec4 outColor;
+layout(location = 1) out vec4 outWVPositionDepth;
 layout(location = 2) out vec3 outNormal;
 layout(location = 3) out vec2 outUv;
 out gl_PerVertex
@@ -26,8 +26,9 @@ out gl_PerVertex
 void main()
 {
 	gl_Position = ubo.MVP * vec4(inPosition, 1.0f);
-	outColor = inColor;
-	outWVPosition = (ubo.MV * vec4(inPosition, 1.0f)).xyz;
+	outColor = vec4(inColor, 1.0f);
+	outWVPositionDepth.xyz = (ubo.MV * vec4(inPosition, 1.0f)).xyz;
+	outWVPositionDepth.w = gl_Position.z / gl_Position.w;
 	outNormal = (ubo.MVInverseTranspose * vec4(inNormal, 0.0f)).xyz;
 	outUv = inUv;
 }
