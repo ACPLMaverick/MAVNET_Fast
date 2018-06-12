@@ -1260,8 +1260,12 @@ namespace Core
 		vkDeviceWaitIdle(_device);
 	}
 
+#include "Rendering/SystemDrawable.h"
+
 	void HelloTriangle::UpdateObjects()
 	{
+		Rendering::SystemDrawable* sys = Rendering::SystemDrawable::GetInstance();
+
 		_fog.Update();
 		_lightDirectional.Update();
 		_camera.Update();

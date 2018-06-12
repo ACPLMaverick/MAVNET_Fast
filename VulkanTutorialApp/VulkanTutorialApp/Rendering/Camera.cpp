@@ -1,7 +1,7 @@
 #include "Camera.h"
 
 
-namespace Core
+namespace Rendering
 {
 	const float Camera::ARBITRARY_DIRECTION_TARGET_DISTANCE = 10.0f;
 

@@ -1,13 +1,17 @@
 #include "HelloTriangle.h"
 
-#include "GlobalIncludes.h"
-
 #if !NDEBUG
 #include <conio.h>
 #endif
 
 int main() 
 {
+#if RENDERDOC
+	std::cout << "\nPress any key to start after you hook up Renderdoc.\n";
+	_getch();
+	std::cout << std::endl;
+#endif
+
 	Core::HelloTriangle app;
 
 	try

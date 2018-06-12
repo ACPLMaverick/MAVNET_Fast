@@ -1,9 +1,9 @@
 #include "LightDirectional.h"
 
 #include "Camera.h"
-#include "HelloTriangle.h"
+#include "Core/HelloTriangle.h"
 
-namespace Core
+namespace Rendering
 {
 	LightDirectional::LightDirectional()
 		: _color(glm::vec3(0.0f, 0.0f, 0.0f))
@@ -30,14 +30,14 @@ namespace Core
 
 	void LightDirectional::Update()
 	{
-		if (HelloTriangle::GetInstance()->GetCamera()->IsViewNeedUpdate())
+		if (Core::HelloTriangle::GetInstance()->GetCamera()->IsViewNeedUpdate())
 		{
 			_bNeedUpdateDirectionV = true;
 		}
 
 		if (_bNeedUpdateDirectionV)
 		{
-			const glm::mat4* viewMat = HelloTriangle::GetInstance()->GetCamera()->GetView();
+			const glm::mat4* viewMat = Core::HelloTriangle::GetInstance()->GetCamera()->GetView();
 			_directionV = *viewMat * glm::vec4(_direction, 0.0f);
 
 			_bNeedUpdateDirectionV = false;

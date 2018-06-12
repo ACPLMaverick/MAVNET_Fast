@@ -1,10 +1,8 @@
 #pragma once
 
-#include "GlobalIncludes.h"
-
-#include "Camera.h"
-#include "LightDirectional.h"
-#include "Fog.h"
+#include "Rendering/Camera.h"
+#include "Rendering/LightDirectional.h"
+#include "Rendering/Fog.h"
 
 namespace Core
 {
@@ -166,7 +164,7 @@ namespace Core
 
 		static HelloTriangle* GetInstance() { JE_Assert(_singletonInstance != nullptr); return _singletonInstance; }
 
-		const Camera* GetCamera() const { return &_camera; }
+		const Rendering::Camera* GetCamera() const { return &_camera; }
 
 	private:
 
@@ -324,9 +322,9 @@ namespace Core
 		uint32_t _currentFrame;
 		UniformBufferObject _ubo;
 
-		Camera _camera;
-		LightDirectional _lightDirectional;
-		Fog _fog;
+		Rendering::Camera _camera;
+		Rendering::LightDirectional _lightDirectional;
+		Rendering::Fog _fog;
 
 		VkDescriptorSet _descriptorSet;
 

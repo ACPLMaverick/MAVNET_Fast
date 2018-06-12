@@ -70,11 +70,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)..\..\Libraries\tinyobjloader;$(ProjectDir)..\..\Libraries\stb;$(ProjectDir)..\..\Libraries\glm-0.9.9-a2\;$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\include;$(VK_SDK_PATH)\Include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)..\..\Libraries\tinyobjloader;$(ProjectDir)..\..\Libraries\stb;$(ProjectDir)..\..\Libraries\glm-0.9.9-a2\;$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\include;$(VK_SDK_PATH)\Include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\lib-vc2015;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)..\..\Libraries\tinyobjloader;$(ProjectDir)..\..\Libraries\stb;$(ProjectDir)..\..\Libraries\glm-0.9.9-a2\;$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\include;$(VK_SDK_PATH)\Include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)..\..\Libraries\tinyobjloader;$(ProjectDir)..\..\Libraries\stb;$(ProjectDir)..\..\Libraries\glm-0.9.9-a2\;$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\include;$(VK_SDK_PATH)\Include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\lib-vc2015;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -91,6 +91,8 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(ProjectDir)Core\GlobalIncludes.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(ProjectDir)..\..\Libraries\glfw-3.2.1.bin.WIN64\lib-vc2015;$(VK_SDK_PATH)\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -122,6 +124,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(ProjectDir)Core\GlobalIncludes.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -134,20 +138,30 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Core\Camera.cpp" />
+    <ClCompile Include="Rendering\Material.cpp" />
+    <ClCompile Include="Rendering\Mesh.cpp" />
+    <ClCompile Include="Rendering\Camera.cpp" />
     <ClCompile Include="Core\main.cpp" />
     <ClCompile Include="Core\HelloTriangle.cpp" />
     <ClCompile Include="Core\stb_impl.cpp" />
     <ClCompile Include="Core\tiny_obj_loader_impl.cpp" />
-    <ClCompile Include="Core\LightDirectional.cpp" />
-    <ClCompile Include="Core\Fog.cpp" />
+    <ClCompile Include="Rendering\LightDirectional.cpp" />
+    <ClCompile Include="Rendering\Fog.cpp" />
+    <ClCompile Include="GOM\Entity.cpp" />
+    <ClCompile Include="Rendering\SystemDrawable.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Core\Camera.h" />
+    <ClInclude Include="Rendering\Material.h" />
+    <ClInclude Include="Rendering\Mesh.h" />
+    <ClInclude Include="Rendering\Camera.h" />
     <ClInclude Include="Core\GlobalIncludes.h" />
     <ClInclude Include="Core\HelloTriangle.h" />
-    <ClInclude Include="Core\LightDirectional.h" />
-    <ClInclude Include="Core\Fog.h" />
+    <ClInclude Include="Rendering\LightDirectional.h" />
+    <ClInclude Include="Rendering\Fog.h" />
+    <ClInclude Include="GOM\Entity.h" />
+    <ClInclude Include="Rendering\SystemDrawable.h" />
+    <ClInclude Include="Util\GlobalIncludes.h" />
+    <ClInclude Include="Util\Singleton.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Shaders\Source\TutorialShader.frag" />

@@ -33,6 +33,8 @@
 #include <chrono>
 
 #include <cassert>
+
+
 #define JE_Assert(val) assert(val)
 #define JE_AssertVkResult(expr) JE_Assert((expr) == VkResult::VK_SUCCESS)
 #define JE_AssertThrow(cond, text) if(!(cond)) throw std::runtime_error(text)
@@ -51,3 +53,24 @@ if((expr) != VkResult::VK_SUCCESS) \
 #define JE_VectorSizeBytes(arrayName) (sizeof((arrayName)[0]) * (arrayName).size())
 
 #define JE_VA_ARGS_COUNT(...) std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value
+
+
+#include "Util/GlobalIncludes.h"
+
+
+#define JE_GetSystemClassName(className) System##className
+
+#define JE_DeclareSystemClass(className) \
+class JE_GetSystemClassName(className) : public Util::Singleton<JE_GetSystemClassName(className)>
+
+#define JE_DeclareSystemClassBody(className)				\
+friend class Util::Singleton<JE_GetSystemClassName(className)>;	\
+	private:												\
+		JE_GetSystemClassName(className)() {};				\
+		~JE_GetSystemClassName(className)() {}
+
+#define JE_DeclareClientClass(className, parentClassName) \
+class className : public parentClassName
+
+#define JE_DeclareClientClassBody(className, parentClassName) \
+friend class JE_GetSystemClassName(className);

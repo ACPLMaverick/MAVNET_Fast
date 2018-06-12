@@ -1,8 +1,6 @@
 #pragma once
 
-#include "GlobalIncludes.h"
-
-namespace Core
+namespace Rendering
 {
 	class Fog
 	{

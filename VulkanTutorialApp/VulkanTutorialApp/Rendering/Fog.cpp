@@ -1,9 +1,9 @@
 #include "Fog.h"
 
-#include "HelloTriangle.h"
+#include "Core/HelloTriangle.h"
 #include "Camera.h"
 
-namespace Core
+namespace Rendering
 {
 	Fog::Fog() 
 		: _color(glm::vec3(1.0f, 1.0f, 1.0f))
@@ -34,7 +34,7 @@ namespace Core
 
 	void Fog::Update()
 	{
-		if (HelloTriangle::GetInstance()->GetCamera()->IsProjNeedUpdate())
+		if (Core::HelloTriangle::GetInstance()->GetCamera()->IsProjNeedUpdate())
 		{
 			_bNeedUpdateDepthDistances = true;
 		}
@@ -60,8 +60,8 @@ namespace Core
 
 	void Fog::UpdateDepthDistances()
 	{
-		const float nearPlane = HelloTriangle::GetInstance()->GetCamera()->GetNear();
-		const float farPlane = HelloTriangle::GetInstance()->GetCamera()->GetFar();
+		const float nearPlane = Core::HelloTriangle::GetInstance()->GetCamera()->GetNear();
+		const float farPlane = Core::HelloTriangle::GetInstance()->GetCamera()->GetFar();
 
 		const float clippedNear = glm::min(glm::max(_startDistance, nearPlane), farPlane);
 		const float clippedFar = glm::max(glm::min(_endDistance, farPlane), nearPlane);
