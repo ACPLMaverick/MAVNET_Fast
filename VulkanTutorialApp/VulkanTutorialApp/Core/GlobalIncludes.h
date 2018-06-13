@@ -35,6 +35,10 @@
 #include <cassert>
 
 
+#define JE_AlignAs(val) alignas(val)
+#define JE_Inline inline
+
+
 #define JE_Assert(val) assert(val)
 #define JE_AssertVkResult(expr) JE_Assert((expr) == VkResult::VK_SUCCESS)
 #define JE_AssertThrow(cond, text) if(!(cond)) throw std::runtime_error(text)
@@ -63,14 +67,16 @@ if((expr) != VkResult::VK_SUCCESS) \
 #define JE_DeclareSystemClass(className) \
 class JE_GetSystemClassName(className) : public Util::Singleton<JE_GetSystemClassName(className)>
 
-#define JE_DeclareSystemClassBody(className)				\
+#define JE_DeclareSystemClassBody(className)					\
 friend class Util::Singleton<JE_GetSystemClassName(className)>;	\
-	private:												\
-		JE_GetSystemClassName(className)() {};				\
+	private:													\
+		JE_GetSystemClassName(className)() {};					\
 		~JE_GetSystemClassName(className)() {}
 
-#define JE_DeclareClientClass(className, parentClassName) \
+#define JE_DeclareClientClass(className, parentClassName)		\
+class JE_GetSystemClassName(className);							\
 class className : public parentClassName
 
-#define JE_DeclareClientClassBody(className, parentClassName) \
-friend class JE_GetSystemClassName(className);
+#define JE_DeclareClientClassBody(className, parentClassName)	\
+	friend class JE_GetSystemClassName(className);				\
+private:														

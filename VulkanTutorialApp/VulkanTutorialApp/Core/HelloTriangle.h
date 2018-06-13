@@ -4,10 +4,16 @@
 #include "Rendering/LightDirectional.h"
 #include "Rendering/Fog.h"
 
+#include "Rendering/Texture.h"
+
 namespace Core
 {
 	class HelloTriangle
 	{
+	public:
+		
+		static const std::string RESOURCE_PATH;
+
 	public:
 
 		const int32_t WINDOW_WIDTH = 800;
@@ -106,37 +112,13 @@ namespace Core
 			}
 		};
 
-		struct alignas(4) PushConstantObject
+		struct PushConstantObject
 		{
-			glm::vec3 LightColor;
-			float Padding01;
-			glm::vec3 LightDirectionV;
+			JE_AlignAs(16) glm::vec3 LightColor;
+			JE_AlignAs(16) glm::vec3 LightDirectionV;
 			float FogDepthNear;
 			glm::vec3 FogColor;
 			float FogDepthFar;
-		};
-
-		struct TextureInfo
-		{
-			uint8_t* Data;
-			uint32_t SizeBytes;
-			uint16_t Width;
-			uint16_t Height;
-			uint16_t Channels;
-			uint8_t MipCount;
-			bool bAllocatedByStbi;
-
-			TextureInfo()
-				: Data(nullptr)
-				, SizeBytes(0)
-				, Width(0)
-				, Height(0)
-				, Channels(0)
-				, MipCount(1)
-				, bAllocatedByStbi(false)
-			{
-
-			}
 		};
 
 		struct ModelInfo
@@ -164,7 +146,26 @@ namespace Core
 
 		static HelloTriangle* GetInstance() { JE_Assert(_singletonInstance != nullptr); return _singletonInstance; }
 
-		const Rendering::Camera* GetCamera() const { return &_camera; }
+		VkDevice GetDevice() { return _device; }
+		VkAllocationCallbacks* GetAllocatorPtr() { return _pAllocator; }
+
+		const ::Rendering::Camera* GetCamera() const { return &_camera; }
+
+
+		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+		void TransitionImageLayout(const ::Rendering::Texture::Info* texInfo, VkImage image, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
+		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& outBuffer, VkDeviceMemory& outBufferMemory);
+		void CopyBuffer_CPU_GPU(const void* srcData, VkDeviceMemory dstMemory, size_t copySize);
+		void CopyBuffer_GPU_GPU(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize copySize);
+		void CreateImage(const ::Rendering::Texture::Info* texInfo, VkImageTiling tiling, VkImageLayout initialLayout, VkImageUsageFlags usage, VkMemoryPropertyFlags memProperties, VkImage& outImage, VkDeviceMemory& outMemory);
+		void CopyBufferToImage(VkBuffer buffer, VkImage image, const ::Rendering::Texture::Info* texInfo);
+
+		VkCommandBuffer BeginSingleTimeCommands();
+		void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+
+		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidateFormats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags);
+		VkFormat FindDepthFormat();
+		bool HasStencilComponent(VkFormat format);
 
 	private:
 
@@ -201,9 +202,7 @@ namespace Core
 			void CreateFramebuffers();
 			void CreateCommandPool();
 			void CreateDescriptorPool();
-			void CreateTextureImage(TextureInfo& texInfo);
-			void CreateTextureImageView(const TextureInfo& texInfo);
-			void CreateTextureSampler(const TextureInfo& texInfo);
+			void CreateTextureSampler(const ::Rendering::Texture* texInfo);
 			void CreateDepthResources();
 			void CreateVertexBuffer();
 			void CreateIndexBuffer();
@@ -219,25 +218,7 @@ namespace Core
 			void CheckForMinimized();
 			void UpdateUniformBuffer();
 
-		VkCommandBuffer BeginSingleTimeCommands();
-		void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
-		
-		void TransitionImageLayout(const TextureInfo& texInfo, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
-
-		void GenerateMipmaps(const TextureInfo& texInfo, VkImage image);
-
-		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidateFormats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags);
-		VkFormat FindDepthFormat();
-		bool HasStencilComponent(VkFormat format);
-
 		void RecreateSwapChain();
-		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& outBuffer, VkDeviceMemory& outBufferMemory);
-		void CopyBuffer_CPU_GPU(const void* srcData, VkDeviceMemory dstMemory, size_t copySize);
-		void CopyBuffer_GPU_GPU(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize copySize);
-		void CreateImage(const TextureInfo& texInfo, VkFormat format, VkImageTiling tiling, VkImageLayout initialLayout, VkImageUsageFlags usage, VkMemoryPropertyFlags memProperties, VkImage& outImage, VkDeviceMemory& outMemory);
-		void CopyBufferToImage(VkBuffer buffer, VkImage image, const TextureInfo& texInfo);
-		VkImageView CreateImageView(const TextureInfo& texInfo, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
 		void Cleanup();
 			void CleanupObjects();
@@ -247,8 +228,6 @@ namespace Core
 
 		static void LoadFile(const std::string& fileName, std::vector<uint8_t>& outData);
 		static void LoadShader(const std::string& shaderName, ShaderType shaderType, std::vector<uint8_t>& outData);
-		static void LoadTexture(const std::string& textureName, uint32_t desiredChannels, TextureInfo& outTextureInfo);
-		static void UnloadTexture(TextureInfo& texInfo);
 		static void LoadModel(const std::string& modelName, ModelInfo& outModelInfo);
 		static void UnloadModel(ModelInfo& modelInfo);
 
@@ -322,9 +301,9 @@ namespace Core
 		uint32_t _currentFrame;
 		UniformBufferObject _ubo;
 
-		Rendering::Camera _camera;
-		Rendering::LightDirectional _lightDirectional;
-		Rendering::Fog _fog;
+		::Rendering::Camera _camera;
+		::Rendering::LightDirectional _lightDirectional;
+		::Rendering::Fog _fog;
 
 		VkDescriptorSet _descriptorSet;
 
@@ -333,7 +312,6 @@ namespace Core
 		VkDeviceMemory _vertexBufferMemory;
 		VkDeviceMemory _indexBufferMemory;
 		VkDeviceMemory _uniformBufferMemory;
-		VkDeviceMemory _textureImageMemory;
 		VkDeviceMemory _depthImageMemory;
 
 		ModelInfo _modelInfo;
@@ -342,16 +320,18 @@ namespace Core
 		VkBuffer _indexBuffer;
 		VkBuffer _uniformBuffer;
 
-		VkImage _textureImage;
-		VkImageView _textureImageView;
 		VkSampler _textureSampler;
 
 		VkImage _depthImage;
 		VkImageView _depthImageView;
 
+		::Rendering::Texture _texture;
+
 		bool _bMinimized;
 	};
 }
+
+#define JE_GetRenderer() Core::HelloTriangle::GetInstance()
 
 namespace std
 {

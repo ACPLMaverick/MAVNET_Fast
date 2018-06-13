@@ -138,6 +138,7 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Rendering\Pipeline.cpp" />
     <ClCompile Include="Rendering\Material.cpp" />
     <ClCompile Include="Rendering\Mesh.cpp" />
     <ClCompile Include="Rendering\Camera.cpp" />
@@ -149,8 +150,10 @@
     <ClCompile Include="Rendering\Fog.cpp" />
     <ClCompile Include="GOM\Entity.cpp" />
     <ClCompile Include="Rendering\SystemDrawable.cpp" />
+    <ClCompile Include="Rendering\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Rendering\Pipeline.h" />
     <ClInclude Include="Rendering\Material.h" />
     <ClInclude Include="Rendering\Mesh.h" />
     <ClInclude Include="Rendering\Camera.h" />
@@ -160,6 +163,7 @@
     <ClInclude Include="Rendering\Fog.h" />
     <ClInclude Include="GOM\Entity.h" />
     <ClInclude Include="Rendering\SystemDrawable.h" />
+    <ClInclude Include="Rendering\Texture.h" />
     <ClInclude Include="Util\GlobalIncludes.h" />
     <ClInclude Include="Util\Singleton.h" />
   </ItemGroup>

@@ -4,10 +4,10 @@
 
 #define USE_STAGING_BUFFER 1
 
-static const std::string RESOURCE_PATH = "..\\..\\JadeEngine\\JadeEngine\\Resources\\";
-
 namespace Core
 {
+	const std::string HelloTriangle::RESOURCE_PATH = "..\\..\\JadeEngine\\JadeEngine\\Resources\\";
+
 	const char* HelloTriangle::ShaderTypeToExtension[]
 	{
 		".vert",
@@ -42,12 +42,9 @@ namespace Core
 		, _vertexBufferMemory(VK_NULL_HANDLE)
 		, _indexBufferMemory(VK_NULL_HANDLE)
 		, _uniformBufferMemory(VK_NULL_HANDLE)
-		, _textureImageMemory(VK_NULL_HANDLE)
 		, _vertexBuffer(VK_NULL_HANDLE)
 		, _indexBuffer(VK_NULL_HANDLE)
 		, _uniformBuffer(VK_NULL_HANDLE)
-		, _textureImage(VK_NULL_HANDLE)
-		, _textureImageView(VK_NULL_HANDLE)
 		, _textureSampler(VK_NULL_HANDLE)
 		, _bMinimized(false)
 	{
@@ -95,10 +92,10 @@ namespace Core
 		CreateCommandPool();
 		CreateDescriptorPool();
 
-		TextureInfo texInfo;
-		CreateTextureImage(texInfo);
-		CreateTextureImageView(texInfo);
-		CreateTextureSampler(texInfo);
+		::Rendering::Texture::LoadOptions options;
+		std::string path = "chalet.jpg";
+		_texture.Initialize(&path, &options);
+		CreateTextureSampler(&_texture);
 
 		LoadModel(MODEL_NAME_MESH, _modelInfo);
 		CreateVertexBuffer();
@@ -570,11 +567,12 @@ namespace Core
 	{
 		_swapChainImageViews.resize(_swapChainImages.size());
 
-		TextureInfo dummy;
+		::Rendering::Texture::Info dummy;
+		dummy.Format = VK_FORMAT_B8G8R8A8_UNORM;
 
 		for (size_t i = 0; i < _swapChainImages.size(); ++i)
 		{
-			_swapChainImageViews[i] = CreateImageView(dummy, _swapChainImages[i], VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+			_swapChainImageViews[i] = ::Rendering::Texture::UtilCreateImageView(&dummy, _swapChainImages[i], VK_IMAGE_ASPECT_COLOR_BIT);
 		}
 	}
 
@@ -969,44 +967,7 @@ namespace Core
 		JE_AssertThrowVkResult(vkCreateDescriptorPool(_device, &poolInfo, _pAllocator, &_descriptorPool));
 	}
 
-	void HelloTriangle::CreateTextureImage(TextureInfo& outTexInfo)
-	{
-		LoadTexture(MODEL_NAME_TEXTURE, 4, outTexInfo);
-		JE_Assert(outTexInfo.Data != nullptr);
-
-		VkDeviceSize imageSize = outTexInfo.Width * outTexInfo.Height * outTexInfo.Channels;
-
-		VkBuffer stagingBuffer;
-		VkDeviceMemory stagingBufferMemory;
-
-		CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-		CopyBuffer_CPU_GPU(reinterpret_cast<void*>(outTexInfo.Data), stagingBufferMemory, imageSize);
-
-		UnloadTexture(outTexInfo);
-
-		VkFormat texFormat = VK_FORMAT_R8G8B8A8_UNORM;
-
-		CreateImage(outTexInfo, texFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _textureImage, _textureImageMemory);
-
-		TransitionImageLayout(outTexInfo, _textureImage, texFormat, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
-		CopyBufferToImage(stagingBuffer, _textureImage, outTexInfo);
-
-		GenerateMipmaps(outTexInfo, _textureImage);
-		// This is now done in GenerateMipmaps.
-		//TransitionImageLayout(outTexInfo, _textureImage, texFormat, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL); 
-
-		vkDestroyBuffer(_device, stagingBuffer, _pAllocator);
-		vkFreeMemory(_device, stagingBufferMemory, _pAllocator);
-	}
-
-	void HelloTriangle::CreateTextureImageView(const TextureInfo& texInfo)
-	{
-		_textureImageView = CreateImageView(texInfo, _textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
-	}
-
-	void HelloTriangle::CreateTextureSampler(const TextureInfo& texInfo)
+	void HelloTriangle::CreateTextureSampler(const ::Rendering::Texture* texInfo)
 	{
 		VkSamplerCreateInfo samplerInfo = {};
 		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -1024,21 +985,21 @@ namespace Core
 		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 		samplerInfo.mipLodBias = 0.0f;
 		samplerInfo.minLod = 0.0f;
-		samplerInfo.maxLod = static_cast<float>(texInfo.MipCount);
+		samplerInfo.maxLod = static_cast<float>(1 /*TODO*/);
 
 		JE_AssertThrowVkResult(vkCreateSampler(_device, &samplerInfo, _pAllocator, &_textureSampler));
 	}
 
 	void HelloTriangle::CreateDepthResources()
 	{
-		VkFormat depthFormat = FindDepthFormat();
-		TextureInfo texInfo;
+		::Rendering::Texture::Info texInfo;
 		texInfo.Width = _swapChainExtent.width;
 		texInfo.Height = _swapChainExtent.height;
-		CreateImage(texInfo, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _depthImage, _depthImageMemory);
-		_depthImageView = CreateImageView(texInfo, _depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+		texInfo.Format = FindDepthFormat();
+		CreateImage(&texInfo, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _depthImage, _depthImageMemory);
+		_depthImageView = ::Rendering::Texture::UtilCreateImageView(&texInfo, _depthImage, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-		TransitionImageLayout(texInfo, _depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		TransitionImageLayout(&texInfo, _depthImage, VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
 
 	void HelloTriangle::CreateVertexBuffer()
@@ -1180,7 +1141,7 @@ namespace Core
 
 		VkDescriptorImageInfo imageInfo = {};
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = _textureImageView;
+		imageInfo.imageView = _texture.GetImageView();
 		imageInfo.sampler = _textureSampler;
 
 		std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
@@ -1403,7 +1364,7 @@ namespace Core
 		vkFreeCommandBuffers(_device, _commandPoolTransient, 1, &commandBuffer);
 	}
 
-	void HelloTriangle::TransitionImageLayout(const TextureInfo& texInfo, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout)
+	void HelloTriangle::TransitionImageLayout(const ::Rendering::Texture::Info* texInfo, VkImage image,  VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout)
 	{
 		VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
 
@@ -1416,7 +1377,7 @@ namespace Core
 		barrier.image = image;
 		barrier.subresourceRange.aspectMask = aspectFlags;
 		barrier.subresourceRange.baseMipLevel = 0;
-		barrier.subresourceRange.levelCount = static_cast<uint32_t>(texInfo.MipCount);
+		barrier.subresourceRange.levelCount = static_cast<uint32_t>(texInfo->MipCount);
 		barrier.subresourceRange.baseArrayLayer = 0;
 		barrier.subresourceRange.layerCount = 1;
 
@@ -1464,112 +1425,6 @@ namespace Core
 			commandBuffer,
 			sourceStage,
 			destinationStage,
-			0,
-			0,
-			nullptr,
-			0,
-			nullptr,
-			1,
-			&barrier
-		);
-
-		EndSingleTimeCommands(commandBuffer);
-	}
-
-	void HelloTriangle::GenerateMipmaps(const TextureInfo & texInfo, VkImage image)
-	{
-		VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
-
-		VkImageMemoryBarrier barrier = {};
-		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		barrier.image = image;
-		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		barrier.subresourceRange.baseArrayLayer = 0;
-		barrier.subresourceRange.layerCount = 1;
-		barrier.subresourceRange.levelCount = 1;
-
-		int32_t mipWidth = texInfo.Width;
-		int32_t mipHeight = texInfo.Height;
-
-		for (uint32_t i = 1; i < static_cast<uint32_t>(texInfo.MipCount); ++i)
-		{
-			barrier.subresourceRange.baseMipLevel = i - 1;
-			barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-			barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-			barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-
-			vkCmdPipelineBarrier
-			(
-				commandBuffer,
-				VK_PIPELINE_STAGE_TRANSFER_BIT,
-				VK_PIPELINE_STAGE_TRANSFER_BIT,
-				0,
-				0,
-				nullptr,
-				0,
-				nullptr,
-				1,
-				&barrier
-			);
-
-			const int32_t nextMipWidth = mipWidth / 2;
-			const int32_t nextMipHeight = mipHeight / 2;
-
-			VkImageBlit blit = {};
-
-			blit.srcOffsets[0] = { 0, 0, 0 };
-			blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
-			blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			blit.srcSubresource.mipLevel = i - 1;
-			blit.srcSubresource.baseArrayLayer = 0;
-			blit.srcSubresource.layerCount = 1;
-
-			blit.dstOffsets[0] = { 0, 0, 0 };
-			blit.dstOffsets[1] = { nextMipWidth, nextMipHeight, 1 };
-			blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			blit.dstSubresource.mipLevel = i;
-			blit.dstSubresource.baseArrayLayer = 0;
-			blit.dstSubresource.layerCount = 1;
-
-			vkCmdBlitImage(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
-
-			barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-			barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-			vkCmdPipelineBarrier
-			(
-				commandBuffer,
-				VK_PIPELINE_STAGE_TRANSFER_BIT,
-				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-				0,
-				0,
-				nullptr,
-				0,
-				nullptr,
-				1,
-				&barrier
-			);
-
-			if (mipWidth > 1) mipWidth /= 2;
-			if (mipHeight > 1) mipHeight /= 2;
-		}
-
-		barrier.subresourceRange.baseMipLevel = static_cast<uint32_t>(texInfo.MipCount) - 1;
-		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-		vkCmdPipelineBarrier
-		(
-			commandBuffer,
-			VK_PIPELINE_STAGE_TRANSFER_BIT,
-			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
 			0,
 			0,
 			nullptr,
@@ -1710,17 +1565,17 @@ namespace Core
 		EndSingleTimeCommands(commandBuffer);
 	}
 
-	void HelloTriangle::CreateImage(const TextureInfo & texInfo, VkFormat format, VkImageTiling tiling, VkImageLayout initialLayout, VkImageUsageFlags usage, VkMemoryPropertyFlags memProperties, VkImage & outImage, VkDeviceMemory & outMemory)
+	void HelloTriangle::CreateImage(const ::Rendering::Texture::Info* texInfo, VkImageTiling tiling, VkImageLayout initialLayout, VkImageUsageFlags usage, VkMemoryPropertyFlags memProperties, VkImage& outImage, VkDeviceMemory& outMemory)
 	{
 		VkImageCreateInfo imageInfo = {};
 		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		imageInfo.imageType = VK_IMAGE_TYPE_2D;
-		imageInfo.extent.width = static_cast<uint32_t>(texInfo.Width);
-		imageInfo.extent.height = static_cast<uint32_t>(texInfo.Height);
+		imageInfo.extent.width = static_cast<uint32_t>(texInfo->Width);
+		imageInfo.extent.height = static_cast<uint32_t>(texInfo->Height);
 		imageInfo.extent.depth = 1;
-		imageInfo.mipLevels = static_cast<uint32_t>(texInfo.MipCount);
+		imageInfo.mipLevels = static_cast<uint32_t>(texInfo->MipCount);
 		imageInfo.arrayLayers = 1;
-		imageInfo.format = format;
+		imageInfo.format = texInfo->Format;
 		imageInfo.tiling = tiling;
 		imageInfo.initialLayout = initialLayout;
 		imageInfo.usage = usage;
@@ -1743,7 +1598,7 @@ namespace Core
 		JE_AssertThrowVkResult(vkBindImageMemory(_device, outImage, outMemory, 0));
 	}
 
-	void HelloTriangle::CopyBufferToImage(VkBuffer buffer, VkImage image, const TextureInfo & texInfo)
+	void HelloTriangle::CopyBufferToImage(VkBuffer buffer, VkImage image, const ::Rendering::Texture::Info* texInfo)
 	{
 		VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
 
@@ -1760,8 +1615,8 @@ namespace Core
 		region.imageOffset = { 0, 0, 0 };
 		region.imageExtent =
 		{
-			static_cast<uint32_t>(texInfo.Width),
-			static_cast<uint32_t>(texInfo.Height),
+			static_cast<uint32_t>(texInfo->Width),
+			static_cast<uint32_t>(texInfo->Height),
 			1
 		};
 
@@ -1770,41 +1625,14 @@ namespace Core
 		EndSingleTimeCommands(commandBuffer);
 	}
 
-	VkImageView HelloTriangle::CreateImageView(const TextureInfo& texInfo, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
-	{
-		VkImageViewCreateInfo viewInfo = {};
-		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.image = image;
-		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		viewInfo.format = format;
-		viewInfo.subresourceRange.aspectMask = aspectFlags;
-		viewInfo.subresourceRange.baseMipLevel = 0;
-		viewInfo.subresourceRange.levelCount = static_cast<uint32_t>(texInfo.MipCount);
-		viewInfo.subresourceRange.baseArrayLayer = 0;
-		viewInfo.subresourceRange.layerCount = 1;
-		viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-		VkImageView imageView;
-		JE_AssertThrowVkResult(vkCreateImageView(_device, &viewInfo, _pAllocator, &imageView));
-		return imageView;
-	}
-
 	void HelloTriangle::Cleanup()
 	{
 		CleanupObjects();
 
 		vkDestroySampler(_device, _textureSampler, _pAllocator);
 		_textureSampler = VK_NULL_HANDLE;
-		vkDestroyImageView(_device, _textureImageView, _pAllocator);
-		_textureImageView = VK_NULL_HANDLE;
 
-		vkDestroyImage(_device, _textureImage, _pAllocator);
-		_textureImage = VK_NULL_HANDLE;
-		vkFreeMemory(_device, _textureImageMemory, _pAllocator);
-		_textureImageMemory = VK_NULL_HANDLE;
+		_texture.Cleanup();
 
 		vkDestroyBuffer(_device, _uniformBuffer, _pAllocator);
 		_uniformBuffer = VK_NULL_HANDLE;
@@ -1935,41 +1763,6 @@ namespace Core
 	void HelloTriangle::LoadShader(const std::string& shaderName, ShaderType shaderType, std::vector<uint8_t>& outData)
 	{
 		LoadFile(RESOURCE_PATH + "Shaders\\Binary\\" + shaderName + ShaderTypeToExtension[shaderType] + ".spv", outData);
-	}
-
-	void HelloTriangle::LoadTexture(const std::string & textureName, uint32_t desiredChannels, TextureInfo& outTextureInfo)
-	{
-		int width, height, chnls;
-		outTextureInfo.Data = stbi_load
-		(
-			(RESOURCE_PATH + "Textures\\Source\\" + textureName).c_str(),
-			&width,
-			&height,
-			&chnls,
-			desiredChannels
-		);
-
-		outTextureInfo.Width = width;
-		outTextureInfo.Height = height;
-		outTextureInfo.Channels = desiredChannels;
-		outTextureInfo.SizeBytes = width * height * outTextureInfo.Channels;
-		outTextureInfo.bAllocatedByStbi = true;
-
-		outTextureInfo.MipCount = static_cast<uint8_t>(std::floor(std::log2(std::max(width, height)))) + 1;
-	}
-
-	void HelloTriangle::UnloadTexture(TextureInfo& texInfo)
-	{
-		if (texInfo.bAllocatedByStbi)
-		{
-			stbi_image_free(texInfo.Data);
-		}
-		else
-		{
-			free(texInfo.Data);
-		}
-
-		texInfo.Data = nullptr;
 	}
 
 	void HelloTriangle::LoadModel(const std::string& modelName, ModelInfo & outModelInfo)
