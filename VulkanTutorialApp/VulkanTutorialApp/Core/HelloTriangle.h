@@ -5,6 +5,8 @@
 #include "Rendering/Fog.h"
 
 #include "Rendering/Texture.h"
+#include "Rendering/Mesh.h"
+#include "Rendering/Material.h"
 
 namespace Core
 {
@@ -19,28 +21,6 @@ namespace Core
 		const int32_t WINDOW_WIDTH = 800;
 		const int32_t WINDOW_HEIGHT = 600;
 		const char* WINDOW_NAME = "Vulkan - HelloTriangle";
-
-		struct alignas(16) VertexTutorial
-		{
-			static const size_t COMPONENT_NUMBER = 4;
-
-			glm::vec3 Position;
-			glm::vec3 Color;
-			glm::vec3 Normal;
-			glm::vec2 Uv;
-
-			static void GetBindingDescription(VkVertexInputBindingDescription& outDescription);
-			static void GetAttributeDescription(std::vector<VkVertexInputAttributeDescription>& outDescriptions);
-
-			bool operator==(const VertexTutorial& other) const
-			{
-				return
-					Position == other.Position
-					&& Color == other.Color
-					&& Normal == other.Normal
-					&& Uv == other.Uv;
-			}
-		};
 
 	private:
 
@@ -75,10 +55,10 @@ namespace Core
 			Geometry,
 			Fragment,
 			Compute,
-			NUM
+			ENUM_SIZE
 		};
 
-		static const char* ShaderTypeToExtension[ShaderType::NUM];
+		static const char* ShaderTypeToExtension[ShaderType::ENUM_SIZE];
 
 		struct QueueFamilyIndices
 		{
@@ -119,23 +99,6 @@ namespace Core
 			float FogDepthNear;
 			glm::vec3 FogColor;
 			float FogDepthFar;
-		};
-
-		struct ModelInfo
-		{
-			std::vector<VertexTutorial> Vertices;
-			std::vector<uint32_t> Indices;
-
-			uint32_t IndexCount;
-
-			ModelInfo()
-				: IndexCount(0)
-			{
-				Vertices.clear();
-				Indices.clear();
-			}
-
-			bool IsLoaded() { return (!Vertices.empty() || !Indices.empty()); }
 		};
 
 	public:
@@ -204,8 +167,6 @@ namespace Core
 			void CreateDescriptorPool();
 			void CreateTextureSampler(const ::Rendering::Texture* texInfo);
 			void CreateDepthResources();
-			void CreateVertexBuffer();
-			void CreateIndexBuffer();
 			void CreateUniformBuffer();
 			void CreateCommandBuffers();
 			void CreateDescriptorSet();
@@ -228,8 +189,6 @@ namespace Core
 
 		static void LoadFile(const std::string& fileName, std::vector<uint8_t>& outData);
 		static void LoadShader(const std::string& shaderName, ShaderType shaderType, std::vector<uint8_t>& outData);
-		static void LoadModel(const std::string& modelName, ModelInfo& outModelInfo);
-		static void UnloadModel(ModelInfo& modelInfo);
 
 		PFN_vkVoidFunction GetVkProcVoid(const char* procName)
 		{
@@ -309,15 +268,9 @@ namespace Core
 
 		VkPushConstantRange _pushConstantRange;
 
-		VkDeviceMemory _vertexBufferMemory;
-		VkDeviceMemory _indexBufferMemory;
 		VkDeviceMemory _uniformBufferMemory;
 		VkDeviceMemory _depthImageMemory;
 
-		ModelInfo _modelInfo;
-
-		VkBuffer _vertexBuffer;
-		VkBuffer _indexBuffer;
 		VkBuffer _uniformBuffer;
 
 		VkSampler _textureSampler;
@@ -326,24 +279,11 @@ namespace Core
 		VkImageView _depthImageView;
 
 		::Rendering::Texture _texture;
+		::Rendering::Mesh _mesh;
+		::Rendering::Material _material;
 
 		bool _bMinimized;
 	};
 }
 
 #define JE_GetRenderer() Core::HelloTriangle::GetInstance()
-
-namespace std
-{
-	template<> struct hash<Core::HelloTriangle::VertexTutorial>
-	{
-		size_t operator()(const Core::HelloTriangle::VertexTutorial& vertex) const
-		{
-			return ((hash<glm::vec3>()(vertex.Position) ^
-				(hash<glm::vec3>()(vertex.Color) << 1)) >> 1) ^
-				((hash<glm::vec3>()(vertex.Normal) << 2) >> 2) ^
-				(hash<glm::vec2>()(vertex.Uv) << 1);
-
-		}
-	};
-}

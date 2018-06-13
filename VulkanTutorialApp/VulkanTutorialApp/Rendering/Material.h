@@ -13,42 +13,72 @@ namespace Rendering
 		{
 		public:
 
-			enum Type
+			enum ComponentType
 			{
-				POSITION,
-				COLOR,
-				NORMAL,
-				UV,
-				TANGENT,
-				BINORMAL,
-				WEIGHT,
-				INDEX
+				Position,
+				Color,
+				Normal,
+				Uv,
+				Tangent,
+				Binormal,
+				Weight,
+				Index,
+				ENUM_SIZE
 			};
 
 		public:
 
-			static size_t GetComponentSize();
+			static JE_Inline uint32_t GetComponentSize(ComponentType type) { return _typeToSizeBytes[static_cast<uint32_t>(type)]; }
+			static JE_Inline VkFormat GetComponentFormat(ComponentType type) { return _typeToVkFormat[static_cast<uint32_t>(type)]; }
 
 			VertexDeclaration();
-			VertexDeclaration(const VertexDeclaration& copy);
 			~VertexDeclaration();
 
-			void Init(const std::vector<Type>* components);
+			void Initialize(const std::vector<ComponentType>* components);
 
-			bool IsHavingComponent() const;
-			const std::vector<Type>* GetComponents() const;
-			void GetComponentSizes(std::vector<size_t>* sizeVector) const;
+			bool IsHavingComponent(ComponentType type) const;
+			JE_Inline const std::vector<ComponentType>* GetComponents() const { return &_components; }
+			void GetComponentSizes(std::vector<uint32_t>* sizeVector) const;
+			uint32_t GetComponentTotalSize() const;
 
-			void GetBindingDescription(VkVertexInputBindingDescription& outDescription);
-			void GetAttributeDescriptions(std::vector<VkVertexInputAttributeDescription>& outDescriptions);
+			void GetBindingDescriptions(std::vector<VkVertexInputBindingDescription>* outDescriptions) const;
+			void GetAttributeDescriptions(std::vector<VkVertexInputAttributeDescription>* outDescriptions) const;
 
 			bool operator==(const VertexDeclaration& other) const;
 
 		private:
 
-			static const size_t _typeToSizeBytes[];
+			static constexpr const uint32_t _typeToSizeBytes[] =
+			{
+				12,		// vec3
+				16,		// vec4
+				12,		// vec3
+				8,		// vec2
+				12,		// vec3
+				12,		// vec3
+				16,		// vec4
+				8		// ushort4
+			};
 
-			std::vector<Type> _components;
+			static constexpr const VkFormat _typeToVkFormat[] =
+			{
+				VK_FORMAT_R32G32B32_SFLOAT,
+				VK_FORMAT_R32G32B32A32_SFLOAT,
+				VK_FORMAT_R32G32B32_SFLOAT,
+				VK_FORMAT_R32G32_SFLOAT,
+				VK_FORMAT_R32G32B32_SFLOAT,
+				VK_FORMAT_R32G32B32_SFLOAT,
+				VK_FORMAT_R32G32B32A32_SFLOAT,
+				VK_FORMAT_R32G32_UINT		// For 8 bytes, will have to unpack it probably.
+			};
+
+		private:
+
+			VertexDeclaration(const VertexDeclaration& copy);
+
+		private:
+
+			std::vector<ComponentType> _components;
 		};
 
 		struct UBOPerScene
@@ -77,6 +107,11 @@ namespace Rendering
 	public:
 		Material();
 		~Material();
+
+		void Initialize();
+		void Cleanup();
+
+		JE_Inline const VertexDeclaration* GetVertexDeclaration() const { return &_vertexDeclaration; }
 
 	protected:
 

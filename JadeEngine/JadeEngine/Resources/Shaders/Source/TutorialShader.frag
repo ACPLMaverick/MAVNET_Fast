@@ -29,5 +29,4 @@ void main()
 	float fogCoeff = smoothstep(pushConsts.FogDepthNear, pushConsts.FogDepthFar, depth);
 	outColor.rgb = mix(objColor, pushConsts.FogColor, fogCoeff);
 	outColor.a = 1.0f;
-//	outColor = pushConsts.FogDepthNear.xxxx;
 }

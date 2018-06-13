@@ -50,32 +50,35 @@ namespace Rendering
 
 		LoadData(loadPath, loadOptions);
 
-		CreateImage(loadOptions);
-		CreateImageView(loadOptions);
-
-		if (loadOptions->bGenerateMips)
-		{
-			GenerateMipmaps();
-		}
-
-		AssignSampler(loadOptions);
-
-		if (loadOptions->bReadOnly)
-		{
-			UnloadData();
-		}
+		InitializeCommon(loadOptions);
 	}
 
-	void Texture::Initialize(uint8_t * dataToCopy, uint32_t sizeBytes, uint16_t width, uint16_t height, uint8_t mipCount, const LoadOptions * loadOptions)
+	void Texture::Initialize(uint8_t * dataToOwn, uint32_t sizeBytes, uint16_t width, uint16_t height, uint8_t mipCount, const LoadOptions * loadOptions)
 	{
-		JE_Assert(dataToCopy != nullptr && sizeBytes != 0);
+		JE_Assert(dataToOwn != nullptr && sizeBytes != 0);
+
+		_info.bAllocatedByStbi = false;
+		_info.Data = dataToOwn;
+		_info.SizeBytes = sizeBytes;
+		_info.Width = width;
+		_info.Height = height;
+		_info.MipCount = mipCount;
+		_info.Format = loadOptions->DesiredFormat;
+		_info.Channels = GetDesiredChannelsFromFormat(loadOptions->DesiredFormat);
+
+		if (loadOptions->bGenerateMips && _info.MipCount == 1)
+		{
+			CalculateMipCount(true);
+		}
+
+		InitializeCommon(loadOptions);
 	}
 
 	void Texture::Cleanup()
 	{
 		if (!IsReadOnly())
 		{
-			UnloadData();
+			CleanupData();
 		}
 
 		vkDestroyImageView(JE_GetRenderer()->GetDevice(), _view, JE_GetRenderer()->GetAllocatorPtr());
@@ -90,6 +93,24 @@ namespace Rendering
 	{
 		// TODO: Implement.
 		return 4;
+	}
+
+	void Texture::InitializeCommon(const LoadOptions * loadOptions)
+	{
+		CreateImage(loadOptions);
+		CreateImageView(loadOptions);
+
+		if (loadOptions->bGenerateMips)
+		{
+			GenerateMipmaps();
+		}
+
+		AssignSampler(loadOptions);
+
+		if (loadOptions->bReadOnly)
+		{
+			CleanupData();
+		}
 	}
 
 	void Texture::LoadData(const std::string * textureName, const LoadOptions * loadOptions)
@@ -116,13 +137,18 @@ namespace Rendering
 		_info.Channels = desiredChannels;
 		_info.SizeBytes = width * height * _info.Channels;
 		_info.bAllocatedByStbi = true;
-		if (loadOptions->bGenerateMips && finalMipCount == 1)
+		CalculateMipCount(loadOptions->bGenerateMips && finalMipCount == 1);
+	}
+
+	void Texture::CalculateMipCount(bool bGenerateMips)
+	{
+		if (bGenerateMips)
 		{
 			_info.MipCount = static_cast<uint8_t>(std::floor(std::log2(std::max(_info.Width, _info.Height)))) + 1;
 		}
 		else
 		{
-			_info.MipCount = finalMipCount;
+			_info.MipCount = 1;
 		}
 	}
 
@@ -159,9 +185,10 @@ namespace Rendering
 
 	void Texture::AssignSampler(const LoadOptions * loadOptions)
 	{
+		// TODO
 	}
 
-	void Texture::UnloadData()
+	void Texture::CleanupData()
 	{
 		if (_info.bAllocatedByStbi)
 		{

@@ -3,7 +3,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 layout(location = 0) in vec3 inPosition;
-layout(location = 1) in vec3 inColor;
+layout(location = 1) in vec4 inColor;
 layout(location = 2) in vec3 inNormal;
 layout(location = 3) in vec2 inUv;
 
@@ -26,7 +26,7 @@ out gl_PerVertex
 void main()
 {
 	gl_Position = ubo.MVP * vec4(inPosition, 1.0f);
-	outColor = vec4(inColor, 1.0f);
+	outColor = inColor;
 	outWVPositionDepth.xyz = (ubo.MV * vec4(inPosition, 1.0f)).xyz;
 	outWVPositionDepth.w = gl_Position.z / gl_Position.w;
 	outNormal = (ubo.MVInverseTranspose * vec4(inNormal, 0.0f)).xyz;

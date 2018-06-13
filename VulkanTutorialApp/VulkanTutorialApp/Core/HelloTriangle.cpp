@@ -2,7 +2,8 @@
 
 #include <fstream>
 
-#define USE_STAGING_BUFFER 1
+#include "Rendering/Helper.h"
+#include "Rendering/SystemDrawable.h"
 
 namespace Core
 {
@@ -39,11 +40,7 @@ namespace Core
 		, _descriptorPool(VK_NULL_HANDLE)
 		, _currentFrame(0)
 		, _descriptorSet(VK_NULL_HANDLE)
-		, _vertexBufferMemory(VK_NULL_HANDLE)
-		, _indexBufferMemory(VK_NULL_HANDLE)
 		, _uniformBufferMemory(VK_NULL_HANDLE)
-		, _vertexBuffer(VK_NULL_HANDLE)
-		, _indexBuffer(VK_NULL_HANDLE)
 		, _uniformBuffer(VK_NULL_HANDLE)
 		, _textureSampler(VK_NULL_HANDLE)
 		, _bMinimized(false)
@@ -92,15 +89,19 @@ namespace Core
 		CreateCommandPool();
 		CreateDescriptorPool();
 
-		::Rendering::Texture::LoadOptions options;
-		std::string path = "chalet.jpg";
-		_texture.Initialize(&path, &options);
+		::Rendering::Helper::GetInstance()->Initialize();
+
+		::Rendering::Texture::LoadOptions texOptions;
+		_texture.Initialize(&MODEL_NAME_TEXTURE, &texOptions);
+
 		CreateTextureSampler(&_texture);
 
-		LoadModel(MODEL_NAME_MESH, _modelInfo);
-		CreateVertexBuffer();
-		CreateIndexBuffer();
-		UnloadModel(_modelInfo);
+		::Rendering::Mesh::LoadOptions meshOptions;
+		_mesh.Initialize(&MODEL_NAME_MESH, &meshOptions);
+
+		_material.Initialize();
+		
+		_mesh.AdjustBuffersForVertexDeclaration(_material.GetVertexDeclaration());
 
 		CreateUniformBuffer();
 		CreateDescriptorSetLayout();
@@ -720,15 +721,15 @@ namespace Core
 		
 		// Vertex input state creation info.
 
-		VkVertexInputBindingDescription bindingDescription;
+		std::vector<VkVertexInputBindingDescription> bindingDescriptions;
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
-		VertexTutorial::GetBindingDescription(bindingDescription);
-		VertexTutorial::GetAttributeDescription(attributeDescriptions);
+		_material.GetVertexDeclaration()->GetBindingDescriptions(&bindingDescriptions);
+		_material.GetVertexDeclaration()->GetAttributeDescriptions(&attributeDescriptions);
 
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertexInputInfo.vertexBindingDescriptionCount = 1;
-		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+		vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
+		vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
 		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
@@ -1002,62 +1003,6 @@ namespace Core
 		TransitionImageLayout(&texInfo, _depthImage, VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
 
-	void HelloTriangle::CreateVertexBuffer()
-	{
-		JE_Assert(_modelInfo.IsLoaded());
-#if USE_STAGING_BUFFER
-		VkDeviceSize bufferSize = JE_VectorSizeBytes(_modelInfo.Vertices);
-
-		VkBuffer stagingBuffer;
-		VkDeviceMemory stagingBufferMemory;
-
-		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_modelInfo.Vertices.data()), stagingBufferMemory, static_cast<size_t>(bufferSize));
-
-		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _vertexBuffer, _vertexBufferMemory);
-
-		CopyBuffer_GPU_GPU(stagingBuffer, _vertexBuffer, bufferSize);
-
-		vkDestroyBuffer(_device, stagingBuffer, _pAllocator);
-		vkFreeMemory(_device, stagingBufferMemory, _pAllocator);
-#else
-		VkDeviceSize bufferSize = JE_VectorSizeBytes(_modelInfo.Vertices);
-
-		CreateBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, _vertexBuffer, _vertexBufferMemory);
-
-		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_modelInfo.Vertices.data()), _vertexBufferMemory, static_cast<size_t>(bufferSize));
-#endif
-	}
-
-	void HelloTriangle::CreateIndexBuffer()
-	{
-		JE_Assert(_modelInfo.IsLoaded());
-#if USE_STAGING_BUFFER
-		VkDeviceSize bufferSize = JE_VectorSizeBytes(_modelInfo.Indices);
-
-		VkBuffer stagingBuffer;
-		VkDeviceMemory stagingBufferMemory;
-
-		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_modelInfo.Indices.data()), stagingBufferMemory, static_cast<size_t>(bufferSize));
-
-		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _indexBuffer, _indexBufferMemory);
-
-		CopyBuffer_GPU_GPU(stagingBuffer, _indexBuffer, bufferSize);
-
-		vkDestroyBuffer(_device, stagingBuffer, _pAllocator);
-		vkFreeMemory(_device, stagingBufferMemory, _pAllocator);
-#else
-		VkDeviceSize bufferSize = JE_VectorSizeBytes(_modelInfo.Indices);
-
-		CreateBuffer(bufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, _indexBuffer, _indexBufferMemory);
-
-		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_modelInfo.Indices.data()), _indexBufferMemory, static_cast<size_t>(bufferSize));
-#endif
-	}
-
 	void HelloTriangle::CreateUniformBuffer()
 	{
 		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
@@ -1112,11 +1057,10 @@ namespace Core
 			pco.LightDirectionV = *_lightDirectional.GetDirectionV();
 			vkCmdPushConstants(_commandBuffers[i], _pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantObject), &pco);
 
-			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindDescriptorSets(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _pipelineLayout, 0, 1, &_descriptorSet, 0, nullptr);
-			vkCmdBindVertexBuffers(_commandBuffers[i], 0, 1, &_vertexBuffer, offsets);
-			vkCmdBindIndexBuffer(_commandBuffers[i], _indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-			vkCmdDrawIndexed(_commandBuffers[i], static_cast<uint32_t>(_modelInfo.IndexCount), 1, 0, 0, 0);
+			vkCmdBindVertexBuffers(_commandBuffers[i], 0, _mesh.GetVertexBufferCount(), _mesh.GetVertexBuffers(), _mesh.GetVertexBufferOffsets());
+			vkCmdBindIndexBuffer(_commandBuffers[i], _mesh.GetIndexBuffer(), 0, JE_IndexTypeVk);
+			vkCmdDrawIndexed(_commandBuffers[i], _mesh.GetIndexCount(), 1, 0, 0, 0);
 
 			vkCmdEndRenderPass(_commandBuffers[i]);
 
@@ -1629,6 +1573,10 @@ namespace Core
 	{
 		CleanupObjects();
 
+		_material.Cleanup();
+
+		_mesh.Cleanup();
+
 		vkDestroySampler(_device, _textureSampler, _pAllocator);
 		_textureSampler = VK_NULL_HANDLE;
 
@@ -1639,15 +1587,13 @@ namespace Core
 		vkFreeMemory(_device, _uniformBufferMemory, _pAllocator);
 		_uniformBufferMemory = VK_NULL_HANDLE;
 
-		vkDestroyBuffer(_device, _indexBuffer, _pAllocator);
-		_indexBuffer = VK_NULL_HANDLE;
-		vkFreeMemory(_device, _indexBufferMemory, _pAllocator);
-		_indexBufferMemory = VK_NULL_HANDLE;
+		::Rendering::Helper::GetInstance()->Cleanup();
 
-		vkDestroyBuffer(_device, _vertexBuffer, _pAllocator);
-		_vertexBuffer = VK_NULL_HANDLE;
-		vkFreeMemory(_device, _vertexBufferMemory, _pAllocator);
-		_vertexBufferMemory = VK_NULL_HANDLE;
+		// System instances destruction.
+		::Rendering::SystemDrawable::DestroyInstance();
+
+		// Other singleton instances destruction.
+		::Rendering::Helper::DestroyInstance();
 
 		CleanupSwapChain();
 
@@ -1763,111 +1709,5 @@ namespace Core
 	void HelloTriangle::LoadShader(const std::string& shaderName, ShaderType shaderType, std::vector<uint8_t>& outData)
 	{
 		LoadFile(RESOURCE_PATH + "Shaders\\Binary\\" + shaderName + ShaderTypeToExtension[shaderType] + ".spv", outData);
-	}
-
-	void HelloTriangle::LoadModel(const std::string& modelName, ModelInfo & outModelInfo)
-	{
-		JE_Assert(!outModelInfo.IsLoaded());
-
-		const std::string finalPath = (RESOURCE_PATH + "Meshes\\Source\\" + modelName);
-
-		tinyobj::attrib_t attrib;
-		std::vector<tinyobj::shape_t> shapes;
-		std::vector<tinyobj::material_t> materials;
-		std::string err;
-
-		JE_AssertThrow(tinyobj::LoadObj(&attrib, &shapes, &materials, &err, finalPath.c_str()), err);
-
-		glm::vec3 dummyNormal = glm::vec3(0.0f, 0.0f, 1.0f);
-		const bool bIncludeNormals = attrib.normals.size();
-
-		std::unordered_map<VertexTutorial, uint32_t> uniqueVertices = {};
-
-		for (const auto& shape : shapes)
-		{
-			for (const auto& index : shape.mesh.indices)
-			{
-				VertexTutorial vertex = {};
-
-				vertex.Position = 
-				{
-					attrib.vertices[3 * index.vertex_index + 0],
-					attrib.vertices[3 * index.vertex_index + 1],
-					attrib.vertices[3 * index.vertex_index + 2]
-				};
-
-				vertex.Color = glm::vec3(1.0f, 1.0f, 1.0f);
-
-				if (bIncludeNormals)
-				{
-					vertex.Normal =
-					{
-						attrib.normals[3 * index.normal_index + 0],
-						attrib.normals[3 * index.normal_index + 1],
-						attrib.normals[3 * index.normal_index + 2]
-					};
-				}
-				else
-				{
-					vertex.Normal = dummyNormal;
-				}
-
-				vertex.Uv =
-				{
-					attrib.texcoords[2 * index.texcoord_index + 0],
-					1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-				};
-
-				if (uniqueVertices.count(vertex) == 0)
-				{
-					uniqueVertices[vertex] = static_cast<uint32_t>(outModelInfo.Vertices.size());
-					outModelInfo.Vertices.push_back(vertex);
-				}
-
-				outModelInfo.Indices.push_back(uniqueVertices[vertex]);
-			}
-		}
-
-		outModelInfo.IndexCount = static_cast<uint32_t>(outModelInfo.Indices.size());
-	}
-
-	void HelloTriangle::UnloadModel(ModelInfo & modelInfo)
-	{
-		JE_Assert(modelInfo.IsLoaded());
-
-		modelInfo.Vertices.clear();
-		modelInfo.Indices.clear();
-	}
-
-	void HelloTriangle::VertexTutorial::GetBindingDescription(VkVertexInputBindingDescription& outDescription)
-	{
-		outDescription.binding = 0;
-		outDescription.stride = sizeof(VertexTutorial);
-		outDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-	}
-
-	void HelloTriangle::VertexTutorial::GetAttributeDescription(std::vector<VkVertexInputAttributeDescription>& outDescriptions)
-	{
-		outDescriptions.resize(COMPONENT_NUMBER);
-
-		outDescriptions[0].binding = 0;
-		outDescriptions[0].location = 0;
-		outDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-		outDescriptions[0].offset = offsetof(VertexTutorial, Position);
-
-		outDescriptions[1].binding = 0;
-		outDescriptions[1].location = 1;
-		outDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		outDescriptions[1].offset = offsetof(VertexTutorial, Color);
-
-		outDescriptions[2].binding = 0;
-		outDescriptions[2].location = 2;
-		outDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
-		outDescriptions[2].offset = offsetof(VertexTutorial, Normal);
-
-		outDescriptions[3].binding = 0;
-		outDescriptions[3].location = 3;
-		outDescriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
-		outDescriptions[3].offset = offsetof(VertexTutorial, Uv);
 	}
 }

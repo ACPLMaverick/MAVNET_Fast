@@ -54,9 +54,10 @@ namespace Rendering
 		JE_Inline VkImageView GetImageView() { return _view; }
 
 		void Initialize(const std::string* textureName, const LoadOptions* loadOptions);
+		// This takes ownership of dataToOwn data buffer and assumes it was allocated inside this app via malloc.
 		void Initialize
 		(
-			uint8_t* dataToCopy,
+			uint8_t* dataToOwn,
 			uint32_t sizeBytes,
 			uint16_t width,
 			uint16_t height,
@@ -73,11 +74,13 @@ namespace Rendering
 		Texture(const Texture& copy) {}
 
 		// This may change format if we load a compressed texture.
+		void InitializeCommon(const LoadOptions* loadOptions);
 		void LoadData(const std::string* loadPath, const LoadOptions* loadOptions);
+		void CalculateMipCount(bool bGenerateMips);
 		void CreateImage(const LoadOptions* loadOptions);
 		void CreateImageView(const LoadOptions* loadOptions);
 		void AssignSampler(const LoadOptions* loadOptions);
-		void UnloadData();
+		void CleanupData();
 
 		void GenerateMipmaps();
 
