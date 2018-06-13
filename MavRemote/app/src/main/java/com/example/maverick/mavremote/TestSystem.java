@@ -1,5 +1,6 @@
 package com.example.maverick.mavremote;
 
+import android.util.Log;
 import android.view.KeyEvent;
 
 public final class TestSystem extends System
@@ -23,6 +24,8 @@ public final class TestSystem extends System
 
     private void RunTest01()
     {
+        Utility.SleepThread(5000);
+        Log.d(App.TAG, "Test 01 started...");
         App.GetInstance().GetInstrumentationSystem().EnqueueActionEvent(new ActionEvent(KeyEvent.KEYCODE_DPAD_LEFT));
         Utility.SleepThread(500);
         App.GetInstance().GetInstrumentationSystem().EnqueueActionEvent(new ActionEvent(KeyEvent.KEYCODE_DPAD_RIGHT));
