@@ -4,6 +4,7 @@ namespace Rendering
 {
 	class Pipeline;
 	class Texture;
+	class DescriptorSet;
 
 	class Material
 	{
@@ -112,12 +113,16 @@ namespace Rendering
 		void Cleanup();
 
 		JE_Inline const VertexDeclaration* GetVertexDeclaration() const { return &_vertexDeclaration; }
+		JE_Inline const DescriptorSet* GetDescriptorSet() const { return _descriptorSet; }
+		JE_Inline const Pipeline* GetPipeline() const { return _pipeline; }
 
 	protected:
 
 		VertexDeclaration _vertexDeclaration;
 
 		std::vector<Texture*> _textures;
+
+		DescriptorSet* _descriptorSet;
 
 		Pipeline* _pipeline;
 	};

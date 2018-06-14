@@ -37,9 +37,7 @@ namespace Core
 		, _pipelineLayout(VK_NULL_HANDLE)
 		, _graphicsPipeline(VK_NULL_HANDLE)
 		, _commandPool(VK_NULL_HANDLE)
-		, _descriptorPool(VK_NULL_HANDLE)
 		, _currentFrame(0)
-		, _descriptorSet(VK_NULL_HANDLE)
 		, _uniformBufferMemory(VK_NULL_HANDLE)
 		, _uniformBuffer(VK_NULL_HANDLE)
 		, _bMinimized(false)
@@ -86,11 +84,13 @@ namespace Core
 		PickPhysicalDevice();
 		CreateLogicalDeviceAndGetQueues();
 		CreateCommandPool();
-		CreateDescriptorPool();
+
+		CreateUniformBuffer();
 
 		::Rendering::Helper::GetInstance()->Initialize();
 
 		_samplerMgr.Initialize();
+		_descriptorMgr.Initialize();
 
 		::Rendering::Texture::LoadOptions texOptions;
 		_texture.Initialize(&MODEL_NAME_TEXTURE, &texOptions);
@@ -102,9 +102,6 @@ namespace Core
 		
 		_mesh.AdjustBuffersForVertexDeclaration(_material.GetVertexDeclaration());
 
-		CreateUniformBuffer();
-		CreateDescriptorSetLayout();
-		CreateDescriptorSet();
 		CreatePushConstantRange();
 
 		InitObjects();
@@ -667,32 +664,6 @@ namespace Core
 		JE_AssertThrowVkResult(vkCreateRenderPass(_device, &renderPassInfo, _pAllocator, &_renderPass));
 	}
 
-	void HelloTriangle::CreateDescriptorSetLayout()
-	{
-		VkDescriptorSetLayoutBinding uboLayoutBinding = {};
-		uboLayoutBinding.binding = 0;
-		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		uboLayoutBinding.descriptorCount = 1;
-		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-		uboLayoutBinding.pImmutableSamplers = nullptr; // TODO: For textures probably.
-
-		VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
-		samplerLayoutBinding.binding = 1;
-		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		samplerLayoutBinding.descriptorCount = 1;
-		samplerLayoutBinding.pImmutableSamplers = nullptr;
-		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-		std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
-
-		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-		layoutInfo.pBindings = bindings.data();
-
-		JE_AssertThrowVkResult(vkCreateDescriptorSetLayout(_device, &layoutInfo, _pAllocator, &_descriptorSetLayout));
-	}
-
 	void HelloTriangle::CreateGraphicsPipeline()
 	{
 		// Shader modules.
@@ -853,10 +824,12 @@ namespace Core
 
 		// Pipeline layout create info.
 
+		VkDescriptorSetLayout layouts[] = { _material.GetDescriptorSet()->GetAssociatedVkDescriptorSetLayout() };
+
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts = &_descriptorSetLayout;
+		pipelineLayoutInfo.pSetLayouts = layouts;
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 		pipelineLayoutInfo.pPushConstantRanges = &_pushConstantRange;
 
@@ -950,23 +923,6 @@ namespace Core
 		JE_AssertThrowVkResult(vkCreateCommandPool(_device, &poolInfo, _pAllocator, &_commandPoolTransient));
 	}
 
-	void HelloTriangle::CreateDescriptorPool()
-	{
-		std::array<VkDescriptorPoolSize, 2> poolSizes = {};
-		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = 1;
-		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = 1;
-
-		VkDescriptorPoolCreateInfo poolInfo = {};
-		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = 1;
-
-		JE_AssertThrowVkResult(vkCreateDescriptorPool(_device, &poolInfo, _pAllocator, &_descriptorPool));
-	}
-
 	void HelloTriangle::CreateDepthResources()
 	{
 		::Rendering::Texture::Info texInfo;
@@ -1033,7 +989,8 @@ namespace Core
 			pco.LightDirectionV = *_lightDirectional.GetDirectionV();
 			vkCmdPushConstants(_commandBuffers[i], _pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantObject), &pco);
 
-			vkCmdBindDescriptorSets(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _pipelineLayout, 0, 1, &_descriptorSet, 0, nullptr);
+			VkDescriptorSet descriptorSets[] = { _material.GetDescriptorSet()->GetVkDescriptorSet() };
+			vkCmdBindDescriptorSets(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _pipelineLayout, 0, 1, descriptorSets, 0, nullptr);
 			vkCmdBindVertexBuffers(_commandBuffers[i], 0, _mesh.GetVertexBufferCount(), _mesh.GetVertexBuffers(), _mesh.GetVertexBufferOffsets());
 			vkCmdBindIndexBuffer(_commandBuffers[i], _mesh.GetIndexBuffer(), 0, JE_IndexTypeVk);
 			vkCmdDrawIndexed(_commandBuffers[i], _mesh.GetIndexCount(), 1, 0, 0, 0);
@@ -1043,51 +1000,6 @@ namespace Core
 			JE_AssertThrowVkResult(vkEndCommandBuffer(_commandBuffers[i]));
 		}
 	}
-
-	void HelloTriangle::CreateDescriptorSet()
-	{
-		VkDescriptorSetAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = _descriptorPool;
-		allocInfo.descriptorSetCount = 1;
-		allocInfo.pSetLayouts = &_descriptorSetLayout;
-
-		JE_AssertThrowVkResult(vkAllocateDescriptorSets(_device, &allocInfo, &_descriptorSet));
-
-		VkDescriptorBufferInfo bufferInfo = {};
-		bufferInfo.buffer = _uniformBuffer;
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(UniformBufferObject); // If you're overwriting the whole buffer, like we are in this case, then it is is also possible to use the VK_WHOLE_SIZE value for the range. 
-
-		VkDescriptorImageInfo imageInfo = {};
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = _texture.GetImageView();
-		imageInfo.sampler = _texture.GetSampler()->GetVkSampler();
-
-		std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
-
-		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[0].dstSet = _descriptorSet;
-		descriptorWrites[0].dstBinding = 0;
-		descriptorWrites[0].dstArrayElement = 0;
-		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrites[0].descriptorCount = 1;
-		descriptorWrites[0].pBufferInfo = &bufferInfo;
-		descriptorWrites[0].pImageInfo = nullptr;
-		descriptorWrites[0].pTexelBufferView = nullptr;
-
-		descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[1].dstSet = _descriptorSet;
-		descriptorWrites[1].dstBinding = 1;
-		descriptorWrites[1].dstArrayElement = 0;
-		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorWrites[1].descriptorCount = 1;
-		descriptorWrites[1].pBufferInfo = nullptr;
-		descriptorWrites[1].pImageInfo = &imageInfo;
-		descriptorWrites[1].pTexelBufferView = nullptr;
-
-		vkUpdateDescriptorSets(_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
- 	}
 
 	void HelloTriangle::CreatePushConstantRange()
 	{
@@ -1555,6 +1467,7 @@ namespace Core
 
 		_texture.Cleanup();
 
+		_descriptorMgr.Cleanup();
 		_samplerMgr.Cleanup();
 
 		vkDestroyBuffer(_device, _uniformBuffer, _pAllocator);
@@ -1570,12 +1483,6 @@ namespace Core
 		::Rendering::Helper::DestroyInstance();
 
 		CleanupSwapChain();
-
-		vkDestroyDescriptorPool(_device, _descriptorPool, _pAllocator);
-		_descriptorPool = VK_NULL_HANDLE;
-
-		vkDestroyDescriptorSetLayout(_device, _descriptorSetLayout, _pAllocator);
-		_descriptorSetLayout = VK_NULL_HANDLE;
 
 		vkDestroyCommandPool(_device, _commandPoolTransient, _pAllocator);
 		_commandPoolTransient = VK_NULL_HANDLE;

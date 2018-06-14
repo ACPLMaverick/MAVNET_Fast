@@ -4,11 +4,11 @@
 
 namespace Rendering
 {
-	class SamplerManager
+	class ManagerSampler
 	{
 	public:
-		SamplerManager();
-		~SamplerManager();
+		ManagerSampler();
+		~ManagerSampler();
 
 		// Will return nullptr if sampler does not exist.
 		Sampler* TryGetSampler(const Sampler::Options* options);

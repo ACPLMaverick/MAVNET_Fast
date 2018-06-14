@@ -7,7 +7,8 @@
 #include "Rendering/Texture.h"
 #include "Rendering/Mesh.h"
 #include "Rendering/Material.h"
-#include "Rendering/SamplerManager.h"
+#include "Rendering/ManagerSampler.h"
+#include "Rendering/ManagerDescriptor.h"
 
 namespace Core
 {
@@ -116,7 +117,8 @@ namespace Core
 		VkAllocationCallbacks* GetAllocatorPtr() { return _pAllocator; }
 
 		::Rendering::Camera* GetCamera() { return &_camera; }
-		::Rendering::SamplerManager* GetSamplerManager() { return &_samplerMgr; }
+		::Rendering::ManagerSampler* GetManagerSampler() { return &_samplerMgr; }
+		::Rendering::ManagerDescriptor* GetManagerDescriptor() { return &_descriptorMgr; }
 
 
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -244,7 +246,6 @@ namespace Core
 		VkExtent2D _swapChainExtent;
 
 		VkRenderPass _renderPass;
-		VkDescriptorSetLayout _descriptorSetLayout;
 		VkPipelineLayout _pipelineLayout;
 		VkPipeline _graphicsPipeline;
 
@@ -253,8 +254,6 @@ namespace Core
 		VkCommandPool _commandPool;
 		VkCommandPool _commandPoolTransient;
 		std::vector<VkCommandBuffer> _commandBuffers;
-
-		VkDescriptorPool _descriptorPool;
 
 		std::vector<VkSemaphore> _semsImageAvailable;
 		std::vector<VkSemaphore> _semsRenderFinished;
@@ -267,8 +266,6 @@ namespace Core
 		::Rendering::LightDirectional _lightDirectional;
 		::Rendering::Fog _fog;
 
-		VkDescriptorSet _descriptorSet;
-
 		VkPushConstantRange _pushConstantRange;
 
 		VkDeviceMemory _uniformBufferMemory;
@@ -279,7 +276,8 @@ namespace Core
 		VkImage _depthImage;
 		VkImageView _depthImageView;
 
-		::Rendering::SamplerManager _samplerMgr;
+		::Rendering::ManagerSampler _samplerMgr;
+		::Rendering::ManagerDescriptor _descriptorMgr;
 
 		::Rendering::Texture _texture;
 		::Rendering::Mesh _mesh;
@@ -290,3 +288,5 @@ namespace Core
 }
 
 #define JE_GetRenderer() Core::HelloTriangle::GetInstance()
+#define JE_GetMgrSampler() Core::HelloTriangle::GetInstance()->GetManagerSampler();
+#define JE_GetMgrDescriptor() Core::HelloTriangle::GetInstance()->GetManagerDescriptor();

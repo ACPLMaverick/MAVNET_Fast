@@ -17,6 +17,7 @@ namespace Rendering
 				Indices[3] == other.Indices[3];
 		}
 	};
+
 #define JE_IndexTypeVk VK_INDEX_TYPE_UINT32
 
 	class Mesh

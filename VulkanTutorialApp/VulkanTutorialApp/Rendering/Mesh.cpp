@@ -22,31 +22,6 @@ namespace Rendering
 	{
 		LoadData(name, loadOptions);
 
-		// ++test
-		/*
-		std::vector<VertexArray> testArray;
-		testArray.push_back(_info.VertexArrays[0]);
-		
-		VertexArray colors = VertexArray(Material::VertexDeclaration::ComponentType::Color);
-		colors.Array.resize(_info.VertexArrays[0].ComponentCount * Material::VertexDeclaration::GetComponentSize(Material::VertexDeclaration::ComponentType::Color));
-		for (size_t i = 0; i < colors.Array.size(); ++i)
-		{
-			colors.Array[i] = 1.0f;
-		}
-		colors.ComponentCount = _info.VertexArrays[0].ComponentCount;
-
-		VertexArray normals = VertexArray(Material::VertexDeclaration::ComponentType::Normal);
-		normals.Array.resize(_info.VertexArrays[0].Array.size());
-		normals.ComponentCount = _info.VertexArrays[0].ComponentCount;
-		
-		testArray.push_back(colors);
-		testArray.push_back(normals);
-		testArray.push_back(_info.VertexArrays[1]);
-
-		_info.VertexArrays = testArray;
-		*/
-		// --test
-
 		CreateVertexBufferArray();
 		CreateIndexBuffer();
 

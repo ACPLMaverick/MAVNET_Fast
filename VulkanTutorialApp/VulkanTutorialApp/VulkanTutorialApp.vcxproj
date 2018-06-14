@@ -138,6 +138,8 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Rendering\DescriptorSet.cpp" />
+    <ClCompile Include="Rendering\ManagerDescriptor.cpp" />
     <ClCompile Include="Rendering\Helper.cpp" />
     <ClCompile Include="Rendering\Pipeline.cpp" />
     <ClCompile Include="Rendering\Material.cpp" />
@@ -152,10 +154,13 @@
     <ClCompile Include="GOM\Entity.cpp" />
     <ClCompile Include="Rendering\SystemDrawable.cpp" />
     <ClCompile Include="Rendering\Texture.cpp" />
-    <ClCompile Include="Rendering\SamplerManager.cpp" />
-    <ClCompile Include="Sampler.cpp" />
+    <ClCompile Include="Rendering\ManagerSampler.cpp" />
+    <ClCompile Include="Rendering\Sampler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Rendering\DescriptorDefines.h" />
+    <ClInclude Include="Rendering\DescriptorSet.h" />
+    <ClInclude Include="Rendering\ManagerDescriptor.h" />
     <ClInclude Include="Rendering\Helper.h" />
     <ClInclude Include="Rendering\Pipeline.h" />
     <ClInclude Include="Rendering\Material.h" />
@@ -168,8 +173,8 @@
     <ClInclude Include="GOM\Entity.h" />
     <ClInclude Include="Rendering\SystemDrawable.h" />
     <ClInclude Include="Rendering\Texture.h" />
-    <ClInclude Include="Rendering\SamplerManager.h" />
-    <ClInclude Include="Sampler.h" />
+    <ClInclude Include="Rendering\ManagerSampler.h" />
+    <ClInclude Include="Rendering\Sampler.h" />
     <ClInclude Include="Util\GlobalIncludes.h" />
     <ClInclude Include="Util\Singleton.h" />
   </ItemGroup>

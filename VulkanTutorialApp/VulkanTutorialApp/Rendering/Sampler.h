@@ -2,11 +2,11 @@
 
 namespace Rendering
 {
-	class SamplerManager;
+	class ManagerSampler;
 
 	class Sampler
 	{
-		friend class SamplerManager;
+		friend class ManagerSampler;
 	public:
 
 		JE_EnumBegin(BorderColor)

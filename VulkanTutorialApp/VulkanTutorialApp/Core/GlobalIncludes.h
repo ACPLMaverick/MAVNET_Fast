@@ -80,8 +80,10 @@ class JE_GetSystemClassName(className) : public Util::Singleton<JE_GetSystemClas
 #define JE_DeclareSystemClassBody(className)					\
 friend class Util::Singleton<JE_GetSystemClassName(className)>;	\
 	private:													\
-		JE_GetSystemClassName(className)() {};					\
-		~JE_GetSystemClassName(className)() {}
+		JE_GetSystemClassName(className)() {}					\
+		~JE_GetSystemClassName(className)() {}					\
+
+#define JE_DefineSystemClassBody(className)
 
 #define JE_DeclareClientClass(className, parentClassName)		\
 class JE_GetSystemClassName(className);							\
@@ -89,4 +91,13 @@ class className : public parentClassName
 
 #define JE_DeclareClientClassBody(className, parentClassName)	\
 	friend class JE_GetSystemClassName(className);				\
-private:														
+public:															\
+	className (const className& other);							\
+	className (const className&& otherMove);					\
+	~className();												\
+	className& operator=(const className& other);				\
+	className& operator=(const className&& otherMove);			\
+private:														\
+	className();												
+
+#define JE_DefineClientClassBody(className, parentClassName)

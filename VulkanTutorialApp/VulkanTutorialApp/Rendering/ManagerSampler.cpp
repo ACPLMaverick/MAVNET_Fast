@@ -1,20 +1,20 @@
-#include "SamplerManager.h"
+#include "ManagerSampler.h"
 
 
 namespace Rendering
 {
-	SamplerManager::SamplerManager()
+	ManagerSampler::ManagerSampler()
 	{
 	}
 
 
-	SamplerManager::~SamplerManager()
+	ManagerSampler::~ManagerSampler()
 	{
 		JE_Assert(_samplers.size() == 0);
 		JE_Assert(_samplerMap.size() == 0);
 	}
 
-	Sampler* SamplerManager::TryGetSampler(const Sampler::Options* options)
+	Sampler* ManagerSampler::TryGetSampler(const Sampler::Options* options)
 	{
 		auto it = _samplerMap.find(*options);
 		if (it != _samplerMap.end())
@@ -27,7 +27,7 @@ namespace Rendering
 		}
 	}
 
-	Sampler* SamplerManager::GetSampler(const Sampler::Options* options)
+	Sampler* ManagerSampler::GetSampler(const Sampler::Options* options)
 	{
 		Sampler* sampler;
 		if ((sampler = TryGetSampler(options)) != nullptr)
@@ -44,13 +44,13 @@ namespace Rendering
 		}
 	}
 
-	void SamplerManager::Initialize()
+	void ManagerSampler::Initialize()
 	{
 		_samplers.clear();
 		_samplerMap.clear();
 	}
 
-	void SamplerManager::Cleanup()
+	void ManagerSampler::Cleanup()
 	{
 		for (auto& sampler : _samplers)
 		{
