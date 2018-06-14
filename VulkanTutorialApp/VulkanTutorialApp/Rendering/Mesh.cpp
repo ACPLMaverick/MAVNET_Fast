@@ -23,6 +23,7 @@ namespace Rendering
 		LoadData(name, loadOptions);
 
 		// ++test
+		/*
 		std::vector<VertexArray> testArray;
 		testArray.push_back(_info.VertexArrays[0]);
 		
@@ -43,6 +44,7 @@ namespace Rendering
 		testArray.push_back(_info.VertexArrays[1]);
 
 		_info.VertexArrays = testArray;
+		*/
 		// --test
 
 		CreateVertexBufferArray();
@@ -92,30 +94,44 @@ namespace Rendering
 			return;
 		}
 
+		const size_t componentCount = declaration->GetComponents()->size();
 		_adjVertexBufferArray.clear();
-		_adjVertexBufferArray.resize(declaration->GetComponents()->size());
+		_adjVertexBufferArray.resize(componentCount);
 		_adjOffsetArray.clear();
-		_adjOffsetArray.resize(declaration->GetComponents()->size());
+		_adjOffsetArray.resize(componentCount);
+
+		for(size_t i = 0; i < componentCount; ++i)
 		{
-			size_t i = 0;
-			for (const auto& component : *declaration->GetComponents())
+			Material::VertexDeclaration::ComponentType thisType = (*declaration->GetComponents())[i];
+
+			// Find this type in our vertex arrays.
+			size_t foundIndex = -1;
+			for (size_t j = 0; j < _info.VertexArrays.size(); ++j)
 			{
-				VertexArray& arr = _info.VertexArrays[i];
-				if (arr.Type == component)
+				if (_info.VertexArrays[j].Type == thisType)
 				{
-					_adjVertexBufferArray[i] = _vertexBufferArray[i];
+					foundIndex = j;
+					break;
 				}
-				else
-				{
-					const uint32_t requiredSize = Material::VertexDeclaration::GetComponentSize(component) * _info.VertexCount;
-					VkBuffer voidBuf = Helper::GetInstance()->GetVoidVertexBuffer(requiredSize);
-					_adjVertexBufferArray[i] = voidBuf;
-				}
+			}
 
-				// TODO
+			if (foundIndex != -1)
+			{
+				// Found this amongst vertex arrays. Assuming indices in vertex arrays correspond to these in vertex buffer array.
+				// Simply place this buffer in this position.
+
+				_adjVertexBufferArray[i] = _vertexBufferArray[foundIndex];
+				_adjOffsetArray[i] = _offsetArray[foundIndex];
+			}
+			else
+			{
+				// This component type is not present among the vertex arrays of this mesh.
+				// Place dummy vertex buffer from the helper.
+
+				uint32_t neededSizeBytes = Material::VertexDeclaration::GetComponentSize(thisType) * _info.VertexCount;
+
+				_adjVertexBufferArray[i] = Helper::GetInstance()->GetVoidVertexBuffer(neededSizeBytes);
 				_adjOffsetArray[i] = 0;
-
-				++i;
 			}
 		}
 	}

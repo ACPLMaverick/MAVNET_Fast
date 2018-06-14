@@ -152,6 +152,8 @@
     <ClCompile Include="GOM\Entity.cpp" />
     <ClCompile Include="Rendering\SystemDrawable.cpp" />
     <ClCompile Include="Rendering\Texture.cpp" />
+    <ClCompile Include="Rendering\SamplerManager.cpp" />
+    <ClCompile Include="Sampler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Rendering\Helper.h" />
@@ -166,6 +168,8 @@
     <ClInclude Include="GOM\Entity.h" />
     <ClInclude Include="Rendering\SystemDrawable.h" />
     <ClInclude Include="Rendering\Texture.h" />
+    <ClInclude Include="Rendering\SamplerManager.h" />
+    <ClInclude Include="Sampler.h" />
     <ClInclude Include="Util\GlobalIncludes.h" />
     <ClInclude Include="Util\Singleton.h" />
   </ItemGroup>

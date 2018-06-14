@@ -13,8 +13,8 @@ namespace Rendering
 		{
 		public:
 
-			enum ComponentType
-			{
+			JE_EnumBegin(ComponentType)
+
 				Position,
 				Color,
 				Normal,
@@ -22,14 +22,14 @@ namespace Rendering
 				Tangent,
 				Binormal,
 				Weight,
-				Index,
-				ENUM_SIZE
-			};
+				Index
+
+			JE_EnumEnd()
 
 		public:
 
-			static JE_Inline uint32_t GetComponentSize(ComponentType type) { return _typeToSizeBytes[static_cast<uint32_t>(type)]; }
-			static JE_Inline VkFormat GetComponentFormat(ComponentType type) { return _typeToVkFormat[static_cast<uint32_t>(type)]; }
+			static JE_Inline uint32_t GetComponentSize(ComponentType type) { return _typeToSizeBytes[static_cast<uint8_t>(type)]; }
+			static JE_Inline VkFormat GetComponentFormat(ComponentType type) { return _typeToVkFormat[static_cast<uint8_t>(type)]; }
 
 			VertexDeclaration();
 			~VertexDeclaration();

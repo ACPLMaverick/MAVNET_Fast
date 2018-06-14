@@ -42,7 +42,6 @@ namespace Core
 		, _descriptorSet(VK_NULL_HANDLE)
 		, _uniformBufferMemory(VK_NULL_HANDLE)
 		, _uniformBuffer(VK_NULL_HANDLE)
-		, _textureSampler(VK_NULL_HANDLE)
 		, _bMinimized(false)
 	{
 		JE_AssertThrow(HelloTriangle::_singletonInstance == nullptr, "HelloTriangle can only have one instance!");
@@ -91,10 +90,10 @@ namespace Core
 
 		::Rendering::Helper::GetInstance()->Initialize();
 
+		_samplerMgr.Initialize();
+
 		::Rendering::Texture::LoadOptions texOptions;
 		_texture.Initialize(&MODEL_NAME_TEXTURE, &texOptions);
-
-		CreateTextureSampler(&_texture);
 
 		::Rendering::Mesh::LoadOptions meshOptions;
 		_mesh.Initialize(&MODEL_NAME_MESH, &meshOptions);
@@ -968,29 +967,6 @@ namespace Core
 		JE_AssertThrowVkResult(vkCreateDescriptorPool(_device, &poolInfo, _pAllocator, &_descriptorPool));
 	}
 
-	void HelloTriangle::CreateTextureSampler(const ::Rendering::Texture* texInfo)
-	{
-		VkSamplerCreateInfo samplerInfo = {};
-		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-		samplerInfo.magFilter = VK_FILTER_LINEAR;
-		samplerInfo.minFilter = VK_FILTER_LINEAR;
-		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.anisotropyEnable = VK_TRUE;
-		samplerInfo.maxAnisotropy = 16;
-		samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-		samplerInfo.unnormalizedCoordinates = VK_FALSE;
-		samplerInfo.compareEnable = VK_FALSE;
-		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-		samplerInfo.mipLodBias = 0.0f;
-		samplerInfo.minLod = 0.0f;
-		samplerInfo.maxLod = static_cast<float>(1 /*TODO*/);
-
-		JE_AssertThrowVkResult(vkCreateSampler(_device, &samplerInfo, _pAllocator, &_textureSampler));
-	}
-
 	void HelloTriangle::CreateDepthResources()
 	{
 		::Rendering::Texture::Info texInfo;
@@ -1086,7 +1062,7 @@ namespace Core
 		VkDescriptorImageInfo imageInfo = {};
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		imageInfo.imageView = _texture.GetImageView();
-		imageInfo.sampler = _textureSampler;
+		imageInfo.sampler = _texture.GetSampler()->GetVkSampler();
 
 		std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
 
@@ -1577,22 +1553,20 @@ namespace Core
 
 		_mesh.Cleanup();
 
-		vkDestroySampler(_device, _textureSampler, _pAllocator);
-		_textureSampler = VK_NULL_HANDLE;
-
 		_texture.Cleanup();
+
+		_samplerMgr.Cleanup();
 
 		vkDestroyBuffer(_device, _uniformBuffer, _pAllocator);
 		_uniformBuffer = VK_NULL_HANDLE;
 		vkFreeMemory(_device, _uniformBufferMemory, _pAllocator);
 		_uniformBufferMemory = VK_NULL_HANDLE;
 
-		::Rendering::Helper::GetInstance()->Cleanup();
-
 		// System instances destruction.
 		::Rendering::SystemDrawable::DestroyInstance();
 
 		// Other singleton instances destruction.
+		::Rendering::Helper::GetInstance()->Cleanup();
 		::Rendering::Helper::DestroyInstance();
 
 		CleanupSwapChain();
@@ -1708,6 +1682,6 @@ namespace Core
 
 	void HelloTriangle::LoadShader(const std::string& shaderName, ShaderType shaderType, std::vector<uint8_t>& outData)
 	{
-		LoadFile(RESOURCE_PATH + "Shaders\\Binary\\" + shaderName + ShaderTypeToExtension[shaderType] + ".spv", outData);
+		LoadFile(RESOURCE_PATH + "Shaders\\Binary\\" + shaderName + ShaderTypeToExtension[static_cast<uint8_t>(shaderType)] + ".spv", outData);
 	}
 }

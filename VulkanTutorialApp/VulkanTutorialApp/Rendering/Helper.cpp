@@ -29,6 +29,9 @@ namespace Rendering
 
 	void Helper::InitializeVoidVertexBuffer()
 	{
+		JE_Assert(_voidVertexBuffer == VK_NULL_HANDLE);
+		JE_Assert(_voidVertexBufferMemory == VK_NULL_HANDLE);
+
 		VkDeviceSize bufferSize = GetVoidVertexBufferSizeBytes();
 
 		VkBuffer stagingBuffer;
@@ -55,7 +58,13 @@ namespace Rendering
 
 	void Helper::CleanupVoidVertexBuffer()
 	{
+		JE_Assert(_voidVertexBuffer != VK_NULL_HANDLE);
+		JE_Assert(_voidVertexBufferMemory != VK_NULL_HANDLE);
+
 		vkDestroyBuffer(JE_GetRenderer()->GetDevice(), _voidVertexBuffer, JE_GetRenderer()->GetAllocatorPtr());
 		vkFreeMemory(JE_GetRenderer()->GetDevice(), _voidVertexBufferMemory, JE_GetRenderer()->GetAllocatorPtr());
+
+		_voidVertexBuffer = VK_NULL_HANDLE;
+		_voidVertexBufferMemory = VK_NULL_HANDLE;
 	}
 }

@@ -7,6 +7,7 @@
 #include "Rendering/Texture.h"
 #include "Rendering/Mesh.h"
 #include "Rendering/Material.h"
+#include "Rendering/SamplerManager.h"
 
 namespace Core
 {
@@ -47,18 +48,20 @@ namespace Core
 		const std::string MODEL_NAME_MESH = "chalet.obj";
 		const std::string MODEL_NAME_TEXTURE = "chalet.jpg";
 
-		enum ShaderType
-		{
+
+		JE_EnumBegin(ShaderType)
+
 			Vertex,
 			TesselationControl,
 			TesselationEvaluation,
 			Geometry,
 			Fragment,
-			Compute,
-			ENUM_SIZE
-		};
+			Compute
 
-		static const char* ShaderTypeToExtension[ShaderType::ENUM_SIZE];
+		JE_EnumEnd()
+
+
+		static const char* ShaderTypeToExtension[static_cast<uint8_t>(ShaderType::ENUM_SIZE)];
 
 		struct QueueFamilyIndices
 		{
@@ -112,7 +115,8 @@ namespace Core
 		VkDevice GetDevice() { return _device; }
 		VkAllocationCallbacks* GetAllocatorPtr() { return _pAllocator; }
 
-		const ::Rendering::Camera* GetCamera() const { return &_camera; }
+		::Rendering::Camera* GetCamera() { return &_camera; }
+		::Rendering::SamplerManager* GetSamplerManager() { return &_samplerMgr; }
 
 
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -165,7 +169,6 @@ namespace Core
 			void CreateFramebuffers();
 			void CreateCommandPool();
 			void CreateDescriptorPool();
-			void CreateTextureSampler(const ::Rendering::Texture* texInfo);
 			void CreateDepthResources();
 			void CreateUniformBuffer();
 			void CreateCommandBuffers();
@@ -273,10 +276,10 @@ namespace Core
 
 		VkBuffer _uniformBuffer;
 
-		VkSampler _textureSampler;
-
 		VkImage _depthImage;
 		VkImageView _depthImageView;
+
+		::Rendering::SamplerManager _samplerMgr;
 
 		::Rendering::Texture _texture;
 		::Rendering::Mesh _mesh;

@@ -1,6 +1,7 @@
 #include "Texture.h"
 
 #include "Core/HelloTriangle.h"
+#include "SamplerManager.h"
 
 namespace Rendering
 {
@@ -30,6 +31,7 @@ namespace Rendering
 		: _dataGpu(VK_NULL_HANDLE)
 		, _image(VK_NULL_HANDLE)
 		, _view(VK_NULL_HANDLE)
+		, _sampler(nullptr)
 	{
 	}
 
@@ -37,6 +39,7 @@ namespace Rendering
 	Texture::~Texture()
 	{
 		JE_Assert(_info.Data == nullptr);
+		JE_Assert(_sampler == nullptr);
 		JE_Assert(_dataGpu == VK_NULL_HANDLE);
 		JE_Assert(_view == VK_NULL_HANDLE);
 		JE_Assert(_image == VK_NULL_HANDLE);
@@ -87,6 +90,8 @@ namespace Rendering
 		_image = VK_NULL_HANDLE;
 		vkFreeMemory(JE_GetRenderer()->GetDevice(), _dataGpu, JE_GetRenderer()->GetAllocatorPtr());
 		_dataGpu = VK_NULL_HANDLE;
+
+		_sampler = nullptr;
 	}
 
 	int32_t Texture::GetDesiredChannelsFromFormat(VkFormat format)
@@ -185,7 +190,13 @@ namespace Rendering
 
 	void Texture::AssignSampler(const LoadOptions * loadOptions)
 	{
-		// TODO
+		Sampler::Options smpOptions = loadOptions->SamplerOptions;
+		if (loadOptions->SamplerOptions.OptMaxMipmapLevel == 0)
+		{
+			smpOptions.OptMaxMipmapLevel = _info.MipCount;
+		}
+
+		_sampler = Core::HelloTriangle::GetInstance()->GetSamplerManager()->GetSampler(&smpOptions);
 	}
 
 	void Texture::CleanupData()

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Sampler.h"
+
 namespace Rendering
 {
 	class Texture
@@ -9,6 +11,7 @@ namespace Rendering
 		struct LoadOptions
 		{
 			VkFormat DesiredFormat = VK_FORMAT_R8G8B8A8_UNORM;
+			Sampler::Options SamplerOptions = Sampler::Options();
 			bool bReadOnly = true;
 			bool bGenerateMips = true;
 		};
@@ -52,6 +55,7 @@ namespace Rendering
 		JE_Inline const Info* GetInfo() const { return &_info; }
 		JE_Inline VkImage GetImage() { return _image; }
 		JE_Inline VkImageView GetImageView() { return _view; }
+		JE_Inline const Sampler* GetSampler() const { return _sampler; }
 
 		void Initialize(const std::string* textureName, const LoadOptions* loadOptions);
 		// This takes ownership of dataToOwn data buffer and assumes it was allocated inside this app via malloc.
@@ -91,5 +95,7 @@ namespace Rendering
 		VkImageView _view;
 
 		Info _info;
+
+		Sampler* _sampler;
 	};
 }

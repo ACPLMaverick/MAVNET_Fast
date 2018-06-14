@@ -48,6 +48,7 @@ if((expr) != VkResult::VK_SUCCESS) \
 { \
 	JE_AssertThrow(false, #expr); \
 }
+#define JE_AssertStatic(val) static_assert(val, "Static assertion failed.")
 
 #define JE_Print(text) std::cout << (text)
 #define JE_PrintLine(text) std::cout << (text) << std::endl
@@ -60,6 +61,15 @@ if((expr) != VkResult::VK_SUCCESS) \
 
 
 #include "Util/GlobalIncludes.h"
+
+
+#define JE_EnumBegin(enumName) \
+enum class enumName : uint8_t			\
+{
+
+#define JE_EnumEnd()	\
+	,ENUM_SIZE			\
+};
 
 
 #define JE_GetSystemClassName(className) System##className
