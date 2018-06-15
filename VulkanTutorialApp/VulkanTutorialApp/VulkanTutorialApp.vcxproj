@@ -158,7 +158,7 @@
     <ClCompile Include="Rendering\Sampler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Rendering\DescriptorDefines.h" />
+    <ClInclude Include="Rendering\DescriptorCommon.h" />
     <ClInclude Include="Rendering\DescriptorSet.h" />
     <ClInclude Include="Rendering\ManagerDescriptor.h" />
     <ClInclude Include="Rendering\Helper.h" />

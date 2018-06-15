@@ -81,15 +81,58 @@ namespace Rendering
 			vkUpdateDescriptorSets(_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 			*/
 
+			template <typename BufferType> struct InfoHelper
+			{
+				BufferType BufferInfo = VK_NULL_HANDLE;
+				size_t IndexInArray = 0;
+			};
+
+			std::vector<InfoHelper<VkDescriptorBufferInfo>> _bufferInfos;
+			std::vector<InfoHelper<VkDescriptorImageInfo>> _imageInfos;
+
+			UpdateCountsFromInfo();
+
 			_bResourcesDirty = false;
 		}
 	}
 
 	void DescriptorSet::AssignResource(const DescriptorCommon::ResourceTypedPtr resource, uint32_t binding, uint32_t slot)
 	{
+		JE_Assert(resource.IsValid());
+		JE_Assert(binding < DescriptorCommon::MAX_BINDINGS_PER_LAYOUT);
+		JE_Assert(slot < DescriptorCommon::MAX_DESCRIPTORS_PER_BINDING);
+
+		if (_info.Resources[binding][slot].IsValid())
+		{
+			JE_PrintWarnLine("Assigning to an occupied resource slot!");
+		}
+
+		_info.Resources[binding][slot] = resource;
+
+		_bResourcesDirty = true;
 	}
 
 	void DescriptorSet::UpdateCountsFromInfo()
 	{
+		_bindingCount = 0;
+		memset(_descriptorCountPerBinding, 0, sizeof(_descriptorCountPerBinding));
+		for (size_t i = 0; i < DescriptorCommon::MAX_BINDINGS_PER_LAYOUT; ++i)
+		{
+			size_t j = 0;
+			for (; j < DescriptorCommon::MAX_DESCRIPTORS_PER_BINDING; ++j)
+			{
+				if (_info.Resources[i][j].IsValid())
+				{
+					++_descriptorCountPerBinding[i];
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			if (j > 0)
+				++_bindingCount;
+		}
 	}
 }

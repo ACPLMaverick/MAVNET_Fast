@@ -83,8 +83,6 @@ namespace Rendering
 			set->_associatedLayout = layout.Layout;
 			set->_descriptorSet = CreateDescriptorSet(&layout);
 
-			set->UpdateCountsFromInfo();
-
 			set->_bResourcesDirty = true;
 			set->UpdateSet();
 

@@ -55,7 +55,7 @@ namespace Rendering
 			void* ResourcePtr = nullptr;
 			ResourceType ResourceT = ResourceType::Unknown;
 
-			JE_Inline bool IsValid() const { return ResourcePtr != nullptr; }
+			JE_Inline bool IsValid() const { return ResourcePtr != nullptr && ResourceT != ResourceType::Unknown; }
 
 			JE_Inline bool operator==(const ResourceTypedPtr& other) const
 			{

@@ -52,6 +52,8 @@ if((expr) != VkResult::VK_SUCCESS) \
 
 #define JE_Print(text) std::cout << (text)
 #define JE_PrintLine(text) std::cout << (text) << std::endl
+#define JE_PrintWarn(text) JE_Print(text)
+#define JE_PrintWarnLine(text) JE_PrintLine(text)
 #define JE_PrintErr(text) std::cerr << (text)
 #define JE_PrintLineErr(text) std::cerr << (text) << std::endl
 

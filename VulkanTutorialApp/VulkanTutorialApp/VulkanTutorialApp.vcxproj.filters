@@ -125,7 +125,7 @@
     <ClInclude Include="Rendering\DescriptorSet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Rendering\DescriptorDefines.h">
+    <ClInclude Include="Rendering\DescriptorCommon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

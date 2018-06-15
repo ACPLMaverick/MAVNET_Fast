@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DescriptorDefines.h"
+#include "DescriptorCommon.h"
 #include "DescriptorSet.h"
 
 namespace Rendering

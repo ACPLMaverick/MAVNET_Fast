@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DescriptorDefines.h"
+#include "DescriptorCommon.h"
 
 namespace Rendering
 {
@@ -69,10 +69,19 @@ namespace std
 {
 	template<> struct hash<::Rendering::DescriptorSet::Info>
 	{
-		size_t operator()(const ::Rendering::DescriptorSet::Info& layout) const
+		size_t operator()(const ::Rendering::DescriptorSet::Info& info) const
 		{
-			// TODO: Properly implement resource data hashing.
-			return std::hash<::Rendering::DescriptorCommon::LayoutInfo>{}(layout.LayInfo);
+			size_t finalHash = std::hash<::Rendering::DescriptorCommon::LayoutInfo>{}(info.LayInfo);
+
+			const size_t hashArrayElementNum = sizeof(info.Resources) / sizeof(size_t);
+			const size_t* inputPtr = reinterpret_cast<const size_t*>(info.Resources);
+
+			for (size_t i = 0; i < hashArrayElementNum; ++i, ++inputPtr)
+			{
+				finalHash = (finalHash ^ (std::hash<size_t>{}( *inputPtr ) << i) >> 1);
+			}
+
+			return finalHash;
 		}
 	};
 }
