@@ -1,11 +1,14 @@
-package com.example.maverick.mavremote;
+package com.example.maverick.mavremote.Server;
 
-public final class App
+import com.example.maverick.mavremote.Server.Instrumentation.InstrumentationSystem;
+import com.example.maverick.mavremote.Utility;
+
+public final class AppServer
 {
-    public static App GetInstance()
+    public static AppServer GetInstance()
     {
         if(_instance == null)
-            _instance = new App();
+            _instance = new AppServer();
 
         return _instance;
     }
@@ -57,7 +60,6 @@ public final class App
             }
         });
 
-        /*
         // Startup instrumentation tests!
         _tester = new TestSystem();
         Utility.StartThread(new Runnable()
@@ -68,7 +70,6 @@ public final class App
                 _tester.Run();
             }
         });
-        */
 
         _isRunning = true;
     }
@@ -82,7 +83,7 @@ public final class App
     {
         while(_isRunning)
         {
-            //Log.d(App.TAG, "Debug message, hay!");
+            //Log.d(AppServer.TAG, "Debug message, hay!");
             Utility.SleepThread(1000);
         }
     }
@@ -90,7 +91,7 @@ public final class App
 
     public static final String TAG = "MavRemote";
 
-    private static App _instance = null;
+    private static AppServer _instance = null;
 
     private InstrumentationSystem _instr = null;
     private InfraredSystem _infr = null;

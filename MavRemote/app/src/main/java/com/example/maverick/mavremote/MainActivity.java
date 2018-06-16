@@ -4,6 +4,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.TextView;
 
+import com.example.maverick.mavremote.Server.AppServer;
+
 public class MainActivity extends AppCompatActivity
 {
 
@@ -24,7 +26,7 @@ public class MainActivity extends AppCompatActivity
         TextView tv = (TextView) findViewById(R.id.sample_text);
         tv.setText("MavRemote v.0.1t");
 
-        App.GetInstance().Run();
+        AppServer.GetInstance().Run();
     }
 
     // C++ unnecessary at this point.

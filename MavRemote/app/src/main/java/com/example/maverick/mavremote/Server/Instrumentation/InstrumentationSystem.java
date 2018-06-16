@@ -1,18 +1,24 @@
-package com.example.maverick.mavremote;
+package com.example.maverick.mavremote.Server.Instrumentation;
 
 import android.util.Log;
+
+import com.example.maverick.mavremote.Server.Actions.ActionEvent;
+import com.example.maverick.mavremote.Server.AppServer;
+import com.example.maverick.mavremote.System;
+import com.example.maverick.mavremote.Utility;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
 public final class InstrumentationSystem extends System
 {
     public static void Enqueue(ActionEvent ev)
     {
-        App.GetInstance().GetInstrumentationSystem().EnqueueActionEvent(ev);
+        AppServer.GetInstance().GetInstrumentationSystem().EnqueueActionEvent(ev);
     }
 
     public void EnqueueActionEvent(ActionEvent ev)
@@ -31,7 +37,11 @@ public final class InstrumentationSystem extends System
         _queue = new ArrayDeque<>();
         _lock = new ReentrantLock();
 
+        _mouseEventCoder = new MouseEventCoder();
+
         InitRootShell();
+        RetrieveMouseDeviceName();
+        MakeMouseDeviceBufferWritable();
     }
 
     @Override
@@ -65,50 +75,37 @@ public final class InstrumentationSystem extends System
     {
         if(_shellProc == null)
         {
-            Log.w(App.TAG, "Cannot perform action event because shell was closed due to an error.");
+            Log.w(AppServer.TAG, "Cannot perform action event because shell was closed due to an error.");
             return;
         }
 
-        Log.d(App.TAG, "Performing action event: " + ev.toString());
+        Log.d(AppServer.TAG, "Performing action event: " + ev.toString());
 
         assert(_shellStream != null);
 
-        final String command;
+        ArrayList<String> commands = new ArrayList<>();
 
         if(ev.GetType() == ActionEvent.Type.Keyboard)
         {
-            command = "input keyevent " + String.valueOf(ev.GetKeyboardEv());
+            commands.add("input keyevent " + String.valueOf(ev.GetKeyboardEv()));
+        }
+        else if(ev.GetType() == ActionEvent.Type.MouseClicks)
+        {
+            _mouseEventCoder.TypeToCodes(ev.GetMouseEv(), "sendevent " + _mouseDeviceName + " " , commands);
         }
         else if(ev.GetType() == ActionEvent.Type.Movement)
         {
-            if(ev.GetMovementEv().IsSwipe())
-            {
-                // TODO: implement.
-            }
-            else
-            {
-                // TODO: implement.
-            }
-
-            assert(false);
-            command = "";
+            _mouseEventCoder.MovementToCodes(ev.GetMovementEv(), "sendevent " + _mouseDeviceName + " " , commands);
         }
         else
         {
             // Shouldn't be able to get here.
             assert(false);
-            command = "";
         }
 
-        try
+        for(String command : commands)
         {
-            _shellStream.writeBytes(command + "\n");
-        }
-        catch(IOException e)
-        {
-            Log.e(App.TAG, "Failed to send input keyevent: " + e.getMessage() + ". Closing root shell...");
-            CloseRootShell();
-            return;
+            ExecuteRootShellCommand(command);
         }
 
         if(ev.GetDelayMillis() > 0)
@@ -130,7 +127,7 @@ public final class InstrumentationSystem extends System
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Failed to initialize root shell: " + e.getMessage());
+            Log.e(AppServer.TAG, "Failed to initialize root shell: " + e.getMessage());
             return;
         }
 
@@ -151,7 +148,7 @@ public final class InstrumentationSystem extends System
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Failed to close root shell: " + e.getMessage());
+            Log.e(AppServer.TAG, "Failed to close root shell: " + e.getMessage());
             return;
         }
 
@@ -162,9 +159,37 @@ public final class InstrumentationSystem extends System
         }
         catch(InterruptedException e)
         {
-            Log.e(App.TAG, "Failed to close root shell: " + e.getMessage());
+            Log.e(AppServer.TAG, "Failed to close root shell: " + e.getMessage());
             return;
         }
+    }
+
+    private void ExecuteRootShellCommand(String command)
+    {
+        try
+        {
+            Log.d(AppServer.TAG, "Sending command: " + command);
+            _shellStream.writeChars(command + "\n");
+        }
+        catch(IOException e)
+        {
+            Log.e(AppServer.TAG, "Failed to send input keyevent: " + e.getMessage() + ". Closing root shell...");
+            CloseRootShell();
+            return;
+        }
+    }
+
+    private void MakeMouseDeviceBufferWritable()
+    {
+        final String command = "chmod 666 " + _mouseDeviceName;
+        ExecuteRootShellCommand(command);
+        LogRootShellOutput();
+    }
+
+    private void RetrieveMouseDeviceName()
+    {
+        // TODO: Obtain this based on getevent command.
+        _mouseDeviceName = "/dev/input/event0"; // vmouse
     }
 
     private void LogRootShellOutput()
@@ -200,21 +225,42 @@ public final class InstrumentationSystem extends System
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Failed to close log shell output: " + e.getMessage());
+            Log.e(AppServer.TAG, "Failed to close log shell output: " + e.getMessage());
             return;
         }
 
         if(!out.isEmpty())
         {
-            Log.d(App.TAG, out);
+            Log.d(AppServer.TAG, out);
         }
     }
 
     private static final int LOG_OUTPUT_WAIT_FOR_SHELL_MILLIS = 250;
+    private static final int ROOT_SHELL_OUTPUT_BUFFER_SIZE_TO_FLUSH = 2048;
+
+    /*
+        add device 1: /dev/input/event3
+          name:     "USB Optical Mouse USB Optical Mouse"
+        could not get driver version for /dev/input/mouse1, Not a typewriter
+        add device 2: /dev/input/event4
+          name:     "sun7i-ir"
+        add device 3: /dev/input/event2
+          name:     "axp20-supplyer"
+        add device 4: /dev/input/event1
+          name:     "sw-keyboard"
+        could not get driver version for /dev/input/mouse0, Not a typewriter
+        add device 5: /dev/input/event0
+          name:     "vmouse"
+        could not get driver version for /dev/input/mice, Not a typewriter
+    */
 
     private ArrayDeque<ActionEvent> _queue = null;
     private ReentrantLock _lock = null;
 
     private Process _shellProc = null;
     private DataOutputStream _shellStream = null;
+
+    private MouseEventCoder _mouseEventCoder = null;
+
+    String _mouseDeviceName = "unknown ";
 }

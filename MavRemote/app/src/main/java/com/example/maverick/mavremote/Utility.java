@@ -2,7 +2,7 @@ package com.example.maverick.mavremote;
 
 import android.util.Log;
 
-import java.util.concurrent.Callable;
+import com.example.maverick.mavremote.Server.AppServer;
 
 public final class Utility
 {
@@ -14,7 +14,7 @@ public final class Utility
         }
         catch(InterruptedException e)
         {
-            Log.e(App.TAG, "[Utility] InterruptedException: " + e.getMessage());
+            Log.e(AppServer.TAG, "[Utility] InterruptedException: " + e.getMessage());
             return false;
         }
 
