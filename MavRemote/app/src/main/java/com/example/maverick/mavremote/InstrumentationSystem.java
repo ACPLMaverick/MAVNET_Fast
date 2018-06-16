@@ -2,17 +2,19 @@ package com.example.maverick.mavremote;
 
 import android.util.Log;
 
-import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.concurrent.Semaphore;
+import java.util.ArrayDeque;
 import java.util.concurrent.locks.ReentrantLock;
 
 public final class InstrumentationSystem extends System
 {
+    public static void Enqueue(ActionEvent ev)
+    {
+        App.GetInstance().GetInstrumentationSystem().EnqueueActionEvent(ev);
+    }
+
     public void EnqueueActionEvent(ActionEvent ev)
     {
         assert (_lock != null);
@@ -26,7 +28,7 @@ public final class InstrumentationSystem extends System
     @Override
     protected void Start()
     {
-        _queue = new LinkedList<>();
+        _queue = new ArrayDeque<>();
         _lock = new ReentrantLock();
 
         InitRootShell();
@@ -50,7 +52,7 @@ public final class InstrumentationSystem extends System
             }
 
             _lock.lock();
-            ActionEvent ev = _queue.pop();
+            ActionEvent ev = _queue.pollLast();
             _lock.unlock();
             PerformActionEvent(ev);
 
@@ -71,17 +73,47 @@ public final class InstrumentationSystem extends System
 
         assert(_shellStream != null);
 
-        final String command = "input keyevent " + String.valueOf(ev.KeyboardEv);
+        final String command;
+
+        if(ev.GetType() == ActionEvent.Type.Keyboard)
+        {
+            command = "input keyevent " + String.valueOf(ev.GetKeyboardEv());
+        }
+        else if(ev.GetType() == ActionEvent.Type.Movement)
+        {
+            if(ev.GetMovementEv().IsSwipe())
+            {
+                // TODO: implement.
+            }
+            else
+            {
+                // TODO: implement.
+            }
+
+            assert(false);
+            command = "";
+        }
+        else
+        {
+            // Shouldn't be able to get here.
+            assert(false);
+            command = "";
+        }
+
         try
         {
             _shellStream.writeBytes(command + "\n");
-            _shellStream.flush();
         }
         catch(IOException e)
         {
             Log.e(App.TAG, "Failed to send input keyevent: " + e.getMessage() + ". Closing root shell...");
             CloseRootShell();
             return;
+        }
+
+        if(ev.GetDelayMillis() > 0)
+        {
+            Utility.SleepThread(ev.GetDelayMillis());
         }
 
         LogRootShellOutput();
@@ -93,26 +125,14 @@ public final class InstrumentationSystem extends System
 
         try
         {
-            _shellProc = Runtime.getRuntime().exec(new String[] { "su", "-c", "system/bin/sh"});
-//            _shellProc = Runtime.getRuntime().exec("sh");
+//            _shellProc = Runtime.getRuntime().exec(new String[] { "su", "-c", "system/bin/sh"});
+            _shellProc = Runtime.getRuntime().exec("su");
         }
         catch(IOException e)
         {
             Log.e(App.TAG, "Failed to initialize root shell: " + e.getMessage());
             return;
         }
-
-        // ++test
-        /*
-        try
-        {
-            _shellProc.waitFor();
-        }
-        catch(InterruptedException e)
-        {
-        }
-        */
-        // --test
 
         _shellStream = new DataOutputStream(_shellProc.getOutputStream());
 
@@ -155,8 +175,16 @@ public final class InstrumentationSystem extends System
         int read = 0;
         String out = new String();
 
+//        Utility.SleepThread(LOG_OUTPUT_WAIT_FOR_SHELL_MILLIS);
+        // Do not wait because this introduces unwanted delay and possibly desync.
+
         try
         {
+            if(stdout.available() == 0)
+            {
+                return;
+            }
+
             while(true)
             {
                 read = stdout.read(buffer, 0, bufferLength);
@@ -176,11 +204,15 @@ public final class InstrumentationSystem extends System
             return;
         }
 
-        Log.d(App.TAG, out);
+        if(!out.isEmpty())
+        {
+            Log.d(App.TAG, out);
+        }
     }
 
+    private static final int LOG_OUTPUT_WAIT_FOR_SHELL_MILLIS = 250;
 
-    private LinkedList<ActionEvent> _queue = null;
+    private ArrayDeque<ActionEvent> _queue = null;
     private ReentrantLock _lock = null;
 
     private Process _shellProc = null;

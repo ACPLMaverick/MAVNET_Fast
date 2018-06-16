@@ -24,7 +24,7 @@ public class MainActivity extends AppCompatActivity
         TextView tv = (TextView) findViewById(R.id.sample_text);
         tv.setText("MavRemote v.0.1t");
 
-        _app.GetInstance().Run();
+        App.GetInstance().Run();
     }
 
     // C++ unnecessary at this point.
@@ -35,6 +35,4 @@ public class MainActivity extends AppCompatActivity
     /*
     public native String stringFromJNI();
     */
-
-    protected App _app = null;
 }

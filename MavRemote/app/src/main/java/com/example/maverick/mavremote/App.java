@@ -57,6 +57,7 @@ public final class App
             }
         });
 
+        /*
         // Startup instrumentation tests!
         _tester = new TestSystem();
         Utility.StartThread(new Runnable()
@@ -67,6 +68,7 @@ public final class App
                 _tester.Run();
             }
         });
+        */
 
         _isRunning = true;
     }
