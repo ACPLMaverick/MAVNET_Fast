@@ -2,6 +2,10 @@ package com.example.maverick.mavremote;
 
 public abstract class System
 {
+    public System()
+    {
+    }
+
     public void Run()
     {
         Start();

@@ -61,15 +61,15 @@ public final class AppServer
         });
 
         // Startup instrumentation tests!
-        _tester = new TestSystem();
-        Utility.StartThread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                _tester.Run();
-            }
-        });
+//        _tester = new TestSystem();
+//        Utility.StartThread(new Runnable()
+//        {
+//            @Override
+//            public void run()
+//            {
+//                _tester.Run();
+//            }
+//        });
 
         _isRunning = true;
     }
