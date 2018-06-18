@@ -1,10 +1,15 @@
 package com.example.maverick.mavremote.Server;
 
+import android.support.v7.app.AppCompatActivity;
+
 import com.example.maverick.mavremote.Server.Instrumentation.InstrumentationSystem;
+import com.example.maverick.mavremote.ServerActivity;
 import com.example.maverick.mavremote.Utility;
 
 public final class AppServer
 {
+    private AppServer() { }
+
     public static AppServer GetInstance()
     {
         if(_instance == null)
@@ -13,10 +18,13 @@ public final class AppServer
         return _instance;
     }
 
-    public void Run()
+    public void Run(ServerActivity activity)
     {
+        _activity = activity;
         Start();
     }
+
+    public ServerActivity GetActivity() { return _activity; }
 
     public InstrumentationSystem GetInstrumentationSystem() { assert(_instr != null); return _instr; }
 
@@ -89,9 +97,11 @@ public final class AppServer
     }
 
 
-    public static final String TAG = "MavRemote";
+    public static final String TAG = "MavRemote_Server";
 
     private static AppServer _instance = null;
+
+    private ServerActivity _activity = null;
 
     private InstrumentationSystem _instr = null;
     private InfraredSystem _infr = null;

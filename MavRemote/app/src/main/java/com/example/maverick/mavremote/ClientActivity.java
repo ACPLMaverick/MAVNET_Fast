@@ -14,6 +14,6 @@ public class ClientActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_client);
 
-        AppClient.GetInstance().Run();
+        AppClient.GetInstance().Run(this);
     }
 }

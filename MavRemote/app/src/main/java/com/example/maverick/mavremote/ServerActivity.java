@@ -26,7 +26,7 @@ public class ServerActivity extends AppCompatActivity
         TextView tv = (TextView) findViewById(R.id.sample_text);
         tv.setText("MavRemote v.0.1t");
 
-        AppServer.GetInstance().Run();
+        AppServer.GetInstance().Run(this);
     }
 
     // C++ unnecessary at this point.

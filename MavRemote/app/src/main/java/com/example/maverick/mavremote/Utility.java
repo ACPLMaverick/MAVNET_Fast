@@ -33,4 +33,17 @@ public final class Utility
         };
         t.start();
     }
+
+    public static void Assert(boolean evaluatedValue)
+    {
+        Assert(evaluatedValue, "Assertion error!");
+    }
+
+    public static void Assert(boolean evaluatedValue, String message)
+    {
+        if(!evaluatedValue)
+        {
+            throw new AssertionError(message);
+        }
+    }
 }
