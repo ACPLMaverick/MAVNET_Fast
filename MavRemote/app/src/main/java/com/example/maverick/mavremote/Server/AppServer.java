@@ -2,11 +2,13 @@ package com.example.maverick.mavremote.Server;
 
 import android.support.v7.app.AppCompatActivity;
 
+import com.example.maverick.mavremote.App;
 import com.example.maverick.mavremote.Server.Instrumentation.InstrumentationSystem;
 import com.example.maverick.mavremote.ServerActivity;
+import com.example.maverick.mavremote.UI.UIManager;
 import com.example.maverick.mavremote.Utility;
 
-public final class AppServer
+public final class AppServer extends App
 {
     private AppServer() { }
 
@@ -15,39 +17,39 @@ public final class AppServer
         if(_instance == null)
             _instance = new AppServer();
 
-        return _instance;
+        return (AppServer)_instance;
     }
 
-    public void Run(ServerActivity activity)
-    {
-        _activity = activity;
-        Start();
-    }
-
-    public ServerActivity GetActivity() { return _activity; }
+    public ServerActivity GetActivityTyped() { return (ServerActivity)_activity; }
 
     public InstrumentationSystem GetInstrumentationSystem() { assert(_instr != null); return _instr; }
 
     public InfraredSystem GetInfraredSystem() { assert(_infr != null); return _infr; }
 
 
-    private void InternalRun()
+    @Override
+    protected void AssertActivityType()
     {
+        Utility.Assert(_activity != null && _activity instanceof ServerActivity);
+    }
+
+    @Override
+    protected void InternalRun()
+    {
+        Start();
         MainLoop();
         Finish();
     }
 
+    @Override
+    protected void SetupUIManager()
+    {
+        _uiManager.InitMenu(UIManager.MenuType.ServerNetwork);
+        _uiManager.SetMenuCurrent(UIManager.MenuType.ServerNetwork);
+    }
+
     private void Start()
     {
-        Utility.StartThread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                InternalRun();
-            }
-        });
-
         _instr = new InstrumentationSystem();
         Utility.StartThread(new Runnable()
         {
@@ -96,12 +98,6 @@ public final class AppServer
         }
     }
 
-
-    public static final String TAG = "MavRemote_Server";
-
-    private static AppServer _instance = null;
-
-    private ServerActivity _activity = null;
 
     private InstrumentationSystem _instr = null;
     private InfraredSystem _infr = null;

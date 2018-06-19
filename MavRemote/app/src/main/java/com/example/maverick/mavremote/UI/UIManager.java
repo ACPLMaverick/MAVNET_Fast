@@ -49,6 +49,7 @@ public class UIManager
             {
                 if(menu.GetMyType() == menuType)
                 {
+                    _currentMenu = menuType;
                     menu.Enable();
                 }
                 else
