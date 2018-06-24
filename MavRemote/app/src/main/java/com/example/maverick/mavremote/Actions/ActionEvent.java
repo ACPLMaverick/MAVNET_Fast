@@ -1,4 +1,6 @@
-package com.example.maverick.mavremote.Server.Actions;
+package com.example.maverick.mavremote.Actions;
+
+import android.view.KeyEvent;
 
 public class ActionEvent
 {
@@ -24,6 +26,42 @@ public class ActionEvent
         LMBUp,
         RMBDown,
         RMBUp
+    }
+
+    public enum SpecialKeyEvent
+    {
+        InvalidValue,
+        TaskManager
+    }
+
+
+    public static int GetIntFromSpecialKeyEvent(SpecialKeyEvent keyEvent)
+    {
+        if(_specialKeyEventBaseValue == -1)
+        {
+            _specialKeyEventBaseValue = KeyEvent.getMaxKeyCode();
+        }
+
+        return _specialKeyEventBaseValue + keyEvent.ordinal();
+    }
+
+    // Returns InvalidValue if code is not a special key event.
+    public static SpecialKeyEvent GetSpecialKeyEventFromInt(int code)
+    {
+        if(_specialKeyEventBaseValue == -1)
+        {
+            _specialKeyEventBaseValue = KeyEvent.getMaxKeyCode();
+        }
+
+        if(code < _specialKeyEventBaseValue || code >= _specialKeyEventBaseValue + SpecialKeyEvent.values().length)
+        {
+            return SpecialKeyEvent.InvalidValue;
+        }
+        else
+        {
+            code = code - _specialKeyEventBaseValue;
+            return SpecialKeyEvent.values()[code];
+        }
     }
 
 
@@ -149,6 +187,8 @@ public class ActionEvent
 
 
     private static final int KEYBOARD_EV_UNUSED = 0xFADEBEEF;
+
+    private static int _specialKeyEventBaseValue = -1;
 
 
     private int _keyboardMouseEv = KEYBOARD_EV_UNUSED;

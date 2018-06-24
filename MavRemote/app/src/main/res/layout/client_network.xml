@@ -97,7 +97,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:text="255.255.255.255"
+        android:text="0.0.0.0"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
         android:textSize="26sp"
         app:layout_constraintBottom_toBottomOf="@+id/textView2"

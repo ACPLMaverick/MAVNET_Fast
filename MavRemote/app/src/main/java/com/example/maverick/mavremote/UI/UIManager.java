@@ -1,5 +1,7 @@
 package com.example.maverick.mavremote.UI;
 
+import android.os.Handler;
+
 import com.example.maverick.mavremote.R;
 import com.example.maverick.mavremote.Utility;
 
@@ -20,7 +22,10 @@ public class UIManager
     };
 
 
-    public UIManager() { }
+    public UIManager()
+    {
+        _handler = new Handler();
+    }
 
     public void InitMenu(MenuType menuType)
     {
@@ -60,6 +65,11 @@ public class UIManager
         }
     }
 
+    public void PerformAction(Runnable runnable)
+    {
+        _handler.post(runnable);
+    }
+
     public Menu GetMenu(MenuType menuType)
     {
         return _menus[menuType.ordinal()];
@@ -86,6 +96,8 @@ public class UIManager
         return false;
     }
 
+
+    private Handler _handler = null;
 
     private Menu[] _menus = new Menu[MenuType.values().length];
     private MenuType _currentMenu;

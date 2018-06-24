@@ -1,7 +1,7 @@
 package com.example.maverick.mavremote.Server.Instrumentation;
 
-import com.example.maverick.mavremote.Server.Actions.ActionEvent;
-import com.example.maverick.mavremote.Server.Actions.Movement;
+import com.example.maverick.mavremote.Actions.ActionEvent;
+import com.example.maverick.mavremote.Actions.Movement;
 
 import java.util.List;
 

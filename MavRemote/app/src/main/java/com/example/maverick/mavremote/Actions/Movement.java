@@ -1,4 +1,4 @@
-package com.example.maverick.mavremote.Server.Actions;
+package com.example.maverick.mavremote.Actions;
 
 public class Movement
 {

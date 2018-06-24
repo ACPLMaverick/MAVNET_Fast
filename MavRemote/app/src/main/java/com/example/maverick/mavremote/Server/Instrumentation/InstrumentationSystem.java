@@ -1,8 +1,10 @@
 package com.example.maverick.mavremote.Server.Instrumentation;
 
+import android.util.EventLog;
 import android.util.Log;
 
-import com.example.maverick.mavremote.Server.Actions.ActionEvent;
+import com.example.maverick.mavremote.Actions.ActionEvent;
+import com.example.maverick.mavremote.EventQueue;
 import com.example.maverick.mavremote.Server.AppServer;
 import com.example.maverick.mavremote.System;
 import com.example.maverick.mavremote.Utility;
@@ -21,21 +23,17 @@ public final class InstrumentationSystem extends System
         AppServer.GetInstance().GetInstrumentationSystem().EnqueueActionEvent(ev);
     }
 
+
     public void EnqueueActionEvent(ActionEvent ev)
     {
-        assert (_lock != null);
-
-        _lock.lock();
-        _queue.push(ev);
-        _lock.unlock();
+        _queue.Enqueue(ev);
     }
-
 
     @Override
     protected void Start()
     {
-        _queue = new ArrayDeque<>();
-        _lock = new ReentrantLock();
+        _queue = new EventQueue<>();
+        _queue.Init();
 
         _mouseEventCoder = new MouseEventCoder();
 
@@ -55,15 +53,13 @@ public final class InstrumentationSystem extends System
     {
         while(true)
         {
-            if(_queue.isEmpty())
+            if(_queue.IsEmpty())
             {
                 Thread.yield();
                 continue;
             }
 
-            _lock.lock();
-            ActionEvent ev = _queue.pollLast();
-            _lock.unlock();
+            ActionEvent ev = _queue.Dequeue();
             PerformActionEvent(ev);
 
             Thread.yield();
@@ -254,8 +250,7 @@ public final class InstrumentationSystem extends System
         could not get driver version for /dev/input/mice, Not a typewriter
     */
 
-    private ArrayDeque<ActionEvent> _queue = null;
-    private ReentrantLock _lock = null;
+    private EventQueue<ActionEvent> _queue = null;
 
     private Process _shellProc = null;
     private DataOutputStream _shellStream = null;

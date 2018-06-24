@@ -3,8 +3,8 @@ package com.example.maverick.mavremote.Server;
 import android.util.Log;
 import android.view.KeyEvent;
 
-import com.example.maverick.mavremote.Server.Actions.ActionEvent;
-import com.example.maverick.mavremote.Server.Actions.Movement;
+import com.example.maverick.mavremote.Actions.ActionEvent;
+import com.example.maverick.mavremote.Actions.Movement;
 import com.example.maverick.mavremote.Server.Instrumentation.InstrumentationSystem;
 import com.example.maverick.mavremote.System;
 import com.example.maverick.mavremote.Utility;

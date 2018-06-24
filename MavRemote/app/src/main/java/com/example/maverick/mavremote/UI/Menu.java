@@ -10,7 +10,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.maverick.mavremote.App;
-import com.example.maverick.mavremote.Client.AppClient;
 import com.example.maverick.mavremote.Utility;
 
 import java.util.HashMap;
@@ -22,6 +21,8 @@ public class Menu
 
     public void Init(UIManager.MenuType menuType)
     {
+        Utility.Assert(!_bInitialized);
+
         _myType = menuType;
 
         _root = App.GetInstance().GetActivity().findViewById(UIManager.MenuTypeRootResources[menuType.ordinal()]);
@@ -45,6 +46,7 @@ public class Menu
             return;
 
         _root.setVisibility(View.VISIBLE);
+        _bEnabled = true;
     }
 
     public void Disable()
@@ -53,6 +55,7 @@ public class Menu
             return;
 
         _root.setVisibility(View.INVISIBLE);
+        _bEnabled = false;
     }
 
     public Map<Integer, Button> GetButtons()
@@ -109,6 +112,7 @@ public class Menu
             }
 
             // TODO: Make SupportedTypes enum and auto-generate HashMap for each type (in an array).
+            // Is it even possible? I think not.
             if(child instanceof Button)
             {
                 _buttons.put(child.getId(), (Button)child);

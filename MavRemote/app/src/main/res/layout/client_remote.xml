@@ -38,7 +38,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/clAuxillary"
         app:layout_constraintTop_toTopOf="parent">
 
         <Button
@@ -155,34 +155,72 @@
         app:layout_constraintTop_toBottomOf="@+id/clButtons">
 
         <Button
-            android:id="@+id/button9"
+            android:id="@+id/btnMediaPause"
             android:layout_width="84dp"
             android:layout_height="64dp"
             android:layout_marginStart="8dp"
             android:text="||"
-            app:layout_constraintStart_toEndOf="@+id/button10" />
+            app:layout_constraintStart_toEndOf="@+id/btnMediaBackwards" />
 
         <Button
-            android:id="@+id/button11"
+            android:id="@+id/btnMediaPlay"
             android:layout_width="84dp"
             android:layout_height="64dp"
             android:layout_marginStart="8dp"
             android:text="|&gt;"
-            app:layout_constraintStart_toEndOf="@+id/button9" />
+            app:layout_constraintStart_toEndOf="@+id/btnMediaPause" />
 
         <Button
-            android:id="@+id/button12"
+            android:id="@+id/btnMediaForward"
             android:layout_width="84dp"
             android:layout_height="64dp"
             android:layout_marginStart="8dp"
             android:text="&gt;&gt;|"
-            app:layout_constraintStart_toEndOf="@+id/button11" />
+            app:layout_constraintStart_toEndOf="@+id/btnMediaPlay" />
 
         <Button
-            android:id="@+id/button10"
+            android:id="@+id/btnMediaBackwards"
             android:layout_width="84dp"
             android:layout_height="64dp"
             android:text="|&lt;&lt;" />
+
+    </android.support.constraint.ConstraintLayout>
+
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/clAuxillary"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/clButtons"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <Button
+            android:id="@+id/btnRec"
+            android:layout_width="72dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="REC"
+            app:layout_constraintTop_toBottomOf="@+id/btnScreen" />
+
+        <Button
+            android:id="@+id/btnScreen"
+            android:layout_width="72dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="SCRN"
+            app:layout_constraintTop_toBottomOf="@+id/btnMute" />
+
+        <Button
+            android:id="@+id/btnMute"
+            android:layout_width="72dp"
+            android:layout_height="wrap_content"
+            android:text="MUTE"
+            app:layout_constraintTop_toTopOf="parent" />
     </android.support.constraint.ConstraintLayout>
 
 </android.support.constraint.ConstraintLayout>

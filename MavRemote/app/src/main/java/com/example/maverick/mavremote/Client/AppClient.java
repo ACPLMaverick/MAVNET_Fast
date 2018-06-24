@@ -32,7 +32,19 @@ public final class AppClient extends App
 
     public InputSystem GetInputSystem() { return _inputSystem; }
 
-    public UIManager GetUIManager() { return _uiManager; }
+    public void OnBackButtonPressed()
+    {
+        if(_uiManager.GetCurrentMenu().GetMyType() == UIManager.MenuType.ClientRemote)
+        {
+            // TODO: Prompt if user really want to shut down connection. If yes, do it and go to ClientNetwork.
+            Log.e(App.TAG, "Remote -> Network.");
+        }
+        else if(_uiManager.GetCurrentMenu().GetMyType() == UIManager.MenuType.ClientNetwork)
+        {
+            // TODO: Prompt if user really wants to exit. If yes, do so.
+            Log.e(App.TAG, "Exit.");
+        }
+    }
 
 
     @Override
@@ -54,7 +66,8 @@ public final class AppClient extends App
     {
         _uiManager.InitMenu(UIManager.MenuType.ClientNetwork);
         _uiManager.InitMenu(UIManager.MenuType.ClientRemote);
-        _uiManager.SetMenuCurrent(UIManager.MenuType.ClientNetwork);
+//        _uiManager.SetMenuCurrent(UIManager.MenuType.ClientNetwork);
+        _uiManager.SetMenuCurrent(UIManager.MenuType.ClientRemote);
     }
 
     private void InternalStart()
@@ -78,10 +91,6 @@ public final class AppClient extends App
                 _networkSystem.Run();
             }
         });
-
-        // TODO: Make other threads be able to modify UI.
-        TextView tv = _uiManager.GetCurrentMenu().GetTextViews().get(R.id.tvStatus);
-//        tv.setText("Chuj");
 
         _bIsRunning = true;
     }

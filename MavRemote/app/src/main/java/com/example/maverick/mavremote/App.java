@@ -36,6 +36,8 @@ public abstract class App
 
     public AppCompatActivity GetActivity() { return _activity; }
 
+    public UIManager GetUIManager() { return _uiManager; }
+
     protected abstract void AssertActivityType();
 
     protected abstract void InternalRun();
