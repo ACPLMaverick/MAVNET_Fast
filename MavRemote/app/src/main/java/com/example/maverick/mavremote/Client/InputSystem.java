@@ -5,6 +5,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 
 import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.App;
@@ -32,6 +33,9 @@ public class InputSystem extends System
         _buttonHoldHelper.Init();
 
         _longClickHelper = new HashMap<>();
+
+        _touchAreaHelper = new TouchAreaHelper();
+        _scrollAreaHelper = new TouchAreaHelper();
 
 
         Button btn;
@@ -94,7 +98,8 @@ public class InputSystem extends System
 
 
         // Set up touch and scroll/swipe field areas and register for touch events.
-
+        SetupTouchArea();
+        SetupScrollArea();
 
         _bIsRunning = true;
     }
@@ -130,6 +135,8 @@ public class InputSystem extends System
 
             // Update Hold Helper.
             _buttonHoldHelper.Update();
+            _touchAreaHelper.Update();
+            _scrollAreaHelper.Update();
         }
     }
 
@@ -184,13 +191,12 @@ public class InputSystem extends System
                             case MotionEvent.ACTION_UP:
                             {
                                 _buttonHoldHelper.RemoveHoldButton((Button) view);
-                                view.performClick();
                             }
                             break;
                             default:
                             break;
                         }
-                        return true;
+                        return false;
                     }
                 });
             }
@@ -252,6 +258,44 @@ public class InputSystem extends System
         });
     }
 
+    private void SetupTouchArea()
+    {
+        _touchAreaHelper.Init(GetMenu().GetImageViews().get(R.id.ivTouchArea), TOUCH_SCALE);
+        _touchAreaHelper.AssignEventHandlerToMovement(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                PassMovement
+                (
+                        _touchAreaHelper.GetLatestMovementDeltaX(),
+                        _touchAreaHelper.GetLatestMovementDeltaY()
+                );
+            }
+        });
+        _touchAreaHelper.AssignEventHandlerToButtonAction(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                PassMouseClick(_touchAreaHelper.GetLatestClickType());
+            }
+        });
+    }
+
+    private void SetupScrollArea()
+    {
+        _scrollAreaHelper.Init(GetMenu().GetImageViews().get(R.id.ivScrollArea), SCROLL_SCALE);
+        _scrollAreaHelper.AssignEventHandlerToMovement(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                PassScroll(-_scrollAreaHelper.GetLatestMovementDeltaY());
+            }
+        });
+    }
+
     private Menu GetMenu()
     {
         return App.GetInstance().GetUIManager().GetMenu(UIManager.MenuType.ClientRemote);
@@ -260,6 +304,11 @@ public class InputSystem extends System
     private void PassKeyboardEvent(int kbEvent)
     {
         Log.e(App.TAG, "[InputSystem] Pressing key: " + KeyEvent.keyCodeToString(kbEvent));
+    }
+
+    private void PassMouseClick(ActionEvent.MouseClickTypes mouseClick)
+    {
+        Log.e(App.TAG, "[InputSystem] Mouse button: " + mouseClick.toString());
     }
 
     private void PassMovement(int dx, int dy)
@@ -274,8 +323,12 @@ public class InputSystem extends System
 
 
     private static final int BUTTON_HOLD_PERIOD_MILLIS = 750;
+    private static final float TOUCH_SCALE = 3.0f;
+    private static final float SCROLL_SCALE = 1.0f;
 
     private ButtonHoldHelper _buttonHoldHelper = null;
+    private TouchAreaHelper _touchAreaHelper = null;
+    private TouchAreaHelper _scrollAreaHelper = null;
     private HashMap<Button, Button> _longClickHelper = null;
     private boolean _bIsRunning = false;
 }

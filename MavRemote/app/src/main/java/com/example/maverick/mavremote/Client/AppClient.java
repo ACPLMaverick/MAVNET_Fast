@@ -66,8 +66,8 @@ public final class AppClient extends App
     {
         _uiManager.InitMenu(UIManager.MenuType.ClientNetwork);
         _uiManager.InitMenu(UIManager.MenuType.ClientRemote);
-//        _uiManager.SetMenuCurrent(UIManager.MenuType.ClientNetwork);
-        _uiManager.SetMenuCurrent(UIManager.MenuType.ClientRemote);
+        _uiManager.SetMenuCurrent(UIManager.MenuType.ClientNetwork);
+//        _uiManager.SetMenuCurrent(UIManager.MenuType.ClientRemote);
     }
 
     private void InternalStart()
