@@ -2,7 +2,9 @@ package com.example.maverick.mavremote.Actions;
 
 import android.view.KeyEvent;
 
-public class ActionEvent
+import java.io.Serializable;
+
+public class ActionEvent implements Serializable
 {
     @Override
     public String toString() {

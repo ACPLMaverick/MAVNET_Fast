@@ -1,6 +1,8 @@
 package com.example.maverick.mavremote.Actions;
 
-public class Movement
+import java.io.Serializable;
+
+public class Movement implements Serializable
 {
     @Override
     public String toString() {
