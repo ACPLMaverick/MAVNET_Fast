@@ -38,8 +38,9 @@
 #define JE_AlignAs(val) alignas(val)
 #define JE_Inline inline
 
+#define JE_Debug 1
 
-#define JE_Assert(val) assert(val)
+#define JE_Assert(val, ...) assert(val)
 #define JE_AssertVkResult(expr) JE_Assert((expr) == VkResult::VK_SUCCESS)
 #define JE_AssertThrow(cond, text) if(!(cond)) throw std::runtime_error(text)
 #define JE_AssertThrowDefault(cond) if(!(cond)) throw std::runtime_error("Error!")
@@ -49,6 +50,10 @@ if((expr) != VkResult::VK_SUCCESS) \
 	JE_AssertThrow(false, #expr); \
 }
 #define JE_AssertStatic(val) static_assert(val, "Static assertion failed.")
+
+#define JE_AssertBitCount(val, bitWidth) JE_Assert(IsBitWidthEqualOrLesserThan(val, bitWidth))
+
+extern bool IsBitWidthEqualOrLesserThan(uint64_t val, uint8_t bitWidth);
 
 #define JE_Print(text) std::cout << (text)
 #define JE_PrintLine(text) std::cout << (text) << std::endl

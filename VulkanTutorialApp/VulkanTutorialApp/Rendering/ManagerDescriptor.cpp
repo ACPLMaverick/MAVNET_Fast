@@ -2,6 +2,8 @@
 
 #include "Core/HelloTriangle.h"
 
+#include "Resource.h"
+
 namespace Rendering
 {
 	ManagerDescriptor::ManagerDescriptor()
@@ -12,10 +14,9 @@ namespace Rendering
 	ManagerDescriptor::~ManagerDescriptor()
 	{
 		JE_Assert(_descriptorSetMemory.size() == 0);
-		JE_Assert(_sets.size() == 0);
 		JE_Assert(_descriptorPools.size() == 0);
 		JE_Assert(_layouts.size() == 0);
-		JE_Assert(_currentPoolIndex == 0);
+		JE_Assert(_currentPoolIndex == -1);
 	}
 
 	void ManagerDescriptor::Initialize()
@@ -29,7 +30,6 @@ namespace Rendering
 			set.Cleanup();
 		}
 		_descriptorSetMemory.clear();
-		_sets.clear();
 
 		for (auto& pool : _descriptorPools)
 		{
@@ -46,51 +46,29 @@ namespace Rendering
 		_currentPoolIndex = -1;
 	}
 
-	DescriptorSet * ManagerDescriptor::TryGetDescriptorSet(const DescriptorSet::Info * info)
-	{
-		JE_Assert(info != nullptr);
-
-		auto it = _sets.find(*info);
-		if (it != _sets.end())
-		{
-			return it->second;
-		}
-		else
-		{
-			return nullptr;
-		}
-	}
-
-	DescriptorSet * ManagerDescriptor::GetDescriptorSet(const DescriptorSet::Info * info)
+	DescriptorSet * ManagerDescriptor::CreateDescriptorSet(const DescriptorSet::Info * info)
 	{
 		DescriptorSet* set;
 
-		if ((set = TryGetDescriptorSet(info)) != nullptr)
-		{
-			return set;
-		}
-		else
-		{
-			// Descriptor set not found! Get layout for this descriptor set then.
-			LayoutData layout = GetDescriptorLayout(&info->LayInfo);
+		// Descriptor set not found! Get layout for this descriptor set then.
+		DescriptorCommon::LayoutData layout = GetDescriptorLayout(&info->LayInfo);
 
-			// Create new descriptor set with these parameters.
-			DescriptorSet setObj;
-			_descriptorSetMemory.push_back(setObj);
-			set = &_descriptorSetMemory.back();
+		// Create new descriptor set with these parameters.
+		DescriptorSet setObj;
+		_descriptorSetMemory.push_back(setObj);
+		set = &_descriptorSetMemory.back();
 
-			set->_info = *info;
-			set->_associatedLayout = layout.Layout;
-			set->_descriptorSet = CreateDescriptorSet(&layout);
+		set->_info = *info;
+		set->_associatedLayout = layout;
+		set->_descriptorSet = CreateDescriptorSet(&layout);
 
-			set->_bResourcesDirty = true;
-			set->UpdateSet();
+		set->_bResourcesDirty = true;
+		set->UpdateSet();
 
-			return set;
-		}
+		return set;
 	}
 
-	ManagerDescriptor::LayoutData ManagerDescriptor::GetDescriptorLayout(const DescriptorCommon::LayoutInfo * info)
+	DescriptorCommon::LayoutData ManagerDescriptor::GetDescriptorLayout(const DescriptorCommon::LayoutInfo * info)
 	{
 		auto it = _layouts.find(*info);
 		if (it != _layouts.end())
@@ -100,7 +78,7 @@ namespace Rendering
 		else
 		{
 			// Descriptor layout not found! Allocate new one.
-			LayoutData retData;
+			DescriptorCommon::LayoutData retData;
 
 			retData.Layout = CreateDescriptorSetLayout(info);
 			retData.Info = *info;
@@ -114,9 +92,9 @@ namespace Rendering
 	{
 		VkDescriptorPool pool;
 
-		VkDescriptorPoolSize sizeInfoArray[static_cast<uint32_t>(DescriptorCommon::ResourceType::ENUM_SIZE)];
+		VkDescriptorPoolSize sizeInfoArray[static_cast<uint32_t>(ResourceCommon::Type::ENUM_SIZE)];
 
-		for (size_t i = 0; i < static_cast<size_t>(DescriptorCommon::ResourceType::ENUM_SIZE); ++i)
+		for (size_t i = 0; i < static_cast<size_t>(ResourceCommon::Type::ENUM_SIZE); ++i)
 		{
 			if(i == 0)
 				continue; // Omit Unknown.
@@ -127,7 +105,7 @@ namespace Rendering
 
 		VkDescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		poolInfo.poolSizeCount = static_cast<uint32_t>(DescriptorCommon::ResourceType::ENUM_SIZE) - 1; // Omit Unknown.
+		poolInfo.poolSizeCount = static_cast<uint32_t>(ResourceCommon::Type::ENUM_SIZE) - 1; // Omit Unknown.
 		poolInfo.pPoolSizes = &sizeInfoArray[1]; // Omit Unknown.
 		poolInfo.maxSets = MAX_SETS_PER_POOL;
 
@@ -171,7 +149,7 @@ namespace Rendering
 
 			bindingArray[i].binding = binding.Index;
 			bindingArray[i].descriptorType = static_cast<VkDescriptorType>(binding.Type);
-			bindingArray[i].descriptorCount = binding.CountMinOne + 1;
+			bindingArray[i].descriptorCount = binding.Count;
 			bindingArray[i].stageFlags = static_cast<VkShaderStageFlags>(binding.Stage);
 			bindingArray[i].pImmutableSamplers = nullptr; // TODO: For textures probably.
 
@@ -214,16 +192,9 @@ namespace Rendering
 		return layout;
 	}
 
-	VkDescriptorSet ManagerDescriptor::CreateDescriptorSet(const LayoutData * layoutData)
+	VkDescriptorSet ManagerDescriptor::CreateDescriptorSet(const DescriptorCommon::LayoutData * layoutData)
 	{
-		VkDescriptorSet set;
-		AllocateDescriptorSet(layoutData, set);
-
-		return set;
-	}
-
-	void ManagerDescriptor::AllocateDescriptorSet(const LayoutData * layoutData, VkDescriptorSet descriptorSet)
-	{
+		VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
 		VkDescriptorSetAllocateInfo allocInfo = {};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorSetCount = 1;
@@ -236,7 +207,7 @@ namespace Rendering
 			JE_Assert(res != VK_ERROR_OUT_OF_HOST_MEMORY && res != VK_ERROR_OUT_OF_DEVICE_MEMORY);
 			if (res == VK_SUCCESS)
 			{
-				return;
+				return descriptorSet;
 			}
 		}
 
@@ -249,5 +220,7 @@ namespace Rendering
 
 		allocInfo.descriptorPool = newPool;
 		JE_AssertThrowVkResult(vkAllocateDescriptorSets(JE_GetRenderer()->GetDevice(), &allocInfo, &descriptorSet));
+
+		return descriptorSet;
 	}
 }

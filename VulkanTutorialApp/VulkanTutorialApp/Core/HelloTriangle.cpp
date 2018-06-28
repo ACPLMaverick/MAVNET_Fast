@@ -5,6 +5,8 @@
 #include "Rendering/Helper.h"
 #include "Rendering/SystemDrawable.h"
 
+#include "Rendering/UboCommon.h" // TODO: temp
+
 namespace Core
 {
 	const std::string HelloTriangle::RESOURCE_PATH = "..\\..\\JadeEngine\\JadeEngine\\Resources\\";
@@ -38,8 +40,6 @@ namespace Core
 		, _graphicsPipeline(VK_NULL_HANDLE)
 		, _commandPool(VK_NULL_HANDLE)
 		, _currentFrame(0)
-		, _uniformBufferMemory(VK_NULL_HANDLE)
-		, _uniformBuffer(VK_NULL_HANDLE)
 		, _bMinimized(false)
 	{
 		JE_AssertThrow(HelloTriangle::_singletonInstance == nullptr, "HelloTriangle can only have one instance!");
@@ -85,15 +85,10 @@ namespace Core
 		CreateLogicalDeviceAndGetQueues();
 		CreateCommandPool();
 
-		CreateUniformBuffer();
-
 		::Rendering::Helper::GetInstance()->Initialize();
 
 		_samplerMgr.Initialize();
 		_descriptorMgr.Initialize();
-
-		::Rendering::Texture::LoadOptions texOptions;
-		_texture.Initialize(&MODEL_NAME_TEXTURE, &texOptions);
 
 		::Rendering::Mesh::LoadOptions meshOptions;
 		_mesh.Initialize(&MODEL_NAME_MESH, &meshOptions);
@@ -935,12 +930,6 @@ namespace Core
 		TransitionImageLayout(&texInfo, _depthImage, VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
 
-	void HelloTriangle::CreateUniformBuffer()
-	{
-		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-		CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, _uniformBuffer, _uniformBufferMemory);
-	}
-
 	void HelloTriangle::CreateCommandBuffers()
 	{
 		// Because one of the drawing commands involves binding the right VkFramebuffer, we'll actually have to record a command buffer for every image in the swap chain once again.
@@ -981,13 +970,13 @@ namespace Core
 
 			vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
 
-			PushConstantObject pco;
+			Rendering::UboCommon::SceneGlobal pco;
 			pco.FogColor = *_fog.GetColor();
 			pco.FogDepthNear = _fog.GetStartDepth();
 			pco.FogDepthFar = _fog.GetEndDepth();
 			pco.LightColor = *_lightDirectional.GetColor();
 			pco.LightDirectionV = *_lightDirectional.GetDirectionV();
-			vkCmdPushConstants(_commandBuffers[i], _pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantObject), &pco);
+			vkCmdPushConstants(_commandBuffers[i], _pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Rendering::UboCommon::SceneGlobal), &pco);
 
 			VkDescriptorSet descriptorSets[] = { _material.GetDescriptorSet()->GetVkDescriptorSet() };
 			vkCmdBindDescriptorSets(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _pipelineLayout, 0, 1, descriptorSets, 0, nullptr);
@@ -1005,7 +994,7 @@ namespace Core
 	{
 		_pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		_pushConstantRange.offset = 0;
-		_pushConstantRange.size = sizeof(PushConstantObject);
+		_pushConstantRange.size = sizeof(Rendering::UboCommon::SceneGlobal);
 	}
 
 	void HelloTriangle::CreateSyncObjects()
@@ -1037,7 +1026,6 @@ namespace Core
 			if (!_bMinimized)
 			{
 				UpdateObjects();
-				UpdateUniformBuffer();
 				DrawFrame();
 			}
 			else
@@ -1062,6 +1050,8 @@ namespace Core
 		_fog.Update();
 		_lightDirectional.Update();
 		_camera.Update();
+
+		_material.Update();
 	}
 
 	void HelloTriangle::DrawFrame()
@@ -1138,27 +1128,6 @@ namespace Core
 			RefreshCameraProj(capabilities.currentExtent.width, capabilities.currentExtent.height);
 			_bMinimized = false;
 		}
-	}
-
-	void HelloTriangle::UpdateUniformBuffer()
-	{
-		static auto startTime = std::chrono::high_resolution_clock::now();
-
-		auto currentTime = std::chrono::high_resolution_clock::now();
-
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-		glm::mat4 mv_translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
-
-		mv_translation = mv_translation * rotation * scale;
-
-		_ubo.MVP = *_camera.GetViewProj() * mv_translation;
-		_ubo.MV = mv_translation;
-		_ubo.MVInverseTranspose = glm::transpose(glm::inverse(mv_translation));
-
-		CopyBuffer_CPU_GPU(reinterpret_cast<void*>(&_ubo), _uniformBufferMemory, sizeof(_ubo));
 	}
 
 	VkCommandBuffer HelloTriangle::BeginSingleTimeCommands()
@@ -1465,15 +1434,8 @@ namespace Core
 
 		_mesh.Cleanup();
 
-		_texture.Cleanup();
-
 		_descriptorMgr.Cleanup();
 		_samplerMgr.Cleanup();
-
-		vkDestroyBuffer(_device, _uniformBuffer, _pAllocator);
-		_uniformBuffer = VK_NULL_HANDLE;
-		vkFreeMemory(_device, _uniformBufferMemory, _pAllocator);
-		_uniformBufferMemory = VK_NULL_HANDLE;
 
 		// System instances destruction.
 		::Rendering::SystemDrawable::DestroyInstance();
