@@ -1,10 +1,11 @@
 #pragma once
 
+#include "Resource.h"
 #include "Sampler.h"
 
 namespace Rendering
 {
-	class Texture
+	class Texture : public Resource
 	{
 	public:
 
@@ -53,8 +54,8 @@ namespace Rendering
 
 		JE_Inline bool IsReadOnly() const { return _info.Data == nullptr; }
 		JE_Inline const Info* GetInfo() const { return &_info; }
-		JE_Inline VkImage GetImage() { return _image; }
-		JE_Inline VkImageView GetImageView() { return _view; }
+		JE_Inline VkImage GetImage() const { return _image; }
+		JE_Inline VkImageView GetImageView() const { return _view; }
 		JE_Inline const Sampler* GetSampler() const { return _sampler; }
 
 		void Initialize(const std::string* textureName, const LoadOptions* loadOptions);

@@ -28,11 +28,13 @@ namespace Rendering
 	}
 
 	Texture::Texture()
-		: _dataGpu(VK_NULL_HANDLE)
+		: Resource()
+		, _dataGpu(VK_NULL_HANDLE)
 		, _image(VK_NULL_HANDLE)
 		, _view(VK_NULL_HANDLE)
 		, _sampler(nullptr)
 	{
+		_type = ResourceCommon::Type::Texture2D;
 	}
 
 

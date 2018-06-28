@@ -1,12 +1,15 @@
 #include "DescriptorSet.h"
 
+#include "Core/HelloTriangle.h"
+#include "UniformBuffer.h"
+#include "Texture.h"
 
 namespace Rendering
 {
 	DescriptorSet::DescriptorSet()
 		: _info(Info())
 		, _bindingCount(0)
-		, _associatedLayout(VK_NULL_HANDLE)
+		, _associatedLayout(DescriptorCommon::LayoutData())
 		, _descriptorSet(VK_NULL_HANDLE)
 		, _bResourcesDirty(false)
 	{
@@ -25,7 +28,7 @@ namespace Rendering
 
 	DescriptorSet::~DescriptorSet()
 	{
-		JE_Assert(_associatedLayout == VK_NULL_HANDLE);
+		JE_Assert(_associatedLayout.Layout == VK_NULL_HANDLE);
 		JE_Assert(_descriptorSet == VK_NULL_HANDLE);
 	}
 
@@ -33,7 +36,7 @@ namespace Rendering
 	{
 		_info = Info();
 		_bindingCount = 0;
-		_associatedLayout = VK_NULL_HANDLE;
+		_associatedLayout.Layout = VK_NULL_HANDLE;
 		_descriptorSet = VK_NULL_HANDLE;
 		_bResourcesDirty = false;
 	}
@@ -42,6 +45,113 @@ namespace Rendering
 	{
 		if (_bResourcesDirty)
 		{
+			// TODO: Make selective updating, with only things that changed updated.
+
+			std::vector<VkDescriptorBufferInfo> bufferInfos;
+			std::vector<VkDescriptorImageInfo> imageInfos;
+
+			std::vector<VkWriteDescriptorSet> descriptorWrites;
+
+			size_t bufferGlobalOffset = 0;
+			size_t imageGlobalOffset = 0;
+			for (size_t i = 0; i < DescriptorCommon::MAX_BINDINGS_PER_LAYOUT; ++i)
+			{
+				ResourceCommon::Type thisBindingType = ResourceCommon::Type::Unknown;
+				for (size_t j = 0; j < DescriptorCommon::MAX_DESCRIPTORS_PER_BINDING; ++j)
+				{
+					const Resource* resource = _info.Resources[i][j];
+					if (resource != nullptr)
+					{
+						if (thisBindingType == ResourceCommon::Type::Unknown)
+						{
+							thisBindingType = resource->GetType();
+						}
+						else if (
+							thisBindingType != ResourceCommon::Type::Unknown
+							&& thisBindingType != resource->GetType())
+						{
+							JE_Assert(false, "Assigning different resource types to the same binding!");
+						}
+
+						if (resource->GetType() == ResourceCommon::Type::UniformBuffer)
+						{
+							const UniformBuffer* buffer = reinterpret_cast<const UniformBuffer*>(resource);
+
+							VkDescriptorBufferInfo bufferInfo = {};
+							bufferInfo.buffer = buffer->GetBuffer();
+							bufferInfo.offset = 0;
+							bufferInfo.range = static_cast<uint32_t>(buffer->GetOptions()->DataSize);
+
+							bufferInfos.push_back(bufferInfo);
+						}
+						else if (resource->GetType() == ResourceCommon::Type::Texture2D)
+						{
+							const Texture* texture = reinterpret_cast<const Texture*>(resource);
+
+							VkDescriptorImageInfo imageInfo = {};
+							// TODO: Support other layouts.
+							imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+							imageInfo.imageView = texture->GetImageView();
+							imageInfo.sampler = texture->GetSampler()->GetVkSampler();
+
+							imageInfos.push_back(imageInfo);
+						}
+						else
+						{
+							JE_Assert(false, "Resource is valid but have an unsupported type!");
+						}
+					}
+					else
+					{
+						// "Holes" in resource layout are not supported. Please avoid them.
+						break;
+					}
+				}
+
+				if (thisBindingType != ResourceCommon::Type::Unknown)
+				{
+					// Check if this/these resource[s] corresponds with layout.
+					JE_Assert(
+						ResourceCommon::TypeToDescriptorType(thisBindingType) == static_cast<VkDescriptorType>(_info.LayInfo.Bindings[i].Type), "Assigned resource does not match the layout.");
+
+					VkWriteDescriptorSet write = {};
+					write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+					write.dstSet = _descriptorSet;
+					write.dstBinding = static_cast<uint32_t>(i);
+					write.dstArrayElement = 0;
+
+					switch (thisBindingType)
+					{
+					case ResourceCommon::Type::UniformBuffer:
+
+						write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+						write.descriptorCount = static_cast<uint32_t>(bufferInfos.size());
+						write.pBufferInfo = bufferInfos.data();
+
+						break;
+					case ResourceCommon::Type::Texture2D:
+
+						write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+						write.descriptorCount = static_cast<uint32_t>(imageInfos.size());
+						write.pImageInfo = imageInfos.data();
+
+						break;
+					default:
+						JE_Assert(false);
+						break;
+					}
+
+					descriptorWrites.push_back(write);
+
+					imageInfos.clear();
+					bufferInfos.clear();
+				}
+			}
+
+			vkUpdateDescriptorSets(JE_GetRenderer()->GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+
+			_bResourcesDirty = false;
+
 			/*
 
 			// Legacy code.
@@ -80,29 +190,18 @@ namespace Rendering
 
 			vkUpdateDescriptorSets(_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 			*/
-
-			template <typename BufferType> struct InfoHelper
-			{
-				BufferType BufferInfo = VK_NULL_HANDLE;
-				size_t IndexInArray = 0;
-			};
-
-			std::vector<InfoHelper<VkDescriptorBufferInfo>> _bufferInfos;
-			std::vector<InfoHelper<VkDescriptorImageInfo>> _imageInfos;
-
-			UpdateCountsFromInfo();
-
-			_bResourcesDirty = false;
 		}
 	}
 
-	void DescriptorSet::AssignResource(const DescriptorCommon::ResourceTypedPtr resource, uint32_t binding, uint32_t slot)
+	void DescriptorSet::AssignResource(const Resource* resource, uint32_t binding, uint32_t slot)
 	{
-		JE_Assert(resource.IsValid());
+		JE_Assert(resource != nullptr);
 		JE_Assert(binding < DescriptorCommon::MAX_BINDINGS_PER_LAYOUT);
 		JE_Assert(slot < DescriptorCommon::MAX_DESCRIPTORS_PER_BINDING);
 
-		if (_info.Resources[binding][slot].IsValid())
+		JE_Assert(static_cast<VkDescriptorType>(_info.LayInfo.Bindings[binding].Type) == ResourceCommon::TypeToDescriptorType(resource->GetType()));
+
+		if (_info.Resources[binding][slot] != nullptr)
 		{
 			JE_PrintWarnLine("Assigning to an occupied resource slot!");
 		}
@@ -112,27 +211,56 @@ namespace Rendering
 		_bResourcesDirty = true;
 	}
 
-	void DescriptorSet::UpdateCountsFromInfo()
+	bool DescriptorSet::TryAssignResource(const Resource * resource)
 	{
-		_bindingCount = 0;
-		memset(_descriptorCountPerBinding, 0, sizeof(_descriptorCountPerBinding));
-		for (size_t i = 0; i < DescriptorCommon::MAX_BINDINGS_PER_LAYOUT; ++i)
+		uint32_t binding, slot;
+		if (GetFirstAvailableResourceSlot(resource, &binding, &slot))
 		{
-			size_t j = 0;
-			for (; j < DescriptorCommon::MAX_DESCRIPTORS_PER_BINDING; ++j)
+			AssignResource(resource, binding, slot);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	bool DescriptorSet::TryAssignResource(const Resource * resource, uint32_t * outBinding, uint32_t * outSlot)
+	{
+		if (GetFirstAvailableResourceSlot(resource, outBinding, outSlot))
+		{
+			AssignResource(resource, *outBinding, *outSlot);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	bool DescriptorSet::GetFirstAvailableResourceSlot(const Resource * resource, uint32_t * outBinding, uint32_t * outSlot)
+	{
+		if (resource == nullptr || resource->GetType() == ResourceCommon::Type::Unknown)
+		{
+			return false;
+		}
+
+		for (uint32_t i = 0; i < DescriptorCommon::MAX_BINDINGS_PER_LAYOUT; ++i)
+		{
+			if (static_cast<VkDescriptorType>(_info.LayInfo.Bindings[i].Type) == ResourceCommon::TypeToDescriptorType(resource->GetType()))
 			{
-				if (_info.Resources[i][j].IsValid())
+				for (uint32_t j = 0; j < DescriptorCommon::MAX_DESCRIPTORS_PER_BINDING; ++j)
 				{
-					++_descriptorCountPerBinding[i];
-				}
-				else
-				{
-					break;
+					if (_info.Resources[i][j] == nullptr)
+					{
+						*outBinding = i;
+						*outSlot = j;
+						return true;
+					}
 				}
 			}
-
-			if (j > 0)
-				++_bindingCount;
 		}
+
+		return false;
 	}
 }

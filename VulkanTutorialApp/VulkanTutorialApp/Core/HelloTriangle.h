@@ -47,7 +47,6 @@ namespace Core
 		const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
 		const std::string MODEL_NAME_MESH = "chalet.obj";
-		const std::string MODEL_NAME_TEXTURE = "chalet.jpg";
 
 
 		JE_EnumBegin(ShaderType)
@@ -80,29 +79,6 @@ namespace Core
 			VkSurfaceCapabilitiesKHR Capabilities;
 			std::vector<VkSurfaceFormatKHR> Formats;
 			std::vector<VkPresentModeKHR> PresentModes;
-		};
-
-		struct alignas(16) UniformBufferObject
-		{
-			glm::mat4 MVP;
-			glm::mat4 MV;
-			glm::mat4 MVInverseTranspose;
-
-			UniformBufferObject()
-				: MVP(glm::mat4(1.0f))
-				, MV(glm::mat4(1.0f))
-				, MVInverseTranspose(glm::mat4(1.0f))
-			{
-			}
-		};
-
-		struct PushConstantObject
-		{
-			JE_AlignAs(16) glm::vec3 LightColor;
-			JE_AlignAs(16) glm::vec3 LightDirectionV;
-			float FogDepthNear;
-			glm::vec3 FogColor;
-			float FogDepthFar;
 		};
 
 	public:
@@ -165,16 +141,12 @@ namespace Core
 			void RefreshCameraProj(uint32_t newWidth, uint32_t newHeight);
 
 			void CreateRenderPass();
-			void CreateDescriptorSetLayout();
 			void CreateGraphicsPipeline();
 				VkShaderModule CreateShaderModule(const std::vector<uint8_t> code);
 			void CreateFramebuffers();
 			void CreateCommandPool();
-			void CreateDescriptorPool();
 			void CreateDepthResources();
-			void CreateUniformBuffer();
 			void CreateCommandBuffers();
-			void CreateDescriptorSet();
 			void CreatePushConstantRange();
 			void CreateSyncObjects();
 
@@ -182,7 +154,6 @@ namespace Core
 			void UpdateObjects();
 			void DrawFrame();
 			void CheckForMinimized();
-			void UpdateUniformBuffer();
 
 		void RecreateSwapChain();
 
@@ -260,7 +231,6 @@ namespace Core
 		std::vector<VkFence> _fencesInFlight;
 
 		uint32_t _currentFrame;
-		UniformBufferObject _ubo;
 
 		::Rendering::Camera _camera;
 		::Rendering::LightDirectional _lightDirectional;
@@ -268,10 +238,7 @@ namespace Core
 
 		VkPushConstantRange _pushConstantRange;
 
-		VkDeviceMemory _uniformBufferMemory;
 		VkDeviceMemory _depthImageMemory;
-
-		VkBuffer _uniformBuffer;
 
 		VkImage _depthImage;
 		VkImageView _depthImageView;
@@ -279,7 +246,6 @@ namespace Core
 		::Rendering::ManagerSampler _samplerMgr;
 		::Rendering::ManagerDescriptor _descriptorMgr;
 
-		::Rendering::Texture _texture;
 		::Rendering::Mesh _mesh;
 		::Rendering::Material _material;
 
