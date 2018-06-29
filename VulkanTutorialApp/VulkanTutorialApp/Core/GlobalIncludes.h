@@ -35,6 +35,8 @@
 #include <cassert>
 
 
+typedef uint64_t Uid;
+
 #define JE_AlignAs(val) alignas(val)
 #define JE_Inline inline
 

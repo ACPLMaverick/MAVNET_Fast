@@ -6,6 +6,7 @@ namespace Rendering
 {
 	class Resource;
 	class ManagerDescriptor;
+	struct PipelineKey;
 
 	class DescriptorSet
 	{
@@ -48,6 +49,8 @@ namespace Rendering
 		bool TryAssignResource(const Resource* resource, uint32_t* outBinding, uint32_t* outSlot);
 		// Will return false if failed to find a slot.
 		bool GetFirstAvailableResourceSlot(const Resource* resource, uint32_t* outBinding, uint32_t* outSlot);
+
+		void FillPipelineKey(PipelineKey* key) const;
 
 	private:
 

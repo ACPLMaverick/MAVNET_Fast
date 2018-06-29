@@ -139,6 +139,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Core\GlobalIncludes.cpp" />
+    <ClCompile Include="Core\ManagerUid.cpp" />
     <ClCompile Include="Rendering\DescriptorCommon.cpp" />
     <ClCompile Include="Rendering\DescriptorSet.cpp" />
     <ClCompile Include="Rendering\ManagerDescriptor.cpp" />
@@ -154,6 +155,7 @@
     <ClCompile Include="Rendering\LightDirectional.cpp" />
     <ClCompile Include="Rendering\Fog.cpp" />
     <ClCompile Include="GOM\Entity.cpp" />
+    <ClCompile Include="Rendering\RenderState.cpp" />
     <ClCompile Include="Rendering\ResourceCommon.cpp" />
     <ClCompile Include="Rendering\SystemDrawable.cpp" />
     <ClCompile Include="Rendering\Texture.cpp" />
@@ -161,8 +163,11 @@
     <ClCompile Include="Rendering\Sampler.cpp" />
     <ClCompile Include="Rendering\UniformBuffer.cpp" />
     <ClCompile Include="Rendering\Resource.cpp" />
+    <ClCompile Include="Rendering\VertexDeclaration.cpp" />
+    <ClCompile Include="Rendering\Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Core\ManagerUid.h" />
     <ClInclude Include="Rendering\DescriptorCommon.h" />
     <ClInclude Include="Rendering\DescriptorSet.h" />
     <ClInclude Include="Rendering\ManagerDescriptor.h" />
@@ -176,6 +181,7 @@
     <ClInclude Include="Rendering\LightDirectional.h" />
     <ClInclude Include="Rendering\Fog.h" />
     <ClInclude Include="GOM\Entity.h" />
+    <ClInclude Include="Rendering\RenderState.h" />
     <ClInclude Include="Rendering\ResourceCommon.h" />
     <ClInclude Include="Rendering\SystemDrawable.h" />
     <ClInclude Include="Rendering\Texture.h" />
@@ -184,6 +190,8 @@
     <ClInclude Include="Rendering\UniformBuffer.h" />
     <ClInclude Include="Rendering\UboCommon.h" />
     <ClInclude Include="Rendering\Resource.h" />
+    <ClInclude Include="Rendering\VertexDeclaration.h" />
+    <ClInclude Include="Rendering\Shader.h" />
     <ClInclude Include="Util\GlobalIncludes.h" />
     <ClInclude Include="Util\Singleton.h" />
   </ItemGroup>

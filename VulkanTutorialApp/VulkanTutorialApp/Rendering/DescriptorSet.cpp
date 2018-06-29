@@ -263,4 +263,8 @@ namespace Rendering
 
 		return false;
 	}
+
+	void DescriptorSet::FillPipelineKey(PipelineKey * key) const
+	{
+	}
 }

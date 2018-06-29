@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Material.h"
+#include "VertexDeclaration.h"
 
 namespace Rendering
 {
@@ -34,15 +34,15 @@ namespace Rendering
 			std::vector<float> Array;
 			uint32_t ComponentSize = 0;
 			uint32_t ComponentCount = 0;
-			Material::VertexDeclaration::ComponentType Type;
+			VertexDeclaration::ComponentType Type;
 
 			VertexArray()
 			{
 			}
 
-			VertexArray(Material::VertexDeclaration::ComponentType type)
+			VertexArray(VertexDeclaration::ComponentType type)
 				: Type(type)
-				, ComponentSize(Material::VertexDeclaration::GetComponentSize(type))
+				, ComponentSize(VertexDeclaration::GetComponentSize(type))
 			{
 			}
 
@@ -104,12 +104,12 @@ namespace Rendering
 		JE_Inline VkBuffer GetIndexBuffer() const { return _indexBuffer; }
 		JE_Inline uint32_t GetIndexCount() const { return static_cast<uint32_t>(_info.IndexCount); }
 
-		JE_Inline const Material::VertexDeclaration* GetVertexDeclarationIsAdjustedTo() const { return _adjustment; }
+		JE_Inline const VertexDeclaration* GetVertexDeclarationIsAdjustedTo() const { return _adjustment; }
 
 		void Initialize(const std::string* name, const LoadOptions* loadOptions);
 		void Cleanup();
 
-		void AdjustBuffersForVertexDeclaration(const Material::VertexDeclaration* declaration);
+		void AdjustBuffersForVertexDeclaration(const VertexDeclaration* declaration);
 
 	protected:
 		
@@ -138,7 +138,7 @@ namespace Rendering
 
 		Info _info;
 
-		const Material::VertexDeclaration* _adjustment;
+		const VertexDeclaration* _adjustment;
 	};
 }
 
