@@ -1,5 +1,6 @@
 package com.example.maverick.mavremote.NetworkCommon;
 
+import android.provider.ContactsContract;
 import android.util.Log;
 
 import com.example.maverick.mavremote.Actions.ActionEvent;
@@ -88,5 +89,5 @@ public class DataPacketFactory
     }
 
 
-    public static final int AppId = ("MavRemoteAppId").hashCode();
+    public static final int AppId = (App.TAG).hashCode();
 }
