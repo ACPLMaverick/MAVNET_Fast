@@ -31,11 +31,13 @@ namespace Rendering
 
 	public:
 
+		DescriptorSet();
 		DescriptorSet(const DescriptorSet& copy);
 		~DescriptorSet();
 
 		JE_Inline const Info* GetInfo() const { return &_info; }
 		JE_Inline VkDescriptorSetLayout GetAssociatedVkDescriptorSetLayout() const { return _associatedLayout.Layout; }
+		JE_Inline const DescriptorCommon::LayoutData* GetAssociatedLayout() const { return &_associatedLayout; }
 		JE_Inline VkDescriptorSet GetVkDescriptorSet() const { return _descriptorSet; }
 
 		// This object is initialized via ManagerDescriptor.
@@ -51,10 +53,6 @@ namespace Rendering
 		bool GetFirstAvailableResourceSlot(const Resource* resource, uint32_t* outBinding, uint32_t* outSlot);
 
 		void FillPipelineKey(PipelineKey* key) const;
-
-	private:
-
-		DescriptorSet();
 
 	private:
 

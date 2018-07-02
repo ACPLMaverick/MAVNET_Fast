@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Resource.h"
+#include "Rendering/resource/Resource.h"
 #include "UboCommon.h"
 
 namespace Rendering

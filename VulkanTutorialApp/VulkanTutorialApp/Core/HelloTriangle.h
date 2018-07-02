@@ -6,11 +6,13 @@
 #include "Rendering/LightDirectional.h"
 #include "Rendering/Fog.h"
 
-#include "Rendering/Texture.h"
-#include "Rendering/Mesh.h"
-#include "Rendering/Material.h"
-#include "Rendering/ManagerSampler.h"
-#include "Rendering/ManagerDescriptor.h"
+#include "Rendering/resource/Texture.h"
+#include "Rendering/resource/Mesh.h"
+#include "Rendering/resource/Material.h"
+#include "Rendering/sampler/ManagerSampler.h"
+#include "Rendering/descriptor/ManagerDescriptor.h"
+#include "Rendering/pipeline/ManagerPipeline.h"
+#include "Rendering/renderPass/ManagerRenderPass.h"
 
 namespace Core
 {
@@ -86,6 +88,8 @@ namespace Core
 		ManagerUid* GetManagerUid() { return &_uidMgr; }
 		::Rendering::ManagerSampler* GetManagerSampler() { return &_samplerMgr; }
 		::Rendering::ManagerDescriptor* GetManagerDescriptor() { return &_descriptorMgr; }
+		::Rendering::ManagerPipeline* GetManagerPipeline() { return &_pipelineMgr; }
+		::Rendering::ManagerRenderPass* GetManagerRenderPass() { return &_renderPassMgr; }
 
 
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -102,6 +106,10 @@ namespace Core
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidateFormats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags);
 		VkFormat FindDepthFormat();
 		bool HasStencilComponent(VkFormat format);
+
+		VkFormat GetSwapChainFormat() { return _swapChainFormat; }
+
+		VkExtent2D GetSwapChainExtent() { return _swapChainExtent; }
 
 	private:
 
@@ -233,6 +241,8 @@ namespace Core
 
 		::Rendering::ManagerSampler _samplerMgr;
 		::Rendering::ManagerDescriptor _descriptorMgr;
+		::Rendering::ManagerPipeline _pipelineMgr;
+		::Rendering::ManagerRenderPass _renderPassMgr;
 
 		::Rendering::Mesh _mesh;
 		::Rendering::Material _material;

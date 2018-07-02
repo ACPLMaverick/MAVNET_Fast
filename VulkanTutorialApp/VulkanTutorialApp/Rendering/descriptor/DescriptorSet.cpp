@@ -1,8 +1,8 @@
 #include "DescriptorSet.h"
 
 #include "Core/HelloTriangle.h"
-#include "UniformBuffer.h"
-#include "Texture.h"
+#include "Rendering/buffer/UniformBuffer.h"
+#include "Rendering/resource/Texture.h"
 
 namespace Rendering
 {

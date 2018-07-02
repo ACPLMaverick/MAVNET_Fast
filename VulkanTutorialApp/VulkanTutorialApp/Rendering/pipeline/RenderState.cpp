@@ -57,7 +57,7 @@ namespace Rendering
 		outMultisampleState->sampleShadingEnable = _info.bSampleShading;
 		outMultisampleState->rasterizationSamples = ConvertToVkSampleCount(_info.SampleCount);
 		outMultisampleState->minSampleShading = 1.0f; // hardcoded !!
-		outMultisampleState->pSampleMask = outSampleMask;
+		outMultisampleState->pSampleMask = *outSampleMask != 0xFFFFFFFF ? outSampleMask : nullptr;
 		outMultisampleState->alphaToCoverageEnable = _info.bAlphaToCoverage;
 		outMultisampleState->alphaToOneEnable = _info.bAlphaToOne;
 	}

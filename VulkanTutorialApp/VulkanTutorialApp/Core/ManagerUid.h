@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Rendering/Shader.h"
+#include "Rendering/resource/Shader.h"
 
 namespace Core
 {
@@ -14,15 +14,15 @@ namespace Core
 		void Initialize();
 		void Cleanup();
 
-		Uid ObtainUidForShaderModule(Rendering::Shader::Stage stage);
-		Uid ObtainUidForMisc();
+		UidShader ObtainUidForShader();
+		UidMisc ObtainUidForMisc();
 
-		void FreeUidForShaderModule(Rendering::Shader::Stage stage, Uid uid);
-		void FreeUidForMisc(Uid uid);
+		void FreeUidForShader(UidShader uid);
+		void FreeUidForMisc(UidMisc uid);
 
 	private:
 
-		Uid _uidsShaderModule[static_cast<uint8_t>(Rendering::Shader::Stage::ENUM_SIZE)] = {};
-		Uid _uidsMisc = 0;
+		UidShader _uidsShader = 0;
+		UidMisc _uidsMisc = 0;
 	};
 }

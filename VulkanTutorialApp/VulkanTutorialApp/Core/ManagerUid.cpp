@@ -11,26 +11,26 @@ namespace Core
 	{
 	}
 
-	Uid ManagerUid::ObtainUidForShaderModule(Rendering::Shader::Stage stage)
+	UidShader ManagerUid::ObtainUidForShader()
 	{
-		++_uidsShaderModule[static_cast<uint8_t>(stage)];
-		JE_Assert(_uidsShaderModule[static_cast<uint8_t>(stage)] <= Rendering::Shader::MAX_SHADER_COUNT_COMMON);
-		return _uidsShaderModule[static_cast<uint8_t>(stage)];
+		++_uidsShader;
+		JE_Assert(_uidsShader <= Rendering::Shader::MAX_SHADER_COUNT);
+		return _uidsShader;
 	}
 
-	Uid ManagerUid::ObtainUidForMisc()
+	UidMisc ManagerUid::ObtainUidForMisc()
 	{
 		++_uidsMisc;
 		return _uidsMisc;
 	}
 
-	void ManagerUid::FreeUidForShaderModule(Rendering::Shader::Stage stage, Uid uid)
+	void ManagerUid::FreeUidForShader(UidShader uid)
 	{
 		// TODO: implement
 		JE_PrintWarnLine("Freeing uids are not yet implemented!");
 	}
 
-	void ManagerUid::FreeUidForMisc(Uid uid)
+	void ManagerUid::FreeUidForMisc(UidMisc uid)
 	{
 		// TODO: implement
 		JE_PrintWarnLine("Freeing uids are not yet implemented!");

@@ -1,7 +1,7 @@
 #include "Mesh.h"
 
 #include "Core/HelloTriangle.h"
-#include "Helper.h"
+#include "Rendering/Helper.h"
 
 #define USE_STAGING_BUFFER 1
 

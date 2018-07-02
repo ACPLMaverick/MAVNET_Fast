@@ -1,5 +1,4 @@
 #include "HelloTriangle.h"
-#include "Rendering/Pipeline.h"
 
 #if !NDEBUG
 #include <conio.h>

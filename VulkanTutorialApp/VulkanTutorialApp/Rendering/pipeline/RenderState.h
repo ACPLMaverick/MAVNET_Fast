@@ -7,7 +7,7 @@ namespace Rendering
 	public:
 
 		static const uint32_t PACKED_STATE_PREFERRED_SIZE_BYTES = 28;
-		static const uint32_t MAX_FRAMEBUFFERS_ATTACHED = 4;
+		static const uint32_t MAX_COLOR_FRAMEBUFFERS_ATTACHED = 4;
 
 
 		JE_EnumBegin(PolygonDrawMode)
@@ -111,7 +111,7 @@ namespace Rendering
 			bool bStencilTestEnabled = false;
 
 			// ColorBlends for four supported attached framebuffers.
-			ColorBlend ColorBlends[MAX_FRAMEBUFFERS_ATTACHED] = {};
+			ColorBlend ColorBlends[MAX_COLOR_FRAMEBUFFERS_ATTACHED] = {};
 			uint32_t FramebufferCount = 0;
 
 			// Fuck DynamicStates, we don't use it for now.
@@ -181,6 +181,18 @@ namespace Rendering
 #pragma pack(pop)
 
 
+		// ++ Helper conversion functions.
+		
+		static VkPolygonMode ConvertToVkPolygonMode(PolygonDrawMode value);
+		static VkSampleCountFlagBits ConvertToVkSampleCount(MultisamplingMode value);
+		static VkCompareOp ConvertToVkCompareOp(CompareOperation value);
+		static VkStencilOp ConvertToVkStencilOp(StencilOperation value);
+		static VkBlendFactor ConvertToVkBlendFactor(ColorBlend::BlendFactor value);
+		static VkBlendOp ConvertToVkBlendOp(ColorBlend::BlendOperation value);
+		
+		// -- Helper conversion functions.
+
+
 		RenderState() { }
 		~RenderState() { }
 
@@ -205,13 +217,6 @@ namespace Rendering
 
 		static uint8_t PackResolution16to8(uint16_t value);
 		static uint16_t UnpackResolution8to16(uint8_t value);
-
-		static VkPolygonMode ConvertToVkPolygonMode(PolygonDrawMode value);
-		static VkSampleCountFlagBits ConvertToVkSampleCount(MultisamplingMode value);
-		static VkCompareOp ConvertToVkCompareOp(CompareOperation value);
-		static VkStencilOp ConvertToVkStencilOp(StencilOperation value);
-		static VkBlendFactor ConvertToVkBlendFactor(ColorBlend::BlendFactor value);
-		static VkBlendOp ConvertToVkBlendOp(ColorBlend::BlendOperation value);
 
 		void CreateKey();
 

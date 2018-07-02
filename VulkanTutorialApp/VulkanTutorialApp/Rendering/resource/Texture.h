@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Resource.h"
-#include "Sampler.h"
+#include "Rendering/sampler/Sampler.h"
 
 namespace Rendering
 {

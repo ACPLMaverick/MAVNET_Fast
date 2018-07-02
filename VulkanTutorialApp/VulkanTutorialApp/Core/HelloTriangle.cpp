@@ -5,7 +5,7 @@
 #include "Rendering/Helper.h"
 #include "Rendering/SystemDrawable.h"
 
-#include "Rendering/UboCommon.h" // TODO: temp
+#include "Rendering/buffer/UboCommon.h" // TODO: temp
 
 namespace Core
 {
@@ -80,6 +80,8 @@ namespace Core
 		_uidMgr.Initialize();
 		_samplerMgr.Initialize();
 		_descriptorMgr.Initialize();
+		_pipelineMgr.Initialize();
+		_renderPassMgr.Initialize();
 
 		::Rendering::Mesh::LoadOptions meshOptions;
 		_mesh.Initialize(&MODEL_NAME_MESH, &meshOptions);
@@ -1400,6 +1402,8 @@ namespace Core
 
 		_mesh.Cleanup();
 
+		_renderPassMgr.Cleanup();
+		_pipelineMgr.Cleanup();
 		_descriptorMgr.Cleanup();
 		_samplerMgr.Cleanup();
 		_uidMgr.Cleanup();

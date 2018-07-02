@@ -1,7 +1,7 @@
 #include "Texture.h"
 
 #include "Core/HelloTriangle.h"
-#include "ManagerSampler.h"
+#include "Rendering/sampler/ManagerSampler.h"
 
 namespace Rendering
 {
@@ -198,7 +198,7 @@ namespace Rendering
 			smpOptions.OptMaxMipmapLevel = _info.MipCount;
 		}
 
-		_sampler = Core::HelloTriangle::GetInstance()->GetManagerSampler()->GetSampler(&smpOptions);
+		_sampler = Core::HelloTriangle::GetInstance()->GetManagerSampler()->Get(&smpOptions);
 	}
 
 	void Texture::CleanupData()

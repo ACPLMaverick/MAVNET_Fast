@@ -8,8 +8,8 @@ namespace Rendering
 	{
 	public:
 
-		static const uint32_t MAX_SHADER_COUNT_COMMON = 64 - 1;	// One is for zero as "no shader here"
-		static const uint32_t KEY_PREFERRED_SIZE_BYTES = 6;
+		static const uint32_t MAX_SHADER_COUNT = 255;
+		static const uint32_t KEY_PREFERRED_SIZE_BYTES = 1;
 
 		JE_EnumBegin(Stage)
 
@@ -24,17 +24,12 @@ namespace Rendering
 
 		struct Key
 		{
-			uint8_t UidStageVertex : 6;
-			uint8_t UidStageTesselationControl : 6;
-			uint8_t UidStageTesselationEvaluation : 6;
-			uint8_t UidStageGeometry : 6;
-			uint8_t UidStageFragment : 6;
-			uint8_t UidStageCompute : 6;
+			uint8_t Uid : 8;
 
 			bool operator==(const Key& other) const
 			{
 				JE_AssertStatic(sizeof(Key) <= KEY_PREFERRED_SIZE_BYTES);
-				return memcmp(this, &other, sizeof(Key)) == 0;
+				return Uid == other.Uid;
 			}
 		};
 

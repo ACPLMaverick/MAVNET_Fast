@@ -40,20 +40,12 @@ namespace Rendering
 
 			// Perform reflection on this module
 			// TODO: Reflection.
-
-			// Assign an index to this module and check it.
-			keys[i] = JE_GetRenderer()->GetManagerUid()->ObtainUidForShaderModule(stage);
 		}
 
 		JE_Assert(hasAnyShader);
 
 		// Create key.
-		_key.UidStageVertex = keys[static_cast<size_t>(Stage::Vertex)];
-		_key.UidStageTesselationControl = keys[static_cast<size_t>(Stage::TesselationControl)];
-		_key.UidStageTesselationEvaluation = keys[static_cast<size_t>(Stage::TesselationEvaluation)];
-		_key.UidStageGeometry = keys[static_cast<size_t>(Stage::Geometry)];
-		_key.UidStageFragment = keys[static_cast<size_t>(Stage::Fragment)];
-		_key.UidStageCompute = keys[static_cast<size_t>(Stage::Compute)];
+		_key.Uid = JE_GetRenderer()->GetManagerUid()->ObtainUidForShader();
 
 		_bIsLoaded = true;
 	}

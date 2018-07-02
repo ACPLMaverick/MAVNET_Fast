@@ -2,10 +2,10 @@
 
 #include "Core/HelloTriangle.h"
 #include "Texture.h"
-#include "UniformBuffer.h"
+#include "Rendering/buffer/UniformBuffer.h"
 
-#include "ManagerDescriptor.h"
-#include "DescriptorSet.h"
+#include "Rendering/descriptor/ManagerDescriptor.h"
+#include "Rendering/descriptor/DescriptorSet.h"
 
 namespace Rendering
 {
@@ -71,7 +71,49 @@ namespace Rendering
 		);
 		info.Resources[0][0] = _uboPerObject;
 		info.Resources[1][0] = _textures[0];
-		_descriptorSet = JE_GetRenderer()->GetManagerDescriptor()->CreateDescriptorSet(&info);
+		_descriptorSet = JE_GetRenderer()->GetManagerDescriptor()->Get(&info);
+
+
+		// Loaded from file too.
+		RenderState::Info renderStateInfo = {};
+		renderStateInfo.bAlphaToCoverage = false;
+		renderStateInfo.bAlphaToOne = false;
+		renderStateInfo.bDepthTestEnabled = true;
+		renderStateInfo.bDepthWriteEnabled = true;
+		renderStateInfo.bRasterizerDepthClamp = false;
+		renderStateInfo.bRasterizerEnabled = true;
+		renderStateInfo.bSampleShading = false;
+		renderStateInfo.bStencilTestEnabled = false;
+
+		renderStateInfo.ColorBlends[0].SrcBlendFactor = RenderState::ColorBlend::BlendFactor::Disabled;
+		renderStateInfo.ColorBlends[0].DstBlendFactor = RenderState::ColorBlend::BlendFactor::Disabled;
+
+		renderStateInfo.DepthCompareOperation = RenderState::CompareOperation::Less;
+		renderStateInfo.DrawMode = RenderState::PolygonDrawMode::Solid;
+		renderStateInfo.FramebufferCount = 1; // TODO: This should be defined by render pass.
+		renderStateInfo.SampleCount = RenderState::MultisamplingMode::None;
+		renderStateInfo.SampleMask = 0xFFFFFFFF;
+		renderStateInfo.ScissorWidth = JE_GetRenderer()->GetSwapChainExtent().width;
+		renderStateInfo.ScissorHeight = JE_GetRenderer()->GetSwapChainExtent().height;
+		renderStateInfo.ViewportWidth = JE_GetRenderer()->GetSwapChainExtent().width;
+		renderStateInfo.ViewportHeight = JE_GetRenderer()->GetSwapChainExtent().height;
+
+		
+		Shader shader;
+		shader.Load("TutorialShader"); // TODO: ResourceManagement. Load modules separately, store them and combine with each other to have shaders.
+
+		Pipeline::Info pipelineInfo;
+		pipelineInfo.RenderStateInfo = &renderStateInfo;
+		pipelineInfo.MyShader = &shader;
+		pipelineInfo.DescriptorLayoutData = _descriptorSet->GetAssociatedLayout();
+		pipelineInfo.MyVertexDeclaration = &_vertexDeclaration;
+		pipelineInfo.MyType = Pipeline::Type::Graphics;
+		pipelineInfo.MyPass = RenderPassCommon::Id::Tutorial;
+
+		Pipeline::Key key;
+		Pipeline::CreateKey(&pipelineInfo, &key);
+
+		_pipeline = JE_GetRenderer()->GetManagerPipeline()->Get(&key, &pipelineInfo);
 	}
 
 	void Material::Update()

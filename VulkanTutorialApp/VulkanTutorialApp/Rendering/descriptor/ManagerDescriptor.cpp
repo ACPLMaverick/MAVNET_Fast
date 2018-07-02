@@ -2,12 +2,13 @@
 
 #include "Core/HelloTriangle.h"
 
-#include "Resource.h"
+#include "Rendering/resource/Resource.h"
 
 namespace Rendering
 {
 	ManagerDescriptor::ManagerDescriptor()
-		: _currentPoolIndex(-1)
+		: Manager()
+		, _currentPoolIndex(-1)
 	{
 	}
 
@@ -19,23 +20,14 @@ namespace Rendering
 		JE_Assert(_currentPoolIndex == -1);
 	}
 
-	void ManagerDescriptor::Initialize()
-	{
-	}
-
 	void ManagerDescriptor::Cleanup()
 	{
-		for (auto& set : _descriptorSetMemory)
-		{
-			set.Cleanup();
-		}
-		_descriptorSetMemory.clear();
-
 		for (auto& pool : _descriptorPools)
 		{
 			vkDestroyDescriptorPool(JE_GetRenderer()->GetDevice(), pool, JE_GetRenderer()->GetAllocatorPtr());
 		}
 		_descriptorPools.clear();
+		_currentPoolIndex = -1;
 
 		for (auto& layoutData : _layouts)
 		{
@@ -43,22 +35,18 @@ namespace Rendering
 		}
 		_layouts.clear();
 
-		_currentPoolIndex = -1;
+		Manager::Cleanup();
 	}
 
-	DescriptorSet * ManagerDescriptor::CreateDescriptorSet(const DescriptorSet::Info * info)
+	DescriptorSet * ManagerDescriptor::CreateValue(const DescriptorSet::Info * key, const Util::NullType * info)
 	{
-		DescriptorSet* set;
-
 		// Descriptor set not found! Get layout for this descriptor set then.
-		DescriptorCommon::LayoutData layout = GetDescriptorLayout(&info->LayInfo);
+		DescriptorCommon::LayoutData layout = GetDescriptorLayout(&key->LayInfo);
 
 		// Create new descriptor set with these parameters.
-		DescriptorSet setObj;
-		_descriptorSetMemory.push_back(setObj);
-		set = &_descriptorSetMemory.back();
+		DescriptorSet* set = AllocateValue();
 
-		set->_info = *info;
+		set->_info = *key;
 		set->_associatedLayout = layout;
 		set->_descriptorSet = CreateDescriptorSet(&layout);
 

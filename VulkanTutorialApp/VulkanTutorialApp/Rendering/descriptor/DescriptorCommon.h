@@ -2,7 +2,7 @@
 
 #include "Core/GlobalIncludes.h"
 
-#include "ResourceCommon.h"
+#include "Rendering/resource/ResourceCommon.h"
 
 namespace Rendering
 {
