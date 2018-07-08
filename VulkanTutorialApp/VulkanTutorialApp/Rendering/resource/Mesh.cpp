@@ -1,7 +1,7 @@
 #include "Mesh.h"
 
 #include "Core/HelloTriangle.h"
-#include "Helper.h"
+#include "Rendering/Helper.h"
 
 #define USE_STAGING_BUFFER 1
 
@@ -57,7 +57,7 @@ namespace Rendering
 		_indexBuffer = VK_NULL_HANDLE;
 	}
 
-	void Mesh::AdjustBuffersForVertexDeclaration(const Material::VertexDeclaration * declaration)
+	void Mesh::AdjustBuffersForVertexDeclaration(const VertexDeclaration * declaration)
 	{
 		if (declaration == nullptr)
 		{
@@ -77,7 +77,7 @@ namespace Rendering
 
 		for(size_t i = 0; i < componentCount; ++i)
 		{
-			Material::VertexDeclaration::ComponentType thisType = (*declaration->GetComponents())[i];
+			VertexDeclaration::ComponentType thisType = (*declaration->GetComponents())[i];
 
 			// Find this type in our vertex arrays.
 			size_t foundIndex = -1;
@@ -103,7 +103,7 @@ namespace Rendering
 				// This component type is not present among the vertex arrays of this mesh.
 				// Place dummy vertex buffer from the helper.
 
-				uint32_t neededSizeBytes = Material::VertexDeclaration::GetComponentSize(thisType) * _info.VertexCount;
+				uint32_t neededSizeBytes = VertexDeclaration::GetComponentSize(thisType) * _info.VertexCount;
 
 				_adjVertexBufferArray[i] = Helper::GetInstance()->GetVoidVertexBuffer(neededSizeBytes);
 				_adjOffsetArray[i] = 0;
@@ -150,12 +150,12 @@ namespace Rendering
 			arrayUv = &_info.VertexArrays[1];
 		}
 
-		*arrayPosition = VertexArray(Material::VertexDeclaration::ComponentType::Position);
+		*arrayPosition = VertexArray(VertexDeclaration::ComponentType::Position);
 		if (bIncludeNormals)
 		{
-			*arrayNormal = VertexArray(Material::VertexDeclaration::ComponentType::Normal);
+			*arrayNormal = VertexArray(VertexDeclaration::ComponentType::Normal);
 		}
-		*arrayUv = VertexArray(Material::VertexDeclaration::ComponentType::Uv);
+		*arrayUv = VertexArray(VertexDeclaration::ComponentType::Uv);
 
 
 

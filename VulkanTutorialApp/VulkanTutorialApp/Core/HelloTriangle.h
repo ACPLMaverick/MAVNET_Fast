@@ -1,14 +1,18 @@
 #pragma once
 
+#include "Core/ManagerUid.h"
+
 #include "Rendering/Camera.h"
 #include "Rendering/LightDirectional.h"
 #include "Rendering/Fog.h"
 
-#include "Rendering/Texture.h"
-#include "Rendering/Mesh.h"
-#include "Rendering/Material.h"
-#include "Rendering/ManagerSampler.h"
-#include "Rendering/ManagerDescriptor.h"
+#include "Rendering/resource/Texture.h"
+#include "Rendering/resource/Mesh.h"
+#include "Rendering/resource/Material.h"
+#include "Rendering/sampler/ManagerSampler.h"
+#include "Rendering/descriptor/ManagerDescriptor.h"
+#include "Rendering/pipeline/ManagerPipeline.h"
+#include "Rendering/renderPass/ManagerRenderPass.h"
 
 namespace Core
 {
@@ -48,21 +52,6 @@ namespace Core
 
 		const std::string MODEL_NAME_MESH = "chalet.obj";
 
-
-		JE_EnumBegin(ShaderType)
-
-			Vertex,
-			TesselationControl,
-			TesselationEvaluation,
-			Geometry,
-			Fragment,
-			Compute
-
-		JE_EnumEnd()
-
-
-		static const char* ShaderTypeToExtension[static_cast<uint8_t>(ShaderType::ENUM_SIZE)];
-
 		struct QueueFamilyIndices
 		{
 			int32_t GraphicsFamily = -1;
@@ -89,12 +78,18 @@ namespace Core
 
 		static HelloTriangle* GetInstance() { JE_Assert(_singletonInstance != nullptr); return _singletonInstance; }
 
+		static bool LoadFile(const std::string& fileName, std::vector<uint8_t>& outData);
+
 		VkDevice GetDevice() { return _device; }
 		VkAllocationCallbacks* GetAllocatorPtr() { return _pAllocator; }
 
 		::Rendering::Camera* GetCamera() { return &_camera; }
+
+		ManagerUid* GetManagerUid() { return &_uidMgr; }
 		::Rendering::ManagerSampler* GetManagerSampler() { return &_samplerMgr; }
 		::Rendering::ManagerDescriptor* GetManagerDescriptor() { return &_descriptorMgr; }
+		::Rendering::ManagerPipeline* GetManagerPipeline() { return &_pipelineMgr; }
+		::Rendering::ManagerRenderPass* GetManagerRenderPass() { return &_renderPassMgr; }
 
 
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -111,6 +106,10 @@ namespace Core
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidateFormats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags);
 		VkFormat FindDepthFormat();
 		bool HasStencilComponent(VkFormat format);
+
+		VkFormat GetSwapChainFormat() { return _swapChainFormat; }
+
+		VkExtent2D GetSwapChainExtent() { return _swapChainExtent; }
 
 	private:
 
@@ -142,7 +141,6 @@ namespace Core
 
 			void CreateRenderPass();
 			void CreateGraphicsPipeline();
-				VkShaderModule CreateShaderModule(const std::vector<uint8_t> code);
 			void CreateFramebuffers();
 			void CreateCommandPool();
 			void CreateDepthResources();
@@ -161,10 +159,6 @@ namespace Core
 			void CleanupObjects();
 			void CleanupDebugCallback();
 			void CleanupSwapChain();
-
-
-		static void LoadFile(const std::string& fileName, std::vector<uint8_t>& outData);
-		static void LoadShader(const std::string& shaderName, ShaderType shaderType, std::vector<uint8_t>& outData);
 
 		PFN_vkVoidFunction GetVkProcVoid(const char* procName)
 		{
@@ -243,8 +237,12 @@ namespace Core
 		VkImage _depthImage;
 		VkImageView _depthImageView;
 
+		ManagerUid _uidMgr;
+
 		::Rendering::ManagerSampler _samplerMgr;
 		::Rendering::ManagerDescriptor _descriptorMgr;
+		::Rendering::ManagerPipeline _pipelineMgr;
+		::Rendering::ManagerRenderPass _renderPassMgr;
 
 		::Rendering::Mesh _mesh;
 		::Rendering::Material _material;

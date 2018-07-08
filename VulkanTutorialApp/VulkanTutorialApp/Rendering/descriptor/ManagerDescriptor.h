@@ -1,25 +1,26 @@
 #pragma once
 
+#include "Rendering/Manager.h"
 #include "DescriptorCommon.h"
 #include "DescriptorSet.h"
 
 namespace Rendering
 {
-	class ManagerDescriptor
+	class ManagerDescriptor : public Manager<DescriptorSet::Info, DescriptorSet, DescriptorSet*>
 	{
 	public:
-
-	public:
 		ManagerDescriptor();
-		~ManagerDescriptor();
+		virtual ~ManagerDescriptor();
 
-		void Initialize();
-		void Cleanup();
+		virtual void Cleanup() override;
 
-		// Will allocate new descriptor sets. May or may not allocate new descriptor layout.
-		DescriptorSet* CreateDescriptorSet(const DescriptorSet::Info* info);
+	protected:
 
-	private:
+		virtual DescriptorSet* CreateValue(const DescriptorSet::Info* key, const Util::NullType* info) override;
+		virtual bool IsValidValueWrapper(DescriptorSet* const* val) override
+		{
+			return (*val) != nullptr;
+		}
 
 		// May create new descriptor layouts.
 		DescriptorCommon::LayoutData GetDescriptorLayout(const DescriptorCommon::LayoutInfo* info);
@@ -28,7 +29,7 @@ namespace Rendering
 		VkDescriptorSetLayout CreateDescriptorSetLayout(const DescriptorCommon::LayoutInfo* info);
 		VkDescriptorSet CreateDescriptorSet(const DescriptorCommon::LayoutData* layoutData);
 
-	private:
+	protected:
 
 		static const uint32_t MAX_SETS_PER_POOL = 100;
 		static constexpr const uint32_t _poolDescriptorCountsPerType[] = 

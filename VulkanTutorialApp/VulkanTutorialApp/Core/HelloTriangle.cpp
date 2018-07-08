@@ -5,21 +5,11 @@
 #include "Rendering/Helper.h"
 #include "Rendering/SystemDrawable.h"
 
-#include "Rendering/UboCommon.h" // TODO: temp
+#include "Rendering/buffer/UboCommon.h" // TODO: temp
 
 namespace Core
 {
 	const std::string HelloTriangle::RESOURCE_PATH = "..\\..\\JadeEngine\\JadeEngine\\Resources\\";
-
-	const char* HelloTriangle::ShaderTypeToExtension[]
-	{
-		".vert",
-		".tesc",
-		".tese",
-		".geom",
-		".frag",
-		".comp"
-	};
 
 	HelloTriangle* HelloTriangle::_singletonInstance = nullptr;
 
@@ -87,8 +77,11 @@ namespace Core
 
 		::Rendering::Helper::GetInstance()->Initialize();
 
+		_uidMgr.Initialize();
 		_samplerMgr.Initialize();
 		_descriptorMgr.Initialize();
+		_pipelineMgr.Initialize();
+		_renderPassMgr.Initialize();
 
 		::Rendering::Mesh::LoadOptions meshOptions;
 		_mesh.Initialize(&MODEL_NAME_MESH, &meshOptions);
@@ -665,23 +658,11 @@ namespace Core
 
 		std::vector<uint8_t> vertShaderData, fragShaderData;
 
-		LoadShader("TutorialShader", ShaderType::Vertex, vertShaderData);
-		LoadShader("TutorialShader", ShaderType::Fragment, fragShaderData);
+		Rendering::Shader shader;
+		shader.Load("TutorialShader");
 
-		VkShaderModule vertShaderModule = CreateShaderModule(vertShaderData);
-		VkShaderModule fragShaderModule = CreateShaderModule(fragShaderData);
-
-		VkPipelineShaderStageCreateInfo shaderStages[2] = {};
-
-		shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-		shaderStages[0].module = vertShaderModule;
-		shaderStages[0].pName = "main";	// It's possible to combine multiple fragment shaders into a single shader module and use different entry points to differentiate between their behaviors. 
-		shaderStages[0].pSpecializationInfo = nullptr; //  It allows you to specify values for shader constants. You can use a single shader module where its behavior can be configured at pipeline creation by specifying different values for the constants used in it. 
-
-		shaderStages[1] = shaderStages[0];
-		shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		shaderStages[1].module = fragShaderModule;
+		std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+		shader.CreatePipelineShaderStageInfos(&shaderStages);
 
 		
 		// Vertex input state creation info.
@@ -836,8 +817,8 @@ namespace Core
 		VkGraphicsPipelineCreateInfo pipelineInfo = {};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		
-		pipelineInfo.stageCount = 2;
-		pipelineInfo.pStages = shaderStages;
+		pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
+		pipelineInfo.pStages = shaderStages.data();
 		
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
 		pipelineInfo.pInputAssemblyState = &inputAssembly;
@@ -860,20 +841,7 @@ namespace Core
 
 		// Shader modules cleanup.
 
-		vkDestroyShaderModule(_device, vertShaderModule, _pAllocator);
-		vkDestroyShaderModule(_device, fragShaderModule, _pAllocator);
-	}
-
-	VkShaderModule HelloTriangle::CreateShaderModule(const std::vector<uint8_t> code)
-	{
-		VkShaderModuleCreateInfo createInfo = {};
-		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		createInfo.codeSize = code.size();
-		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
-
-		VkShaderModule shaderModule;
-		JE_AssertThrowVkResult(vkCreateShaderModule(_device, &createInfo, _pAllocator, &shaderModule));
-		return shaderModule;
+		shader.Cleanup();
 	}
 
 	void HelloTriangle::CreateFramebuffers()
@@ -1434,8 +1402,11 @@ namespace Core
 
 		_mesh.Cleanup();
 
+		_renderPassMgr.Cleanup();
+		_pipelineMgr.Cleanup();
 		_descriptorMgr.Cleanup();
 		_samplerMgr.Cleanup();
+		_uidMgr.Cleanup();
 
 		// System instances destruction.
 		::Rendering::SystemDrawable::DestroyInstance();
@@ -1531,11 +1502,12 @@ namespace Core
 		}
 	}
 
-	void HelloTriangle::LoadFile(const std::string & fileName, std::vector<uint8_t>& outData)
+	bool HelloTriangle::LoadFile(const std::string & fileName, std::vector<uint8_t>& outData)
 	{
 		std::ifstream file(fileName, std::ios::ate | std::ios::binary);
 
-		JE_AssertThrow(file.is_open(), "Failed to open requested file!");
+		if (!file.is_open())
+			return false;
 
 		// (ate) The advantage of starting to read at the end of the file is that we can use the read position to determine the size of the file and allocate a buffer
 
@@ -1547,10 +1519,7 @@ namespace Core
 		file.read(reinterpret_cast<char*>(outData.data()), fileSize);
 
 		file.close();
-	}
 
-	void HelloTriangle::LoadShader(const std::string& shaderName, ShaderType shaderType, std::vector<uint8_t>& outData)
-	{
-		LoadFile(RESOURCE_PATH + "Shaders\\Binary\\" + shaderName + ShaderTypeToExtension[static_cast<uint8_t>(shaderType)] + ".spv", outData);
+		return true;
 	}
 }

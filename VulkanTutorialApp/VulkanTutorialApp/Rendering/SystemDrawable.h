@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Mesh.h"
-#include "Texture.h"
-#include "Material.h"
+#include "Rendering/resource/Mesh.h"
+#include "Rendering/resource/Texture.h"
+#include "Rendering/resource/Material.h"
 
 namespace Rendering
 {

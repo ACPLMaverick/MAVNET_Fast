@@ -35,6 +35,11 @@
 #include <cassert>
 
 
+typedef uint64_t UidShader;
+typedef uint64_t UidMisc;
+typedef uint64_t UidEntity;
+
+
 #define JE_AlignAs(val) alignas(val)
 #define JE_Inline inline
 

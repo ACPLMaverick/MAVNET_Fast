@@ -2,112 +2,20 @@
 
 #include "Core/HelloTriangle.h"
 #include "Texture.h"
-#include "UniformBuffer.h"
+#include "Rendering/buffer/UniformBuffer.h"
 
-#include "ManagerDescriptor.h"
-#include "DescriptorSet.h"
+#include "Rendering/descriptor/ManagerDescriptor.h"
+#include "Rendering/descriptor/DescriptorSet.h"
 
 namespace Rendering
 {
-	Material::VertexDeclaration::VertexDeclaration()
-	{
-	}
-
-	Material::VertexDeclaration::~VertexDeclaration()
-	{
-	}
-
-	void Material::VertexDeclaration::Initialize(const std::vector<Material::VertexDeclaration::ComponentType>* components)
-	{
-		_components = *components;
-	}
-
-	bool Material::VertexDeclaration::IsHavingComponent(ComponentType type) const
-	{
-		for (const auto& mType : _components)
-		{
-			if (mType == type)
-				return true;
-		}
-
-		return false;
-	}
-
-	void Material::VertexDeclaration::GetComponentSizes(std::vector<uint32_t>* sizeVector) const
-	{
-		sizeVector->clear();
-		for (const auto& mType : _components)
-		{
-			sizeVector->push_back(GetComponentSize(mType));
-		}
-	}
-
-	uint32_t Material::VertexDeclaration::GetComponentTotalSize() const
-	{
-		uint32_t sum = 0;
-		for (const auto& mType : _components)
-		{
-			sum += GetComponentSize(mType);
-		}
-		return sum;
-	}
-
-	void Material::VertexDeclaration::GetBindingDescriptions(std::vector<VkVertexInputBindingDescription>* outDescriptions) const 
-	{
-		outDescriptions->clear();
-
-		uint32_t bindingIndex = 0;
-		for (const auto& component : _components)
-		{
-			VkVertexInputBindingDescription desc = {};
-			desc.binding = bindingIndex;
-			desc.stride = GetComponentSize(component);
-			desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-			outDescriptions->push_back(desc);
-
-			++bindingIndex;
-		}
-	}
-
-	void Material::VertexDeclaration::GetAttributeDescriptions(std::vector<VkVertexInputAttributeDescription>* outDescriptions) const
-	{
-		outDescriptions->clear();
-
-		uint32_t bindingIndex = 0;
-		for (const auto& component : _components)
-		{
-			VkVertexInputAttributeDescription desc = {};
-			desc.binding = bindingIndex;
-			desc.location = bindingIndex;
-			desc.format = GetComponentFormat(component);
-			desc.offset = 0; // TODO: Check this when rewriting code to use only one VkBuffer for all attribs.
-
-			outDescriptions->push_back(desc);
-
-			++bindingIndex;
-		}
-	}
-
-	bool Material::VertexDeclaration::operator==(const VertexDeclaration & other) const
-	{
-		if (_components.size() != other._components.size())
-			return false;
-
-		for (size_t i = 0; i < _components.size(); ++i)
-		{
-			if (_components[i] != other._components[i])
-				return false;
-		}
-
-		return true;
-	}
-
 	Material::Material()
-		: _descriptorSet(nullptr)
+		: Resource()
+		, _descriptorSet(nullptr)
 		, _uboPerObject(nullptr)
 		, _uboPerMaterial(nullptr)
 	{
+		_type = ResourceCommon::Type::Material;
 	}
 
 
@@ -144,7 +52,7 @@ namespace Rendering
 		texture->Initialize(&texName, &texOptions);
 		_textures.push_back(texture);
 
-		//This is created based on material properties (TODO)
+		
 		DescriptorSet::Info info;
 		info.LayInfo.Bindings[0] = DescriptorCommon::LayoutInfo::Binding
 		(
@@ -163,7 +71,49 @@ namespace Rendering
 		);
 		info.Resources[0][0] = _uboPerObject;
 		info.Resources[1][0] = _textures[0];
-		_descriptorSet = JE_GetRenderer()->GetManagerDescriptor()->CreateDescriptorSet(&info);
+		_descriptorSet = JE_GetRenderer()->GetManagerDescriptor()->Get(&info);
+
+
+		// Loaded from file too.
+		RenderState::Info renderStateInfo = {};
+		renderStateInfo.bAlphaToCoverage = false;
+		renderStateInfo.bAlphaToOne = false;
+		renderStateInfo.bDepthTestEnabled = true;
+		renderStateInfo.bDepthWriteEnabled = true;
+		renderStateInfo.bRasterizerDepthClamp = false;
+		renderStateInfo.bRasterizerEnabled = true;
+		renderStateInfo.bSampleShading = false;
+		renderStateInfo.bStencilTestEnabled = false;
+
+		renderStateInfo.ColorBlends[0].SrcBlendFactor = RenderState::ColorBlend::BlendFactor::Disabled;
+		renderStateInfo.ColorBlends[0].DstBlendFactor = RenderState::ColorBlend::BlendFactor::Disabled;
+
+		renderStateInfo.DepthCompareOperation = RenderState::CompareOperation::Less;
+		renderStateInfo.DrawMode = RenderState::PolygonDrawMode::Solid;
+		renderStateInfo.FramebufferCount = 1; // TODO: This should be defined by render pass.
+		renderStateInfo.SampleCount = RenderState::MultisamplingMode::None;
+		renderStateInfo.SampleMask = 0xFFFFFFFF;
+		renderStateInfo.ScissorWidth = JE_GetRenderer()->GetSwapChainExtent().width;
+		renderStateInfo.ScissorHeight = JE_GetRenderer()->GetSwapChainExtent().height;
+		renderStateInfo.ViewportWidth = JE_GetRenderer()->GetSwapChainExtent().width;
+		renderStateInfo.ViewportHeight = JE_GetRenderer()->GetSwapChainExtent().height;
+
+		
+		Shader shader;
+		shader.Load("TutorialShader"); // TODO: ResourceManagement. Load modules separately, store them and combine with each other to have shaders.
+
+		Pipeline::Info pipelineInfo;
+		pipelineInfo.RenderStateInfo = &renderStateInfo;
+		pipelineInfo.MyShader = &shader;
+		pipelineInfo.DescriptorLayoutData = _descriptorSet->GetAssociatedLayout();
+		pipelineInfo.MyVertexDeclaration = &_vertexDeclaration;
+		pipelineInfo.MyType = Pipeline::Type::Graphics;
+		pipelineInfo.MyPass = RenderPassCommon::Id::Tutorial;
+
+		Pipeline::Key key;
+		Pipeline::CreateKey(&pipelineInfo, &key);
+
+		_pipeline = JE_GetRenderer()->GetManagerPipeline()->Get(&key, &pipelineInfo);
 	}
 
 	void Material::Update()

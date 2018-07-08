@@ -2,11 +2,8 @@
 
 namespace Rendering
 {
-	class ManagerSampler;
-
 	class Sampler
 	{
-		friend class ManagerSampler;
 	public:
 
 		JE_EnumBegin(BorderColor)
@@ -68,6 +65,7 @@ namespace Rendering
 
 	public:
 
+		Sampler();
 		Sampler(const Sampler& copy);
 		~Sampler();
 
@@ -79,8 +77,6 @@ namespace Rendering
 		void Cleanup();
 
 	protected:
-
-		Sampler();
 
 		static constexpr const VkBorderColor _borderColorToVk[] =
 		{

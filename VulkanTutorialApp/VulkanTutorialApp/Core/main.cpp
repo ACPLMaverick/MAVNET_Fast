@@ -7,7 +7,7 @@
 int main() 
 {
 #if RENDERDOC
-	std::cout << "\nPress any key to start after you hook up Renderdoc.\n";
+	std::cout << "\nPress any key to start after you hook up Render Doc.\n";
 	_getch();
 	std::cout << std::endl;
 #endif

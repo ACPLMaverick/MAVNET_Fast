@@ -6,6 +6,7 @@ namespace Rendering
 {
 	class Resource;
 	class ManagerDescriptor;
+	struct PipelineKey;
 
 	class DescriptorSet
 	{
@@ -30,11 +31,13 @@ namespace Rendering
 
 	public:
 
+		DescriptorSet();
 		DescriptorSet(const DescriptorSet& copy);
 		~DescriptorSet();
 
 		JE_Inline const Info* GetInfo() const { return &_info; }
 		JE_Inline VkDescriptorSetLayout GetAssociatedVkDescriptorSetLayout() const { return _associatedLayout.Layout; }
+		JE_Inline const DescriptorCommon::LayoutData* GetAssociatedLayout() const { return &_associatedLayout; }
 		JE_Inline VkDescriptorSet GetVkDescriptorSet() const { return _descriptorSet; }
 
 		// This object is initialized via ManagerDescriptor.
@@ -49,9 +52,7 @@ namespace Rendering
 		// Will return false if failed to find a slot.
 		bool GetFirstAvailableResourceSlot(const Resource* resource, uint32_t* outBinding, uint32_t* outSlot);
 
-	private:
-
-		DescriptorSet();
+		void FillPipelineKey(PipelineKey* key) const;
 
 	private:
 
