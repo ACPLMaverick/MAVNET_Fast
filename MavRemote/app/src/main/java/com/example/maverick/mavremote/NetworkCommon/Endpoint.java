@@ -5,6 +5,7 @@ import android.util.Log;
 import com.example.maverick.mavremote.App;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -127,6 +128,20 @@ public class Endpoint
             bytesFundamental[i] = bytes[i];
 
         return ByteBuffer.wrap(bytesFundamental);
+    }
+
+    public boolean IsConnected()
+    {
+        return (_sock != null && _sock.isConnected());
+    }
+
+    public SocketAddress GetAddress()
+    {
+        if(!IsConnected())
+        {
+            return new InetSocketAddress("0.0.0.0", 0);
+        }
+        return new InetSocketAddress(_sock.getInetAddress(), _sock.getPort());
     }
 
 

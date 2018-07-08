@@ -4,6 +4,8 @@ import android.util.Log;
 
 import com.example.maverick.mavremote.Server.AppServer;
 
+import java.net.SocketAddress;
+
 public final class Utility
 {
     public static boolean SleepThread(long millis)

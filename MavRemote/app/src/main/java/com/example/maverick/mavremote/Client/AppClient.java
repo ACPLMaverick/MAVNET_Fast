@@ -9,6 +9,7 @@ import android.widget.TextView;
 import com.example.maverick.mavremote.App;
 import com.example.maverick.mavremote.ClientActivity;
 import com.example.maverick.mavremote.R;
+import com.example.maverick.mavremote.Server.ServerNetworkSystem;
 import com.example.maverick.mavremote.UI.UIManager;
 import com.example.maverick.mavremote.Utility;
 
@@ -92,6 +93,19 @@ public final class AppClient extends App
             }
         });
 
+        // ++debug
+        _dbgServer = new ServerNetworkSystem();
+        Utility.StartThread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                _dbgServer.Run();
+            }
+        });
+
+        // --debug
+
         _bIsRunning = true;
     }
 
@@ -112,4 +126,6 @@ public final class AppClient extends App
     private ClientNetworkSystem _networkSystem = null;
 
     private boolean _bIsRunning = false;
+
+    private ServerNetworkSystem _dbgServer = null;
 }

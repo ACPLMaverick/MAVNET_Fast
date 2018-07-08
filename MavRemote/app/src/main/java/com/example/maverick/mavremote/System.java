@@ -9,7 +9,12 @@ public abstract class System
     public void Run()
     {
         Start();
-        MainLoop();
+
+        while (_bIsRunning)
+        {
+            MainLoop();
+        }
+
         Finish();
     }
 
@@ -19,4 +24,8 @@ public abstract class System
 
     protected abstract void MainLoop();
 
+    protected void Stop() { _bIsRunning = false; }
+
+
+    protected boolean _bIsRunning = true;
 }

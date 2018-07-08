@@ -6,27 +6,18 @@ import android.util.Log;
 import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.App;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 
-
-class DataPacketHeader implements Serializable
-{
-    public DataPacketHeader(int packetType)
-    {
-        AppId = DataPacketFactory.AppId;
-        PacketType = packetType;
-    }
-
-
-    public final int AppId;
-    public final int PacketType;
-}
 
 public class DataPacketFactory
 {
@@ -63,6 +54,40 @@ public class DataPacketFactory
     {
         DataPacketHeader header = new DataPacketHeader(PacketType.Broadcast.ordinal());
         return CreatePacketInternal(header, address);
+    }
+
+    public <T extends Serializable> DataPacketRetriever<T> DecodePacket(ByteBuffer packet)
+    {
+        ByteArrayInputStream bis = new ByteArrayInputStream(packet.array());
+        ObjectInput input = null;
+        try
+        {
+            input = new ObjectInputStream(bis);
+            try
+            {
+                DataPacketHeader header = (DataPacketHeader)input.readObject();
+                if(header.AppId != AppId)
+                {
+                    throw new InvalidObjectException("AppId does not match.");
+                }
+
+                T obj = (T)input.readObject();
+                input.close();
+                return new DataPacketRetriever<>(PacketType.values()[header.PacketType], obj);
+            }
+            catch(Exception e)  // Simply. Because ClassCastException, NullPointerException and such can occur.
+            {
+                // Packet not decoded properly - nothing special.
+                Log.e(App.TAG, "Failed to extract data from packet: " + e.getMessage());
+                input.close();
+                return new DataPacketRetriever<>();
+            }
+        }
+        catch(IOException e)
+        {
+            Log.e(App.TAG, "Error decoding packet!\n" + e.getMessage());
+            return new DataPacketRetriever<>();
+        }
     }
 
 

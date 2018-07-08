@@ -113,31 +113,28 @@ public class InputSystem extends System
     @Override
     protected void MainLoop()
     {
-        while(_bIsRunning)
+        // Poll volume regulation from ClientActivity.
+        if (!AppClient.GetInstance().GetActivityTyped().GetSystemKeyEvents().IsEmpty())
         {
-            // Poll volume regulation from ClientActivity.
-            if (!AppClient.GetInstance().GetActivityTyped().GetSystemKeyEvents().IsEmpty())
+            KeyEvent ke = AppClient.GetInstance().GetActivityTyped().GetSystemKeyEvents().Dequeue();
+
+            if (
+                    ke.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP
+                            || ke.getKeyCode() == KeyEvent.KEYCODE_VOLUME_DOWN
+                    )
             {
-                KeyEvent ke = AppClient.GetInstance().GetActivityTyped().GetSystemKeyEvents().Dequeue();
-
-                if (
-                        ke.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP
-                                || ke.getKeyCode() == KeyEvent.KEYCODE_VOLUME_DOWN
-                        )
-                {
-                    PassKeyboardEvent(ke.getKeyCode());
-                }
-                else if(ke.getKeyCode() == KeyEvent.KEYCODE_BACK)
-                {
-                    AppClient.GetInstance().OnBackButtonPressed();
-                }
+                PassKeyboardEvent(ke.getKeyCode());
             }
-
-            // Update Hold Helper.
-            _buttonHoldHelper.Update();
-            _touchAreaHelper.Update();
-            _scrollAreaHelper.Update();
+            else if(ke.getKeyCode() == KeyEvent.KEYCODE_BACK)
+            {
+                AppClient.GetInstance().OnBackButtonPressed();
+            }
         }
+
+        // Update Hold Helper.
+        _buttonHoldHelper.Update();
+        _touchAreaHelper.Update();
+        _scrollAreaHelper.Update();
     }
 
     private void AssignClickEventToButton(final Button button, final int kbEvent)
@@ -330,5 +327,4 @@ public class InputSystem extends System
     private TouchAreaHelper _touchAreaHelper = null;
     private TouchAreaHelper _scrollAreaHelper = null;
     private HashMap<Button, Button> _longClickHelper = null;
-    private boolean _bIsRunning = false;
 }

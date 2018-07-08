@@ -32,6 +32,8 @@ public final class TestSystem extends System
 
         RunTestMouse01();
 //        RunTestMouse02();
+
+        Stop();
     }
 
     private void RunTestKb01()

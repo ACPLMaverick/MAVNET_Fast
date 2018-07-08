@@ -51,19 +51,16 @@ public final class InstrumentationSystem extends System
     @Override
     protected void MainLoop()
     {
-        while(true)
+        if(_queue.IsEmpty())
         {
-            if(_queue.IsEmpty())
-            {
-                Thread.yield();
-                continue;
-            }
-
-            ActionEvent ev = _queue.Dequeue();
-            PerformActionEvent(ev);
-
             Thread.yield();
+            return;
         }
+
+        ActionEvent ev = _queue.Dequeue();
+        PerformActionEvent(ev);
+
+        Thread.yield();
     }
 
 
