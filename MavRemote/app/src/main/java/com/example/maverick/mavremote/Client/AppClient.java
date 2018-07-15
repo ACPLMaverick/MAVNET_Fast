@@ -93,19 +93,6 @@ public final class AppClient extends App
             }
         });
 
-        // ++debug
-        _dbgServer = new ServerNetworkSystem();
-        Utility.StartThread(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                _dbgServer.Run();
-            }
-        });
-
-        // --debug
-
         _bIsRunning = true;
     }
 

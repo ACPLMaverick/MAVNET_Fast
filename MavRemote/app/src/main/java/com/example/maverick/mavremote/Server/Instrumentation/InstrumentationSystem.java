@@ -4,6 +4,7 @@ import android.util.EventLog;
 import android.util.Log;
 
 import com.example.maverick.mavremote.Actions.ActionEvent;
+import com.example.maverick.mavremote.App;
 import com.example.maverick.mavremote.EventQueue;
 import com.example.maverick.mavremote.Server.AppServer;
 import com.example.maverick.mavremote.System;
@@ -29,6 +30,10 @@ public final class InstrumentationSystem extends System
         _queue.Enqueue(ev);
     }
 
+    public boolean IsShellCreated() {
+        return _bShellCreated;
+    }
+
     @Override
     protected void Start()
     {
@@ -37,7 +42,12 @@ public final class InstrumentationSystem extends System
 
         _mouseEventCoder = new MouseEventCoder();
 
-        InitRootShell();
+        _bShellCreated = InitRootShell();
+        if(!_bShellCreated)
+        {
+            Log.e(App.TAG, "InstrumentationSystem: Failed to create root shell. Instrumentation will not work.");
+            return;
+        }
         RetrieveMouseDeviceName();
         MakeMouseDeviceBufferWritable();
     }
@@ -51,6 +61,9 @@ public final class InstrumentationSystem extends System
     @Override
     protected void MainLoop()
     {
+        if(!_bShellCreated)
+            return;
+
         if(_queue.IsEmpty())
         {
             Thread.yield();
@@ -109,7 +122,7 @@ public final class InstrumentationSystem extends System
         LogRootShellOutput();
     }
 
-    private void InitRootShell()
+    private boolean InitRootShell()
     {
         assert(_shellProc == null);
 
@@ -121,12 +134,14 @@ public final class InstrumentationSystem extends System
         catch(IOException e)
         {
             Log.e(AppServer.TAG, "Failed to initialize root shell: " + e.getMessage());
-            return;
+            return false;
         }
 
         _shellStream = new DataOutputStream(_shellProc.getOutputStream());
 
         LogRootShellOutput();
+
+        return true;
     }
 
     private void CloseRootShell()
@@ -254,5 +269,7 @@ public final class InstrumentationSystem extends System
 
     private MouseEventCoder _mouseEventCoder = null;
 
-    String _mouseDeviceName = "unknown ";
+    private String _mouseDeviceName = "unknown ";
+
+    private boolean _bShellCreated = false;
 }

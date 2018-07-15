@@ -60,15 +60,30 @@ public final class AppServer extends App
             }
         });
 
-        _infr = new InfraredSystem();
-        Utility.StartThread(new Runnable()
+        if(B_USE_INFRARED)
         {
-            @Override
-            public void run()
+            _infr = new InfraredSystem();
+            Utility.StartThread(new Runnable()
             {
-                _infr.Run();
-            }
-        });
+                @Override
+                public void run()
+                {
+                    _infr.Run();
+                }
+            });
+        }
+        else
+        {
+            _server = new ServerNetworkSystem();
+            Utility.StartThread(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    _server.Run();
+                }
+            });
+        }
 
         // Startup instrumentation tests!
 //        _tester = new TestSystem();
@@ -98,9 +113,11 @@ public final class AppServer extends App
         }
     }
 
+    private static final boolean B_USE_INFRARED = false;
 
     private InstrumentationSystem _instr = null;
     private InfraredSystem _infr = null;
+    private ServerNetworkSystem _server;
     private TestSystem _tester = null;
     private boolean _isRunning = false;
 }
