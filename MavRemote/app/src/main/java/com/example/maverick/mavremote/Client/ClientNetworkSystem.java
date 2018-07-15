@@ -58,9 +58,12 @@ public class ClientNetworkSystem extends NetworkSystem
         }
         else
         {
-            ActionEvent ev = _actionEventQueue.Dequeue();
-            ByteBuffer packet = _packetFactory.CreatePacket(ev);
-            _endpoint.SendData(packet);
+            while(!_packetQueue.IsEmpty())
+            {
+                ActionEvent ev = _actionEventQueue.Dequeue();
+                ByteBuffer packet = _packetFactory.CreatePacket(ev);
+                _endpoint.SendData(packet);
+            }
         }
 
         return true;
