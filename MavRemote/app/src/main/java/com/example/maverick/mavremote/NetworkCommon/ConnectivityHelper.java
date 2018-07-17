@@ -9,6 +9,7 @@ import android.util.Log;
 import com.example.maverick.mavremote.App;
 import com.example.maverick.mavremote.Utility;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
@@ -53,7 +54,7 @@ public final class ConnectivityHelper
 
                 if(intf.isLoopback()
                         || !intf.isUp()
-                        || !intf.getName().contains("lan"))
+                        || !(intf.getName().contains("lan") || intf.getName().contains("eth")))
                 {
                     continue;
                 }
@@ -65,7 +66,8 @@ public final class ConnectivityHelper
                             addr.getAddress().isSiteLocalAddress()
                             || addr.getAddress().isLinkLocalAddress()
                             || addr.getAddress().isAnyLocalAddress();
-                    if(bNotLoopback && bLocal)
+                    final boolean bIpv4 = addr.getAddress() instanceof Inet4Address;
+                    if(bNotLoopback && bLocal && bIpv4)
                     {
                         if(_netAddress == null)
                         {
@@ -112,8 +114,10 @@ public final class ConnectivityHelper
 
     public boolean IsConnectedToLocalNetwork()
     {
-        return _netInterface != null && _netInfo != null && _netAddress != null &&
-                _netInfo.isConnected() && _netInfo.getType() == ConnectivityManager.TYPE_WIFI;
+        return _netInterface != null && _netInfo != null && _netAddress != null
+                && _netInfo.isConnected()
+                && (_netInfo.getType() == ConnectivityManager.TYPE_WIFI
+                    || _netInfo.getType() == ConnectivityManager.TYPE_ETHERNET);
     }
 
     public SocketAddress GetMyLocalAddress()
