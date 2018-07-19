@@ -51,7 +51,7 @@ public class EndpointDatagram
         }
         catch(SocketException e)
         {
-            Log.e(App.TAG, "Error on creating EndpointDatagram: " + e.getMessage());
+            App.LogLine("Error on creating EndpointDatagram: " + e.getMessage());
             return;
         }
     }
@@ -73,7 +73,7 @@ public class EndpointDatagram
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Error on sending Datagram message: " + e.getMessage());
+            App.LogLine("Error on sending Datagram message: " + e.getMessage());
             return false;
         }
 
@@ -93,7 +93,7 @@ public class EndpointDatagram
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Error on sending Broadcast message: " + e.getMessage());
+            App.LogLine("Error on sending Broadcast message: " + e.getMessage());
             return false;
         }
 
@@ -117,7 +117,7 @@ public class EndpointDatagram
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Error on receiving Datagram message: " + e.getMessage());
+            App.LogLine("Error on receiving Datagram message: " + e.getMessage());
             return null;
         }
     }
@@ -138,7 +138,7 @@ public class EndpointDatagram
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Error on receiving Datagram message: " + e.getMessage());
+            App.LogLine("Error on receiving Datagram message: " + e.getMessage());
             return null;
         }
     }

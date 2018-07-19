@@ -119,11 +119,14 @@ public class Menu
             }
             else if(child instanceof TextView)
             {
-                _textViews.put(child.getId(), (TextView) child);
-            }
-            else if(child instanceof EditText)
-            {
-                _editTextViews.put(child.getId(), (EditText) child);
+                if(child instanceof EditText)
+                {
+                    _editTextViews.put(child.getId(), (EditText) child);
+                }
+                else
+                {
+                    _textViews.put(child.getId(), (TextView) child);
+                }
             }
             else if(child instanceof ImageView)
             {

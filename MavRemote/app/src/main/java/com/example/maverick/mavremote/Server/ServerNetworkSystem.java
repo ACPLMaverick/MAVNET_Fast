@@ -8,6 +8,7 @@ import com.example.maverick.mavremote.NetworkCommon.EndpointDatagram;
 import com.example.maverick.mavremote.NetworkCommon.EndpointServer;
 import com.example.maverick.mavremote.NetworkCommon.NetworkSystem;
 
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Calendar;
 
@@ -19,8 +20,21 @@ public class ServerNetworkSystem extends NetworkSystem
         if(!super.StartAwaitingConnections())
             return false;
 
-        _broadcastPacket = _packetFactory.CreatePacketBroadcast(_connHelper.GetMyLocalAddress());
+        _broadcastPacket = _packetFactory.CreatePacketBroadcast(_connHelper.GetConnectionLocalAddress());
         return true;
+    }
+
+    @Override
+    public SocketAddress GetConnectedAddress()
+    {
+        if(_endpoint != null)
+        {
+            return _endpoint.GetAddress();
+        }
+        else
+        {
+            return null;
+        }
     }
 
     @Override
@@ -65,7 +79,7 @@ public class ServerNetworkSystem extends NetworkSystem
 
         if(!_endpoint.IsConnected())
         {
-            Log.e(App.TAG, "[ServerNetworkSystem] Lost connection with Client.");
+            App.LogLine("[ServerNetworkSystem] Lost connection with Client.");
             if(!StartAwaitingConnections())
             {
                 ProcessConnectionLost();
@@ -102,7 +116,7 @@ public class ServerNetworkSystem extends NetworkSystem
         _endpointBroadcast.Init(_connHelper, EndpointDatagram.Mode.Broadcast, ConnectivityHelper.BROADCAST_PORT);
 
         _endpoint = new EndpointServer();
-        _endpoint.Init(_connHelper.GetMyLocalAddress(), ENDPOINT_SERVER_TIMEOUT_MILLIS);
+        _endpoint.Init(_connHelper.GetConnectionLocalAddress(), ENDPOINT_SERVER_TIMEOUT_MILLIS);
     }
 
     @Override

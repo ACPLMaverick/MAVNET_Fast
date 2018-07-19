@@ -91,10 +91,7 @@ public final class ConnectivityHelper
 
             if(!bFoundAddress)
             {
-                _netInfo = null;
-                _netAddress = null;
-                _broadcastAddress = null;
-                _netInterface = null;
+                Cleanup();
 
                 Log.e(App.TAG, "[ConnectivityHelper] Failed to find valid address. " +
                         "Is device connected to local network?");
@@ -109,7 +106,10 @@ public final class ConnectivityHelper
 
     public void Cleanup()
     {
-
+        _netInfo = null;
+        _netAddress = null;
+        _broadcastAddress = null;
+        _netInterface = null;
     }
 
     public boolean IsConnectedToLocalNetwork()
@@ -120,7 +120,7 @@ public final class ConnectivityHelper
                     || _netInfo.getType() == ConnectivityManager.TYPE_ETHERNET);
     }
 
-    public SocketAddress GetMyLocalAddress()
+    public SocketAddress GetConnectionLocalAddress()
     {
         if(_netAddress != null)
         {

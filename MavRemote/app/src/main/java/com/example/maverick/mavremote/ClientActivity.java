@@ -3,6 +3,7 @@ package com.example.maverick.mavremote;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
+import android.view.WindowManager;
 
 import com.example.maverick.mavremote.Client.AppClient;
 import com.example.maverick.mavremote.Client.InputSystem;
@@ -15,6 +16,8 @@ public class ClientActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_client);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
 
         _systemKeyEvents = new EventQueue<>();
         _systemKeyEvents.Init();

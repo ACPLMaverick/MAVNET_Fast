@@ -4,7 +4,6 @@ package com.example.maverick.mavremote.Client;
 import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.EventQueue;
 import com.example.maverick.mavremote.NetworkCommon.ConnectivityHelper;
-import com.example.maverick.mavremote.NetworkCommon.DataPacketFactory;
 import com.example.maverick.mavremote.NetworkCommon.DataPacketRetriever;
 import com.example.maverick.mavremote.NetworkCommon.Endpoint;
 import com.example.maverick.mavremote.NetworkCommon.EndpointDatagram;
@@ -18,6 +17,19 @@ public class ClientNetworkSystem extends NetworkSystem
     public EventQueue<ActionEvent> GetActionEventQueue()
     {
         return _actionEventQueue;
+    }
+
+    @Override
+    public SocketAddress GetConnectedAddress()
+    {
+        if(_endpoint != null)
+        {
+            return _endpoint.GetAddress();
+        }
+        else
+        {
+            return null;
+        }
     }
 
     @Override

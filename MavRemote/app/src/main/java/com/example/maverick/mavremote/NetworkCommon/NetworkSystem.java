@@ -6,12 +6,14 @@ import com.example.maverick.mavremote.App;
 import com.example.maverick.mavremote.EventQueue;
 import com.example.maverick.mavremote.System;
 
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 
 public abstract class NetworkSystem extends System
 {
     public enum State
     {
+        Invalid,
         NotConnectedIdle,
         WaitingForConnection,
         Connected
@@ -22,6 +24,7 @@ public abstract class NetworkSystem extends System
         if(!_connHelper.IsConnectedToLocalNetwork())
             return false;
 
+        CreateEndpoints();
         GoToState(State.WaitingForConnection);
         return true;
     }
@@ -35,6 +38,8 @@ public abstract class NetworkSystem extends System
     {
         return _packetQueue;
     }
+
+    public abstract SocketAddress GetConnectedAddress();
 
     @Override
     protected void Start()
@@ -81,14 +86,15 @@ public abstract class NetworkSystem extends System
     {
         // If no endpoints are created check for connection and create'em.
 
+        /*
         if(_endpointBroadcast == null)
         {
             if(_connHelper.IsConnectedToLocalNetwork())
             {
-                CreateEndpoints();
-                StartAwaitingConnections();
+
             }
         }
+        */
 
         return true;
     }
@@ -117,13 +123,22 @@ public abstract class NetworkSystem extends System
 
     protected void GoToState(State state)
     {
-        Log.e(App.TAG, "[" + this.getClass().getSimpleName() + "] Goes to State: " + state.toString());
+        App.LogLine("[" + this.getClass().getSimpleName() + "] Goes to State: " + state.toString());
+        CleanupAfterState(_state);
         _state = state;
+    }
+
+    protected void CleanupAfterState(State stateCurrent)
+    {
+        if(stateCurrent == State.Connected)
+        {
+            _connHelper.Cleanup();
+        }
     }
 
     protected void ProcessConnectionLost()
     {
-        Log.e(App.TAG, "[" + this.getClass().getSimpleName() + "] Network connection lost.");
+        App.LogLine("[" + this.getClass().getSimpleName() + "] Network connection lost.");
 
         DestroyEndpoints();
 
@@ -139,5 +154,5 @@ public abstract class NetworkSystem extends System
 
     protected EventQueue<ByteBuffer> _packetQueue = null;
 
-    protected State _state;
+    protected State _state = State.NotConnectedIdle;
 }

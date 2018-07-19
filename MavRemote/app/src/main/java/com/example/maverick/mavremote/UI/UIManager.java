@@ -1,9 +1,16 @@
 package com.example.maverick.mavremote.UI;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Handler;
+import android.util.Log;
 
+import com.example.maverick.mavremote.App;
+import com.example.maverick.mavremote.Client.AppClient;
 import com.example.maverick.mavremote.R;
 import com.example.maverick.mavremote.Utility;
+
+import java.util.Calendar;
 
 public class UIManager
 {
@@ -79,21 +86,6 @@ public class UIManager
     {
         Utility.Assert(_bHasAnyMenuInitialized);
         return _menus[_currentMenu.ordinal()];
-    }
-
-    public void DisplayNotification(String notificationText)
-    {
-
-    }
-
-    public void DisplayMessageOneResponse(String messageText)
-    {
-
-    }
-
-    public boolean DisplayMessageTwoResponses(String messageText)
-    {
-        return false;
     }
 
 

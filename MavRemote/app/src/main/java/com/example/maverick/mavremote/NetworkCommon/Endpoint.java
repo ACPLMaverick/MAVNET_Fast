@@ -26,7 +26,7 @@ public class Endpoint
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Error creating socket with given address: "
+            App.LogLine("Error creating socket with given address: "
                     + address.toString() + "\n" + e.getMessage());
             _sock = null;
             return false;
@@ -46,7 +46,7 @@ public class Endpoint
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Error closing socket with address: "
+            App.LogLine("Error closing socket with address: "
                     + _sock.getLocalAddress().toString() + " and port: "
                     + Integer.toString(_sock.getPort()) + "\n"
                     + e.getMessage());
@@ -72,7 +72,7 @@ public class Endpoint
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Error on Socket.SendData with address: "
+            App.LogLine("Error on Socket.SendData with address: "
                     + _sock.getLocalAddress().toString() + " and port: "
                     + Integer.toString(_sock.getPort()) + "\n"
                     + e.getMessage());
@@ -109,7 +109,7 @@ public class Endpoint
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Error on Socket.GetData with address: "
+            App.LogLine("Error on Socket.GetData with address: "
                     + _sock.getLocalAddress().toString() + " and port: "
                     + Integer.toString(_sock.getPort()) + "\n"
                     + e.getMessage());

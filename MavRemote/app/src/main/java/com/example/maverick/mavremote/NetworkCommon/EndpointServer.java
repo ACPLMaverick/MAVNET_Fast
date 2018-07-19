@@ -27,7 +27,7 @@ public class EndpointServer
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Error creating socket with given address: "
+            App.LogLine("Error creating socket with given address: "
                     + address.toString() + "\n" + e.getMessage());
             _sock = null;
             return false;
@@ -47,7 +47,7 @@ public class EndpointServer
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Error closing server socket with address: "
+            App.LogLine("Error closing server socket with address: "
                     + _sock.getLocalSocketAddress().toString() + " and port: "
                     + Integer.toString(_sock.getLocalPort()) + "\n"
                     + e.getMessage());
@@ -97,7 +97,7 @@ public class EndpointServer
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Error reading from Server Connection Socket with address: "
+            App.LogLine("Error reading from Server Connection Socket with address: "
                     + _connectionSock.getLocalSocketAddress().toString() + " and port: "
                     + Integer.toString(_connectionSock.getLocalPort()) + "\n"
                     + e.getMessage());
@@ -114,7 +114,7 @@ public class EndpointServer
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Error on socket GetTimeout: " + e.getMessage());
+            App.LogLine("Error on socket GetTimeout: " + e.getMessage());
 
             return 0;
         }
@@ -128,13 +128,23 @@ public class EndpointServer
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Error on socket SetTimeout: " + e.getMessage());
+            App.LogLine("Error on socket SetTimeout: " + e.getMessage());
 
             return;
         }
     }
 
     public boolean IsConnected() { return _connectionSock != null; }
+
+    public SocketAddress GetAddress()
+    {
+        if(!IsConnected())
+        {
+            return new InetSocketAddress("0.0.0.0", 0);
+        }
+        return new InetSocketAddress(_connectionSock.getInetAddress(), _connectionSock.getPort());
+    }
+
 
 
     private void ListenForConnections()
@@ -145,7 +155,7 @@ public class EndpointServer
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Error on socket accept: " + e.getMessage());
+            App.LogLine("Error on socket accept: " + e.getMessage());
 
             return;
         }
@@ -164,7 +174,7 @@ public class EndpointServer
                 }
                 catch(IOException e)
                 {
-                    Log.e(App.TAG, "Error on connection socket close: " + e.getMessage());
+                    App.LogLine("Error on connection socket close: " + e.getMessage());
                 }
             }
 

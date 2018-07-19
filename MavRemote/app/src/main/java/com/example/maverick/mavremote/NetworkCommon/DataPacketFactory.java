@@ -78,14 +78,14 @@ public class DataPacketFactory
             catch(Exception e)  // Simply. Because ClassCastException, NullPointerException and such can occur.
             {
                 // Packet not decoded properly - nothing special.
-                Log.e(App.TAG, "Failed to extract data from packet: " + e.getMessage());
+                App.LogLine("Failed to extract data from packet: " + e.getMessage());
                 input.close();
                 return new DataPacketRetriever<>();
             }
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Error decoding packet!\n" + e.getMessage());
+            App.LogLine("Error decoding packet: " + e.getMessage());
             return new DataPacketRetriever<>();
         }
     }
@@ -106,7 +106,7 @@ public class DataPacketFactory
         }
         catch(IOException e)
         {
-            Log.e(App.TAG, "Error creating packet!\n" + e.getMessage());
+            App.LogLine("Error creating packet!\n" + e.getMessage());
             return null;
         }
 
