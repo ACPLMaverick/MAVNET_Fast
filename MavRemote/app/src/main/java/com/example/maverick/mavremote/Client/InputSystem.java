@@ -8,13 +8,17 @@ import android.widget.Button;
 import android.widget.ImageView;
 
 import com.example.maverick.mavremote.Actions.ActionEvent;
+import com.example.maverick.mavremote.Actions.Movement;
 import com.example.maverick.mavremote.App;
+import com.example.maverick.mavremote.EventQueue;
 import com.example.maverick.mavremote.R;
 import com.example.maverick.mavremote.System;
 import com.example.maverick.mavremote.UI.Menu;
 import com.example.maverick.mavremote.UI.UIManager;
 
 import java.util.HashMap;
+
+import static com.example.maverick.mavremote.Client.AppClient.GetInstance;
 
 public class InputSystem extends System
 {
@@ -114,9 +118,9 @@ public class InputSystem extends System
     protected void MainLoop()
     {
         // Poll volume regulation from ClientActivity.
-        if (!AppClient.GetInstance().GetActivityTyped().GetSystemKeyEvents().IsEmpty())
+        if (!GetInstance().GetActivityTyped().GetSystemKeyEvents().IsEmpty())
         {
-            KeyEvent ke = AppClient.GetInstance().GetActivityTyped().GetSystemKeyEvents().Dequeue();
+            KeyEvent ke = GetInstance().GetActivityTyped().GetSystemKeyEvents().Dequeue();
 
             if (
                     ke.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP
@@ -127,7 +131,7 @@ public class InputSystem extends System
             }
             else if(ke.getKeyCode() == KeyEvent.KEYCODE_BACK)
             {
-                AppClient.GetInstance().OnBackButtonPressed();
+                GetInstance().OnBackButtonPressed();
             }
         }
 
@@ -301,21 +305,41 @@ public class InputSystem extends System
     private void PassKeyboardEvent(int kbEvent)
     {
         Log.e(App.TAG, "[InputSystem] Pressing key: " + KeyEvent.keyCodeToString(kbEvent));
+
+        ActionEvent ev = new ActionEvent(kbEvent);
+
+        EventQueue<ActionEvent> eventQueue = AppClient.GetInstance().GetNetworkSystem().GetActionEventQueue();
+        eventQueue.Enqueue(ev);
     }
 
     private void PassMouseClick(ActionEvent.MouseClickTypes mouseClick)
     {
         Log.e(App.TAG, "[InputSystem] Mouse button: " + mouseClick.toString());
+
+        ActionEvent ev = new ActionEvent(mouseClick);
+
+        EventQueue<ActionEvent> eventQueue = AppClient.GetInstance().GetNetworkSystem().GetActionEventQueue();
+        eventQueue.Enqueue(ev);
     }
 
     private void PassMovement(int dx, int dy)
     {
         Log.e(App.TAG, "[InputSystem] Movement: " + Integer.toString(dx) + ", "  + Integer.toString(dy));
+
+        ActionEvent ev = new ActionEvent(new Movement(dx, dy));
+
+        EventQueue<ActionEvent> eventQueue = AppClient.GetInstance().GetNetworkSystem().GetActionEventQueue();
+        eventQueue.Enqueue(ev);
     }
 
     private void PassScroll(int dy)
     {
         Log.e(App.TAG, "[InputSystem] Scroll: " + Integer.toString(dy));
+
+        ActionEvent ev = new ActionEvent(new Movement(dy));
+
+        EventQueue<ActionEvent> eventQueue = AppClient.GetInstance().GetNetworkSystem().GetActionEventQueue();
+        eventQueue.Enqueue(ev);
     }
 
 

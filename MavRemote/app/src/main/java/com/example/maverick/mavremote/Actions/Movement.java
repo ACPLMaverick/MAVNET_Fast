@@ -14,17 +14,16 @@ public class Movement implements Serializable
 
     // For scroll, please pass the scroll value as Y. In this case, X is used to store magic value,
     // indicating that this movement is a scroll.
-    public Movement(int x, int y, boolean scroll)
+    public Movement(int x, int y)
     {
-        if(scroll)
-        {
-            _x = SCROLL_MAGIC_X;
-        }
-        else
-        {
-            _x = x;
-        }
+        _x = x;
         _y = y;
+    }
+
+    public Movement(int scroll)
+    {
+        _x = SCROLL_MAGIC_X;
+        _y = scroll;
     }
 
     public int GetX()
