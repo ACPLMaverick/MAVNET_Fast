@@ -2,7 +2,7 @@ package com.example.maverick.mavremote;
 
 import android.support.v7.app.AppCompatActivity;
 
-import com.example.maverick.mavremote.UI.NotificationManager;
+import com.example.maverick.mavremote.UI.NotificationHelper;
 import com.example.maverick.mavremote.UI.UIController;
 import com.example.maverick.mavremote.UI.UIManager;
 
@@ -38,7 +38,7 @@ public abstract class App
 
         SetupUIController();
 
-        _notificationMgr = new NotificationManager();
+        _notificationMgr = new NotificationHelper();
 
         Utility.StartThread(new Runnable()
         {
@@ -71,5 +71,5 @@ public abstract class App
     protected AppCompatActivity _activity = null;
     protected UIManager _uiManager = null;
     protected UIController _uiController = null;
-    protected NotificationManager _notificationMgr = null;
+    protected NotificationHelper _notificationMgr = null;
 }

@@ -1,18 +1,10 @@
 package com.example.maverick.mavremote.Client;
 
-import android.support.constraint.ConstraintLayout;
-import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
-import android.view.View;
-import android.widget.TextView;
-
 import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.App;
 import com.example.maverick.mavremote.ClientActivity;
 import com.example.maverick.mavremote.NetworkCommon.NetworkSystem;
-import com.example.maverick.mavremote.R;
-import com.example.maverick.mavremote.Server.ServerNetworkSystem;
-import com.example.maverick.mavremote.UI.NotificationManager;
+import com.example.maverick.mavremote.UI.NotificationHelper;
 import com.example.maverick.mavremote.UI.UIManager;
 import com.example.maverick.mavremote.Utility;
 
@@ -39,10 +31,9 @@ public final class AppClient extends App
 
     public InputSystem GetInputSystem() { return _inputSystem; }
 
-    public void OnBackButtonPressed()
-    {
-        _bBackPressed = true;
-    }
+    public void OnBackButtonPressed() { _bBackPressed = true; }
+
+    public boolean IsRunning() { return _bIsRunning; }
 
 
     @Override
@@ -235,12 +226,12 @@ public final class AppClient extends App
             Utility.Assert(false);
         }
 
-        final NotificationManager.MessageState msgState = _notificationMgr.CheckMessageStateAndCleanup();
-        if(msgState == NotificationManager.MessageState.None)
+        final NotificationHelper.MessageState msgState = _notificationMgr.CheckMessageStateAndCleanup();
+        if(msgState == NotificationHelper.MessageState.None)
         {
             _notificationMgr.DisplayMessageTwoResponses(messgeText);
         }
-        else if(msgState == NotificationManager.MessageState.Positive)
+        else if(msgState == NotificationHelper.MessageState.Positive)
         {
             if(destMenu != null)
                 _uiManager.SetMenuCurrent(destMenu);
@@ -249,7 +240,7 @@ public final class AppClient extends App
 
             _bBackPressed = false;
         }
-        else if(msgState == NotificationManager.MessageState.Negative)
+        else if(msgState == NotificationHelper.MessageState.Negative)
         {
             _bBackPressed = false;
         }

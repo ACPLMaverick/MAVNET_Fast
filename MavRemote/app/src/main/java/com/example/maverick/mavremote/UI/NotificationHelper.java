@@ -1,16 +1,26 @@
 package com.example.maverick.mavremote.UI;
 
 import android.app.AlertDialog;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.os.Build;
 import android.os.Handler;
-import android.util.Log;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
+import android.support.v7.app.AppCompatActivity;
 
 import com.example.maverick.mavremote.App;
-import com.example.maverick.mavremote.Utility;
+import com.example.maverick.mavremote.ClientActivity;
+import com.example.maverick.mavremote.R;
+import com.example.maverick.mavremote.ServerActivity;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-public class NotificationManager
+public class NotificationHelper
 {
     public enum MessageState
     {
@@ -21,7 +31,7 @@ public class NotificationManager
     }
 
 
-    public NotificationManager()
+    public NotificationHelper()
     {
         _handler = new Handler();
         _lock = new ReentrantLock();
@@ -60,16 +70,49 @@ public class NotificationManager
         return state;
     }
 
-    public boolean DisplayNotificationText(String notificationText)
+    public boolean DisplayNotificationText(final String notificationText)
     {
-        return false;
+        if(_notificationBuilder == null)
+        {
+            // Create new notification.
+
+            CreateNotificationChannel();
+
+            Intent intent = new Intent(App.GetInstance().GetActivity(),
+                    App.GetInstance().GetActivity() instanceof ServerActivity ? ServerActivity.class : ClientActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent pendingIntent =
+                    PendingIntent.getActivity(App.GetInstance().GetActivity(), 0, intent, 0);
+
+            _notificationBuilder
+                    = new NotificationCompat.Builder(App.GetInstance().GetActivity(), NOTIFICATION_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setContentTitle(TITLE)
+                    .setContentText(notificationText)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setContentIntent(pendingIntent)
+                    .setAutoCancel(false);
+        }
+        else
+        {
+            // Update existing notification.
+            _notificationBuilder.setContentText(notificationText);
+        }
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from
+        (
+                App.GetInstance().GetActivity()
+        );
+        notificationManager.notify(NOTIFICATION_ID, _notificationBuilder.build());
+
+        return true;
     }
 
     public boolean DisplayMessageOneResponse(final String messageText)
     {
         if(_currentMessageState.ordinal() > MessageState.None.ordinal())
         {
-            App.LogLine("[NotificationManager] Trying to create message when one is in progress!");
+            App.LogLine("[NotificationHelper] Trying to create message when one is in progress!");
             return false;
         }
 
@@ -96,7 +139,7 @@ public class NotificationManager
 
                 _currentMessage = alert;
 
-                alert.setTitle("MavRemote");
+                alert.setTitle(TITLE);
                 alert.show();
             }
         });
@@ -111,7 +154,7 @@ public class NotificationManager
     {
         if(_currentMessageState.ordinal() > MessageState.None.ordinal())
         {
-            App.LogLine("[NotificationManager] Trying to create message when one is in progress!");
+            App.LogLine("[NotificationHelper] Trying to create message when one is in progress!");
             return false;
         }
 
@@ -145,7 +188,7 @@ public class NotificationManager
 
                 final AlertDialog alert = builder.create();
 
-                alert.setTitle("MavRemote");
+                alert.setTitle(TITLE);
 
                 alert.show();
 
@@ -160,6 +203,24 @@ public class NotificationManager
     }
 
 
+    private void CreateNotificationChannel()
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+        {
+            CharSequence name = "MavRemote_ChannelName";
+            String description = "MavRemote_ChannelDescription";
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            NotificationManager notificationManager =
+                    App.GetInstance().GetActivity().getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+
+    }
+
     private void OnClickChangeMessageState(MessageState newState)
     {
         _lock.lock();
@@ -172,10 +233,16 @@ public class NotificationManager
     }
 
 
+    private static final String TITLE = "MavRemote";
+    private static final String NOTIFICATION_CHANNEL_ID = TITLE + "_ChannelID";
+    private static final int NOTIFICATION_ID = 0xDEADBEEF;
+
     private Handler _handler;
     private ReentrantLock _lock;
 
 //    private HashMap<AlertDialog, MessageState> _currentDialogs;
     private AlertDialog _currentMessage = null;
     private MessageState _currentMessageState = MessageState.None;
+
+    private NotificationCompat.Builder _notificationBuilder = null;
 }

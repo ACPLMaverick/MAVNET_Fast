@@ -19,10 +19,13 @@ public class ClientActivity extends AppCompatActivity
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 
-        _systemKeyEvents = new EventQueue<>();
-        _systemKeyEvents.Init();
+        if(!AppClient.GetInstance().IsRunning())
+        {
+            _systemKeyEvents = new EventQueue<>();
+            _systemKeyEvents.Init();
 
-        AppClient.GetInstance().Run(this);
+            AppClient.GetInstance().Run(this);
+        }
     }
 
     @Override

@@ -7,6 +7,8 @@ import com.example.maverick.mavremote.ServerActivity;
 import com.example.maverick.mavremote.UI.UIManager;
 import com.example.maverick.mavremote.Utility;
 
+import java.util.Calendar;
+
 public final class AppServer extends App
 {
     private AppServer() { }
@@ -24,6 +26,8 @@ public final class AppServer extends App
     public InstrumentationSystem GetInstrumentationSystem() { return _instr; }
 
     public InfraredSystem GetInfraredSystem() { return _infr; }
+
+    public boolean IsRunning() { return _bIsRunning; }
 
 
     @Override
@@ -94,6 +98,10 @@ public final class AppServer extends App
 
         _notificationMgr.DisplayNotificationText("Server running...");
 
+        // ++notification test
+        appstart = Calendar.getInstance().getTimeInMillis();
+        // --notification test
+
         _bIsRunning = true;
     }
 
@@ -119,6 +127,15 @@ public final class AppServer extends App
     {
         while(_bIsRunning)
         {
+            // ++notification test
+            if(Calendar.getInstance().getTimeInMillis() - timer > 5000)
+            {
+                timer = Calendar.getInstance().getTimeInMillis();
+                long delta = timer - appstart;
+
+                _notificationMgr.DisplayNotificationText("App running: " + Long.toString(delta));
+            }
+            // --notification test
             if(B_USE_INFRARED)
             {
                 ProcessQueueInfrared();
@@ -156,4 +173,9 @@ public final class AppServer extends App
     private TestSystem _tester = null;
     private ServerUIController _uiControllerServer = null;
     private boolean _bIsRunning = false;
+
+    // ++notification test
+    private long appstart = 0;
+    private long timer = 0;
+    // --notification test
 }
