@@ -14,9 +14,9 @@ import java.nio.ByteBuffer;
 
 public class ClientNetworkSystem extends NetworkSystem
 {
-    public EventQueue<ActionEvent> GetActionEventQueue()
+    public void PushActionEvent(ActionEvent event)
     {
-        return _actionEventQueue;
+        _actionEventQueue.Enqueue(event);
     }
 
     @Override
@@ -123,5 +123,4 @@ public class ClientNetworkSystem extends NetworkSystem
     protected static final int ENDPOINT_TIMEOUT_MILLIS = 1000;
 
     protected Endpoint _endpoint = null;
-    protected EventQueue<ActionEvent> _actionEventQueue = null;
 }

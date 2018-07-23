@@ -2,8 +2,10 @@ package com.example.maverick.mavremote.Server;
 
 import android.util.Log;
 
+import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.App;
 import com.example.maverick.mavremote.NetworkCommon.ConnectivityHelper;
+import com.example.maverick.mavremote.NetworkCommon.DataPacketRetriever;
 import com.example.maverick.mavremote.NetworkCommon.EndpointDatagram;
 import com.example.maverick.mavremote.NetworkCommon.EndpointServer;
 import com.example.maverick.mavremote.NetworkCommon.NetworkSystem;
@@ -34,6 +36,18 @@ public class ServerNetworkSystem extends NetworkSystem
         else
         {
             return null;
+        }
+    }
+
+    public ActionEvent PopActionEvent()
+    {
+        if(_actionEventQueue.IsEmpty())
+        {
+            return null;
+        }
+        else
+        {
+            return _actionEventQueue.Dequeue();
         }
     }
 
@@ -92,7 +106,15 @@ public class ServerNetworkSystem extends NetworkSystem
         ByteBuffer receivedBuffer = _endpoint.GetData();
         if(receivedBuffer != null)
         {
-            _packetQueue.Enqueue(receivedBuffer);
+            DataPacketRetriever<ActionEvent> retriever = _packetFactory.DecodePacket(receivedBuffer);
+            if(retriever.IsValid())
+            {
+                _actionEventQueue.Enqueue(retriever.ObjectRef);
+            }
+            else
+            {
+                App.LogLine("Server decoded an invalid packet!");
+            }
         }
 
         return true;

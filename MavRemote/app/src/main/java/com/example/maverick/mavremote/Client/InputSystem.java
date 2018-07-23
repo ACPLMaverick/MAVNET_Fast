@@ -29,6 +29,18 @@ public class InputSystem extends System
         KeyEvent.KEYCODE_BACK
     };
 
+    // Can return null if queue empty.
+    public ActionEvent PopEvent()
+    {
+        if(_eventQueue.IsEmpty())
+        {
+            return null;
+        }
+        else
+        {
+            return _eventQueue.Dequeue();
+        }
+    }
 
     @Override
     protected void Start()
@@ -40,6 +52,8 @@ public class InputSystem extends System
 
         _touchAreaHelper = new TouchAreaHelper();
         _scrollAreaHelper = new TouchAreaHelper();
+
+        _eventQueue = new EventQueue<>();
 
 
         Button btn;
@@ -308,8 +322,7 @@ public class InputSystem extends System
 
         ActionEvent ev = new ActionEvent(kbEvent);
 
-        EventQueue<ActionEvent> eventQueue = AppClient.GetInstance().GetNetworkSystem().GetActionEventQueue();
-        eventQueue.Enqueue(ev);
+        _eventQueue.Enqueue(ev);
     }
 
     private void PassMouseClick(ActionEvent.MouseClickTypes mouseClick)
@@ -318,8 +331,7 @@ public class InputSystem extends System
 
         ActionEvent ev = new ActionEvent(mouseClick);
 
-        EventQueue<ActionEvent> eventQueue = AppClient.GetInstance().GetNetworkSystem().GetActionEventQueue();
-        eventQueue.Enqueue(ev);
+        _eventQueue.Enqueue(ev);
     }
 
     private void PassMovement(int dx, int dy)
@@ -328,8 +340,7 @@ public class InputSystem extends System
 
         ActionEvent ev = new ActionEvent(new Movement(dx, dy));
 
-        EventQueue<ActionEvent> eventQueue = AppClient.GetInstance().GetNetworkSystem().GetActionEventQueue();
-        eventQueue.Enqueue(ev);
+        _eventQueue.Enqueue(ev);
     }
 
     private void PassScroll(int dy)
@@ -338,8 +349,7 @@ public class InputSystem extends System
 
         ActionEvent ev = new ActionEvent(new Movement(dy));
 
-        EventQueue<ActionEvent> eventQueue = AppClient.GetInstance().GetNetworkSystem().GetActionEventQueue();
-        eventQueue.Enqueue(ev);
+        _eventQueue.Enqueue(ev);
     }
 
 
@@ -351,4 +361,6 @@ public class InputSystem extends System
     private TouchAreaHelper _touchAreaHelper = null;
     private TouchAreaHelper _scrollAreaHelper = null;
     private HashMap<Button, Button> _longClickHelper = null;
+
+    private EventQueue<ActionEvent> _eventQueue = null;
 }

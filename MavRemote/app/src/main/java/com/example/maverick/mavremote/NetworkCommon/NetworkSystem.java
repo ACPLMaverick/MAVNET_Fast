@@ -2,6 +2,7 @@ package com.example.maverick.mavremote.NetworkCommon;
 
 import android.util.Log;
 
+import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.App;
 import com.example.maverick.mavremote.EventQueue;
 import com.example.maverick.mavremote.System;
@@ -34,11 +35,6 @@ public abstract class NetworkSystem extends System
         return _state;
     }
 
-    public EventQueue<ByteBuffer> GetPacketsQueue()
-    {
-        return _packetQueue;
-    }
-
     public abstract SocketAddress GetConnectedAddress();
 
     @Override
@@ -53,6 +49,9 @@ public abstract class NetworkSystem extends System
 
         _packetQueue = new EventQueue<>();
         _packetQueue.Init();
+
+        _actionEventQueue = new EventQueue<>();
+        _actionEventQueue.Init();
     }
 
     @Override
@@ -153,6 +152,7 @@ public abstract class NetworkSystem extends System
     protected EndpointDatagram _endpointBroadcast = null;
 
     protected EventQueue<ByteBuffer> _packetQueue = null;
+    protected EventQueue<ActionEvent> _actionEventQueue = null;
 
     protected State _state = State.NotConnectedIdle;
 }

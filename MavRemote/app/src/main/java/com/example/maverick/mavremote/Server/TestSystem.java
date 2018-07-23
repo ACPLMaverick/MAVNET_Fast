@@ -134,7 +134,7 @@ public final class TestSystem extends System
             int deltaX = (int)(movementRadius * Math.cos(currentAngle));
             int deltaY = (int)(movementRadius * Math.sin(currentAngle));
 
-            InstrumentationSystem.Enqueue(new ActionEvent(new Movement(deltaX, deltaY, false), movementDelay));
+            InstrumentationSystem.Enqueue(new ActionEvent(new Movement(deltaX, deltaY), movementDelay));
         }
     }
 
@@ -171,7 +171,7 @@ public final class TestSystem extends System
 
             for(int j = 0; j < oneSideMovementCount; ++j)
             {
-                InstrumentationSystem.Enqueue(new ActionEvent(new Movement(x, y, false)));
+                InstrumentationSystem.Enqueue(new ActionEvent(new Movement(x, y)));
             }
         }
     }

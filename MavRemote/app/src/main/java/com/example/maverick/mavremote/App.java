@@ -36,6 +36,8 @@ public abstract class App
         _uiManager = new UIManager();
         SetupUIManager();
 
+        SetupUIController();
+
         _notificationMgr = new NotificationManager();
 
         Utility.StartThread(new Runnable()
@@ -59,6 +61,8 @@ public abstract class App
     protected abstract void InternalRun();
 
     protected abstract void SetupUIManager();
+
+    protected abstract void SetupUIController();
 
     public static final String TAG = "MavRemote";
 

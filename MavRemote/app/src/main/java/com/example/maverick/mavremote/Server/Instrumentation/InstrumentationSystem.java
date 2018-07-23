@@ -45,7 +45,7 @@ public final class InstrumentationSystem extends System
         _bShellCreated = InitRootShell();
         if(!_bShellCreated)
         {
-            Log.e(App.TAG, "InstrumentationSystem: Failed to create root shell. Instrumentation will not work.");
+            App.LogLine("InstrumentationSystem: Failed to create root shell. Instrumentation will not work.");
             return;
         }
         RetrieveMouseDeviceName();
@@ -106,7 +106,7 @@ public final class InstrumentationSystem extends System
         else
         {
             // Shouldn't be able to get here.
-            assert(false);
+            Utility.Assert(false);
         }
 
         for(String command : commands)

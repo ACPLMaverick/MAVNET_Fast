@@ -6,6 +6,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.App;
 import com.example.maverick.mavremote.ClientActivity;
 import com.example.maverick.mavremote.NetworkCommon.NetworkSystem;
@@ -64,10 +65,10 @@ public final class AppClient extends App
         _uiManager.InitMenu(UIManager.MenuType.ClientNetwork);
         _uiManager.InitMenu(UIManager.MenuType.ClientRemote);
         _uiManager.SetMenuCurrent(UIManager.MenuType.ClientNetwork);
-//        _uiManager.SetMenuCurrent(UIManager.MenuType.ClientRemote);
     }
 
-    private void InternalStart()
+    @Override
+    protected void SetupUIController()
     {
         _uiController = new ClientUIController();
         _uiControllerClient = (ClientUIController)_uiController;
@@ -80,7 +81,10 @@ public final class AppClient extends App
                 _bTryingConnect = true;
             }
         });
+    }
 
+    private void InternalStart()
+    {
         _inputSystem = new InputSystem();
         Utility.StartThread(new Runnable()
         {
@@ -135,6 +139,8 @@ public final class AppClient extends App
             {
                 ProcessBackPressed();
             }
+
+            ProcessQueue();
         }
     }
 
@@ -171,6 +177,16 @@ public final class AppClient extends App
         {
             _bTryingConnect = false;
             _bIsConnected = true;
+        }
+    }
+
+    private void ProcessQueue()
+    {
+        ActionEvent ev = _inputSystem.PopEvent();
+        while(ev != null)
+        {
+            _networkSystem.PushActionEvent(ev);
+            ev = _inputSystem.PopEvent();
         }
     }
 

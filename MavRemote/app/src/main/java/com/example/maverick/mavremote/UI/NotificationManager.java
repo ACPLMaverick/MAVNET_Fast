@@ -60,9 +60,8 @@ public class NotificationManager
         return state;
     }
 
-    public boolean DisplayNotification(String notificationText)
+    public boolean DisplayNotificationText(String notificationText)
     {
-        Utility.Assert(false);
         return false;
     }
 

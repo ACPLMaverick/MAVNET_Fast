@@ -1,7 +1,6 @@
 package com.example.maverick.mavremote.Server;
 
-import android.support.v7.app.AppCompatActivity;
-
+import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.App;
 import com.example.maverick.mavremote.Server.Instrumentation.InstrumentationSystem;
 import com.example.maverick.mavremote.ServerActivity;
@@ -22,9 +21,9 @@ public final class AppServer extends App
 
     public ServerActivity GetActivityTyped() { return (ServerActivity)_activity; }
 
-    public InstrumentationSystem GetInstrumentationSystem() { assert(_instr != null); return _instr; }
+    public InstrumentationSystem GetInstrumentationSystem() { return _instr; }
 
-    public InfraredSystem GetInfraredSystem() { assert(_infr != null); return _infr; }
+    public InfraredSystem GetInfraredSystem() { return _infr; }
 
 
     @Override
@@ -46,6 +45,14 @@ public final class AppServer extends App
     {
         _uiManager.InitMenu(UIManager.MenuType.ServerNetwork);
         _uiManager.SetMenuCurrent(UIManager.MenuType.ServerNetwork);
+    }
+
+    @Override
+    protected void SetupUIController()
+    {
+        _uiController = new ServerUIController();
+        _uiControllerServer = (ServerUIController)_uiController;
+        _uiControllerServer.Init(_uiManager);
     }
 
     private void Start()
@@ -85,31 +92,59 @@ public final class AppServer extends App
             });
         }
 
-        // Startup instrumentation tests!
-//        _tester = new TestSystem();
-//        Utility.StartThread(new Runnable()
-//        {
-//            @Override
-//            public void run()
-//            {
-//                _tester.Run();
-//            }
-//        });
+        _notificationMgr.DisplayNotificationText("Server running...");
 
-        _isRunning = true;
+        _bIsRunning = true;
     }
 
     private void Finish()
     {
-        _isRunning = false;
+        _instr.Stop();
+        if(B_USE_INFRARED)
+        {
+            _infr.Stop();
+        }
+        else
+        {
+            _server.Stop();
+        }
+
+        if(_tester != null)
+        {
+            _tester.Stop();
+        }
     }
 
     private void MainLoop()
     {
-        while(_isRunning)
+        while(_bIsRunning)
         {
-            //Log.d(AppServer.TAG, "Debug message, hay!");
-            Utility.SleepThread(1000);
+            if(B_USE_INFRARED)
+            {
+                ProcessQueueInfrared();
+            }
+            else
+            {
+                ProcessQueueServer();
+            }
+        }
+    }
+
+    private void ProcessQueueInfrared()
+    {
+        // TODO: Implement.
+    }
+
+    private void ProcessQueueServer()
+    {
+        if(!_server.IsRunning() || !_instr.IsRunning())
+            return;
+
+        ActionEvent ev = _server.PopActionEvent();
+        while(ev != null)
+        {
+            _instr.EnqueueActionEvent(ev);
+            ev = _server.PopActionEvent();
         }
     }
 
@@ -119,5 +154,6 @@ public final class AppServer extends App
     private InfraredSystem _infr = null;
     private ServerNetworkSystem _server;
     private TestSystem _tester = null;
-    private boolean _isRunning = false;
+    private ServerUIController _uiControllerServer = null;
+    private boolean _bIsRunning = false;
 }
