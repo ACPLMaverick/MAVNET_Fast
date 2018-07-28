@@ -30,6 +30,13 @@ public abstract class NetworkSystem extends System
         return true;
     }
 
+    public void Disconnect()
+    {
+        DestroyEndpoints();
+        GoToState(State.NotConnectedIdle);
+    }
+
+
     public State GetState()
     {
         return _state;
@@ -48,6 +55,7 @@ public abstract class NetworkSystem extends System
             return null;
         }
     }
+
 
     @Override
     protected void Start()

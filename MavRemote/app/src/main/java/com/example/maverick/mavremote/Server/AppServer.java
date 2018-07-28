@@ -225,7 +225,15 @@ public final class AppServer extends App
 
         if(_bChangeConnectionState)
         {
-            _server.StartAwaitingConnections();
+            if(_server.GetState() == NetworkSystem.State.NotConnectedIdle)
+            {
+                _server.StartAwaitingConnections();
+            }
+            else
+            {
+                _server.Disconnect();
+            }
+
             _bChangeConnectionState = false;
         }
     }
