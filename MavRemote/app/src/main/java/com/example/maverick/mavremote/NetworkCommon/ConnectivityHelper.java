@@ -23,8 +23,7 @@ public final class ConnectivityHelper
 {
     public void Init()
     {
-        _cm = (ConnectivityManager) App.GetInstance().GetActivity().
-                getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        _cm = (ConnectivityManager) App.GetInstance().GetContext().getSystemService(Context.CONNECTIVITY_SERVICE);
         Utility.Assert(_cm != null);
         _updateTimer = 0;
 

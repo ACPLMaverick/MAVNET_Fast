@@ -25,6 +25,7 @@ public class Menu
 
         _myType = menuType;
 
+        Utility.Assert(App.GetInstance().HasActivity());
         _root = App.GetInstance().GetActivity().findViewById(UIManager.MenuTypeRootResources[menuType.ordinal()]);
         Utility.Assert(_root != null);
 

@@ -54,7 +54,7 @@ public class InputSystem extends System
         _scrollAreaHelper = new TouchAreaHelper();
 
         _eventQueue = new EventQueue<>();
-
+        _eventQueue.Init();
 
         Button btn;
 
@@ -132,20 +132,23 @@ public class InputSystem extends System
     protected void MainLoop()
     {
         // Poll volume regulation from ClientActivity.
-        if (!GetInstance().GetActivityTyped().GetSystemKeyEvents().IsEmpty())
+        if(GetInstance().HasActivity())
         {
-            KeyEvent ke = GetInstance().GetActivityTyped().GetSystemKeyEvents().Dequeue();
+            if (!GetInstance().GetActivityTyped().GetSystemKeyEvents().IsEmpty())
+            {
+                KeyEvent ke = GetInstance().GetActivityTyped().GetSystemKeyEvents().Dequeue();
 
-            if (
-                    ke.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP
-                            || ke.getKeyCode() == KeyEvent.KEYCODE_VOLUME_DOWN
-                    )
-            {
-                PassKeyboardEvent(ke.getKeyCode());
-            }
-            else if(ke.getKeyCode() == KeyEvent.KEYCODE_BACK)
-            {
-                GetInstance().OnBackButtonPressed();
+                if (
+                        ke.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP
+                                || ke.getKeyCode() == KeyEvent.KEYCODE_VOLUME_DOWN
+                        )
+                {
+                    PassKeyboardEvent(ke.getKeyCode());
+                }
+                else if(ke.getKeyCode() == KeyEvent.KEYCODE_BACK)
+                {
+                    GetInstance().OnBackButtonPressed();
+                }
             }
         }
 

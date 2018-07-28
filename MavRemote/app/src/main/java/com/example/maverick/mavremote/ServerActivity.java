@@ -1,7 +1,9 @@
 package com.example.maverick.mavremote;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.TextView;
 
 import com.example.maverick.mavremote.Server.AppServer;
@@ -23,11 +25,28 @@ public class ServerActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_server);
 
-        TextView tv = (TextView) findViewById(R.id.sample_text);
-        tv.setText("MavRemote v.0.1t");
-
         if(!AppServer.GetInstance().IsRunning())
-            AppServer.GetInstance().Run(this);
+        {
+            AppServer.GetInstance().UpdateActivityState(this, null);
+        }
+
+        Intent intent = new Intent(this, ServerService.class);
+        intent.putExtra("LaunchedFromActivity", true);
+        startService(intent);
+
+        Log.d(App.TAG, "[Activity] [onCreate]");
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        super.onDestroy();
+
+        // Do not stop app, as this is a service.
+        // Only clear reference to this activty to avoid memory leak.
+        AppServer.GetInstance().UpdateActivityState(null, getApplicationContext());
+
+        Log.d(App.TAG, "[Activity] [onDestroy]");
     }
 
     // C++ unnecessary at this point.

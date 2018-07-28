@@ -25,7 +25,11 @@ public final class AppClient extends App
     }
 
 
-    public ClientActivity GetActivityTyped() { return (ClientActivity)_activity; }
+    public ClientActivity GetActivityTyped()
+    {
+        Utility.Assert(HasActivity());
+        return (ClientActivity)GetActivity();
+    }
 
     public ClientNetworkSystem GetNetworkSystem() { return _networkSystem; }
 
@@ -39,7 +43,7 @@ public final class AppClient extends App
     @Override
     protected void AssertActivityType()
     {
-        Utility.Assert(_activity != null && _activity instanceof ClientActivity);
+        Utility.Assert(GetActivity() != null && GetActivity() instanceof ClientActivity);
     }
 
     @Override
@@ -48,11 +52,14 @@ public final class AppClient extends App
         InternalStart();
         InternalMainLoop();
         InternalFinish();
+
+        Cleanup();
     }
 
     @Override
     protected void SetupUIManager()
     {
+        _uiManager = new UIManager();
         _uiManager.InitMenu(UIManager.MenuType.ClientNetwork);
         _uiManager.InitMenu(UIManager.MenuType.ClientRemote);
         _uiManager.SetMenuCurrent(UIManager.MenuType.ClientNetwork);
@@ -74,8 +81,17 @@ public final class AppClient extends App
         });
     }
 
+    @Override
+    public void Stop()
+    {
+        _bIsRunning = false;
+    }
+
     private void InternalStart()
     {
+        // Client MUST use UI.
+        Utility.Assert(CanUseUI());
+
         _inputSystem = new InputSystem();
         Utility.StartThread(new Runnable()
         {
@@ -96,6 +112,8 @@ public final class AppClient extends App
             }
         });
 
+        _notificationMgr.DisplayNotificationText("Touch to return to the remote.");
+
         App.LogLine("[AppClient] Started.");
 
         _bIsRunning = true;
@@ -105,31 +123,15 @@ public final class AppClient extends App
     {
         while(_bIsRunning)
         {
-            _uiController.Update();
+            if(CanUseUI())
+                _uiController.Update();
 
             if(_bTryingConnect)
             {
                 TryConnect();
             }
 
-            if(_bIsConnected && _networkSystem.GetState() != NetworkSystem.State.Connected)
-            {
-                BackUIToDisconnected();
-            }
-
             ProcessUI();
-
-            if(_bIsConnected
-                    && _uiManager.GetCurrentMenu().GetMyType() != UIManager.MenuType.ClientRemote)
-            {
-                Utility.SleepThread(1000);
-                _uiManager.SetMenuCurrent(UIManager.MenuType.ClientRemote);
-            }
-
-            if(_bBackPressed)
-            {
-                ProcessBackPressed();
-            }
 
             ProcessQueue();
         }
@@ -137,11 +139,13 @@ public final class AppClient extends App
 
     private void InternalFinish()
     {
-        _uiController.Cleanup();
+        if(_uiController != null)
+            _uiController.Cleanup();
         _inputSystem.Stop();
         _networkSystem.Stop();
 
-        _activity.finish();
+        if(HasActivity())
+            GetActivity().finish();
     }
 
     private void TryConnect()
@@ -183,6 +187,15 @@ public final class AppClient extends App
 
     private void ProcessUI()
     {
+        if(!CanUseUI())
+            return;
+
+        if(_bIsConnected && _networkSystem.GetState() != NetworkSystem.State.Connected)
+        {
+            BackUIToDisconnected();
+        }
+
+
         _uiControllerClient.NetworkUpdateConnectionStatus(_networkSystem.GetState());
         SocketAddress addr = null;
         if(_networkSystem.GetState() == NetworkSystem.State.Connected
@@ -194,6 +207,19 @@ public final class AppClient extends App
         {
             _uiControllerClient.NetworkUpdateConnectionAddress(new InetSocketAddress("0.0.0.0", 0));
         }
+
+
+        if(_bIsConnected
+                && _uiManager.GetCurrentMenu().GetMyType() != UIManager.MenuType.ClientRemote)
+        {
+            Utility.SleepThread(1000);
+            _uiManager.SetMenuCurrent(UIManager.MenuType.ClientRemote);
+        }
+
+        if(_bBackPressed)
+        {
+            ProcessBackPressed();
+        }
     }
 
     private void BackUIToDisconnected()
@@ -203,7 +229,11 @@ public final class AppClient extends App
 
         _uiManager.SetMenuCurrent(UIManager.MenuType.ClientNetwork);
         _uiControllerClient.SetConnectionButtonAvailability(true);
-        _notificationMgr.DisplayMessageOneResponse("Connection lost.");
+        final boolean retVal = _notificationMgr.DisplayMessageOneResponse("Connection lost.");
+        if(!retVal)
+        {
+            App.LogLine("WARNING: Failed to create pop-up message on connection lost.");
+        }
     }
 
     private void ProcessBackPressed()
@@ -229,7 +259,20 @@ public final class AppClient extends App
         final NotificationHelper.MessageState msgState = _notificationMgr.CheckMessageStateAndCleanup();
         if(msgState == NotificationHelper.MessageState.None)
         {
-            _notificationMgr.DisplayMessageTwoResponses(messgeText);
+            final boolean retVal = _notificationMgr.DisplayMessageTwoResponses(messgeText);
+            if(!retVal)
+            {
+                // Just leave without this notification.
+
+                App.LogLine("WARNING: Failed to create pop-up message!");
+
+                if(destMenu != null)
+                    _uiManager.SetMenuCurrent(destMenu);
+                else
+                    _bIsRunning = false;
+
+                _bBackPressed = false;
+            }
         }
         else if(msgState == NotificationHelper.MessageState.Positive)
         {
