@@ -1,11 +1,17 @@
 package com.example.maverick.mavremote.UI;
 
+import android.graphics.Color;
 import android.text.Editable;
 import android.util.Log;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.example.maverick.mavremote.App;
+import com.example.maverick.mavremote.NetworkCommon.NetworkSystem;
 import com.example.maverick.mavremote.Utility;
+
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 public abstract class UIController
 {
@@ -71,6 +77,52 @@ public abstract class UIController
     {
         _etLog = null;
     }
+
+
+    protected void UpdateStatusTextView(final TextView statusTextView, final NetworkSystem.State state)
+    {
+        _manager.PerformAction(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                statusTextView.setText(STATE_NAMES[state.ordinal()]);
+                statusTextView.setTextColor(STATE_COLORS[state.ordinal()]);
+            }
+        });
+    }
+
+    protected void UpdateAddressTextView(final TextView addressTextView, final SocketAddress address)
+    {
+        final String addrString = address != null
+                ? ((InetSocketAddress)address).getAddress().getCanonicalHostName()
+                : "0.0.0.0";
+
+        _manager.PerformAction(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                addressTextView.setText(addrString);
+            }
+        });
+    }
+
+    ///////// ClientNetwork
+    protected static final String[] STATE_NAMES =
+            {
+                    "Invalid",
+                    "Not connected",
+                    "Connecting...",
+                    "Connected"
+            };
+    protected static final int[] STATE_COLORS =
+            {
+                    Color.BLACK,
+                    Color.RED,
+                    Color.YELLOW,
+                    Color.GREEN
+            };
 
     protected UIManager _manager;
 

@@ -37,6 +37,18 @@ public abstract class NetworkSystem extends System
 
     public abstract SocketAddress GetConnectedAddress();
 
+    public SocketAddress GetMyAddress()
+    {
+        if(_connHelper.IsConnectedToLocalNetwork())
+        {
+            return _connHelper.GetConnectionLocalAddress();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
     @Override
     protected void Start()
     {

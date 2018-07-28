@@ -51,6 +51,16 @@ public class ServerNetworkSystem extends NetworkSystem
         }
     }
 
+    public boolean HasActionEvents()
+    {
+        return _actionEventQueue.IsEmpty();
+    }
+
+    public PacketCounter GetPacketCounter()
+    {
+        return _packetCounter;
+    }
+
     @Override
     protected boolean ProcessStateWaitingForConnection()
     {
@@ -109,10 +119,12 @@ public class ServerNetworkSystem extends NetworkSystem
             DataPacketRetriever<ActionEvent> retriever = _packetFactory.DecodePacket(receivedBuffer);
             if(retriever.IsValid())
             {
+                _packetCounter.IncPacketNumCorrect();
                 _actionEventQueue.Enqueue(retriever.ObjectRef);
             }
             else
             {
+                _packetCounter.IncPacketNumWrong();
                 App.LogLine("Server decoded an invalid packet!");
             }
         }
@@ -156,6 +168,8 @@ public class ServerNetworkSystem extends NetworkSystem
 
     protected static final int ENDPOINT_SERVER_TIMEOUT_MILLIS = 1000;
     protected static final int ENDPOINT_BROADCAST_SEND_PERIOD_MILLIS = 1000;
+
+    protected PacketCounter _packetCounter = new PacketCounter();
 
     protected EndpointServer _endpoint = null;
 

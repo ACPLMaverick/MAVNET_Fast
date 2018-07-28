@@ -1,6 +1,5 @@
 package com.example.maverick.mavremote.Client;
 
-import android.graphics.Color;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -13,7 +12,6 @@ import com.example.maverick.mavremote.UI.UIController;
 import com.example.maverick.mavremote.UI.UIManager;
 import com.example.maverick.mavremote.Utility;
 
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
 public class ClientUIController extends UIController
@@ -25,20 +23,10 @@ public class ClientUIController extends UIController
 
     public void NetworkUpdateConnectionAddress(final SocketAddress addr)
     {
-        final String addrString = ((InetSocketAddress)addr).getAddress().toString();
-
-        if(addrString != _networkAddressDisplayed)
+        if(addr != _networkAddressDisplayed)
         {
-            _manager.PerformAction(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    _tvAddress.setText(addrString);
-                }
-            });
-
-            _networkAddressDisplayed = addrString;
+            UpdateAddressTextView(_tvAddress, addr);
+            _networkAddressDisplayed = addr;
         }
     }
 
@@ -46,16 +34,7 @@ public class ClientUIController extends UIController
     {
         if(_networkStateDisplayed != state)
         {
-            _manager.PerformAction(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    _tvConnectionStatus.setText(STATE_NAMES[state.ordinal()]);
-                    _tvConnectionStatus.setTextColor(STATE_COLORS[state.ordinal()]);
-                }
-            });
-
+            UpdateStatusTextView(_tvConnectionStatus, state);
             _networkStateDisplayed = state;
         }
     }
@@ -113,28 +92,13 @@ public class ClientUIController extends UIController
         Utility.Assert(_etLog != null);
     }
 
-    ///////// ClientNetwork
-    private static final String[] STATE_NAMES =
-            {
-                    "Invalid",
-                    "Not connected",
-                    "Connecting...",
-                    "Connected"
-            };
-    private static final int[] STATE_COLORS =
-            {
-                    Color.BLACK,
-                    Color.RED,
-                    Color.YELLOW,
-                    Color.GREEN
-            };
 
     private TextView _tvAddress = null;
     private TextView _tvConnectionStatus = null;
     private Button _btnConnect = null;
 
     private NetworkSystem.State _networkStateDisplayed = NetworkSystem.State.Invalid;
-    private String _networkAddressDisplayed = "0.0.0.0";
+    private SocketAddress _networkAddressDisplayed = null;
 
     ///////// ClientRemote
 }

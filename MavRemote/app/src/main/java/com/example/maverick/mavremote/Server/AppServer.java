@@ -5,6 +5,7 @@ import com.example.maverick.mavremote.App;
 import com.example.maverick.mavremote.NetworkCommon.NetworkSystem;
 import com.example.maverick.mavremote.Server.Instrumentation.InstrumentationSystem;
 import com.example.maverick.mavremote.ServerActivity;
+import com.example.maverick.mavremote.UI.NotificationHelper;
 import com.example.maverick.mavremote.UI.UIManager;
 import com.example.maverick.mavremote.Utility;
 
@@ -28,6 +29,13 @@ public final class AppServer extends App
     public InfraredSystem GetInfraredSystem() { return _infr; }
 
     public boolean IsRunning() { return _bIsRunning; }
+
+    public void SetForceConnect(boolean bForceConnect)
+    {
+        _bForceConnect = bForceConnect;
+    }
+
+    public void OnBackButtonPressed() { _bBackPressed = true; }
 
 
     @Override
@@ -92,6 +100,7 @@ public final class AppServer extends App
                     _infr.Run();
                 }
             });
+            _notificationMgr.DisplayNotificationText("Using IR Remote as client...");
         }
         else
         {
@@ -104,6 +113,16 @@ public final class AppServer extends App
                     _server.Run();
                 }
             });
+            _cachedServerState = _server.GetState();
+            _notificationMgr.DisplayNotificationText(_cachedServerState.name());
+            _uiControllerServer.RegisterOnConnectionClick(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    _bChangeConnectionState = !_bChangeConnectionState;
+                }
+            });
         }
 
         _cachedServerState = _server.GetState();
@@ -112,15 +131,6 @@ public final class AppServer extends App
 //        _notificationMgr.DisplayNotificationText("Server running...");
 //        appstart = Calendar.getInstance().getTimeInMillis();
         // --notification test
-
-        if(_server != null)
-        {
-            _notificationMgr.DisplayNotificationText(_cachedServerState.name());
-        }
-        else
-        {
-            _notificationMgr.DisplayNotificationText("Using IR Remote as client...");
-        }
 
         _bIsRunning = true;
     }
@@ -174,6 +184,9 @@ public final class AppServer extends App
                 ProcessQueueServer();
                 ProcessServerState();
             }
+
+            if(CanUseUI())
+                ProcessUI();
         }
     }
 
@@ -184,7 +197,7 @@ public final class AppServer extends App
 
     private void ProcessQueueServer()
     {
-        if(!_server.IsRunning() || !_instr.IsRunning())
+        if(!_server.IsRunning() || !_instr.IsRunning() || !_server.HasActionEvents())
             return;
 
         ActionEvent ev = _server.PopActionEvent();
@@ -202,6 +215,52 @@ public final class AppServer extends App
             _cachedServerState = _server.GetState();
             _notificationMgr.DisplayNotificationText(_cachedServerState.name());
         }
+
+
+        if(_bForceConnect && _server.GetState() == NetworkSystem.State.NotConnectedIdle)
+        {
+            _bChangeConnectionState = true;
+        }
+
+
+        if(_bChangeConnectionState)
+        {
+            _server.StartAwaitingConnections();
+            _bChangeConnectionState = false;
+        }
+    }
+
+    private void ProcessUI()
+    {
+        _uiControllerServer.UpdateCurrentNetworkState(_server.GetState());
+        _uiControllerServer.UpdateCurrentMyAddress(_server.GetMyAddress());
+        _uiControllerServer.UpdateCurrentClientAddress(_server.GetConnectedAddress());
+        _uiControllerServer.UpdateReceived(_server.GetPacketCounter());
+
+        if(_bBackPressed)
+        {
+            final NotificationHelper.MessageState msgState = _notificationMgr.CheckMessageStateAndCleanup();
+            if(msgState == NotificationHelper.MessageState.None)
+            {
+                final boolean retVal = _notificationMgr.DisplayMessageTwoResponses(
+                        "Do you really want to shutdown server?");
+                if(!retVal)
+                {
+                    App.LogLine("WARNING: Failed to create pop-up message!");
+                    _bIsRunning = false;
+                    _bBackPressed = false;
+                }
+            }
+            else if(msgState == NotificationHelper.MessageState.Positive)
+            {
+                _bIsRunning = false;
+                _bBackPressed = false;
+            }
+            else if(msgState == NotificationHelper.MessageState.Negative)
+            {
+                _bBackPressed = false;
+            }
+        }
     }
 
     private static final boolean B_USE_INFRARED = false;
@@ -213,6 +272,9 @@ public final class AppServer extends App
     private TestSystem _tester = null;
     private ServerUIController _uiControllerServer = null;
     private boolean _bIsRunning = false;
+    private boolean _bForceConnect = false;
+    private boolean _bChangeConnectionState = false;
+    private boolean _bBackPressed = false;
 
     // ++notification test
 //    private long appstart = 0;
