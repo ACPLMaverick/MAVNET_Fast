@@ -269,7 +269,11 @@ public final class AppClient extends App
                 App.LogLine("WARNING: Failed to create pop-up message!");
 
                 if(destMenu != null)
+                {
+                    _networkSystem.Disconnect();
                     _uiManager.SetMenuCurrent(destMenu);
+                    _bIsConnected = false;
+                }
                 else
                     _bIsRunning = false;
 
@@ -279,7 +283,11 @@ public final class AppClient extends App
         else if(msgState == NotificationHelper.MessageState.Positive)
         {
             if(destMenu != null)
+            {
+                _networkSystem.Disconnect();
                 _uiManager.SetMenuCurrent(destMenu);
+                _bIsConnected = false;
+            }
             else
                 _bIsRunning = false;
 

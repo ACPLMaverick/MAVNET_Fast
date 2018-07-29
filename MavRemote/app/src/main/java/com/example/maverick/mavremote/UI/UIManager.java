@@ -55,18 +55,32 @@ public class UIManager
     {
         Utility.Assert(IsMenuInitialized(menuType));
 
-        for(Menu menu : _menus)
+        for(final Menu menu : _menus)
         {
             if(menu != null)
             {
                 if(menu.GetMyType() == menuType)
                 {
                     _currentMenu = menuType;
-                    menu.Enable();
+                    PerformAction(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            menu.Enable();
+                        }
+                    });
                 }
                 else
                 {
-                    menu.Disable();
+                    PerformAction(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            menu.Disable();
+                        }
+                    });
                 }
             }
         }
