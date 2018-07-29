@@ -58,14 +58,18 @@ public class ClientUIController extends UIController
 
     public void SetConnectionButtonAvailability(final boolean available)
     {
-        _manager.PerformAction(new Runnable()
+        if(_bConnectionButtonAvailable != available)
         {
-            @Override
-            public void run()
+            _bConnectionButtonAvailable = available;
+            _manager.PerformAction(new Runnable()
             {
-                _btnConnect.setEnabled(available);
-            }
-        });
+                @Override
+                public void run()
+                {
+                    _btnConnect.setEnabled(available);
+                }
+            });
+        }
     }
 
     @Override
@@ -82,6 +86,8 @@ public class ClientUIController extends UIController
         Utility.Assert(_tvAddress != null);
         Utility.Assert(_tvConnectionStatus != null);
         Utility.Assert(_btnConnect != null);
+
+        _bConnectionButtonAvailable = _btnConnect.isEnabled();
     }
 
     @Override
@@ -99,6 +105,7 @@ public class ClientUIController extends UIController
 
     private NetworkSystem.State _networkStateDisplayed = NetworkSystem.State.Invalid;
     private SocketAddress _networkAddressDisplayed = null;
+    private boolean _bConnectionButtonAvailable = true;
 
     ///////// ClientRemote
 }

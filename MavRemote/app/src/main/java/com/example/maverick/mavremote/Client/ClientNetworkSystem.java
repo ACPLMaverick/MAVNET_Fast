@@ -64,18 +64,12 @@ public class ClientNetworkSystem extends NetworkSystem
         if(!super.ProcessStateConnected())
             return false;
 
-        if(_packetQueue.IsEmpty())
+
+        while(!_actionEventQueue.IsEmpty())
         {
-            Thread.yield();
-        }
-        else
-        {
-            while(!_packetQueue.IsEmpty())
-            {
-                ActionEvent ev = _actionEventQueue.Dequeue();
-                ByteBuffer packet = _packetFactory.CreatePacket(ev);
-                _endpoint.SendData(packet);
-            }
+            ActionEvent ev = _actionEventQueue.Dequeue();
+            ByteBuffer packet = _packetFactory.CreatePacket(ev);
+            _endpoint.SendData(packet);
         }
 
         return true;

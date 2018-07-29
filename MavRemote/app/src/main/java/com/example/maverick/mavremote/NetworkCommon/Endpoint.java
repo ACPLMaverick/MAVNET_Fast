@@ -64,11 +64,8 @@ public class Endpoint
 
         try
         {
-            int bytesWritten = _sock.getChannel().write(data);
-            if(bytesWritten == data.array().length)
-                return true;
-            else
-                return false;
+            _sock.getOutputStream().write(data.array());
+            return true;
         }
         catch(IOException e)
         {

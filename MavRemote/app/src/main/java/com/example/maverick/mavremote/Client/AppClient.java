@@ -272,6 +272,7 @@ public final class AppClient extends App
                 {
                     _networkSystem.Disconnect();
                     _uiManager.SetMenuCurrent(destMenu);
+                    _uiControllerClient.SetConnectionButtonAvailability(true);
                     _bIsConnected = false;
                 }
                 else
@@ -286,6 +287,7 @@ public final class AppClient extends App
             {
                 _networkSystem.Disconnect();
                 _uiManager.SetMenuCurrent(destMenu);
+                _uiControllerClient.SetConnectionButtonAvailability(true);
                 _bIsConnected = false;
             }
             else
