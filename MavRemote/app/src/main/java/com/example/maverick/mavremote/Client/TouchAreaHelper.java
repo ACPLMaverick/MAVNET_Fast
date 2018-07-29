@@ -214,6 +214,7 @@ public class TouchAreaHelper
                             _lockProtector.lock();
 
                             Utility.Assert(!_timerFirstDown.IsRunning());
+                            InitOnDown(motionEvent);
                             _timerFirstDown.Start();
 
                             _lockProtector.unlock();
@@ -293,6 +294,12 @@ public class TouchAreaHelper
     protected void UpdateDistance(float dx, float dy)
     {
         _distanceThisTouch += Math.sqrt(dx * dx + dy * dy);
+    }
+
+    protected void InitOnDown(MotionEvent motionEvent)
+    {
+        _latestMovementX = motionEvent.getX();
+        _latestMovementY = motionEvent.getY();
     }
 
     protected void ClearOnUp()
