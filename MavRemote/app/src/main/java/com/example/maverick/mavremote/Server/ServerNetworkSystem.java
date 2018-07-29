@@ -87,10 +87,6 @@ public class ServerNetworkSystem extends NetworkSystem
             _timerBroadcast = 0;
             GoToState(State.Connected);
         }
-        else
-        {
-            Thread.yield();
-        }
 
         return true;
     }

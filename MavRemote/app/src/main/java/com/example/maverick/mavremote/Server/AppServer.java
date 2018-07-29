@@ -200,7 +200,7 @@ public final class AppServer extends App
             }
             else
             {
-//                ProcessQueueServer();
+                ProcessQueueServer();
                 ProcessServerState();
             }
 

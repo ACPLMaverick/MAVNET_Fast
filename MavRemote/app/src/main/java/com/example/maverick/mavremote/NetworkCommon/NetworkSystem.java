@@ -32,8 +32,7 @@ public abstract class NetworkSystem extends System
 
     public void Disconnect()
     {
-        DestroyEndpoints();
-        GoToState(State.NotConnectedIdle);
+        _bNeedDisconnect = true;
     }
 
 
@@ -99,6 +98,12 @@ public abstract class NetworkSystem extends System
                 ProcessStateConnected();
                 break;
         }
+
+        if(_bNeedDisconnect)
+        {
+            ProcessDisconnect();
+            _bNeedDisconnect = false;
+        }
     }
 
     protected boolean ProcessStateNotConnectedIdle()
@@ -140,6 +145,13 @@ public abstract class NetworkSystem extends System
         return true;
     }
 
+    protected boolean ProcessDisconnect()
+    {
+        DestroyEndpoints();
+        GoToState(State.NotConnectedIdle);
+        return true;
+    }
+
     protected void GoToState(State state)
     {
         App.LogLine("[" + this.getClass().getSimpleName() + "] Goes to State: " + state.toString());
@@ -175,4 +187,6 @@ public abstract class NetworkSystem extends System
     protected EventQueue<ActionEvent> _actionEventQueue = null;
 
     protected State _state = State.NotConnectedIdle;
+
+    protected boolean _bNeedDisconnect = false;
 }

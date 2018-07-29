@@ -18,9 +18,9 @@ public abstract class System
 
         while (_bIsRunning)
         {
-            //_systemLock.lock();
+            _systemMainLoopLock.lock();
             MainLoop();
-            //_systemLock.unlock();
+            _systemMainLoopLock.unlock();
         }
 
         Finish();
@@ -49,5 +49,6 @@ public abstract class System
 
 
     protected ReentrantLock _systemLock = new ReentrantLock();
+    protected ReentrantLock _systemMainLoopLock = new ReentrantLock();
     protected boolean _bIsRunning = false;
 }
