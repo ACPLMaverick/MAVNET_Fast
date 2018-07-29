@@ -32,7 +32,7 @@ public class InputSystem extends System
     // Can return null if queue empty.
     public ActionEvent PopEvent()
     {
-        if(_eventQueue.IsEmpty())
+        if(_eventQueue == null || _eventQueue.IsEmpty())
         {
             return null;
         }
