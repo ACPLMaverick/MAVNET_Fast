@@ -151,7 +151,17 @@ public class EndpointServer
     {
         try
         {
-            _sock.accept();
+            Socket connSock = _sock.accept();
+
+            // If no exception has been thrown, assuming the connection has been made.
+            if(connSock != null)
+            {
+                _connectionSock = connSock;
+            }
+            else
+            {
+                App.LogLine("ServerSocket accept returned a null socket!");
+            }
         }
         catch(IOException e)
         {
