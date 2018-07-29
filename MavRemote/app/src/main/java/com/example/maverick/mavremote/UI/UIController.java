@@ -51,7 +51,7 @@ public abstract class UIController
 
     public void Log(final String text)
     {
-        if(_etLog != null)
+        if(_etLog != null && _manager != null)
         {
             _manager.PerformAction(new Runnable()
             {

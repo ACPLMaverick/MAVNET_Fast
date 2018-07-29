@@ -23,16 +23,16 @@ public final class Utility
         return true;
     }
 
-    public static void StartThread(final Runnable func)
+    public static void StartThread(final Runnable func, String name)
     {
-        final Thread t = new Thread()
-        {
-            @Override
-            public void run()
-            {
-                func.run();
-            }
-        };
+        final Thread t = new Thread(func, name);
+        t.start();
+    }
+
+    public static void StartThread(final Runnable func, String name, int priority)
+    {
+        final Thread t = new Thread(func, name);
+        t.setPriority(priority);
         t.start();
     }
 

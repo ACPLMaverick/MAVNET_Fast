@@ -1,5 +1,7 @@
 package com.example.maverick.mavremote.Server;
 
+import android.util.Log;
+
 import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.App;
 import com.example.maverick.mavremote.NetworkCommon.NetworkSystem;
@@ -35,7 +37,20 @@ public final class AppServer extends App
         _bForceConnect = bForceConnect;
     }
 
-    public void OnBackButtonPressed() { _bBackPressed = true; }
+    public void SetBackPressed(boolean val)
+    {
+        _lockApp.lock();
+        _bBackPressed = val;
+        _lockApp.unlock();
+    }
+
+    public boolean GetBackPressed()
+    {
+        _lockApp.lock();
+        final boolean bBackPressed = _bBackPressed;
+        _lockApp.unlock();
+        return bBackPressed;
+    }
 
 
     @Override
@@ -87,7 +102,8 @@ public final class AppServer extends App
             {
                 _instr.Run();
             }
-        });
+        }
+        , "InstrumentationSystem", 7);
 
         if(B_USE_INFRARED)
         {
@@ -99,7 +115,8 @@ public final class AppServer extends App
                 {
                     _infr.Run();
                 }
-            });
+            }
+            , "InfraredSystem", 5);
             _notificationMgr.DisplayNotificationText("Using IR Remote as client...");
         }
         else
@@ -112,7 +129,8 @@ public final class AppServer extends App
                 {
                     _server.Run();
                 }
-            });
+            }
+            , "ServerNetworkSystem", 5);
             _cachedServerState = _server.GetState();
             _notificationMgr.DisplayNotificationText(_cachedServerState.name());
             _uiControllerServer.RegisterOnConnectionClick(new Runnable()
@@ -172,6 +190,7 @@ public final class AppServer extends App
 //                _notificationMgr.DisplayNotificationText("App running: " + Long.toString(delta));
 //            }
             // --notification test
+
             if(CanUseUI())
                 _uiController.Update();
 
@@ -181,7 +200,7 @@ public final class AppServer extends App
             }
             else
             {
-                ProcessQueueServer();
+//                ProcessQueueServer();
                 ProcessServerState();
             }
 
@@ -245,7 +264,7 @@ public final class AppServer extends App
         _uiControllerServer.UpdateCurrentClientAddress(_server.GetConnectedAddress());
         _uiControllerServer.UpdateReceived(_server.GetPacketCounter());
 
-        if(_bBackPressed)
+        if(GetBackPressed())
         {
             final NotificationHelper.MessageState msgState = _notificationMgr.CheckMessageStateAndCleanup();
             if(msgState == NotificationHelper.MessageState.None)
@@ -255,18 +274,21 @@ public final class AppServer extends App
                 if(!retVal)
                 {
                     App.LogLine("WARNING: Failed to create pop-up message!");
+                    App.LogLine("Exiting.");
                     _bIsRunning = false;
-                    _bBackPressed = false;
+                    SetBackPressed(false);
                 }
             }
             else if(msgState == NotificationHelper.MessageState.Positive)
             {
+                App.LogLine("Exiting.");
                 _bIsRunning = false;
-                _bBackPressed = false;
+                SetBackPressed(false);
             }
             else if(msgState == NotificationHelper.MessageState.Negative)
             {
-                _bBackPressed = false;
+                App.LogLine("Keeping running.");
+                SetBackPressed(false);
             }
         }
     }

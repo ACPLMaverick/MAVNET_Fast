@@ -151,7 +151,8 @@ public abstract class App
             {
                 InternalRun();
             }
-        });
+        }
+        , getClass().getSimpleName(), 8);
     }
 
 

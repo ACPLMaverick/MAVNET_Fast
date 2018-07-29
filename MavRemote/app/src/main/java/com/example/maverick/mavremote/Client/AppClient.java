@@ -100,7 +100,8 @@ public final class AppClient extends App
             {
                 _inputSystem.Run();
             }
-        });
+        }
+        , "InputSystem");
 
         _networkSystem = new ClientNetworkSystem();
         Utility.StartThread(new Runnable()
@@ -110,7 +111,8 @@ public final class AppClient extends App
             {
                 _networkSystem.Run();
             }
-        });
+        }
+        , "NetworkSystem");
 
         _notificationMgr.DisplayNotificationText("Touch to return to the remote.");
 

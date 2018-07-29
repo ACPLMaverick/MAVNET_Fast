@@ -17,16 +17,6 @@ import java.util.Calendar;
 public class ServerNetworkSystem extends NetworkSystem
 {
     @Override
-    public boolean StartAwaitingConnections()
-    {
-        if(!super.StartAwaitingConnections())
-            return false;
-
-        _broadcastPacket = _packetFactory.CreatePacketBroadcast(_connHelper.GetConnectionLocalAddress());
-        return true;
-    }
-
-    @Override
     public SocketAddress GetConnectedAddress()
     {
         if(_endpoint != null)
@@ -62,6 +52,14 @@ public class ServerNetworkSystem extends NetworkSystem
     }
 
     @Override
+    protected void Start()
+    {
+        super.Start();
+
+        _broadcastPacket = _packetFactory.CreatePacketBroadcast(_connHelper.GetConnectionLocalAddress());
+    }
+
+    @Override
     protected boolean ProcessStateWaitingForConnection()
     {
         if(!super.ProcessStateWaitingForConnection())
@@ -75,6 +73,8 @@ public class ServerNetworkSystem extends NetworkSystem
             _timerBroadcast = Calendar.getInstance().getTimeInMillis();
 
             _endpointBroadcast.SendDataBroadcast(_broadcastPacket);
+            _packetCounterBroadcast.IncPacketNumCorrect();
+            App.LogLine("Sending broadcast packet " + _packetCounterBroadcast.GetPacketNumCorrect());
         }
 
 
@@ -86,6 +86,10 @@ public class ServerNetworkSystem extends NetworkSystem
         {
             _timerBroadcast = 0;
             GoToState(State.Connected);
+        }
+        else
+        {
+            Thread.yield();
         }
 
         return true;
@@ -170,6 +174,7 @@ public class ServerNetworkSystem extends NetworkSystem
     protected static final int ENDPOINT_BROADCAST_SEND_PERIOD_MILLIS = 1000;
 
     protected PacketCounter _packetCounter = new PacketCounter();
+    protected PacketCounter _packetCounterBroadcast = new PacketCounter();
 
     protected EndpointServer _endpoint = null;
 

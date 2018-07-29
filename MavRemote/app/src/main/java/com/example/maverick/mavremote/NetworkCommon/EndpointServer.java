@@ -155,9 +155,10 @@ public class EndpointServer
         }
         catch(IOException e)
         {
-            App.LogLine("Error on socket accept: " + e.getMessage());
-
-            return;
+            if(e.getMessage() != null)
+            {
+                App.LogLine("Error on socket accept: " + e.getMessage());
+            }
         }
     }
 

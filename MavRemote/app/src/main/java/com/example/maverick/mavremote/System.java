@@ -18,9 +18,9 @@ public abstract class System
 
         while (_bIsRunning)
         {
-            _systemLock.lock();
+            //_systemLock.lock();
             MainLoop();
-            _systemLock.unlock();
+            //_systemLock.unlock();
         }
 
         Finish();

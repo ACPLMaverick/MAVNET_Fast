@@ -1,11 +1,9 @@
 package com.example.maverick.mavremote;
 
-import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.widget.TextView;
 
 import com.example.maverick.mavremote.Server.AppServer;
 
@@ -26,15 +24,19 @@ public class ServerActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_server);
 
+        // Service is disabled for now because it would not work on API 17.
+
         if(!AppServer.GetInstance().IsRunning())
         {
-            AppServer.GetInstance().UpdateActivityState(this, null);
+            //AppServer.GetInstance().UpdateActivityState(this, null);
+            AppServer.GetInstance().Run(this);
         }
 
+        /*
         Intent intent = new Intent(this, ServerService.class);
         intent.putExtra("LaunchedFromActivity", true);
         startService(intent);
-
+        */
         Log.d(App.TAG, "[Activity] [onCreate]");
     }
 
@@ -43,9 +45,14 @@ public class ServerActivity extends AppCompatActivity
     {
         super.onDestroy();
 
+        if(AppServer.GetInstance().IsRunning())
+            AppServer.GetInstance().Stop();
+
+        // This is disabled now as would not want to work on API 17.
+
         // Do not stop app, as this is a service.
         // Only clear reference to this activty to avoid memory leak.
-        AppServer.GetInstance().UpdateActivityState(null, getApplicationContext());
+        //AppServer.GetInstance().UpdateActivityState(null, getApplicationContext());
 
         Log.d(App.TAG, "[Activity] [onDestroy]");
     }
@@ -58,7 +65,7 @@ public class ServerActivity extends AppCompatActivity
 
         if(AppServer.GetInstance().IsRunning())
         {
-            AppServer.GetInstance().OnBackButtonPressed();
+            AppServer.GetInstance().SetBackPressed(true);
         }
 
         return true;
