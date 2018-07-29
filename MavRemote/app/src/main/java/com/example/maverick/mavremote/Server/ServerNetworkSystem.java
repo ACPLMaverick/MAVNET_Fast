@@ -43,7 +43,7 @@ public class ServerNetworkSystem extends NetworkSystem
 
     public boolean HasActionEvents()
     {
-        return _actionEventQueue.IsEmpty();
+        return !_actionEventQueue.IsEmpty();
     }
 
     public PacketCounter GetPacketCounter()

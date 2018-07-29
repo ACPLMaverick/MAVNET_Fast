@@ -71,9 +71,11 @@ public final class InstrumentationSystem extends System
         }
 
         ActionEvent ev = _queue.Dequeue();
-        PerformActionEvent(ev);
-
-        Thread.yield();
+        while(ev != null)
+        {
+            PerformActionEvent(ev);
+            ev = _queue.Dequeue();
+        }
     }
 
 
@@ -81,11 +83,11 @@ public final class InstrumentationSystem extends System
     {
         if(_shellProc == null)
         {
-            Log.w(AppServer.TAG, "Cannot perform action event because shell was closed due to an error.");
+            App.LogLine("Cannot perform action event because shell was closed due to an error.");
             return;
         }
 
-        Log.d(AppServer.TAG, "Performing action event: " + ev.toString());
+        App.LogLine("Performing action event: " + ev.toString());
 
         assert(_shellStream != null);
 
@@ -118,8 +120,6 @@ public final class InstrumentationSystem extends System
         {
             Utility.SleepThread(ev.GetDelayMillis());
         }
-
-        LogRootShellOutput();
     }
 
     private boolean InitRootShell()
@@ -176,7 +176,7 @@ public final class InstrumentationSystem extends System
     {
         try
         {
-            Log.d(AppServer.TAG, "Sending command: " + command);
+            App.LogLine("Sending command: " + command);
             _shellStream.writeChars(command + "\n");
         }
         catch(IOException e)
@@ -239,7 +239,7 @@ public final class InstrumentationSystem extends System
 
         if(!out.isEmpty())
         {
-            Log.d(AppServer.TAG, out);
+            App.LogLine(out);
         }
     }
 
