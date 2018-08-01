@@ -93,7 +93,11 @@ public final class InstrumentationSystem extends System
 
         ArrayList<String> commands = new ArrayList<>();
 
-        if(ev.GetType() == ActionEvent.Type.Keyboard)
+        if(ev.GetType() == ActionEvent.Type.Text)
+        {
+            commands.add("input text \"" + ev.GetText() + "\"");
+        }
+        else if(ev.GetType() == ActionEvent.Type.Keyboard)
         {
             commands.add("input keyevent " + String.valueOf(ev.GetKeyboardEv()));
         }

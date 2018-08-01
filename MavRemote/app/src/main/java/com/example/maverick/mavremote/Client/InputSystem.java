@@ -119,6 +119,16 @@ public class InputSystem extends System
 
         btn = GetMenu().GetButtons().get(R.id.btnRec);
         AssignClickEventToButton(btn, KeyEvent.KEYCODE_MEDIA_RECORD);
+
+        btn = GetMenu().GetButtons().get(R.id.btnBackspace);
+        AssignClickEventToButton(btn, KeyEvent.KEYCODE_DEL, new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                _oskHelper.OnBackspaceBtnClicked();
+            }
+        });
         // TODO: Maybe implement some general-purpose recording?
         // TODO: Button state changes in case of MUTE and RECORD.
 
@@ -172,12 +182,6 @@ public class InputSystem extends System
                     GetInstance().OnBackButtonPressed();
                 }
             }
-
-            if(!GetInstance().GetActivityTyped().GetSystemKeyEvents().IsEmpty())
-            {
-                MotionEvent me = GetInstance().GetActivityTyped().GetMotionEvents().Dequeue();
-                _oskHelper.PushMotionEvent(me);
-            }
         }
 
         // Update Hold Helper.
@@ -190,6 +194,11 @@ public class InputSystem extends System
 
     private void AssignClickEventToButton(final Button button, final int kbEvent)
     {
+        AssignClickEventToButton(button, kbEvent, null);
+    }
+
+    private void AssignClickEventToButton(final Button button, final int kbEvent, final Runnable runnable)
+    {
         App.GetInstance().GetUIManager().PerformAction(new Runnable()
         {
             @Override
@@ -201,6 +210,8 @@ public class InputSystem extends System
                     public void onClick(View view)
                     {
                         PassKeyboardEvent(kbEvent);
+                        if(runnable != null)
+                            runnable.run();
                     }
                 });
             }
@@ -391,7 +402,7 @@ public class InputSystem extends System
 
     private void PassKeyboardEvent(int kbEvent)
     {
-        Log.e(App.TAG, "[InputSystem] Pressing key: " + KeyEvent.keyCodeToString(kbEvent));
+        App.LogLine("[InputSystem] Pressing key: " + KeyEvent.keyCodeToString(kbEvent));
 
         ActionEvent ev = new ActionEvent(kbEvent);
 
@@ -400,7 +411,7 @@ public class InputSystem extends System
 
     private void PassMouseClick(ActionEvent.MouseClickTypes mouseClick)
     {
-        Log.e(App.TAG, "[InputSystem] Mouse button: " + mouseClick.toString());
+        App.LogLine("[InputSystem] Mouse button: " + mouseClick.toString());
 
         ActionEvent ev = new ActionEvent(mouseClick);
 
@@ -409,7 +420,7 @@ public class InputSystem extends System
 
     private void PassMovement(int dx, int dy)
     {
-        Log.e(App.TAG, "[InputSystem] Movement: " + Integer.toString(dx) + ", "  + Integer.toString(dy));
+        App.LogLine("[InputSystem] Movement: " + Integer.toString(dx) + ", "  + Integer.toString(dy));
 
         ActionEvent ev = new ActionEvent(new Movement(dx, dy));
 
@@ -418,7 +429,7 @@ public class InputSystem extends System
 
     private void PassScroll(int dy)
     {
-        Log.e(App.TAG, "[InputSystem] Scroll: " + Integer.toString(dy));
+        App.LogLine("[InputSystem] Scroll: " + Integer.toString(dy));
 
         ActionEvent ev = new ActionEvent(new Movement(dy));
 
@@ -427,8 +438,11 @@ public class InputSystem extends System
 
     private void PassOSK(final String oskText)
     {
-        // TODO: Implement.
         App.LogLine("Sending OSK event with text: " + oskText);
+
+        ActionEvent ev = new ActionEvent(oskText);
+
+        _eventQueue.Enqueue(ev);
     }
 
 

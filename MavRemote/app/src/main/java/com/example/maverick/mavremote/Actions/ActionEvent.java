@@ -12,6 +12,7 @@ public class ActionEvent implements Serializable
                 "_keyboardMouseEv=" + _keyboardMouseEv +
                 ", _movementEv=" + _movementEv +
                 ", _delayMillis=" + _delayMillis +
+                ", _text=" + _text +
                 '}';
     }
 
@@ -19,7 +20,8 @@ public class ActionEvent implements Serializable
     {
         Keyboard,
         MouseClicks,
-        Movement
+        Movement,
+        Text
     }
 
     public enum MouseClickTypes
@@ -118,6 +120,11 @@ public class ActionEvent implements Serializable
         Init(KEYBOARD_EV_UNUSED, movementEv, 0, false);
     }
 
+    public ActionEvent(final String text)
+    {
+        _text = text;
+    }
+
     public int GetKeyboardEv()
     {
         return _keyboardMouseEv;
@@ -136,6 +143,11 @@ public class ActionEvent implements Serializable
         return _movementEv;
     }
 
+    public String GetText()
+    {
+        return _text;
+    }
+
     public int GetDelayMillis()
     {
         return _delayMillis;
@@ -143,6 +155,11 @@ public class ActionEvent implements Serializable
 
     public Type GetType()
     {
+        if(_text != "")
+        {
+            return Type.Text;
+        }
+
         if(_keyboardMouseEv != KEYBOARD_EV_UNUSED && _movementEv == null)
         {
             if(_keyboardMouseEv < 0)
@@ -196,4 +213,5 @@ public class ActionEvent implements Serializable
     private int _keyboardMouseEv = KEYBOARD_EV_UNUSED;
     private Movement _movementEv = null;
     private int _delayMillis = 0;
+    private String _text = "";
 }

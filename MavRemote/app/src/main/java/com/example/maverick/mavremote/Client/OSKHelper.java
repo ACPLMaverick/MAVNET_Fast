@@ -25,9 +25,6 @@ public class OSKHelper
     {
         Utility.Assert(App.GetInstance().HasActivity());
 
-        _motionEvents = new EventQueue<>();
-        _motionEvents.Init();
-
          _currentState = new OSKState(false, "");
 
         _et = App.GetInstance().GetUIManager().GetMenu(UIManager.MenuType.ClientRemote)
@@ -73,14 +70,7 @@ public class OSKHelper
     {
         if(_bVisible)
         {
-            String str = _et.getText().toString();
-            if(str.contains("\n"))
-            {
-                // Meaning an "enter" was pressed and we need to close.
-                _bAccepted = true;
-                GetImm().hideSoftInputFromWindow(_et.getWindowToken(), 0);
-                OnHide();
-            }
+            CheckNewlinePressed();
         }
 
         if(_hidingTimer > 0)
@@ -90,12 +80,6 @@ public class OSKHelper
             {
                 OnHide();
             }
-        }
-
-        if(!_motionEvents.IsEmpty())
-        {
-            MotionEvent ev = _motionEvents.Dequeue();
-            ProcessMotionEventAcceptPress(ev);
         }
     }
 
@@ -157,9 +141,23 @@ public class OSKHelper
         return _currentState;
     }
 
-    public void PushMotionEvent(MotionEvent ev)
+    public void OnBackspaceBtnClicked()
     {
-        _motionEvents.Enqueue(ev);
+        /*
+        if(_bVisible)
+        {
+            final String str = _et.getText().toString();
+            final String subStr = str.length() > 0 ? str.substring(0, str.length() - 1) : "";
+            App.GetInstance().GetUIManager().PerformAction(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    _et.setText(subStr);
+                }
+            });
+        }
+        */
     }
 
     private InputMethodManager GetImm()
@@ -235,19 +233,28 @@ public class OSKHelper
         return keypadHeight;
     }
 
-    private void ProcessMotionEventAcceptPress(MotionEvent ev)
+    private void CheckNewlinePressed()
     {
-        if(_bVisible)
+        Editable ed = _et.getText();
+
+        if(ed.length() > 1)
         {
-            if(!_bAccepted)
+            String str = "";
+            try
             {
-                if(ev.getAction() == MotionEvent.ACTION_UP)
-                {
-                    if(_acceptRect.contains((int)ev.getX(), (int)ev.getY()))
-                    {
-                        _bAccepted = true;
-                    }
-                }
+                str = ed.toString();
+            }
+            catch(IndexOutOfBoundsException e)
+            {
+                // This happens on rapid deleting chars, no way newline appears in this moment.
+                return;
+            }
+            if(str.contains("\n"))
+            {
+                // Meaning an "enter" was pressed and we need to close.
+                _bAccepted = true;
+                GetImm().hideSoftInputFromWindow(_et.getWindowToken(), 0);
+                OnHide();
             }
         }
     }
@@ -267,6 +274,4 @@ public class OSKHelper
     private long _hidingTimer = 0;
 
     private OSKState _currentState = null;
-
-    private EventQueue<MotionEvent> _motionEvents = null;
 }
