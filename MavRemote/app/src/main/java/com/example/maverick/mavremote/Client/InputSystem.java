@@ -5,7 +5,6 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 
 import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.Actions.Movement;
@@ -55,6 +54,17 @@ public class InputSystem extends System
 
         _eventQueue = new EventQueue<>();
         _eventQueue.Init();
+
+        _oskHelper = new OSKHelper();
+        _oskHelper.Init();
+        _oskHelper.RegisterOnHideAction(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                OnOSKHide();
+            }
+        });
 
         Button btn;
 
@@ -112,12 +122,23 @@ public class InputSystem extends System
         // TODO: Maybe implement some general-purpose recording?
         // TODO: Button state changes in case of MUTE and RECORD.
 
+        btn = GetMenu().GetButtons().get(R.id.btnOsk);
+        btn.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                OSKAppear();
+            }
+        });
+
         // Ideas for other buttons:
 
 
         // Set up touch and scroll/swipe field areas and register for touch events.
         SetupTouchArea();
         SetupScrollArea();
+
 
         _bIsRunning = true;
     }
@@ -147,8 +168,15 @@ public class InputSystem extends System
                 }
                 else if(ke.getKeyCode() == KeyEvent.KEYCODE_BACK)
                 {
+                    // Do not care about OSK because it consumes input.
                     GetInstance().OnBackButtonPressed();
                 }
+            }
+
+            if(!GetInstance().GetActivityTyped().GetSystemKeyEvents().IsEmpty())
+            {
+                MotionEvent me = GetInstance().GetActivityTyped().GetMotionEvents().Dequeue();
+                _oskHelper.PushMotionEvent(me);
             }
         }
 
@@ -156,6 +184,8 @@ public class InputSystem extends System
         _buttonHoldHelper.Update();
         _touchAreaHelper.Update();
         _scrollAreaHelper.Update();
+
+        _oskHelper.Update();
     }
 
     private void AssignClickEventToButton(final Button button, final int kbEvent)
@@ -319,6 +349,46 @@ public class InputSystem extends System
         return App.GetInstance().GetUIManager().GetMenu(UIManager.MenuType.ClientRemote);
     }
 
+    private void OSKAppear()
+    {
+        final Button btn = GetMenu().GetButtons().get(R.id.btnOsk);
+        if(btn.isEnabled())
+        {
+            App.GetInstance().GetUIManager().PerformAction(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    btn.setEnabled(false);
+                }
+            });
+        }
+
+        _oskHelper.Appear();
+    }
+
+    private void OnOSKHide()
+    {
+        final Button btn = GetMenu().GetButtons().get(R.id.btnOsk);
+        if(!btn.isEnabled())
+        {
+            App.GetInstance().GetUIManager().PerformAction(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    btn.setEnabled(true);
+                }
+            });
+        }
+
+        OSKState state = _oskHelper.GetCurrentState();
+        if(state.IsValid())
+        {
+            PassOSK(state.GetText());
+        }
+    }
+
     private void PassKeyboardEvent(int kbEvent)
     {
         Log.e(App.TAG, "[InputSystem] Pressing key: " + KeyEvent.keyCodeToString(kbEvent));
@@ -355,6 +425,12 @@ public class InputSystem extends System
         _eventQueue.Enqueue(ev);
     }
 
+    private void PassOSK(final String oskText)
+    {
+        // TODO: Implement.
+        App.LogLine("Sending OSK event with text: " + oskText);
+    }
+
 
     private static final int BUTTON_HOLD_PERIOD_MILLIS = 750;
     private static final float TOUCH_SCALE = 3.0f;
@@ -364,6 +440,7 @@ public class InputSystem extends System
     private TouchAreaHelper _touchAreaHelper = null;
     private TouchAreaHelper _scrollAreaHelper = null;
     private HashMap<Button, Button> _longClickHelper = null;
+    private OSKHelper _oskHelper = null;
 
     private EventQueue<ActionEvent> _eventQueue = null;
 }

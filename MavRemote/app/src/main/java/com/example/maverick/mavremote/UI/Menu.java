@@ -79,10 +79,13 @@ public class Menu
         return _imageViews;
     }
 
+    public Map<Integer, ConstraintLayout> GetLayoutViews() { return _layoutViews; }
+
     public Map<Integer, View> GetOtherViews()
     {
         return _otherViews;
     }
+
 
     public ConstraintLayout GetRoot()
     {
@@ -133,6 +136,10 @@ public class Menu
             {
                 _imageViews.put(child.getId(), (ImageView)child);
             }
+            else if(child instanceof ConstraintLayout)
+            {
+                _layoutViews.put(child.getId(), (ConstraintLayout)child);
+            }
             else
             {
                 _otherViews.put(child.getId(), child);
@@ -148,6 +155,7 @@ public class Menu
     protected Map<Integer, TextView> _textViews = new HashMap<>();
     protected Map<Integer, EditText> _editTextViews = new HashMap<>();
     protected Map<Integer, ImageView> _imageViews = new HashMap<>();
+    protected Map<Integer, ConstraintLayout> _layoutViews = new HashMap<>();
     protected Map<Integer, View> _otherViews = new HashMap<>();
 
     protected ConstraintLayout _root = null;

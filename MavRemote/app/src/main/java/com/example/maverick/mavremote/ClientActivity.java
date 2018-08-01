@@ -3,6 +3,7 @@ package com.example.maverick.mavremote;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.WindowManager;
 
 import com.example.maverick.mavremote.Client.AppClient;
@@ -23,6 +24,9 @@ public class ClientActivity extends AppCompatActivity
         {
             _systemKeyEvents = new EventQueue<>();
             _systemKeyEvents.Init();
+
+            _motionEvents = new EventQueue<>();
+            _motionEvents.Init();
 
             AppClient.GetInstance().Run(this);
         }
@@ -45,11 +49,16 @@ public class ClientActivity extends AppCompatActivity
         return super.onKeyDown(keyCode, event);
     }
 
-
     public EventQueue<KeyEvent> GetSystemKeyEvents()
     {
         return _systemKeyEvents;
     }
 
+    public EventQueue<MotionEvent> GetMotionEvents()
+    {
+        return _motionEvents;
+    }
+
     private EventQueue<KeyEvent> _systemKeyEvents;
+    private EventQueue<MotionEvent> _motionEvents;
 }
