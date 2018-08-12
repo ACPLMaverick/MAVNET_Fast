@@ -153,9 +153,9 @@ public class ActionEvent implements Serializable
         return _delayMillis;
     }
 
-    public Type GetType()
+    public Type ResolveType()
     {
-        if(_text != "")
+        if(!_text.equals(""))
         {
             return Type.Text;
         }
