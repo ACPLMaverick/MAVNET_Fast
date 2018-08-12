@@ -1,6 +1,5 @@
 package com.example.maverick.mavremote.Server.Instrumentation;
 
-import android.util.EventLog;
 import android.util.Log;
 
 import com.example.maverick.mavremote.Actions.ActionEvent;
@@ -13,9 +12,7 @@ import com.example.maverick.mavremote.Utility;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.concurrent.locks.ReentrantLock;
 
 public final class InstrumentationSystem extends System
 {
@@ -93,19 +90,21 @@ public final class InstrumentationSystem extends System
 
         ArrayList<String> commands = new ArrayList<>();
 
-        if(ev.GetType() == ActionEvent.Type.Text)
+        final ActionEvent.Type evType = ev.ResolveType();
+
+        if(evType == ActionEvent.Type.Text)
         {
             commands.add("input text \"" + ev.GetText() + "\"");
         }
-        else if(ev.GetType() == ActionEvent.Type.Keyboard)
+        else if(evType == ActionEvent.Type.Keyboard)
         {
             commands.add("input keyevent " + String.valueOf(ev.GetKeyboardEv()));
         }
-        else if(ev.GetType() == ActionEvent.Type.MouseClicks)
+        else if(evType == ActionEvent.Type.MouseClicks)
         {
             _mouseEventCoder.TypeToCodes(ev.GetMouseEv(), "sendevent " + _mouseDeviceName + " " , commands);
         }
-        else if(ev.GetType() == ActionEvent.Type.Movement)
+        else if(evType == ActionEvent.Type.Movement)
         {
             _mouseEventCoder.MovementToCodes(ev.GetMovementEv(), "sendevent " + _mouseDeviceName + " " , commands);
         }
