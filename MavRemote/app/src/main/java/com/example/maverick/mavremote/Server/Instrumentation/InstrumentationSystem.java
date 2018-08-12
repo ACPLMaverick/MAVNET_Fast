@@ -131,8 +131,8 @@ public final class InstrumentationSystem extends System
 
         try
         {
-//            _shellProc = Runtime.getRuntime().exec(new String[] { "su", "-c", "system/bin/sh"});
-            _shellProc = Runtime.getRuntime().exec("su");
+            _shellProc = Runtime.getRuntime().exec(new String[] { "su", "-c", "system/bin/sh"});
+//            _shellProc = Runtime.getRuntime().exec("su");
         }
         catch(IOException e)
         {
@@ -141,8 +141,6 @@ public final class InstrumentationSystem extends System
         }
 
         _shellStream = new DataOutputStream(_shellProc.getOutputStream());
-
-        LogRootShellOutput();
 
         return true;
     }
