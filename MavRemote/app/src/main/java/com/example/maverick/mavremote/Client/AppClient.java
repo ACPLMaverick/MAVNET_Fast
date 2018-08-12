@@ -119,7 +119,7 @@ public final class AppClient extends App
         App.LogLine("[AppClient] Started.");
 
         // ++debug
-        _uiManager.SetMenuCurrent(UIManager.MenuType.ClientRemote);
+//        _uiManager.SetMenuCurrent(UIManager.MenuType.ClientRemote);
         // --debug
 
         _bIsRunning = true;
