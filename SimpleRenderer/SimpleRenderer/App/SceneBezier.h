@@ -20,10 +20,13 @@ protected:
 	virtual void InitDrawables() override;
 	virtual void UpdateLogic() override;
 
-	void ComputeBezierPoints(const std::vector<glm::vec3>& linePoints, std::vector<glm::vec3>& outBezier);
 	void MovePlayer();
 	void ComputeLineMarker();
 	void ComputeBezierMarker();
+
+	void GetClosestPoint(const glm::vec3* lines, const size_t lineNum, const glm::vec3& source, glm::vec3& outClosestPoint, glm::vec3* outSecondClosestPoint = nullptr, glm::vec3* outClosestLineVertex = nullptr);
+
+
 
 	DrawableLine* _line;
 	DrawableBezier* _bezier;

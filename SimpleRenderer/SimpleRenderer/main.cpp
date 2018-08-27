@@ -6,8 +6,10 @@ int main()
 {
 	App::GetInstance().Run();
 
+	/*
 #if _DEBUG
 	_getch();
 #endif
+	*/
 	return 0;
 }

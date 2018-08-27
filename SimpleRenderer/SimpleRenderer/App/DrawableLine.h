@@ -11,8 +11,8 @@ public:
 	{
 	public:
 		std::vector<glm::vec3> Points;
-		glm::vec4 Color;
-		float Width;
+		glm::vec4 Color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		float Width = 1.0f;
 	};
 
 	DrawableLine();
