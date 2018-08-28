@@ -81,7 +81,7 @@ void SceneBezier::InitDrawables()
 	line->Init(lineParams);
 	_line = line;
 
-
+	/*
 	DrawableBezier* bezier = new DrawableBezier();
 	_drawables.push_back(bezier);
 
@@ -95,7 +95,7 @@ void SceneBezier::InitDrawables()
 
 	bezier->Init(bezierParams);
 	_bezier = bezier;
-
+	*/
 
 	point = new DrawablePoint();
 	_drawables.push_back(point);
@@ -109,7 +109,7 @@ void SceneBezier::InitDrawables()
 	point->Init(paramsMarker);
 	_markerLine = point;
 
-
+	/*
 	point = new DrawablePoint();
 	_drawables.push_back(point);
 
@@ -122,13 +122,14 @@ void SceneBezier::InitDrawables()
 
 	point->Init(paramsMarkerBezier);
 	_markerBezier = point;
+	*/
 }
 
 void SceneBezier::UpdateLogic()
 {
 	MovePlayer();
 	ComputeLineMarker();
-	ComputeBezierMarker();
+	//ComputeBezierMarker();
 }
 
 void SceneBezier::MovePlayer()
@@ -193,45 +194,54 @@ void SceneBezier::ComputeLineMarker()
 		if (diff < DIFF_THRES)
 		{
 			// Get the intersection point of closestPoint - secondClosestPoint and eyePos - closestVertex
-			const glm::vec3 da = secondClosestPoint - closestPoint;
-			const glm::vec3 db = eyePos - closestVertex;
-			const glm::vec3 dc = closestVertex - closestPoint;
+			glm::vec3 a1 = closestPoint;
+			glm::vec3 a2 = secondClosestPoint;
+			glm::vec3 a3 = eyePos;
+			glm::vec3 a4 = closestVertex;
 
-			auto clengthSqr = [](const glm::vec3& a) -> float
+			auto cmpDet = [](float a, float b, float c, float d) -> float
 			{
-				return glm::dot(a, a);
+				return a * d - b * c;
 			};
 
-			if (glm::dot(dc, glm::cross(da, db)) == 0.0f)	// Lines cannot be coplanar.
+			bool isCross = true;
+			float detL1 = cmpDet(a1.x, a1.y, a2.x, a2.y);
+			float detL2 = cmpDet(a3.x, a3.y, a4.x, a4.y);
+			float x1mx2 = a1.x - a2.x;
+			float x3mx4 = a3.x - a4.x;
+			float y1my2 = a1.y - a2.y;
+			float y3my4 = a3.y - a4.y;
+
+			float xnom = cmpDet(detL1, x1mx2, detL2, x3mx4);
+			float ynom = cmpDet(detL1, y1my2, detL2, y3my4);
+			float denom = cmpDet(x1mx2, y1my2, x3mx4, y3my4);
+			if (fabsf(denom) < 0.00001f)
 			{
-				const float s = glm::dot
-				(
-					glm::cross(dc, db),
-					glm::cross(da, db)
-				) 
-				/ clengthSqr(glm::cross(da, db));
+				isCross = false;
+			}
 
-				if (s >= 0.0f && s <= 1.0f)
+			if(isCross)
+			{
+				glm::vec3 pointBetween = glm::vec3(xnom / denom, ynom / denom, (a1.z + a2.z) * 0.5f);
+
+				float lerpVal = (1.0f - (diff / DIFF_THRES));
+				lerpVal = lerpVal * lerpVal;
+				pointBetween = glm::lerp(closestPoint, pointBetween, lerpVal);
+
+				closestPoint = pointBetween;
+				// Calculate final diff
+				/*
 				{
-					glm::vec3 pointBetween = closestPoint + da * s;
+					const glm::vec3 finalDiffs[2] = { eyePos - closestPoint, eyePos - pointBetween };
+					const float finalLengths[2] = {
+						glm::dot(finalDiffs[0], finalDiffs[0]), glm::dot(finalDiffs[1], finalDiffs[1]) };
 
-					float lerpVal = ((1.0f - diff) / DIFF_THRES);
-					//lerpVal = glm::pow(lerpVal, 0.5f);
-					lerpVal = glm::clamp(lerpVal * 10.0f, 0.0f, 1.0f);
-					pointBetween = glm::lerp(closestPoint, pointBetween, lerpVal);
-
-					// Calculate final diff
+					if (finalLengths[1] < finalLengths[0])
 					{
-						const glm::vec3 finalDiffs[2] = { eyePos - closestPoint, eyePos - pointBetween };
-						const float finalLengths[2] = {
-							glm::dot(finalDiffs[0], finalDiffs[0]), glm::dot(finalDiffs[1], finalDiffs[1]) };
-
-						if (finalLengths[1] < finalLengths[0])
-						{
-							closestPoint = pointBetween;
-						}
+						closestPoint = pointBetween;
 					}
 				}
+				*/
 			}
 		}
 	}
@@ -339,9 +349,9 @@ void SceneBezier::ComputeBezierMarker()
 	}
 
 	// Apply to marker.
-	closestPoint = glm::lerp(
-		((DrawablePoint::Params&)_markerBezier->GetParams(false)).Position,
-		closestPoint, 0.1f);
+	//closestPoint = glm::lerp(
+	//	((DrawablePoint::Params&)_markerBezier->GetParams(false)).Position,
+	//	closestPoint, 0.1f);
 	((DrawablePoint::Params&)_markerBezier->GetParams()).Position = closestPoint;
 }
 
@@ -358,8 +368,8 @@ void SceneBezier::GetClosestPoint(const glm::vec3* lines, const size_t lineNum, 
 	glm::vec3 secondClosestPoint = glm::vec3(FLT_MAX, FLT_MAX, FLT_MAX);
 	float secondClosestDistSqr = FLT_MAX;
 
-	size_t closestIndex = 0;
-	float closestDistanceToPoint = FLT_MAX;
+	size_t closestIndex = soundPositionsNum;
+	size_t secondClosestIndex = soundPositionsNum;
 
 	// Line strip.
 	for (size_t i = 0; i < (soundPositionsNum - 1); i++)
@@ -372,23 +382,6 @@ void SceneBezier::GetClosestPoint(const glm::vec3* lines, const size_t lineNum, 
 		// Project point onto a line.
 		glm::vec3 posToLineA = source - lineA;
 		glm::vec3 lineAToB = lineB - lineA;
-
-		// Calculate distanceSqr to these points to obtain closestIndex
-		{
-			const float distToA = glm::dot(lineA - source, lineA - source);
-			const float distToB = glm::dot(lineB - source, lineB - source);
-
-			if (distToA < closestDistanceToPoint)
-			{
-				closestDistanceToPoint = distToA;
-				closestIndex = i;
-			}
-			if (distToB < closestDistanceToPoint)
-			{
-				closestDistanceToPoint = distToB;
-				closestIndex = i + 1;
-			}
-		}
 
 
 		//float mplier = sgvector_project3(lineAToB, posToLineA, lineAToB); // lineBToA stores projected vec.
@@ -424,14 +417,17 @@ void SceneBezier::GetClosestPoint(const glm::vec3* lines, const size_t lineNum, 
 		{
 			secondClosestDistSqr = closestDistSqr;
 			secondClosestPoint = closestPoint;
+			secondClosestIndex = closestIndex;
 
 			closestDistSqr = tmpDistance;
 			closestPoint = tmpClosest;
+			closestIndex = i;
 		}
 		else if (tmpDistance < secondClosestDistSqr && tmpDistance != closestDistSqr)
 		{
 			secondClosestDistSqr = tmpDistance;
 			secondClosestPoint = tmpClosest;
+			secondClosestIndex = i;
 		}
 	}
 
@@ -442,7 +438,8 @@ void SceneBezier::GetClosestPoint(const glm::vec3* lines, const size_t lineNum, 
 	}
 	if (outClosestLineVertex != nullptr)
 	{
-		*outClosestLineVertex = lines[closestIndex];
+		// Iterate thru all points to 
+		*outClosestLineVertex = lines[glm::max<size_t>(closestIndex, secondClosestIndex)];
 	}
 }
 

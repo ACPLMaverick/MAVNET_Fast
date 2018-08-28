@@ -15,7 +15,7 @@ void DrawableBezier::Init(Drawable::Params* params)
 {
 	// Precompute blending points.
 
-	const float step = 0.05f;
+	const float step = 0.25f;
 	for (float t = 0.0f; t <= 1.005f; t += step)
 	{
 		BlendParam bParam(t);
