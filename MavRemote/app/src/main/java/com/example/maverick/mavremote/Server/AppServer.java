@@ -151,6 +151,18 @@ public final class AppServer extends App
         // --notification test
 
         _bIsRunning = true;
+
+        // ++instrumentation test
+        _tester = new TestSystem();
+        Utility.StartThread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                _tester.Run();
+            }
+        }, "Tester");
+        // --instrumentation test
     }
 
     private void Finish()

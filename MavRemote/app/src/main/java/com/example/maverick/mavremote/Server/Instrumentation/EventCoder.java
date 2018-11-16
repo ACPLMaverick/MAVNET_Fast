@@ -2,12 +2,13 @@ package com.example.maverick.mavremote.Server.Instrumentation;
 
 import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.Actions.Movement;
+import com.example.maverick.mavremote.Utility;
 
 import java.util.List;
 
-class MouseEventCoder
+class EventCoder
 {
-    enum Type
+    enum MouseEventType
     {
         Up,
         Down,
@@ -24,7 +25,7 @@ class MouseEventCoder
     }
 
 
-    private static final String[][] _baseCodeArray =
+    private static final String[][] _baseCodesMouse =
     {
             { "0002 0001 " },
             { "0002 0001 " },
@@ -50,23 +51,27 @@ class MouseEventCoder
     (0, MaxY)               (MaxX, MaxY)
      */
 
-
-    public void TypeToCodes(Type type, final String codePrefix, List<String> outCodes)
+    public void KeyEventToCodes(int keyEvent, List<String> outCodes)
     {
-        assert(type.ordinal() < _baseCodeArray.length - 1);
+
+    }
+
+    public void MouseTypeToCodes(MouseEventType type, final String codePrefix, List<String> outCodes)
+    {
+        assert(type.ordinal() < _baseCodesMouse.length - 1);
 
         outCodes.clear();
-        String[] codes = _baseCodeArray[type.ordinal()];
+        String[] codes = _baseCodesMouse[type.ordinal()];
         for(int i = 0; i < codes.length; ++i)
             outCodes.add(codePrefix + codes[i]);
 
-        if(type != Type.Commit) // Adding commit after commit is unnecessary.
-            outCodes.add(codePrefix + _baseCodeArray[Type.Commit.ordinal()][0]);
+        if(type != MouseEventType.Commit) // Adding commit after commit is unnecessary.
+            outCodes.add(codePrefix + _baseCodesMouse[MouseEventType.Commit.ordinal()][0]);
     }
 
-    public void TypeToCodes(ActionEvent.MouseClickTypes clickType, final String codePrefix, List<String > outCodes)
+    public void MouseTypeToCodes(ActionEvent.MouseClickTypes clickType, final String codePrefix, List<String > outCodes)
     {
-        TypeToCodes(MouseClickActionEventToCoder(clickType), codePrefix, outCodes);
+        MouseTypeToCodes(MouseClickActionEventToCoder(clickType), codePrefix, outCodes);
     }
 
     public void MovementToCodes(final Movement movement, final String codePrefix, List<String> outCodes)
@@ -77,11 +82,11 @@ class MouseEventCoder
             {
                 if(movement.GetY() > 0)
                 {
-                    GetCodesForDirection(Type.ScrollUp, movement.GetY(), codePrefix, outCodes);
+                    GetCodesForDirection(MouseEventType.ScrollUp, movement.GetY(), codePrefix, outCodes);
                 }
                 else
                 {
-                    GetCodesForDirection(Type.ScrollDown, movement.GetY(), codePrefix, outCodes);
+                    GetCodesForDirection(MouseEventType.ScrollDown, movement.GetY(), codePrefix, outCodes);
                 }
             }
         }
@@ -91,11 +96,11 @@ class MouseEventCoder
             {
                 if(movement.GetX() > 0)
                 {
-                    GetCodesForDirection(Type.Right, movement.GetX(), codePrefix, outCodes);
+                    GetCodesForDirection(MouseEventType.Right, movement.GetX(), codePrefix, outCodes);
                 }
                 else
                 {
-                    GetCodesForDirection(Type.Left, movement.GetX(), codePrefix, outCodes);
+                    GetCodesForDirection(MouseEventType.Left, movement.GetX(), codePrefix, outCodes);
                 }
             }
 
@@ -103,31 +108,31 @@ class MouseEventCoder
             {
                 if(movement.GetY() > 0)
                 {
-                    GetCodesForDirection(Type.Down, movement.GetY(), codePrefix, outCodes);
+                    GetCodesForDirection(MouseEventType.Down, movement.GetY(), codePrefix, outCodes);
                 }
                 else
                 {
-                    GetCodesForDirection(Type.Up, movement.GetY(), codePrefix, outCodes);
+                    GetCodesForDirection(MouseEventType.Up, movement.GetY(), codePrefix, outCodes);
                 }
             }
         }
     }
 
 
-    private Type MouseClickActionEventToCoder(ActionEvent.MouseClickTypes type)
+    private MouseEventType MouseClickActionEventToCoder(ActionEvent.MouseClickTypes type)
     {
-        final int shift = Type.values().length - Type.ButtonLeftDown.ordinal();
-        assert(ActionEvent.MouseClickTypes.values().length < Type.values().length - shift);
-        return Type.values()[type.ordinal() + shift];
+        final int shift = MouseEventType.values().length - MouseEventType.ButtonLeftDown.ordinal();
+        assert(ActionEvent.MouseClickTypes.values().length < MouseEventType.values().length - shift);
+        return MouseEventType.values()[type.ordinal() + shift];
     }
 
-    private void GetCodesForDirection(Type dirType, int value, final String codePrefix, List<String> outCodes)
+    private void GetCodesForDirection(MouseEventType dirType, int value, final String codePrefix, List<String> outCodes)
     {
-        String movementCode = _baseCodeArray[dirType.ordinal()][0];
+        String movementCode = _baseCodesMouse[dirType.ordinal()][0];
 
         movementCode += Integer.toString(value);
 
         outCodes.add(codePrefix + movementCode);
-        outCodes.add(codePrefix + _baseCodeArray[Type.Commit.ordinal()][0]);
+        outCodes.add(codePrefix + _baseCodesMouse[MouseEventType.Commit.ordinal()][0]);
     }
 }

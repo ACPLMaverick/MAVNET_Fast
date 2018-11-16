@@ -1,6 +1,12 @@
 package com.example.maverick.mavremote.Server.Instrumentation;
 
+import android.app.Instrumentation;
+import android.hardware.input.InputManager;
+import android.os.SystemClock;
 import android.util.Log;
+import android.view.InputDevice;
+import android.view.KeyCharacterMap;
+import android.view.KeyEvent;
 
 import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.App;
@@ -10,9 +16,10 @@ import com.example.maverick.mavremote.System;
 import com.example.maverick.mavremote.Utility;
 
 import java.io.DataOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 
 public final class InstrumentationSystem extends System
 {
@@ -37,7 +44,7 @@ public final class InstrumentationSystem extends System
         _queue = new EventQueue<>();
         _queue.Init();
 
-        _mouseEventCoder = new MouseEventCoder();
+        _eventCoder = new EventCoder();
 
         _bShellCreated = InitRootShell();
         if(!_bShellCreated)
@@ -45,13 +52,19 @@ public final class InstrumentationSystem extends System
             App.LogLine("InstrumentationSystem: Failed to create root shell. Instrumentation will not work.");
             return;
         }
-        RetrieveMouseDeviceName();
-        MakeMouseDeviceBufferWritable();
+
+        _sendEventWrapper = new SendEventWrapper();
+        MakeDevicesWritable();
+        _sendEventWrapper.Initialize();
+
+        _instr = new Instrumentation();
     }
 
     @Override
     protected void Finish()
     {
+        _sendEventWrapper.Cleanup();
+
         CloseRootShell();
     }
 
@@ -63,7 +76,7 @@ public final class InstrumentationSystem extends System
 
         if(_queue.IsEmpty())
         {
-            Thread.yield();
+//            Thread.yield();
             return;
         }
 
@@ -88,25 +101,30 @@ public final class InstrumentationSystem extends System
 
         assert(_shellStream != null);
 
-        ArrayList<String> commands = new ArrayList<>();
-
         final ActionEvent.Type evType = ev.ResolveType();
+
+        long now = SystemClock.uptimeMillis();
 
         if(evType == ActionEvent.Type.Text)
         {
-            commands.add("input text \"" + ev.GetText() + "\"");
+            // Can use input for such matters, because it doesn't require speed.
+            // TODO: Will this work when device files are opened?
+            ExecuteRootShellCommand("input text \"" + ev.GetText() + "\"");
         }
         else if(evType == ActionEvent.Type.Keyboard)
         {
-            commands.add("input keyevent " + String.valueOf(ev.GetKeyboardEv()));
+            // TODO
+            _instr.sendKeySync(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, ev.GetKeyboardEv()
+                    , 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD
+                    , 0, 0, InputDevice.SOURCE_KEYBOARD));
         }
         else if(evType == ActionEvent.Type.MouseClicks)
         {
-            _mouseEventCoder.TypeToCodes(ev.GetMouseEv(), "sendevent " + _mouseDeviceName + " " , commands);
+            // TODO
         }
         else if(evType == ActionEvent.Type.Movement)
         {
-            _mouseEventCoder.MovementToCodes(ev.GetMovementEv(), "sendevent " + _mouseDeviceName + " " , commands);
+            // TODO
         }
         else
         {
@@ -114,11 +132,7 @@ public final class InstrumentationSystem extends System
             Utility.Assert(false);
         }
 
-        for(String command : commands)
-        {
-            ExecuteRootShellCommand(command);
-        }
-
+        // TODO: What to do with this?
         if(ev.GetDelayMillis() > 0)
         {
             Utility.SleepThread(ev.GetDelayMillis());
@@ -132,7 +146,6 @@ public final class InstrumentationSystem extends System
         try
         {
             _shellProc = Runtime.getRuntime().exec(new String[] { "su", "-c", "system/bin/sh"});
-//            _shellProc = Runtime.getRuntime().exec("su");
         }
         catch(IOException e)
         {
@@ -188,17 +201,15 @@ public final class InstrumentationSystem extends System
         }
     }
 
-    private void MakeMouseDeviceBufferWritable()
+    private void MakeDevicesWritable()
     {
-        final String command = "chmod 666 " + _mouseDeviceName;
+        String command = "chmod 666 " + _sendEventWrapper.GetDeviceName(SendEventWrapper.DeviceIndex.Keyboard);
         ExecuteRootShellCommand(command);
-        LogRootShellOutput();
-    }
 
-    private void RetrieveMouseDeviceName()
-    {
-        // TODO: Obtain this based on getevent command.
-        _mouseDeviceName = "/dev/input/event0"; // vmouse
+        command = "chmod 666 " + _sendEventWrapper.GetDeviceName(SendEventWrapper.DeviceIndex.Mouse);
+        ExecuteRootShellCommand(command);
+
+        Utility.SleepThread(500); // Make sure the commands have executed.
     }
 
     private void LogRootShellOutput()
@@ -207,7 +218,7 @@ public final class InstrumentationSystem extends System
         InputStream stdout = _shellProc.getInputStream();
         byte[] buffer = new byte[bufferLength];
         int read = 0;
-        String out = new String();
+        String out = "";
 
 //        Utility.SleepThread(LOG_OUTPUT_WAIT_FOR_SHELL_MILLIS);
         // Do not wait because this introduces unwanted delay and possibly desync.
@@ -244,6 +255,20 @@ public final class InstrumentationSystem extends System
         }
     }
 
+
+    // NEW implementation, more low-level.
+    private void WriteBytesToDevice(DataOutputStream device, final byte[] bytes)
+    {
+        try
+        {
+            device.write(bytes);
+        }
+        catch(IOException e)
+        {
+            App.LogLine("Error writing to the device: " + e.getMessage());
+        }
+    }
+
     private static final int LOG_OUTPUT_WAIT_FOR_SHELL_MILLIS = 250;
     private static final int ROOT_SHELL_OUTPUT_BUFFER_SIZE_TO_FLUSH = 2048;
 
@@ -268,9 +293,9 @@ public final class InstrumentationSystem extends System
     private Process _shellProc = null;
     private DataOutputStream _shellStream = null;
 
-    private MouseEventCoder _mouseEventCoder = null;
-
-    private String _mouseDeviceName = "unknown ";
+    private EventCoder _eventCoder = null;
+    private SendEventWrapper _sendEventWrapper = null;
+    private Instrumentation _instr = null;
 
     private boolean _bShellCreated = false;
 }

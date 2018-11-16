@@ -1,13 +1,21 @@
 package com.example.maverick.mavremote.Server;
 
+import android.os.Environment;
 import android.util.Log;
 import android.view.KeyEvent;
 
 import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.Actions.Movement;
+import com.example.maverick.mavremote.App;
 import com.example.maverick.mavremote.Server.Instrumentation.InstrumentationSystem;
 import com.example.maverick.mavremote.System;
 import com.example.maverick.mavremote.Utility;
+
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public final class TestSystem extends System
 {
@@ -24,16 +32,61 @@ public final class TestSystem extends System
     @Override
     protected void MainLoop()
     {
-        /*
-        RunTestKb01();
+//        RunTestFile();
+
+//        RunTestKb01();
         RunTestKb02();
         RunTestKb03();
-        */
 
-        RunTestMouse01();
+//        RunTestMouse01();
 //        RunTestMouse02();
 
         Stop();
+    }
+
+    private void RunTestFile()
+    {
+        final String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download/test/fileTest.bin";
+        DataOutputStream stream = null;
+
+        try
+        {
+            File file = new File(path);
+            boolean ret = file.createNewFile();
+            ret = file.canWrite();
+
+            ret = false;
+        }
+        catch(IOException e)
+        {
+            App.LogLine("Dupa");
+            return;
+        }
+
+        try
+        {
+            stream = new DataOutputStream(new FileOutputStream(path, false));
+        }
+        catch(FileNotFoundException e)
+        {
+            App.LogLine("Dupa");
+            return;
+        }
+
+        try
+        {
+            final byte[] bytes = Utility.StringToBytes("DEADBEEF1234");
+
+            stream.write(bytes);
+            stream.close();
+        }
+        catch(IOException e)
+        {
+            App.LogLine("Dupa");
+            return;
+        }
+
+        App.LogLine("File written properly.");
     }
 
     private void RunTestKb01()
@@ -67,18 +120,10 @@ public final class TestSystem extends System
 
     private void RunTestKb02()
     {
-        if(_kbVersion == 1)
-        {
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_BACK));
-            Utility.SleepThread(1500);
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_HOME));
-            Utility.SleepThread(500);
-        }
-        else if(_kbVersion == 2)
-        {
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_BACK, 1500));
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_HOME, 500));
-        }
+        Utility.SleepThread(5000);
+        App.LogLine("Test 02 started...");
+
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_HOME));
     }
 
     private void RunTestKb03()
@@ -116,6 +161,10 @@ public final class TestSystem extends System
         {
             InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_DOWN));
         }
+
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_BACK));
+        InstrumentationSystem.Enqueue(new ActionEvent(ActionEvent.MouseClickTypes.LMBDown));
+        InstrumentationSystem.Enqueue(new ActionEvent(ActionEvent.MouseClickTypes.LMBUp));
     }
 
     private void RunTestMouse01()

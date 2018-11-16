@@ -9,15 +9,6 @@ import com.example.maverick.mavremote.Server.AppServer;
 
 public class ServerActivity extends AppCompatActivity
 {
-
-    // C++ unnecessary at this point.
-    /*
-    // Used to load the 'native-lib' library on application startup.
-    static {
-        System.loadLibrary("native-lib");
-    }
-    */
-
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -70,13 +61,4 @@ public class ServerActivity extends AppCompatActivity
 
         return true;
     }
-
-    // C++ unnecessary at this point.
-    /**
-     * A native method that is implemented by the 'native-lib' native library,
-     * which is packaged with this application.
-     */
-    /*
-    public native String stringFromJNI();
-    */
 }
