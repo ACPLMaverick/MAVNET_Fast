@@ -2,7 +2,6 @@ package com.example.maverick.mavremote.Server.Instrumentation;
 
 import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.Actions.Movement;
-import com.example.maverick.mavremote.Utility;
 
 import java.util.List;
 
@@ -51,9 +50,14 @@ class EventCoder
     (0, MaxY)               (MaxX, MaxY)
      */
 
-    public void KeyEventToCodes(int keyEvent, List<String> outCodes)
+    public boolean TryKeyEventToCodes(int keyEvent, List<InputDeviceEvent> outCodes)
     {
-
+        // TEST
+        outCodes.add(new InputDeviceEvent(1, 1, 1));
+        outCodes.add(new InputDeviceEvent(0, 0, 0));
+        outCodes.add(new InputDeviceEvent(1, 1, 0));
+        outCodes.add(new InputDeviceEvent(0, 0, 0));
+		return true;
     }
 
     public void MouseTypeToCodes(MouseEventType type, final String codePrefix, List<String> outCodes)

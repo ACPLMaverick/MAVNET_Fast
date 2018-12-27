@@ -36,7 +36,7 @@ public final class TestSystem extends System
 
 //        RunTestKb01();
         RunTestKb02();
-        RunTestKb03();
+        //RunTestKb03();
 
 //        RunTestMouse01();
 //        RunTestMouse02();

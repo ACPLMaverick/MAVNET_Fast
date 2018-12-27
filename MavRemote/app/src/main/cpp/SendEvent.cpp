@@ -5,8 +5,16 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 
+#include <linux/uinput.h>
+#include <cerrno>
+
 
 #define JNI_FUNC(funcName) Java_com_example_maverick_mavremote_Server_Instrumentation_SendEventWrapper_##funcName
+#define RET_FALSE_NONZERO(expression) \
+{ \
+    bool ret = (expression); \
+    if(ret != 0) return false; \
+}
 
 //JNICALL JNI_FUNC(stringFromJNI)
 //        (
@@ -24,50 +32,22 @@ class SendEvent
 {
 public:
 
-    enum class DeviceIndex : uint8_t
-    {
-        Keyboard = 0,
-        Mouse = 1,
-        NUM,
-    };
-
-private:
-
-    struct InputData
-    {
-        timeval Timestamp;
-        uint16_t Type;
-        uint16_t Code;
-        int32_t Value;
-    };
-
-    const char* DeviceNames[(uint32_t)DeviceIndex::NUM] =
-    {
-        "/dev/input/event4", // TODO: This is hw-keyboard, for sw-keyboard, use event1.
-        "/dev/input/event0" // vmouse
-    };
-
-public:
-
     SendEvent();
     ~SendEvent();
 
     bool Initialize();
     bool Cleanup();
 
-    bool SendInputEvent(DeviceIndex deviceIndex,
-                        const char* strType, const char* strCode, const char* strValue);
-
-    const char* GetDeviceName(DeviceIndex deviceIndex);
+    bool SendInputEvent(uint16_t strType, uint16_t strCode, uint32_t strValue);
 
 private:
 
-    bool OpenDeviceFile(const char* path, int32_t& outDescriptor);
+    bool CreateUinputDevice();
+
+    bool OpenDeviceFile(int32_t& outDescriptor);
     bool CloseDeviceFile(int32_t descriptor);
 
-
-    int32_t _deviceFiles[(uint32_t)DeviceIndex::NUM];
-
+    int32_t _devDescriptor;
     bool _bIsInitialised;
 };
 
@@ -75,18 +55,6 @@ private:
 // JNI Interface
 
 static SendEvent g_SendEvent;
-
-void JCharArrayToCharArray(JNIEnv* env, char* dstChars, const jcharArray& srcJChars, const uint32_t arrayLength)
-{
-    for(uint32_t i = 0; i < arrayLength; ++i)
-    {
-        jchar srcChar;
-        env->GetCharArrayRegion(srcJChars, i, 1, &srcChar);
-
-        char dstChar = (char)(srcChar);
-        dstChars[i] = dstChar;
-    }
-}
 
 extern "C" JNIEXPORT jboolean JNICALL JNI_FUNC(SendEventInitialize) (JNIEnv* env, jobject _this)
 {
@@ -101,63 +69,30 @@ extern "C" JNIEXPORT jboolean JNICALL JNI_FUNC(SendEventCleanup) (JNIEnv* env, j
 }
 
 extern "C" JNIEXPORT jboolean JNICALL JNI_FUNC(SendEventSendInputEvent) (JNIEnv* env, jobject _this,
-                                                    jint deviceIndex,
-                                                     jcharArray jStrType,
-                                                     jcharArray jStrCode,
-                                                     jcharArray jStrValue)
+                                                     jint jStrType,
+                                                     jint jStrCode,
+                                                     jint jStrValue)
 {
-    static const uint32_t STR_TYPE_SIZE = 4;
-    static const uint32_t STR_CODE_SIZE = 4;
-    static const uint32_t STR_VALUE_SIZE = 8;
+    // DeviceIndex ignored for uinput implementation.
 
-    if(deviceIndex < 0 || deviceIndex >= (jint)SendEvent::DeviceIndex::NUM)
-        return jboolean(false);
+    const uint16_t strType = (uint16_t)jStrType;
+    const uint16_t strCode = (uint16_t)jStrCode;
+    const uint32_t strValue = (uint32_t)jStrValue;
 
-    if(env->GetArrayLength(jStrType) != STR_TYPE_SIZE)
-        return jboolean(false);
-    if(env->GetArrayLength(jStrCode) != STR_CODE_SIZE)
-        return jboolean(false);
-    if(env->GetArrayLength(jStrValue) != STR_VALUE_SIZE)
-        return jboolean(false);
-
-    char strType[STR_TYPE_SIZE] = {};
-    char strCode[STR_CODE_SIZE] = {};
-    char strValue[STR_VALUE_SIZE] = {};
-
-    JCharArrayToCharArray(env, strType, jStrType, STR_TYPE_SIZE);
-    JCharArrayToCharArray(env, strCode, jStrCode, STR_CODE_SIZE);
-    JCharArrayToCharArray(env, strValue, jStrValue, STR_VALUE_SIZE);
-
-    const bool ret = g_SendEvent.SendInputEvent(
-            (SendEvent::DeviceIndex)deviceIndex, strType, strCode, strValue);
+    const bool ret = g_SendEvent.SendInputEvent(strType, strCode, strValue);
     return jboolean(ret);
 }
-
-extern "C" JNIEXPORT jstring JNICALL JNI_FUNC(SendEventGetDeviceName)(JNIEnv* env, jobject _this, jint deviceIndex)
-{
-    if(deviceIndex < 0 || deviceIndex >= (jint)SendEvent::DeviceIndex::NUM)
-        return env->NewStringUTF("/dev/null");
-
-    const char* ret = g_SendEvent.GetDeviceName((SendEvent::DeviceIndex)deviceIndex);
-    jstring retStr = env->NewStringUTF(ret);
-    return retStr;
-}
-
 
 // Func definitions
 
 SendEvent::SendEvent()
-    : _bIsInitialised(false)
+    : _devDescriptor(0)
+    , _bIsInitialised(false)
 {
-    for(uint32_t i = 0; i < (uint32_t)DeviceIndex::NUM; ++i)
-    {
-        _deviceFiles[i] = -1;
-    }
 }
 
 SendEvent::~SendEvent()
 {
-
 }
 
 bool SendEvent::Initialize()
@@ -165,11 +100,15 @@ bool SendEvent::Initialize()
     if(_bIsInitialised)
         return true;
 
-    for(uint32_t i = 0; i < (uint32_t)DeviceIndex::NUM; ++i)
+    // Create and open uinput device.
+    bool ret = OpenDeviceFile(_devDescriptor);
+    if(!ret) return false;
+
+    ret = CreateUinputDevice();
+    if(!ret)
     {
-        bool ret = OpenDeviceFile(DeviceNames[i], _deviceFiles[i]);
-        if(!ret)
-            return false;
+        CloseDeviceFile(_devDescriptor);
+        return false;
     }
 
     _bIsInitialised = true;
@@ -182,40 +121,37 @@ bool SendEvent::Cleanup()
     if(!_bIsInitialised)
         return true;
 
-    for(uint32_t i = 0; i < (uint32_t)DeviceIndex::NUM; ++i)
-    {
-        if(_deviceFiles[i] < 0)
-            continue;
+    RET_FALSE_NONZERO(ioctl(_devDescriptor, UI_DEV_DESTROY));
 
-        bool ret = CloseDeviceFile(_deviceFiles[i]);
-        if(!ret)
-            return false;
-    }
+    bool ret = CloseDeviceFile(_devDescriptor);
+    if(!ret)
+        return false;
 
     _bIsInitialised = false;
 
     return true;
 }
 
-bool SendEvent::SendInputEvent(DeviceIndex deviceIndex,
-                               const char* strType, const char* strCode, const char* strValue)
+bool SendEvent::SendInputEvent(uint16_t evType, uint16_t evCode, uint32_t evValue)
 {
     if(!_bIsInitialised)
         return false;
 
-    InputData event = {};
-    event.Type = (uint16_t)atoi(strType);
-    event.Code = (uint16_t)atoi(strCode);
-    event.Value = atoi(strValue);
+    input_event event = {};
+    event.type = evType;
+    event.code = evCode;
+    event.value = evValue;
 
-    ssize_t ret = write(_deviceFiles[(uint32_t)deviceIndex], &event, sizeof(event));
+    const ssize_t written = write(_devDescriptor, &event, sizeof(event));
 
-    return ret == sizeof(event);
+    const bool bSuccess = written == sizeof(event);
+
+    return bSuccess;
 }
 
-bool SendEvent::OpenDeviceFile(const char* path, int32_t &outDescriptor)
+bool SendEvent::OpenDeviceFile(int32_t& outDescriptor)
 {
-    outDescriptor = open(path, O_RDWR);
+    outDescriptor = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
     return outDescriptor >= 0;
 }
 
@@ -225,7 +161,63 @@ bool SendEvent::CloseDeviceFile(int32_t descriptor)
     return ret == 0;
 }
 
-const char* SendEvent::GetDeviceName(SendEvent::DeviceIndex deviceIndex)
+bool SendEvent::CreateUinputDevice()
 {
-    return DeviceNames[(uint32_t)deviceIndex];
+    // Configure allowed events and keys.
+    RET_FALSE_NONZERO(ioctl(_devDescriptor, UI_SET_EVBIT, EV_KEY));
+    RET_FALSE_NONZERO(ioctl(_devDescriptor, UI_SET_EVBIT, EV_REL));
+
+    // TEST
+    RET_FALSE_NONZERO(ioctl(_devDescriptor, UI_SET_KEYBIT, KEY_ESC));
+    // TODO: Configure via array data.
+
+    // Create UInput device.
+
+    int32_t version = 0;
+    (ioctl(_devDescriptor, UI_GET_VERSION, &version));  // Not checked because returns error on BPi.
+
+    static const int INIT_ID_BUS_TYPE = BUS_USB;
+    static const int INIT_ID_VENDOR = 0xDEAD;
+    static const int INIT_ID_PRODUCT = 0xBEEF;
+    static const char* INIT_NAME = "MavRemote UI Device";
+
+    if(version >= 5)
+    {
+        uinput_setup usetup = {};
+        usetup.id.bustype = INIT_ID_BUS_TYPE;
+        usetup.id.vendor = INIT_ID_VENDOR;
+        usetup.id.product = INIT_ID_PRODUCT;
+        strcpy(usetup.name, INIT_NAME);
+
+        RET_FALSE_NONZERO(ioctl(_devDescriptor, UI_DEV_SETUP, &usetup));
+        RET_FALSE_NONZERO(ioctl(_devDescriptor, UI_DEV_CREATE));
+    }
+    else if(version < 5)    // for 0 version assume the older method - works on BPi.
+    {
+        uinput_user_dev usetup = {};
+        usetup.id.bustype = INIT_ID_BUS_TYPE;
+        usetup.id.vendor = INIT_ID_VENDOR;
+        usetup.id.product = INIT_ID_PRODUCT;
+        strcpy(usetup.name, INIT_NAME);
+
+        ssize_t writeRetVal = write(_devDescriptor, &usetup, sizeof(usetup));
+        if(writeRetVal < 0)
+        {
+            return false;
+        }
+
+        int32_t ret = (ioctl(_devDescriptor, UI_DEV_CREATE));
+        if(ret < 0)
+        {
+            const char* err = strerror(errno);
+            return false;
+        }
+    }
+    else
+    {
+        return false;
+    }
+
+
+    return true;
 }

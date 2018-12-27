@@ -2,6 +2,8 @@ package com.example.maverick.mavremote.Server.Instrumentation;
 
 import com.example.maverick.mavremote.App;
 
+import org.jetbrains.annotations.NotNull;
+
 public class SendEventWrapper
 {
     // Used to load the 'native-lib' library on application startup.
@@ -11,11 +13,9 @@ public class SendEventWrapper
 
     public native boolean SendEventInitialize();
     public native boolean SendEventCleanup();
-    public native boolean SendEventSendInputEvent(int deviceIndex,
-                                                  char[] strType,
-                                                  char[] strCode,
-                                                  char[] strValue);
-    public native String SendEventGetDeviceName(int deviceIndex);
+    public native boolean SendEventSendInputEvent(int strType,
+                                                  int strCode,
+                                                  int strValue);
 
     public enum DeviceIndex
     {
@@ -46,23 +46,12 @@ public class SendEventWrapper
         }
     }
 
-    public void SendInputEvent(final DeviceIndex index,
-                               final String strType, final String strCode, final String strValue)
+    public void SendInputEvent(@NotNull final InputDeviceEvent kbEvent)
     {
-        int devIndex = index.ordinal();
-        char[] sStrType = strType.toCharArray();
-        char[] sStrCode = strCode.toCharArray();
-        char[] sStrValue = strValue.toCharArray();
-
-        final boolean ret = SendEventSendInputEvent(devIndex, sStrType, sStrCode, sStrValue);
+        final boolean ret = SendEventSendInputEvent(kbEvent.GetEvType(), kbEvent.GetEvCode(), kbEvent.GetEvValue());
         if(!ret)
         {
             App.LogLine("Failed to SetInputEvent!");
         }
-    }
-
-    public String GetDeviceName(DeviceIndex index)
-    {
-        return SendEventGetDeviceName(index.ordinal());
     }
 }

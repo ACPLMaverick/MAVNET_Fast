@@ -1,12 +1,8 @@
 package com.example.maverick.mavremote.Server.Instrumentation;
 
 import android.app.Instrumentation;
-import android.hardware.input.InputManager;
 import android.os.SystemClock;
 import android.util.Log;
-import android.view.InputDevice;
-import android.view.KeyCharacterMap;
-import android.view.KeyEvent;
 
 import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.App;
@@ -16,10 +12,9 @@ import com.example.maverick.mavremote.System;
 import com.example.maverick.mavremote.Utility;
 
 import java.io.DataOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 
 public final class InstrumentationSystem extends System
 {
@@ -54,10 +49,8 @@ public final class InstrumentationSystem extends System
         }
 
         _sendEventWrapper = new SendEventWrapper();
-        MakeDevicesWritable();
+        MakeDeviceWritable();
         _sendEventWrapper.Initialize();
-
-        _instr = new Instrumentation();
     }
 
     @Override
@@ -113,10 +106,21 @@ public final class InstrumentationSystem extends System
         }
         else if(evType == ActionEvent.Type.Keyboard)
         {
-            // TODO
-            _instr.sendKeySync(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, ev.GetKeyboardEv()
-                    , 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD
-                    , 0, 0, InputDevice.SOURCE_KEYBOARD));
+            ArrayList<InputDeviceEvent> deviceEvents = new ArrayList<>();
+            final boolean bCoded = _eventCoder.TryKeyEventToCodes(ev.GetKeyboardEv(), deviceEvents);
+
+            if(bCoded)
+			{
+				for(InputDeviceEvent inputDeviceEvent : deviceEvents)
+				{
+					_sendEventWrapper.SendInputEvent(inputDeviceEvent);
+				}
+			}
+			else
+			{
+				// Fallback to good old input method.
+				ExecuteRootShellCommand("input keyevent " + String.valueOf(ev.GetKeyboardEv()));
+			}
         }
         else if(evType == ActionEvent.Type.MouseClicks)
         {
@@ -201,12 +205,9 @@ public final class InstrumentationSystem extends System
         }
     }
 
-    private void MakeDevicesWritable()
+    private void MakeDeviceWritable()
     {
-        String command = "chmod 666 " + _sendEventWrapper.GetDeviceName(SendEventWrapper.DeviceIndex.Keyboard);
-        ExecuteRootShellCommand(command);
-
-        command = "chmod 666 " + _sendEventWrapper.GetDeviceName(SendEventWrapper.DeviceIndex.Mouse);
+        final String command = "chmod 666 /dev/uinput";
         ExecuteRootShellCommand(command);
 
         Utility.SleepThread(500); // Make sure the commands have executed.
@@ -295,7 +296,6 @@ public final class InstrumentationSystem extends System
 
     private EventCoder _eventCoder = null;
     private SendEventWrapper _sendEventWrapper = null;
-    private Instrumentation _instr = null;
 
     private boolean _bShellCreated = false;
 }
