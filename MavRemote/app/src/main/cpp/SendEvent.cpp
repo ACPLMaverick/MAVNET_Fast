@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <string>
+#include <vector>
 #include <time.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -32,22 +33,45 @@ class SendEvent
 {
 public:
 
+    enum class DeviceType : uint8_t
+    {
+        Keyboard,
+        Mouse,
+        NUM
+    };
+
+    enum class MouseCodeType : uint8_t
+    {
+        Key,
+        Rel,
+        NUM
+    };
+
+public:
+
     SendEvent();
     ~SendEvent();
 
-    bool Initialize();
+    bool Initialize(const std::vector<int32_t>& keyCodes, const std::vector<int32_t>& mouseCodes,
+                    const std::vector<MouseCodeType>& mouseCodeTypes, int32_t badCode);
     bool Cleanup();
 
-    bool SendInputEvent(uint16_t strType, uint16_t strCode, uint32_t strValue);
+    bool SendInputEvent(DeviceType devType, uint16_t strType, uint16_t strCode, uint32_t strValue);
 
 private:
 
-    bool CreateUinputDevice();
+    bool CreateUinputDevice(const DeviceType deviceType);
 
     bool OpenDeviceFile(int32_t& outDescriptor);
     bool CloseDeviceFile(int32_t descriptor);
 
-    int32_t _devDescriptor;
+    std::vector<int32_t> _keyCodes;
+    std::vector<int32_t> _mouseCodes;
+    std::vector<MouseCodeType> _mouseCodeTypes;
+
+    int32_t _badCode;
+
+    int32_t _devDescriptors[(size_t)DeviceType::NUM];
     bool _bIsInitialised;
 };
 
@@ -56,9 +80,40 @@ private:
 
 static SendEvent g_SendEvent;
 
-extern "C" JNIEXPORT jboolean JNICALL JNI_FUNC(SendEventInitialize) (JNIEnv* env, jobject _this)
+template <typename T> void PopulateInitArray(JNIEnv* jEnv, jintArray inputArray,
+        std::vector<T>& outArray, T badValue)
 {
-    const bool ret = g_SendEvent.Initialize();
+    jint num = jEnv->GetArrayLength(inputArray);
+    jboolean bIsCopy = JNI_FALSE;
+    jint* jKeyCodesPtr = jEnv->GetIntArrayElements(inputArray, &bIsCopy);
+
+
+    for(jint i = 0; i < num; ++i)
+    {
+        T val = (T)jKeyCodesPtr[i];
+        if(val != badValue)
+        {
+            outArray.push_back(val);
+        }
+    }
+}
+
+extern "C" JNIEXPORT jboolean JNICALL JNI_FUNC(SendEventInitialize) (JNIEnv* env, jobject _this,
+                                                    jintArray jKeyCodes, jintArray jMouseCodes,
+                                                    jintArray jMouseCodeTypes, jint jBadCode)
+{
+    std::vector<int32_t> keyCodes;
+    std::vector<int32_t> mouseCodes;
+    std::vector<SendEvent::MouseCodeType> mouseCodeTypes;
+    int32_t badCode = (int32_t)jBadCode;
+
+    PopulateInitArray<int32_t>(env, jKeyCodes, keyCodes, badCode);
+    PopulateInitArray<int32_t>(env, jMouseCodes, mouseCodes, badCode);
+    PopulateInitArray<SendEvent::MouseCodeType>(env, jMouseCodeTypes,
+                                                mouseCodeTypes, SendEvent::MouseCodeType::NUM);
+
+    const bool ret = g_SendEvent.Initialize(keyCodes, mouseCodes, mouseCodeTypes, badCode);
+
     return jboolean(ret);
 }
 
@@ -69,45 +124,80 @@ extern "C" JNIEXPORT jboolean JNICALL JNI_FUNC(SendEventCleanup) (JNIEnv* env, j
 }
 
 extern "C" JNIEXPORT jboolean JNICALL JNI_FUNC(SendEventSendInputEvent) (JNIEnv* env, jobject _this,
+                                                     jint jDeviceType,
                                                      jint jStrType,
                                                      jint jStrCode,
                                                      jint jStrValue)
 {
     // DeviceIndex ignored for uinput implementation.
 
+    const jint maxIndex = (jint)SendEvent::DeviceType::NUM;
+    if(jDeviceType < 0 || jDeviceType >= maxIndex)
+    {
+        return false;
+    }
+
+    const SendEvent::DeviceType devType = (SendEvent::DeviceType)jDeviceType;
     const uint16_t strType = (uint16_t)jStrType;
     const uint16_t strCode = (uint16_t)jStrCode;
     const uint32_t strValue = (uint32_t)jStrValue;
 
-    const bool ret = g_SendEvent.SendInputEvent(strType, strCode, strValue);
+    const bool ret = g_SendEvent.SendInputEvent(devType, strType, strCode, strValue);
     return jboolean(ret);
 }
 
 // Func definitions
 
 SendEvent::SendEvent()
-    : _devDescriptor(0)
-    , _bIsInitialised(false)
+    : _bIsInitialised(false)
 {
+    for(size_t i = 0; i < (size_t)DeviceType::NUM; ++i)
+    {
+        _devDescriptors[i] = -1;
+    }
 }
 
 SendEvent::~SendEvent()
 {
 }
 
-bool SendEvent::Initialize()
+bool SendEvent::Initialize(const std::vector<int32_t>& keyCodes, const std::vector<int32_t>& mouseCodes,
+                           const std::vector<MouseCodeType>& mouseCodeTypes, int32_t badCode)
 {
     if(_bIsInitialised)
         return true;
 
-    // Create and open uinput device.
-    bool ret = OpenDeviceFile(_devDescriptor);
-    if(!ret) return false;
+    if(mouseCodes.size() != mouseCodeTypes.size())
+        return false;
 
-    ret = CreateUinputDevice();
+    _keyCodes = keyCodes;
+    _mouseCodes = mouseCodes;
+    _mouseCodeTypes = mouseCodeTypes;
+    _badCode = badCode;
+
+    // Create and open uinput devices.
+    for(size_t i = 0; i < (size_t)DeviceType::NUM; ++i)
+    {
+        bool ret = OpenDeviceFile(_devDescriptors[i]);
+        if (!ret)
+        {
+            for(size_t j = i - 1; j >= 0; --j)
+            {
+                CloseDeviceFile(_devDescriptors[j]);
+            }
+            return false;
+        }
+    }
+
+    bool ret = CreateUinputDevice(DeviceType::Keyboard);
+    ret &= CreateUinputDevice(DeviceType::Mouse);
+
     if(!ret)
     {
-        CloseDeviceFile(_devDescriptor);
+        for(size_t i = 0; i < (size_t)DeviceType::NUM; ++i)
+        {
+            CloseDeviceFile(_devDescriptors[i]);
+        }
         return false;
     }
 
@@ -121,18 +211,20 @@ bool SendEvent::Cleanup()
     if(!_bIsInitialised)
         return true;
 
-    RET_FALSE_NONZERO(ioctl(_devDescriptor, UI_DEV_DESTROY));
+    bool ret = true;
 
-    bool ret = CloseDeviceFile(_devDescriptor);
-    if(!ret)
-        return false;
+    for(size_t i = 0; i < (size_t)DeviceType::NUM; ++i)
+    {
+        (ioctl(_devDescriptors[i], UI_DEV_DESTROY));
+        ret &= CloseDeviceFile(_devDescriptors[i]);
+    }
 
-    _bIsInitialised = false;
+    _bIsInitialised = !ret;
 
-    return true;
+    return ret;
 }
 
-bool SendEvent::SendInputEvent(uint16_t evType, uint16_t evCode, uint32_t evValue)
+bool SendEvent::SendInputEvent(DeviceType devType, uint16_t evType, uint16_t evCode, uint32_t evValue)
 {
     if(!_bIsInitialised)
         return false;
@@ -142,7 +234,7 @@ bool SendEvent::SendInputEvent(uint16_t evType, uint16_t evCode, uint32_t evValu
     event.code = evCode;
     event.value = evValue;
 
-    const ssize_t written = write(_devDescriptor, &event, sizeof(event));
+    const ssize_t written = write(_devDescriptors[(size_t)devType], &event, sizeof(event));
 
     const bool bSuccess = written == sizeof(event);
 
@@ -161,25 +253,71 @@ bool SendEvent::CloseDeviceFile(int32_t descriptor)
     return ret == 0;
 }
 
-bool SendEvent::CreateUinputDevice()
+bool SendEvent::CreateUinputDevice(const DeviceType deviceType)
 {
-    // Configure allowed events and keys.
-    RET_FALSE_NONZERO(ioctl(_devDescriptor, UI_SET_EVBIT, EV_KEY));
-    RET_FALSE_NONZERO(ioctl(_devDescriptor, UI_SET_EVBIT, EV_REL));
+    const int32_t devDescriptor = _devDescriptors[(size_t)deviceType];
 
-    // TEST
-    RET_FALSE_NONZERO(ioctl(_devDescriptor, UI_SET_KEYBIT, KEY_ESC));
-    // TODO: Configure via array data.
+
+    // Append allowed keycodes.
+
+    switch(deviceType)
+    {
+        case DeviceType::Keyboard:
+        {
+            // Configure allowed events and keys.
+            RET_FALSE_NONZERO(ioctl(devDescriptor, UI_SET_EVBIT, EV_KEY));
+
+            for(int32_t keyCode : _keyCodes)
+            {
+                RET_FALSE_NONZERO(ioctl(devDescriptor, UI_SET_KEYBIT, keyCode));
+            }
+        }
+            break;
+        case DeviceType::Mouse:
+        {
+            // Configure allowed events and keys.
+            RET_FALSE_NONZERO(ioctl(devDescriptor, UI_SET_EVBIT, EV_KEY));
+            RET_FALSE_NONZERO(ioctl(devDescriptor, UI_SET_EVBIT, EV_REL));
+
+            const size_t mouseCodeNum = _mouseCodes.size();
+            for(size_t i = 0; i < mouseCodeNum; ++i)
+            {
+                int32_t mouseCode = _mouseCodes[i];
+                MouseCodeType mouseCodeType = _mouseCodeTypes[i];
+                int32_t codeType;
+
+                switch(mouseCodeType)
+                {
+                case MouseCodeType::Rel:
+                    codeType = UI_SET_RELBIT;
+                    break;
+                case MouseCodeType::Key:
+                default:
+                    codeType = UI_SET_KEYBIT;
+                    break;
+                }
+
+                RET_FALSE_NONZERO(ioctl(devDescriptor, codeType, mouseCode));
+            }
+        }
+            break;
+        default:
+            break;
+    }
 
     // Create UInput device.
 
     int32_t version = 0;
-    (ioctl(_devDescriptor, UI_GET_VERSION, &version));  // Not checked because returns error on BPi.
+    (ioctl(devDescriptor, UI_GET_VERSION, &version));  // Not checked because returns error on BPi.
 
     static const int INIT_ID_BUS_TYPE = BUS_USB;
     static const int INIT_ID_VENDOR = 0xDEAD;
     static const int INIT_ID_PRODUCT = 0xBEEF;
-    static const char* INIT_NAME = "MavRemote UI Device";
+    static const char* INIT_NAMES[] =
+    {
+            "MavRemote Keyboard",
+            "MavRemove Mouse"
+    };
 
     if(version >= 5)
     {
@@ -187,10 +325,10 @@ bool SendEvent::CreateUinputDevice()
         usetup.id.bustype = INIT_ID_BUS_TYPE;
         usetup.id.vendor = INIT_ID_VENDOR;
         usetup.id.product = INIT_ID_PRODUCT;
-        strcpy(usetup.name, INIT_NAME);
+        strcpy(usetup.name, INIT_NAMES[(size_t)deviceType]);
 
-        RET_FALSE_NONZERO(ioctl(_devDescriptor, UI_DEV_SETUP, &usetup));
-        RET_FALSE_NONZERO(ioctl(_devDescriptor, UI_DEV_CREATE));
+        RET_FALSE_NONZERO(ioctl(devDescriptor, UI_DEV_SETUP, &usetup));
+        RET_FALSE_NONZERO(ioctl(devDescriptor, UI_DEV_CREATE));
     }
     else if(version < 5)    // for 0 version assume the older method - works on BPi.
     {
@@ -198,15 +336,15 @@ bool SendEvent::CreateUinputDevice()
         usetup.id.bustype = INIT_ID_BUS_TYPE;
         usetup.id.vendor = INIT_ID_VENDOR;
         usetup.id.product = INIT_ID_PRODUCT;
-        strcpy(usetup.name, INIT_NAME);
+        strcpy(usetup.name, INIT_NAMES[(size_t)deviceType]);
 
-        ssize_t writeRetVal = write(_devDescriptor, &usetup, sizeof(usetup));
+        ssize_t writeRetVal = write(devDescriptor, &usetup, sizeof(usetup));
         if(writeRetVal < 0)
         {
             return false;
         }
 
-        int32_t ret = (ioctl(_devDescriptor, UI_DEV_CREATE));
+        int32_t ret = (ioctl(devDescriptor, UI_DEV_CREATE));
         if(ret < 0)
         {
             const char* err = strerror(errno);

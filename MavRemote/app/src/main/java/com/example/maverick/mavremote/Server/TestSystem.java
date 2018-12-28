@@ -32,13 +32,15 @@ public final class TestSystem extends System
     @Override
     protected void MainLoop()
     {
+        Utility.SleepThread(5000);
+
 //        RunTestFile();
 
 //        RunTestKb01();
-        RunTestKb02();
+//        RunTestKb02();
         //RunTestKb03();
 
-//        RunTestMouse01();
+        RunTestMouse01();
 //        RunTestMouse02();
 
         Stop();
@@ -91,7 +93,6 @@ public final class TestSystem extends System
 
     private void RunTestKb01()
     {
-        Utility.SleepThread(5000);
         Log.d(AppServer.TAG, "Test 01 started...");
         final int delayTime = 500;
         
@@ -120,10 +121,15 @@ public final class TestSystem extends System
 
     private void RunTestKb02()
     {
-        Utility.SleepThread(5000);
         App.LogLine("Test 02 started...");
 
-        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_HOME));
+//        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_HOME));
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_BACK));
+        Utility.SleepThread(2500);
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_RIGHT));
+        Utility.SleepThread(500);
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_ENTER));
+        Utility.SleepThread(500);
     }
 
     private void RunTestKb03()

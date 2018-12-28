@@ -153,6 +153,7 @@ public final class AppServer extends App
         _bIsRunning = true;
 
         // ++instrumentation test
+        /*
         _tester = new TestSystem();
         Utility.StartThread(new Runnable()
         {
@@ -162,6 +163,7 @@ public final class AppServer extends App
                 _tester.Run();
             }
         }, "Tester");
+        */
         // --instrumentation test
     }
 

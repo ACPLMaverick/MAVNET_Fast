@@ -50,7 +50,8 @@ public final class InstrumentationSystem extends System
 
         _sendEventWrapper = new SendEventWrapper();
         MakeDeviceWritable();
-        _sendEventWrapper.Initialize();
+        _sendEventWrapper.Initialize(_eventCoder.GetKeycodes(), _eventCoder.GetMouseCodes(),
+                _eventCoder.GetMouseCodeTypes(), _eventCoder.GetBadCode());
     }
 
     @Override
@@ -101,39 +102,35 @@ public final class InstrumentationSystem extends System
         if(evType == ActionEvent.Type.Text)
         {
             // Can use input for such matters, because it doesn't require speed.
-            // TODO: Will this work when device files are opened?
             ExecuteRootShellCommand("input text \"" + ev.GetText() + "\"");
-        }
-        else if(evType == ActionEvent.Type.Keyboard)
-        {
-            ArrayList<InputDeviceEvent> deviceEvents = new ArrayList<>();
-            final boolean bCoded = _eventCoder.TryKeyEventToCodes(ev.GetKeyboardEv(), deviceEvents);
-
-            if(bCoded)
-			{
-				for(InputDeviceEvent inputDeviceEvent : deviceEvents)
-				{
-					_sendEventWrapper.SendInputEvent(inputDeviceEvent);
-				}
-			}
-			else
-			{
-				// Fallback to good old input method.
-				ExecuteRootShellCommand("input keyevent " + String.valueOf(ev.GetKeyboardEv()));
-			}
-        }
-        else if(evType == ActionEvent.Type.MouseClicks)
-        {
-            // TODO
-        }
-        else if(evType == ActionEvent.Type.Movement)
-        {
-            // TODO
         }
         else
         {
-            // Shouldn't be able to get here.
-            Utility.Assert(false);
+            // Use event coder for any other case.
+            ArrayList<InputDeviceEvent> deviceEvents = new ArrayList<>();
+            final boolean bCoded = _eventCoder.ActionEventToCodes(ev, evType, deviceEvents);
+            if(bCoded)
+            {
+                final SendEventWrapper.DeviceType deviceType =
+                        evType == ActionEvent.Type.Keyboard
+                                ? SendEventWrapper.DeviceType.Keyboard : SendEventWrapper.DeviceType.Mouse;
+                for(InputDeviceEvent inputDeviceEvent : deviceEvents)
+                {
+                    _sendEventWrapper.SendInputEvent(deviceType, inputDeviceEvent);
+                }
+            }
+            else
+            {
+                // If coder has failed, resort to the legacy slower methods.
+                if(evType == ActionEvent.Type.Keyboard)
+                {
+                    ExecuteRootShellCommand("input keyevent " + String.valueOf(ev.GetKeyboardEv()));
+                }
+                else
+                {
+                    App.LogLine("Instrumentation couldn't resolve an ActionEvent!");
+                }
+            }
         }
 
         // TODO: What to do with this?
@@ -210,7 +207,7 @@ public final class InstrumentationSystem extends System
         final String command = "chmod 666 /dev/uinput";
         ExecuteRootShellCommand(command);
 
-        Utility.SleepThread(500); // Make sure the commands have executed.
+        Utility.SleepThread(1500); // Make sure the commands have executed.
     }
 
     private void LogRootShellOutput()

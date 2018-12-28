@@ -11,13 +11,15 @@ public class SendEventWrapper
         java.lang.System.loadLibrary("SendEvent");
     }
 
-    public native boolean SendEventInitialize();
+    public native boolean SendEventInitialize(int[] jKeyCodes, int[] jMouseCodes,
+                                              int[] jMouseCodeTypes, int jBadCode);
     public native boolean SendEventCleanup();
-    public native boolean SendEventSendInputEvent(int strType,
+    public native boolean SendEventSendInputEvent(int devType,
+                                                  int strType,
                                                   int strCode,
                                                   int strValue);
 
-    public enum DeviceIndex
+    public enum DeviceType
     {
         Keyboard,
         Mouse,
@@ -28,9 +30,9 @@ public class SendEventWrapper
     {
     }
 
-    public void Initialize()
+    public void Initialize(int[] keyCodes, int[] mouseCodes, int[] mouseCodeTypes, int badCode)
     {
-        final boolean ret = SendEventInitialize();
+        final boolean ret = SendEventInitialize(keyCodes, mouseCodes, mouseCodeTypes, badCode);
         if(!ret)
         {
             App.LogLine("Failed to initialize SendEvent!");
@@ -46,9 +48,10 @@ public class SendEventWrapper
         }
     }
 
-    public void SendInputEvent(@NotNull final InputDeviceEvent kbEvent)
+    public void SendInputEvent(final DeviceType deviceType, @NotNull final InputDeviceEvent kbEvent)
     {
-        final boolean ret = SendEventSendInputEvent(kbEvent.GetEvType(), kbEvent.GetEvCode(), kbEvent.GetEvValue());
+        final boolean ret = SendEventSendInputEvent(deviceType.ordinal(), kbEvent.GetEvType(),
+                kbEvent.GetEvCode(), kbEvent.GetEvValue());
         if(!ret)
         {
             App.LogLine("Failed to SetInputEvent!");
