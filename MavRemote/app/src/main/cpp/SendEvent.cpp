@@ -234,9 +234,15 @@ bool SendEvent::SendInputEvent(DeviceType devType, uint16_t evType, uint16_t evC
     event.code = evCode;
     event.value = evValue;
 
-    const ssize_t written = write(_devDescriptors[(size_t)devType], &event, sizeof(event));
+    ssize_t written = write(_devDescriptors[(size_t)devType], &event, sizeof(event));
+    bool bSuccess = written == sizeof(event);
 
-    const bool bSuccess = written == sizeof(event);
+    // Perform EV_SYNC.
+    event.type = EV_SYN;
+    event.code = SYN_REPORT;
+    event.value = 0;
+    written = write(_devDescriptors[(size_t)devType], &event, sizeof(event));
+    bSuccess &= written == sizeof(event);
 
     return bSuccess;
 }

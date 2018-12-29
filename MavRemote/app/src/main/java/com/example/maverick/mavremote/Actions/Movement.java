@@ -41,8 +41,8 @@ public class Movement implements Serializable
         return _x == SCROLL_MAGIC_X;
     }
 
-    private static final int SCROLL_MAGIC_X = 0xDEADBEEF;
+    protected static final int SCROLL_MAGIC_X = 0xDEADBEEF;
 
-    private int _x;
-    private int _y;
+    protected int _x;
+    protected int _y;
 }

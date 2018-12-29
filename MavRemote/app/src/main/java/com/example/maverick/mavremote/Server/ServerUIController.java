@@ -63,6 +63,15 @@ public class ServerUIController extends UIController
         _startStopRunnable = runnable;
     }
 
+    public void DeactivateStartStopButton()
+    {
+        if(_btnStartStop != null)
+        {
+            _btnStartStop.setActivated(false);
+            _btnStartStop.setVisibility(View.INVISIBLE);
+        }
+    }
+
 
     @Override
     protected void AcquireUIElements()

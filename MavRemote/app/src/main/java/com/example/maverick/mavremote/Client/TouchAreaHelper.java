@@ -79,7 +79,7 @@ public class TouchAreaHelper
     {
         if(_timerFirstDown.IsRunning())
         {
-            _lockProtector.lock();
+//            _lockProtector.lock();
 
             if(IsMove())
             {
@@ -93,7 +93,7 @@ public class TouchAreaHelper
                 CallEventHandlersButtonAction();
             }
 
-            _lockProtector.unlock();
+//            _lockProtector.unlock();
         }
     }
 

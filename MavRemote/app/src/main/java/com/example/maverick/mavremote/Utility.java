@@ -24,17 +24,53 @@ public final class Utility
         return true;
     }
 
-    public static void StartThread(final Runnable func, String name)
+    public static boolean SleepThreadUs(int us)
+    {
+        try
+        {
+            final int millis = us / 1000;
+            final int ns = 1000 * (us % 1000);
+            Thread.sleep(millis, ns);
+        }
+        catch(InterruptedException e)
+        {
+            Log.e(AppServer.TAG, "[Utility] InterruptedException: " + e.getMessage());
+            return false;
+        }
+
+        return true;
+    }
+
+    public static boolean SleepThreadNs(int ns)
+    {
+        try
+        {
+            final int millis = ns / 1000000;
+            final int nsD = ns % 1000000;
+            Thread.sleep(millis, nsD);
+        }
+        catch(InterruptedException e)
+        {
+            Log.e(AppServer.TAG, "[Utility] InterruptedException: " + e.getMessage());
+            return false;
+        }
+
+        return true;
+    }
+
+    public static Thread StartThread(final Runnable func, String name)
     {
         final Thread t = new Thread(func, name);
         t.start();
+        return t;
     }
 
-    public static void StartThread(final Runnable func, String name, int priority)
+    public static Thread StartThread(final Runnable func, String name, int priority)
     {
         final Thread t = new Thread(func, name);
         t.setPriority(priority);
         t.start();
+        return t;
     }
 
     public static void Assert(boolean evaluatedValue)

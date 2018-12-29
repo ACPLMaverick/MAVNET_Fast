@@ -133,14 +133,22 @@ public final class AppServer extends App
             , "ServerNetworkSystem", 5);
             _cachedServerState = _server.GetState();
             _notificationMgr.DisplayNotificationText(_cachedServerState.name());
-            _uiControllerServer.RegisterOnConnectionClick(new Runnable()
+
+            if(B_AUTO_START)
             {
-                @Override
-                public void run()
+                _uiControllerServer.DeactivateStartStopButton();
+            }
+            else
+            {
+                _uiControllerServer.RegisterOnConnectionClick(new Runnable()
                 {
-                    _bChangeConnectionState = !_bChangeConnectionState;
-                }
-            });
+                    @Override
+                    public void run()
+                    {
+                        _bChangeConnectionState = !_bChangeConnectionState;
+                    }
+                });
+            }
         }
 
         _cachedServerState = _server.GetState();
@@ -269,6 +277,14 @@ public final class AppServer extends App
 
             _bChangeConnectionState = false;
         }
+
+        if(B_AUTO_START)
+        {
+            if(_server.GetState() == NetworkSystem.State.NotConnectedIdle)
+            {
+                _bChangeConnectionState = !_bChangeConnectionState;
+            }
+        }
     }
 
     private void ProcessUI()
@@ -308,6 +324,7 @@ public final class AppServer extends App
     }
 
     private static final boolean B_USE_INFRARED = false;
+    private static final boolean B_AUTO_START = true;
 
     private InstrumentationSystem _instr = null;
     private InfraredSystem _infr = null;

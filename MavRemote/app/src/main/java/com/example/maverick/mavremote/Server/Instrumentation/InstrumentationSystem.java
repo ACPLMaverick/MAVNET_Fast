@@ -52,11 +52,15 @@ public final class InstrumentationSystem extends System
         MakeDeviceWritable();
         _sendEventWrapper.Initialize(_eventCoder.GetKeycodes(), _eventCoder.GetMouseCodes(),
                 _eventCoder.GetMouseCodeTypes(), _eventCoder.GetBadCode());
+
+        _movementHelper = new MouseMovementHelper();
+        _movementHelper.Start(_sendEventWrapper, _eventCoder);
     }
 
     @Override
     protected void Finish()
     {
+        _movementHelper.Stop();
         _sendEventWrapper.Cleanup();
 
         CloseRootShell();
@@ -83,6 +87,7 @@ public final class InstrumentationSystem extends System
     }
 
 
+    // Returns: How many ms of delay was performed.
     private void PerformActionEvent(ActionEvent ev)
     {
         if(_shellProc == null)
@@ -91,9 +96,11 @@ public final class InstrumentationSystem extends System
             return;
         }
 
-        App.LogLine("Performing action event: " + ev.toString());
+        //App.LogLine("Performing action event: " + ev.toString());
 
         assert(_shellStream != null);
+
+        int millisWaited = 0;
 
         final ActionEvent.Type evType = ev.ResolveType();
 
@@ -103,6 +110,10 @@ public final class InstrumentationSystem extends System
         {
             // Can use input for such matters, because it doesn't require speed.
             ExecuteRootShellCommand("input text \"" + ev.GetText() + "\"");
+        }
+        else if(evType == ActionEvent.Type.Movement && !ev.GetMovementEv().IsScroll())
+        {
+            _movementHelper.UpdateMouseOffset(ev.GetMovementEv());
         }
         else
         {
@@ -117,6 +128,7 @@ public final class InstrumentationSystem extends System
                 for(InputDeviceEvent inputDeviceEvent : deviceEvents)
                 {
                     _sendEventWrapper.SendInputEvent(deviceType, inputDeviceEvent);
+                    millisWaited = PerformDelay();    // Delay after each sendinputevent.
                 }
             }
             else
@@ -134,10 +146,19 @@ public final class InstrumentationSystem extends System
         }
 
         // TODO: What to do with this?
-        if(ev.GetDelayMillis() > 0)
+        final int millisToWait = ev.GetDelayMillis() - millisWaited;
+        if(millisToWait > 0)
         {
-            Utility.SleepThread(ev.GetDelayMillis());
+            Utility.SleepThread(millisToWait);
         }
+    }
+
+    private int PerformDelay()
+    {
+        final int timeToWait = WAIT_AFTER_EACH_EVENT_MICROS;
+        if(timeToWait > 0)
+            Utility.SleepThreadUs(timeToWait);
+        return timeToWait;
     }
 
     private boolean InitRootShell()
@@ -269,6 +290,7 @@ public final class InstrumentationSystem extends System
 
     private static final int LOG_OUTPUT_WAIT_FOR_SHELL_MILLIS = 250;
     private static final int ROOT_SHELL_OUTPUT_BUFFER_SIZE_TO_FLUSH = 2048;
+    private static final int WAIT_AFTER_EACH_EVENT_MICROS = 0;
 
     /*
         add device 1: /dev/input/event3
@@ -292,6 +314,7 @@ public final class InstrumentationSystem extends System
     private DataOutputStream _shellStream = null;
 
     private EventCoder _eventCoder = null;
+    private MouseMovementHelper _movementHelper = null;
     private SendEventWrapper _sendEventWrapper = null;
 
     private boolean _bShellCreated = false;

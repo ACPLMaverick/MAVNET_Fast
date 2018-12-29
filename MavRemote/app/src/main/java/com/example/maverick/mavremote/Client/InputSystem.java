@@ -447,8 +447,8 @@ public class InputSystem extends System
 
 
     private static final int BUTTON_HOLD_PERIOD_MILLIS = 750;
-    private static final float TOUCH_SCALE = 3.0f;
-    private static final float SCROLL_SCALE = 1.0f;
+    private static final float TOUCH_SCALE = 1.3f;
+    private static final float SCROLL_SCALE = 0.1f;
 
     private ButtonHoldHelper _buttonHoldHelper = null;
     private TouchAreaHelper _touchAreaHelper = null;

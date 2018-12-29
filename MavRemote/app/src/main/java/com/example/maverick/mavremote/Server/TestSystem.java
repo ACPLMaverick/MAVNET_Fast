@@ -40,7 +40,8 @@ public final class TestSystem extends System
 //        RunTestKb02();
         //RunTestKb03();
 
-        RunTestMouse01();
+        RunTestMouse00();
+//        RunTestMouse01();
 //        RunTestMouse02();
 
         Stop();
@@ -171,6 +172,28 @@ public final class TestSystem extends System
         InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_BACK));
         InstrumentationSystem.Enqueue(new ActionEvent(ActionEvent.MouseClickTypes.LMBDown));
         InstrumentationSystem.Enqueue(new ActionEvent(ActionEvent.MouseClickTypes.LMBUp));
+    }
+
+    private void RunTestMouse00()
+    {
+        final int diagMulX = 2;
+        final int diagMovement = 250;
+        final int diagDiv = 25;
+        final int diagMovePerLoop = diagMovement / diagDiv;
+
+        final boolean multiple = false;
+
+        if(multiple)
+        {
+            for(int i = 0; i < diagDiv; ++i)
+            {
+                InstrumentationSystem.Enqueue(new ActionEvent(new Movement(diagMulX * diagMovePerLoop, diagMovePerLoop)));
+            }
+        }
+        else
+        {
+            InstrumentationSystem.Enqueue(new ActionEvent(new Movement(diagMulX * diagMovement, diagMovement)));
+        }
     }
 
     private void RunTestMouse01()
