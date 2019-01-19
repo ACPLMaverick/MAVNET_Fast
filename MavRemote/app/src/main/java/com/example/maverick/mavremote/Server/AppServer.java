@@ -161,17 +161,18 @@ public final class AppServer extends App
         _bIsRunning = true;
 
         // ++instrumentation test
-        /*
-        _tester = new TestSystem();
-        Utility.StartThread(new Runnable()
+        if(B_TESTER)
         {
-            @Override
-            public void run()
+            _tester = new TestSystem();
+            Utility.StartThread(new Runnable()
             {
-                _tester.Run();
-            }
-        }, "Tester");
-        */
+                @Override
+                public void run()
+                {
+                    _tester.Run();
+                }
+            }, "Tester");
+        }
         // --instrumentation test
     }
 
@@ -325,6 +326,7 @@ public final class AppServer extends App
 
     private static final boolean B_USE_INFRARED = false;
     private static final boolean B_AUTO_START = true;
+    private static final boolean B_TESTER = false;
 
     private InstrumentationSystem _instr = null;
     private InfraredSystem _infr = null;

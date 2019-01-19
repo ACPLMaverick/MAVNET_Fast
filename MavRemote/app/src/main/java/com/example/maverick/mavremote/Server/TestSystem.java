@@ -40,8 +40,9 @@ public final class TestSystem extends System
 //        RunTestKb02();
         //RunTestKb03();
 
-        RunTestMouse00();
-//        RunTestMouse01();
+//        RunTestMouseMinus01();
+//        RunTestMouse00();
+        RunTestMouse01();
 //        RunTestMouse02();
 
         Stop();
@@ -174,6 +175,13 @@ public final class TestSystem extends System
         InstrumentationSystem.Enqueue(new ActionEvent(ActionEvent.MouseClickTypes.LMBUp));
     }
 
+    private void RunTestMouseMinus01()
+    {
+        InstrumentationSystem.Enqueue(new ActionEvent(new Movement(50, 150)));
+        Utility.SleepThread(1000);
+        InstrumentationSystem.Enqueue(new ActionEvent(new Movement(-550, 550)));
+    }
+
     private void RunTestMouse00()
     {
         final int diagMulX = 2;
@@ -198,21 +206,24 @@ public final class TestSystem extends System
 
     private void RunTestMouse01()
     {
-        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_BACK, 1500));
-        final double movementAngleRadians = Math.toRadians(12);
-        final int movementRadius = 50;
-        final int movementNum = 30;
-        final int movementDelay = 250;
-        double currentAngle = 0;
-
-        for(int i = 0; i < movementNum; ++i)
+        while(true)
         {
-            currentAngle += movementAngleRadians;
+            final double movementAngleRadians = Math.toRadians(12);
+            final int movementRadius = 50;
+            final int movementNum = 30;
+            final int movementDelay = 100;
+            double currentAngle = 0;
 
-            int deltaX = (int)(movementRadius * Math.cos(currentAngle));
-            int deltaY = (int)(movementRadius * Math.sin(currentAngle));
+            for (int i = 0; i < movementNum; ++i)
+            {
+                currentAngle += movementAngleRadians;
 
-            InstrumentationSystem.Enqueue(new ActionEvent(new Movement(deltaX, deltaY), movementDelay));
+                int deltaX = (int) (movementRadius * Math.cos(currentAngle));
+                int deltaY = (int) (movementRadius * Math.sin(currentAngle));
+
+                InstrumentationSystem.Enqueue(new ActionEvent(new Movement(deltaX, deltaY)));
+                Utility.SleepThread(movementDelay);
+            }
         }
     }
 

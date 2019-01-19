@@ -113,10 +113,24 @@ public final class ConnectivityHelper
 
     public boolean IsConnectedToLocalNetwork()
     {
-        return _netInterface != null && _netInfo != null && _netAddress != null
-                && _netInfo.isConnected()
-                && (_netInfo.getType() == ConnectivityManager.TYPE_WIFI
-                    || _netInfo.getType() == ConnectivityManager.TYPE_ETHERNET);
+        if(_netInterface == null)
+            return false;
+
+        if(_netInfo == null)
+            return false;
+
+        if(_netAddress == null)
+            return false;
+
+        if(_netInfo.isConnected())
+        {
+            return _netInfo.getType() == ConnectivityManager.TYPE_WIFI
+                    || _netInfo.getType() == ConnectivityManager.TYPE_ETHERNET;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     public SocketAddress GetConnectionLocalAddress()

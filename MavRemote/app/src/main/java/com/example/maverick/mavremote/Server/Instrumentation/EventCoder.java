@@ -107,9 +107,9 @@ class EventCoder
 
 		final float distance = (float)Math.sqrt(
 				movement.GetX() * movement.GetX() +
-						movement.GetY() + movement.GetY());
+						movement.GetY() * movement.GetY());
 
-		final float delay = distance == 0.0f ? 0.0f : MOVEMENT_SPEED / distance;
+		final float delay = distance == 0.0f ? 0.0f : distance / MOVEMENT_SPEED;
 
 		for(MouseEventConversion conversion : conversions)
 		{
@@ -251,7 +251,7 @@ class EventCoder
 
 				final int totalMovement = numX + numY;
 
-				final boolean bSmallerXDim = x < y;
+				final boolean bSmallerXDim = numX < numY;
 				final int smallerDim = bSmallerXDim ? x : y;
 				final int largerDim = bSmallerXDim ? y : x;
 				final int smallerDimDir = bSmallerXDim ? dirX : dirY;
@@ -279,19 +279,19 @@ class EventCoder
 			}
 			else
 			{
-				if(movement.GetX() != 0)
-				{
-					MouseEventConversion conv = new MouseEventConversion();
-					conv.Ev = MouseEvent.MovementX;
-					conv.Value = movement.GetX();
-
-					outConversions.add(conv);
-				}
 				if(movement.GetY() != 0)
 				{
 					MouseEventConversion conv = new MouseEventConversion();
 					conv.Ev = MouseEvent.MovementY;
 					conv.Value = movement.GetY();
+
+					outConversions.add(conv);
+				}
+				if(movement.GetX() != 0)
+				{
+					MouseEventConversion conv = new MouseEventConversion();
+					conv.Ev = MouseEvent.MovementX;
+					conv.Value = movement.GetX();
 
 					outConversions.add(conv);
 				}
@@ -355,7 +355,7 @@ class EventCoder
 
 	private final boolean USE_PER_PIXEL_MOUSE_CODING = true;
 
-    private final float MOVEMENT_SPEED = 0.001f;
+    private final float MOVEMENT_SPEED = 1.0f;
 
 	private final int BAD_CODE = -1;
 

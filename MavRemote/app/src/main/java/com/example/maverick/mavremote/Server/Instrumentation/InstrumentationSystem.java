@@ -45,7 +45,6 @@ public final class InstrumentationSystem extends System
         if(!_bShellCreated)
         {
             App.LogLine("InstrumentationSystem: Failed to create root shell. Instrumentation will not work.");
-            return;
         }
 
         _sendEventWrapper = new SendEventWrapper();
@@ -69,6 +68,11 @@ public final class InstrumentationSystem extends System
     @Override
     protected void MainLoop()
     {
+        // ++ TEST
+        // nakurwiaj w opór
+        //_sendEventWrapper.SendInputEvent(SendEventWrapper.DeviceType.Mouse, new InputDeviceEvent(2, 0, 1));
+        // -- TEST
+
         if(!_bShellCreated)
             return;
 
@@ -96,7 +100,7 @@ public final class InstrumentationSystem extends System
             return;
         }
 
-        //App.LogLine("Performing action event: " + ev.toString());
+        App.LogLine("Performing action event: " + ev.toString());
 
         assert(_shellStream != null);
 
@@ -210,6 +214,11 @@ public final class InstrumentationSystem extends System
 
     private void ExecuteRootShellCommand(String command)
     {
+        if(!_bShellCreated)
+        {
+            return;
+        }
+
         try
         {
             App.LogLine("Sending command: " + command);

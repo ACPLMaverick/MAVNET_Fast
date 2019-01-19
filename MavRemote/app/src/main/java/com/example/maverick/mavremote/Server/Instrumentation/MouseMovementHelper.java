@@ -22,10 +22,22 @@ class MouseMovementHelper
 			super(copy.GetX(), copy.GetY());
 		}
 
+		public void Add(int x, int y)
+		{
+			_x += x;
+			_y += y;
+		}
+
 		public void Add(final Movement v)
 		{
 			_x += v.GetX();
 			_y += v.GetY();
+		}
+
+		public void Sub(int x, int y)
+		{
+			_x -= x;
+			_y -= y;
 		}
 
 		public void Sub(final Movement v)
@@ -110,19 +122,21 @@ class MouseMovementHelper
 		if(_nextMovement != null)
 		{
 			_lock.lock();
-			MovementEp thisMovement = new MovementEp(_nextMovement);
+			_currentMovement.Add(_nextMovement);
 			_nextMovement = null;
 			_lock.unlock();
 
-			//_currentDeviceEvents.clear();
-			_eventCoder.MouseMoveEventToCodes(thisMovement, _currentDeviceEvents);
+//			_currentDeviceEvents.clear();
+			_eventCoder.MouseMoveEventToCodes(_currentMovement, _currentDeviceEvents);
 		}
 
 		if(!_currentDeviceEvents.isEmpty())
 		{
 			InputDeviceEvent ev = _currentDeviceEvents.pop();
 			_sendEventWrapper.SendInputEvent(SendEventWrapper.DeviceType.Mouse, ev);
-			Utility.SleepThreadUs((int)(ev.GetDelay() * 1000.0f * 1000.0f));
+			SubFromCurrentMovement(ev);
+//			Utility.SleepThreadUs((int)(ev.GetDelay()));
+//			Utility.SleepThreadUs(TICK_PROCESS_WAIT_US);
 		}
 		else
 		{
@@ -136,14 +150,26 @@ class MouseMovementHelper
 		_sendEventWrapper = null;
 	}
 
+	private void SubFromCurrentMovement(InputDeviceEvent ev)
+	{
+		if(ev.GetEvCode() == 0)	// TODO: This is hacky.
+		{
+			_currentMovement.Sub(ev.GetEvValue(), 0);
+		}
+		else if(ev.GetEvCode() == 1)
+		{
+			_currentMovement.Sub(0, ev.GetEvValue());
+		}
+	}
 
-	private static final int TICK_STEP_WAIT_SPEED = 10;
+	private static final int TICK_PROCESS_WAIT_US = 500;
 	private static final int TICK_IDLE_WAIT_MS = 1;
 
 	private Thread _thread = null;
 	private SendEventWrapper _sendEventWrapper = null;
 	private EventCoder _eventCoder = null;
 
+	private MovementEp _currentMovement = new MovementEp(0, 0);
 	private MovementEp _nextMovement = null;
 	private LinkedList<InputDeviceEvent> _currentDeviceEvents = new LinkedList<>();
 

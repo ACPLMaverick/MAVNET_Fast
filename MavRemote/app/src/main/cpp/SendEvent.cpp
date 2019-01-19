@@ -10,6 +10,8 @@
 #include <cerrno>
 
 
+#define SE_MOUSE_MOVEMENT_SMART_SYNC 0
+
 #define JNI_FUNC(funcName) Java_com_example_maverick_mavremote_Server_Instrumentation_SendEventWrapper_##funcName
 #define RET_FALSE_NONZERO(expression) \
 { \
@@ -56,7 +58,7 @@ public:
                     const std::vector<MouseCodeType>& mouseCodeTypes, int32_t badCode);
     bool Cleanup();
 
-    bool SendInputEvent(DeviceType devType, uint16_t strType, uint16_t strCode, uint32_t strValue);
+    bool SendInputEvent(DeviceType devType, uint16_t evType, uint16_t evCode, uint32_t evValue);
 
 private:
 
@@ -64,6 +66,12 @@ private:
 
     bool OpenDeviceFile(int32_t& outDescriptor);
     bool CloseDeviceFile(int32_t descriptor);
+
+    bool WriteToDevice(DeviceType devType, uint16_t evType, uint16_t evCode, uint32_t evValue);
+    bool WriteSync(DeviceType devType);
+
+
+    static const uint8_t MOUSE_MOVEMENT_SYNC_STATE_CLEAR = 0xFF;
 
     std::vector<int32_t> _keyCodes;
     std::vector<int32_t> _mouseCodes;
@@ -73,6 +81,9 @@ private:
 
     int32_t _devDescriptors[(size_t)DeviceType::NUM];
     bool _bIsInitialised;
+#if SE_MOUSE_MOVEMENT_SMART_SYNC
+    uint8_t _mouseMovementSyncState;
+#endif
 };
 
 
@@ -80,7 +91,7 @@ private:
 
 static SendEvent g_SendEvent;
 
-template <typename T> void PopulateInitArray(JNIEnv* jEnv, jintArray inputArray,
+template <typename T> void PopulateInitArray(JNIEnv* jEnv, jintArray& inputArray,
         std::vector<T>& outArray, T badValue)
 {
     jint num = jEnv->GetArrayLength(inputArray);
@@ -96,6 +107,8 @@ template <typename T> void PopulateInitArray(JNIEnv* jEnv, jintArray inputArray,
             outArray.push_back(val);
         }
     }
+
+    jEnv->ReleaseIntArrayElements(inputArray, jKeyCodesPtr, JNI_ABORT);
 }
 
 extern "C" JNIEXPORT jboolean JNICALL JNI_FUNC(SendEventInitialize) (JNIEnv* env, jobject _this,
@@ -129,12 +142,12 @@ extern "C" JNIEXPORT jboolean JNICALL JNI_FUNC(SendEventSendInputEvent) (JNIEnv*
                                                      jint jStrCode,
                                                      jint jStrValue)
 {
-    // DeviceIndex ignored for uinput implementation.
+    env->PushLocalFrame(6);
 
     const jint maxIndex = (jint)SendEvent::DeviceType::NUM;
     if(jDeviceType < 0 || jDeviceType >= maxIndex)
     {
-        return false;
+        return jboolean(false);
     }
 
     const SendEvent::DeviceType devType = (SendEvent::DeviceType)jDeviceType;
@@ -143,6 +156,8 @@ extern "C" JNIEXPORT jboolean JNICALL JNI_FUNC(SendEventSendInputEvent) (JNIEnv*
     const uint32_t strValue = (uint32_t)jStrValue;
 
     const bool ret = g_SendEvent.SendInputEvent(devType, strType, strCode, strValue);
+
+    env->PopLocalFrame(nullptr);
     return jboolean(ret);
 }
 
@@ -150,6 +165,9 @@ extern "C" JNIEXPORT jboolean JNICALL JNI_FUNC(SendEventSendInputEvent) (JNIEnv*
 
 SendEvent::SendEvent()
     : _bIsInitialised(false)
+#if SE_MOUSE_MOVEMENT_SMART_SYNC
+    , _mouseMovementSyncState(MOUSE_MOVEMENT_SYNC_STATE_CLEAR)
+#endif
 {
     for(size_t i = 0; i < (size_t)DeviceType::NUM; ++i)
     {
@@ -176,12 +194,12 @@ bool SendEvent::Initialize(const std::vector<int32_t>& keyCodes, const std::vect
     _badCode = badCode;
 
     // Create and open uinput devices.
-    for(size_t i = 0; i < (size_t)DeviceType::NUM; ++i)
+    for(int64_t i = 0; i < (int64_t)DeviceType::NUM; ++i)
     {
         bool ret = OpenDeviceFile(_devDescriptors[i]);
         if (!ret)
         {
-            for(size_t j = i - 1; j >= 0; --j)
+            for(int64_t j = i - 1; j >= 0; --j)
             {
                 CloseDeviceFile(_devDescriptors[j]);
             }
@@ -226,23 +244,45 @@ bool SendEvent::Cleanup()
 
 bool SendEvent::SendInputEvent(DeviceType devType, uint16_t evType, uint16_t evCode, uint32_t evValue)
 {
-    if(!_bIsInitialised)
-        return false;
+//    if(!_bIsInitialised)
+//        return false;
 
-    input_event event = {};
-    event.type = evType;
-    event.code = evCode;
-    event.value = evValue;
+    bool bSuccess = WriteToDevice(devType, evType, evCode, evValue);
 
-    ssize_t written = write(_devDescriptors[(size_t)devType], &event, sizeof(event));
-    bool bSuccess = written == sizeof(event);
+#if SE_MOUSE_MOVEMENT_SMART_SYNC
+    const bool bIsMouseMovement = (devType == DeviceType::Mouse
+            && evType == EV_REL && (evCode == REL_X || evCode == REL_Y));
 
-    // Perform EV_SYNC.
-    event.type = EV_SYN;
-    event.code = SYN_REPORT;
-    event.value = 0;
-    written = write(_devDescriptors[(size_t)devType], &event, sizeof(event));
-    bSuccess &= written == sizeof(event);
+    if(bIsMouseMovement)
+    {
+        switch(_mouseMovementSyncState)
+        {
+            case MOUSE_MOVEMENT_SYNC_STATE_CLEAR:
+                _mouseMovementSyncState = (uint8_t)evCode;
+                break;
+            case REL_X:
+                if(evCode == REL_Y)
+                {
+                    bSuccess &= WriteSync(devType);
+                    _mouseMovementSyncState = MOUSE_MOVEMENT_SYNC_STATE_CLEAR;
+                }
+                break;
+            case REL_Y:
+                if(evCode == REL_X)
+                {
+                    bSuccess &= WriteSync(devType);
+                    _mouseMovementSyncState = MOUSE_MOVEMENT_SYNC_STATE_CLEAR;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    else
+#endif
+    {
+        bSuccess &= WriteSync(devType);
+    }
 
     return bSuccess;
 }
@@ -364,4 +404,21 @@ bool SendEvent::CreateUinputDevice(const DeviceType deviceType)
 
 
     return true;
+}
+
+bool SendEvent::WriteToDevice(SendEvent::DeviceType devType, uint16_t evType, uint16_t evCode,
+                              uint32_t evValue)
+{
+    input_event event = {};
+    event.type = evType;
+    event.code = evCode;
+    event.value = evValue;
+
+    ssize_t written = write(_devDescriptors[(size_t)devType], &event, sizeof(event));
+    return written == sizeof(event);
+}
+
+bool SendEvent::WriteSync(SendEvent::DeviceType devType)
+{
+    return WriteToDevice(devType, EV_SYN, SYN_REPORT, 0);
 }

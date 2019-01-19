@@ -19,6 +19,7 @@ import com.example.maverick.mavremote.ClientActivity;
 import com.example.maverick.mavremote.R;
 import com.example.maverick.mavremote.Server.AppServer;
 import com.example.maverick.mavremote.ServerActivity;
+import com.example.maverick.mavremote.Utility;
 
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -86,14 +87,21 @@ public class NotificationHelper
             PendingIntent pendingIntent =
                     PendingIntent.getActivity(App.GetInstance().GetContext(), 0, intent, 0);
 
-            _notificationBuilder
-                    = new NotificationCompat.Builder(App.GetInstance().GetContext(), NOTIFICATION_CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_bar)
-                    .setContentTitle(TITLE)
-                    .setContentText(notificationText)
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
-                    .setContentIntent(pendingIntent)
-                    .setAutoCancel(false);
+            try
+            {
+                _notificationBuilder
+                        = new NotificationCompat.Builder(App.GetInstance().GetContext(), NOTIFICATION_CHANNEL_ID)
+                        .setSmallIcon(R.drawable.ic_bar)
+                        .setContentTitle(TITLE)
+                        .setContentText(notificationText)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setContentIntent(pendingIntent)
+                        .setAutoCancel(false);
+            }
+            catch(Exception e)
+            {
+                App.LogLine("NotificationBuilder exception: " + e.getMessage());
+            }
         }
         else
         {
@@ -101,11 +109,18 @@ public class NotificationHelper
             _notificationBuilder.setContentText(notificationText);
         }
 
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from
-        (
-                App.GetInstance().GetContext()
-        );
-        notificationManager.notify(NOTIFICATION_ID, _notificationBuilder.build());
+        try
+        {
+            NotificationManagerCompat notificationManager = NotificationManagerCompat.from
+                    (
+                            App.GetInstance().GetContext()
+                    );
+            notificationManager.notify(NOTIFICATION_ID, _notificationBuilder.build());
+        }
+        catch(Exception e)
+        {
+            App.LogLine("NotificationBuilder Notify exception: " + e.getMessage());
+        }
 
         return true;
     }

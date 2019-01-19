@@ -8,6 +8,7 @@ import com.example.maverick.mavremote.UI.NotificationHelper;
 import com.example.maverick.mavremote.UI.UIController;
 import com.example.maverick.mavremote.UI.UIManager;
 
+import java.util.Calendar;
 import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class App
@@ -132,6 +133,15 @@ public abstract class App
         return _uiController;
     }
 
+    public Calendar GetCalendar()
+    {
+        if(_calendar == null)
+        {
+            _calendar = Calendar.getInstance();
+        }
+        return _calendar;
+    }
+
     private void RunCommon()
     {
         if(CanUseUI())
@@ -187,4 +197,5 @@ public abstract class App
     protected UIManager _uiManager = null;
     protected UIController _uiController = null;
     protected NotificationHelper _notificationMgr = null;
+    protected Calendar _calendar = null;
 }
