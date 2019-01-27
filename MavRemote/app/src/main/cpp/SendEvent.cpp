@@ -11,6 +11,7 @@
 
 
 #define SE_MOUSE_MOVEMENT_SMART_SYNC 0
+#define SE_MOUSE_MOVEMENT_DONT_SYNC 1
 
 #define JNI_FUNC(funcName) Java_com_example_maverick_mavremote_Server_Instrumentation_SendEventWrapper_##funcName
 #define RET_FALSE_NONZERO(expression) \
@@ -280,6 +281,9 @@ bool SendEvent::SendInputEvent(DeviceType devType, uint16_t evType, uint16_t evC
     }
     else
 #endif
+#if SE_MOUSE_MOVEMENT_DONT_SYNC
+    if(devType != DeviceType::Mouse)
+#endif
     {
         bSuccess &= WriteSync(devType);
     }
@@ -362,7 +366,7 @@ bool SendEvent::CreateUinputDevice(const DeviceType deviceType)
     static const char* INIT_NAMES[] =
     {
             "MavRemote Keyboard",
-            "MavRemove Mouse"
+            "MavRemote Mouse"
     };
 
     if(version >= 5)

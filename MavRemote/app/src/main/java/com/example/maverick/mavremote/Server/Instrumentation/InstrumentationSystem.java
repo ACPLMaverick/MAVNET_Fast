@@ -1,6 +1,5 @@
 package com.example.maverick.mavremote.Server.Instrumentation;
 
-import android.app.Instrumentation;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -100,7 +99,7 @@ public final class InstrumentationSystem extends System
             return;
         }
 
-        App.LogLine("Performing action event: " + ev.toString());
+        //App.LogLine("Performing action event: " + ev.toString());
 
         assert(_shellStream != null);
 
@@ -117,7 +116,7 @@ public final class InstrumentationSystem extends System
         }
         else if(evType == ActionEvent.Type.Movement && !ev.GetMovementEv().IsScroll())
         {
-            _movementHelper.UpdateMouseOffset(ev.GetMovementEv());
+            _movementHelper.AddMouseMovement(ev.GetMovementEv());
         }
         else
         {

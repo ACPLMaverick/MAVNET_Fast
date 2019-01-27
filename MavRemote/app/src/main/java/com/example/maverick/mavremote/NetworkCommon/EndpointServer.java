@@ -61,6 +61,8 @@ public class EndpointServer
     // This will block for a timeout, because it listens for connections when no connection is made.
     public void Update()
     {
+        // TODO: FIX THIS CRASH.
+
         if(!IsConnected())
             ListenForConnections();
 

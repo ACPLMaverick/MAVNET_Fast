@@ -105,16 +105,12 @@ class EventCoder
 		ArrayList<MouseEventConversion> conversions = new ArrayList<>();
 		ConvertMouseMovementEvent(movement, conversions);
 
-		final float distance = (float)Math.sqrt(
-				movement.GetX() * movement.GetX() +
-						movement.GetY() * movement.GetY());
-
-		final float delay = distance == 0.0f ? 0.0f : distance / MOVEMENT_SPEED;
-
 		for(MouseEventConversion conversion : conversions)
 		{
-			MakeInputDeviceEventsForMouseEvent(conversion, outCodes, delay);
+			MakeInputDeviceEventsForMouseEvent(conversion, outCodes, 0.0f);
 		}
+
+		MakeSync(outCodes);
 	}
 
     private boolean TryKeyEventToCodes(int keyEvent, List<InputDeviceEvent> outCodes)
@@ -202,101 +198,28 @@ class EventCoder
 		}
 		else
 		{
-			if(USE_PER_PIXEL_MOUSE_CODING)
+			if(movement.GetY() != 0)
 			{
-				final int x = movement.GetX();
-				final int y = movement.GetY();
+				MouseEventConversion conv = new MouseEventConversion();
+				conv.Ev = MouseEvent.MovementY;
+				conv.Value = movement.GetY();
 
-				if (x == 0 && y == 0)
-				{
-					return;
-				}
-
-				if (y == 0)
-				{
-					final int numX = Math.abs(x);
-					final int dirX = x / numX;
-
-					for (int i = 0; i < numX; ++i)
-					{
-						MouseEventConversion conv = new MouseEventConversion();
-						conv.Ev = MouseEvent.MovementX;
-						conv.Value = dirX;
-						outConversions.add(conv);
-					}
-
-					return;
-				}
-				else if (x == 0)
-				{
-					final int numY = Math.abs(y);
-					final int dirY = y / numY;
-
-					for (int i = 0; i < numY; ++i)
-					{
-						MouseEventConversion conv = new MouseEventConversion();
-						conv.Ev = MouseEvent.MovementY;
-						conv.Value = dirY;
-						outConversions.add(conv);
-					}
-
-					return;
-				}
-
-				final int numX = Math.abs(x);
-				final int numY = Math.abs(y);
-
-				final int dirX = x / numX;
-				final int dirY = y / numY;
-
-				final int totalMovement = numX + numY;
-
-				final boolean bSmallerXDim = numX < numY;
-				final int smallerDim = bSmallerXDim ? x : y;
-				final int largerDim = bSmallerXDim ? y : x;
-				final int smallerDimDir = bSmallerXDim ? dirX : dirY;
-				final int largerDimDir = bSmallerXDim ? dirY : dirX;
-				final int smallerEveryNLargers = (int) Math.round((double) Math.abs(largerDim) / (double) Math.abs(smallerDim)) + 1;
-
-				for (int i = 0; i < totalMovement; ++i)
-				{
-					MouseEventConversion conv = new MouseEventConversion();
-
-					final boolean bIsSmallerThisStep = i % smallerEveryNLargers == 0;
-					if (bIsSmallerThisStep)
-					{
-						conv.Ev = bSmallerXDim ? MouseEvent.MovementX : MouseEvent.MovementY;
-						conv.Value = smallerDimDir;
-					}
-					else
-					{
-						conv.Ev = bSmallerXDim ? MouseEvent.MovementY : MouseEvent.MovementX;
-						conv.Value = largerDimDir;
-					}
-
-					outConversions.add(conv);
-				}
+				outConversions.add(conv);
 			}
-			else
+			if(movement.GetX() != 0)
 			{
-				if(movement.GetY() != 0)
-				{
-					MouseEventConversion conv = new MouseEventConversion();
-					conv.Ev = MouseEvent.MovementY;
-					conv.Value = movement.GetY();
+				MouseEventConversion conv = new MouseEventConversion();
+				conv.Ev = MouseEvent.MovementX;
+				conv.Value = movement.GetX();
 
-					outConversions.add(conv);
-				}
-				if(movement.GetX() != 0)
-				{
-					MouseEventConversion conv = new MouseEventConversion();
-					conv.Ev = MouseEvent.MovementX;
-					conv.Value = movement.GetX();
-
-					outConversions.add(conv);
-				}
+				outConversions.add(conv);
 			}
 		}
+	}
+
+	private void MakeSync(List<InputDeviceEvent> outCodes)
+	{
+		outCodes.add(new InputDeviceEvent(0, 0, 0));
 	}
 
     private void BuildKeycodeArray()
@@ -353,12 +276,7 @@ class EventCoder
 	}
 
 
-	private final boolean USE_PER_PIXEL_MOUSE_CODING = true;
-
-    private final float MOVEMENT_SPEED = 1.0f;
-
 	private final int BAD_CODE = -1;
-
 
 	// EV_SYN is performed automatically by the backend.
     private final int EV_KEY = 1;

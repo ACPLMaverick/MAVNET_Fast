@@ -40,6 +40,12 @@ public class EventQueue<T>
         return _queue.isEmpty();
     }
 
+    public int GetSize()
+    {
+        Utility.Assert(_queue != null);
+        return _queue.size();
+    }
+
     private ArrayDeque<T> _queue = null;
     private ReentrantLock _lock = null;
 }
