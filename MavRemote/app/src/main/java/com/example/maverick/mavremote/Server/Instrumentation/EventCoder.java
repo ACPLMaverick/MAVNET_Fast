@@ -113,6 +113,27 @@ class EventCoder
 		MakeSync(outCodes);
 	}
 
+	public Movement GetMovementFromInputEventCode(final InputDeviceEvent event)
+	{
+		if(event.GetEvCode() == _mouseCodes[MouseEvent.MovementX.ordinal()])
+		{
+			return new Movement(event.GetEvValue(), 0);
+		}
+		else if(event.GetEvCode() == _mouseCodes[MouseEvent.MovementY.ordinal()])
+		{
+			return new Movement(0, event.GetEvValue());
+		}
+		else
+		{
+			return new Movement(0, 0);
+		}
+	}
+
+	public void MakeSync(List<InputDeviceEvent> outCodes)
+	{
+		outCodes.add(new InputDeviceEvent(0, 0, 0));
+	}
+
     private boolean TryKeyEventToCodes(int keyEvent, List<InputDeviceEvent> outCodes)
     {
     	Utility.Assert(keyEvent < KEYCODES_NUM);
@@ -215,11 +236,6 @@ class EventCoder
 				outConversions.add(conv);
 			}
 		}
-	}
-
-	private void MakeSync(List<InputDeviceEvent> outCodes)
-	{
-		outCodes.add(new InputDeviceEvent(0, 0, 0));
 	}
 
     private void BuildKeycodeArray()

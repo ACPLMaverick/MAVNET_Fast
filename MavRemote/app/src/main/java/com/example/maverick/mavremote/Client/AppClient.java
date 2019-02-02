@@ -118,9 +118,10 @@ public final class AppClient extends App
 
         App.LogLine("[AppClient] Started.");
 
-        // ++debug
-//        _uiManager.SetMenuCurrent(UIManager.MenuType.ClientRemote);
-        // --debug
+        if(B_TEST_MODE)
+        {
+            _uiManager.SetMenuCurrent(UIManager.MenuType.ClientRemote);
+        }
 
         _bIsRunning = true;
     }
@@ -140,6 +141,8 @@ public final class AppClient extends App
             ProcessUI();
 
             ProcessQueue();
+
+            Utility.SleepThread(1);
         }
     }
 
@@ -304,6 +307,9 @@ public final class AppClient extends App
             _bBackPressed = false;
         }
     }
+
+
+    private static final boolean B_TEST_MODE = false;
 
     private InputSystem _inputSystem = null;
     private ClientNetworkSystem _networkSystem = null;

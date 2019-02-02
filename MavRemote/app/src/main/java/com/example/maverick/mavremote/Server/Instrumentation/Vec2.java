@@ -22,11 +22,19 @@ class Vec2
 
 	public float GetX() { return X; }
 	public float GetY() { return Y; }
+	public void SetX(final float ax) { X = ax; }
+	public void SetY(final float ay) { Y = ay; }
 
 	public void Add(final Vec2 v)
 	{
 		X += v.X;
 		Y += v.Y;
+	}
+
+	public void Mul(final float a)
+	{
+		X *= a;
+		Y *= a;
 	}
 
 	public float GetLength()

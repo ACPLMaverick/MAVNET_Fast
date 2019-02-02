@@ -11,6 +11,11 @@ public final class Utility
 {
     public static boolean SleepThread(long millis)
     {
+        if(millis == 0)
+        {
+            return true;
+        }
+
         try
         {
             Thread.sleep(millis);
@@ -26,6 +31,11 @@ public final class Utility
 
     public static boolean SleepThreadUs(int us)
     {
+        if(us == 0)
+        {
+            return true;
+        }
+
         try
         {
             final int millis = us / 1000;
@@ -43,6 +53,11 @@ public final class Utility
 
     public static boolean SleepThreadNs(int ns)
     {
+        if(ns == 0)
+        {
+            return true;
+        }
+
         try
         {
             final int millis = ns / 1000000;

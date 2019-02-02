@@ -229,6 +229,8 @@ public final class AppServer extends App
 
             if(CanUseUI())
                 ProcessUI();
+
+            Utility.SleepThread(1);
         }
     }
 

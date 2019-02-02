@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 class MouseMovementHelper
 {
@@ -49,6 +50,11 @@ class MouseMovementHelper
 			_y -= v.GetY();
 		}
 
+		public int GetLengthInt()
+		{
+			return Math.abs(GetX()) + Math.abs(GetY());
+		}
+
 		public boolean IsMovement()
 		{
 			return _x != 0 || _y != 0;
@@ -60,8 +66,6 @@ class MouseMovementHelper
 	{
 		_sendEventWrapper = sendEventWrapper;
 		_eventCoder = eventCoder;
-		_pendingMovements = new EventQueue<>();
-		_pendingMovements.Init();
 
 		// ++test
 //		Movement testMovement = new Movement(284, 109);
@@ -92,16 +96,112 @@ class MouseMovementHelper
 		}
 	}
 
+	/*
+	//		V1
 	public void AddMouseMovement(final Movement movement)
 	{
-		if(_pendingMovements.GetSize() < MAX_PENDING)
+		if(_pendingDeviceEvents.size() > MAX_PENDING)	// Don't sync it.
 		{
-			_pendingMovements.Enqueue(movement);
+			App.LogLine("Exceeding max pending mouse movements! This shouldn't be happening.");
+			return;
+		}
+
+		SplitMovements(movement, _tmpMovements);
+		_lock.lock();
+		for(Movement splitMovement : _tmpMovements)
+		{
+			_eventCoder.MouseMoveEventToCodes(splitMovement, _pendingDeviceEvents);
+		}
+		_lock.unlock();
+		_tmpMovements.clear();
+	}
+	*/
+
+	public void AddMouseMovement(final Movement movement)
+	{
+		if(_pendingDeviceEvents.size() > MAX_PENDING)	// Don't sync it.
+		{
+			App.LogLine("Exceeding max pending mouse movements! This shouldn't be happening.");
+			return;
+		}
+
+		_lock.lock();
+
+		_currentMovement.Add(movement);
+
+		// First, clear everything and recompute from beginning.
+		_tmpMovements.clear();
+		_pendingDeviceEvents.clear();
+		// Add first sync just in case.
+		_eventCoder.MakeSync(_pendingDeviceEvents);
+
+		Vec2 totalMovement = new Vec2(_currentMovement.GetX(), _currentMovement.GetY());
+		MovementEp totalMovementInt = new MovementEp(_currentMovement);
+		final float totalLen = totalMovement.GetLength();
+		final float splitThres = 1.0f;
+		if(totalLen <= splitThres)
+		{
+			_eventCoder.MouseMoveEventToCodes(_currentMovement, _pendingDeviceEvents);
+			_currentTickWaitUs = DEFAULT_TICK_WAIT_US;
 		}
 		else
 		{
-			App.LogLine("Exceeding max pending mouse movements! This shouldn't be happening.");
+			Vec2 baseDir = new Vec2(totalMovement);
+			baseDir.Normalize();
+			Vec2 accum = new Vec2();
+
+			// Create new integer movements and subtract them from totalMovement until zero.
+			while(totalMovementInt.IsMovement())
+			{
+				Vec2 thisMovement = new Vec2(baseDir);
+				if(Math.abs(accum.GetX()) >= 1.0f)
+				{
+					thisMovement.SetX(thisMovement.GetX() + GetSign(accum.GetX()));
+					accum.SetX(accum.GetX() - GetSign(accum.GetX()));
+				}
+				if(Math.abs(accum.GetY()) >= 1.0f)
+				{
+					thisMovement.SetY(thisMovement.GetY() + GetSign(accum.GetY()));
+					accum.SetY(accum.GetY() - GetSign(accum.GetY()));
+				}
+
+				// Truncate floating point values.
+				MovementEp intMovement = new MovementEp((int)thisMovement.GetX(), (int)thisMovement.GetY());
+				Vec2 leftovers = new Vec2(thisMovement.GetX() - (float)intMovement.GetX(), thisMovement.GetY() - (float)intMovement.GetY());
+				accum.Add(leftovers);
+
+				if(intMovement.IsMovement())
+				{
+					_tmpMovements.add(intMovement);
+					totalMovementInt.Sub(intMovement);
+				}
+
+				// Correct edge cases
+				if(totalMovementInt.IsMovement() && totalMovementInt.GetLengthInt() <= 2)
+				{
+					_tmpMovements.add(totalMovementInt);
+					break;	// Finished.
+				}
+			}
+
+			// Make new device events.
+			for(Movement intMovement : _tmpMovements)
+			{
+				_eventCoder.MouseMoveEventToCodes(intMovement, _pendingDeviceEvents);
+			}
+
+			// Compute new tick wait time in relation to the device event num: t = s / v
+			if(_pendingDeviceEvents.isEmpty())
+			{
+				_currentTickWaitUs = DEFAULT_TICK_WAIT_US;
+			}
+			else
+			{
+				_currentTickWaitUs = (int)((float)INPUT_EVENT_NUM_PER_MS / (float)_pendingDeviceEvents.size() * 1000.0f);
+			}
 		}
+
+		_lock.unlock();
 	}
 
 	private void Start_Internal()
@@ -116,25 +216,58 @@ class MouseMovementHelper
 		Cleanup();
 	}
 
+	/*
+	//		V1
 	private void Tick()
 	{
-		// Process only one pending movement per tick.
-		if(!_pendingMovements.IsEmpty())
-		{
-			SplitMovements(_pendingMovements.Dequeue(), _tmpMovements);
-			for(Movement movement : _tmpMovements)
-			{
-				_eventCoder.MouseMoveEventToCodes(movement, _currentDeviceEvents);
-			}
-			_tmpMovements.clear();
-		}
+		// Process only one pending device event per tick.
 
-		if(!_currentDeviceEvents.isEmpty())
+		InputDeviceEvent event = null;
+		_lock.lock();
+		if(!_pendingDeviceEvents.isEmpty())
 		{
-			_sendEventWrapper.SendInputEvent(SendEventWrapper.DeviceType.Mouse, _currentDeviceEvents.pop());
+			event = _pendingDeviceEvents.poll();
+		}
+		_lock.unlock();
+
+		if(event != null)
+		{
+			_sendEventWrapper.SendInputEvent(SendEventWrapper.DeviceType.Mouse, event);
 		}
 
 		Utility.SleepThread(TICK_WAIT_MS);
+	}
+	*/
+
+	// V2
+	private void Tick()
+	{
+		InputDeviceEvent inputDeviceEvent = null;
+		int currentTickWaitUs = DEFAULT_TICK_WAIT_US;
+		_lock.lock();
+		if(!_pendingDeviceEvents.isEmpty())
+		{
+			inputDeviceEvent = _pendingDeviceEvents.poll();
+			_currentMovement.Sub(_eventCoder.GetMovementFromInputEventCode(inputDeviceEvent));
+			currentTickWaitUs = _currentTickWaitUs;
+		}
+		_lock.unlock();
+
+		if(inputDeviceEvent != null)
+		{
+			_sendEventWrapper.SendInputEvent(SendEventWrapper.DeviceType.Mouse, inputDeviceEvent);
+		}
+
+		if(_executedEventCounter >= INPUT_BUFFERING_WAIT_PER_INPUT_EVENT_NUM)
+		{
+			_executedEventCounter = 0;
+			Utility.SleepThread(INPUT_BUFFERING_WAIT_TIME_MS);
+		}
+		else
+		{
+			++_executedEventCounter;
+			Utility.SleepThreadUs(currentTickWaitUs);
+		}
 	}
 
 	private void Cleanup()
@@ -144,6 +277,17 @@ class MouseMovementHelper
 	}
 
 	private void SplitMovements(final Movement inMovement, List<Movement> outMovements)
+	{
+		//SplitMovementsNoSplit(inMovement, outMovements);
+		SplitMovementsApproach1(inMovement, outMovements);
+	}
+
+	private void SplitMovementsNoSplit(final Movement inMovement, List<Movement> outMovements)
+	{
+		outMovements.add(inMovement);
+	}
+
+	private void SplitMovementsApproach1(final Movement inMovement, List<Movement> outMovements)
 	{
 		final int lengthSum = Math.abs(inMovement.GetX()) + Math.abs(inMovement.GetY());
 		final int mainDiv = SPLIT_THRESHOLD;
@@ -218,18 +362,34 @@ class MouseMovementHelper
 
 	private int GetSign(int val)
 	{
-		if(val == 0)
+		if(val >= 0)
 		{
 			return 1;
 		}
 		else
 		{
-			return val / Math.abs(val);
+			return -1;
+		}
+	}
+
+	private float GetSign(float val)
+	{
+		final float THRES = 0.001f;
+		if(val < -THRES)
+		{
+			return -1.0f;
+		}
+		else
+		{
+			return 1.0f;
 		}
 	}
 
 
-	private static final int TICK_WAIT_MS = 1;
+	private static final int INPUT_EVENT_NUM_PER_MS = 32;
+	private static final int DEFAULT_TICK_WAIT_US = 1000;
+	private static final int INPUT_BUFFERING_WAIT_PER_INPUT_EVENT_NUM = 128; // TODO: Think of a better way to do this.
+	private static final int INPUT_BUFFERING_WAIT_TIME_MS = 1;
 	private static final int MAX_PENDING = 255;	// This shouldn't be ever exceeded.
 	private static final int SPLIT_THRESHOLD = 4;
 
@@ -237,9 +397,13 @@ class MouseMovementHelper
 	private SendEventWrapper _sendEventWrapper = null;
 	private EventCoder _eventCoder = null;
 
-	private EventQueue<Movement> _pendingMovements;
-	private LinkedList<InputDeviceEvent> _currentDeviceEvents = new LinkedList<>();
-	private ArrayList<Movement> _tmpMovements = new ArrayList<>();
+	private LinkedList<InputDeviceEvent> _pendingDeviceEvents = new LinkedList<>();
+	private ReentrantLock _lock = new ReentrantLock();
+	private ArrayList<Movement> _tmpMovements = new ArrayList<>();	// Code running from MMH thread shouldn't touch this.
+
+	private MovementEp _currentMovement = new MovementEp(0, 0);
+	private int _currentTickWaitUs = DEFAULT_TICK_WAIT_US;
+	private int _executedEventCounter = 0;
 
 	private boolean _bIsRunning = false;
 }

@@ -21,6 +21,7 @@ public abstract class System
             _systemMainLoopLock.lock();
             MainLoop();
             _systemMainLoopLock.unlock();
+            Utility.SleepThread(GetTickSleepMs());
         }
 
         Finish();
@@ -46,6 +47,8 @@ public abstract class System
     protected abstract void Finish();
 
     protected abstract void MainLoop();
+
+    protected long GetTickSleepMs() { return 0; }
 
 
     protected ReentrantLock _systemLock = new ReentrantLock();
