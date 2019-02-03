@@ -89,14 +89,14 @@ public class ButtonHoldHelper
     protected void InitDelta()
     {
         final long temp = _currentTime;
-        _currentTime = Calendar.getInstance().getTimeInMillis();
+        _currentTime = App.GetCurrentTimeMs();
         _prevTime = temp;
     }
 
     protected void UpdateDelta()
     {
         _prevTime = _currentTime;
-        _currentTime = Calendar.getInstance().getTimeInMillis();
+        _currentTime = App.GetCurrentTimeMs();
     }
 
     protected int GetDelta()

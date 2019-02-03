@@ -26,6 +26,8 @@ public class ActionEvent implements Serializable
 
     public enum MouseClickTypes
     {
+        LMBClick,
+        RMBClick,
         LMBDown,
         LMBUp,
         RMBDown,

@@ -22,7 +22,7 @@ class TouchTimer
     void Start()
     {
         _bIsRunning = true;
-        _timer = Calendar.getInstance().getTimeInMillis();
+        _timer = App.GetCurrentTimeMs();
     }
 
     void Stop()
@@ -35,7 +35,7 @@ class TouchTimer
     {
         if(_bIsRunning)
         {
-            return Calendar.getInstance().getTimeInMillis() - _timer;
+            return App.GetCurrentTimeMs() - _timer;
         }
         else
         {
@@ -79,7 +79,7 @@ public class TouchAreaHelper
     {
         if(_timerFirstDown.IsRunning())
         {
-//            _lockProtector.lock();
+            _lockProtector.lock();
 
             if(IsMove())
             {
@@ -93,7 +93,7 @@ public class TouchAreaHelper
                 CallEventHandlersButtonAction();
             }
 
-//            _lockProtector.unlock();
+            _lockProtector.unlock();
         }
     }
 
@@ -194,9 +194,7 @@ public class TouchAreaHelper
                             if(_timerFirstDown.IsRunning())
                             {
                                 _timerFirstDown.Stop();
-                                _latestClickType = ActionEvent.MouseClickTypes.LMBDown;
-                                CallEventHandlersButtonAction();
-                                _latestClickType = ActionEvent.MouseClickTypes.LMBUp;
+                                _latestClickType = ActionEvent.MouseClickTypes.LMBClick;
                                 CallEventHandlersButtonAction();
                             }
                             else if(_latestClickType != null)

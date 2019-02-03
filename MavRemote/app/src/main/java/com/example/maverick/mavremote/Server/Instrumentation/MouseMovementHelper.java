@@ -138,8 +138,9 @@ class MouseMovementHelper
 		Vec2 totalMovement = new Vec2(_currentMovement.GetX(), _currentMovement.GetY());
 		MovementEp totalMovementInt = new MovementEp(_currentMovement);
 		final float totalLen = totalMovement.GetLength();
-		final float splitThres = 1.0f;
-		if(totalLen <= splitThres)
+		final float splitThreshold = (float)SPLIT_THRESHOLD;
+
+		if(totalLen <= splitThreshold)
 		{
 			_eventCoder.MouseMoveEventToCodes(_currentMovement, _pendingDeviceEvents);
 			_currentTickWaitUs = DEFAULT_TICK_WAIT_US;
@@ -154,15 +155,15 @@ class MouseMovementHelper
 			while(totalMovementInt.IsMovement())
 			{
 				Vec2 thisMovement = new Vec2(baseDir);
-				if(Math.abs(accum.GetX()) >= 1.0f)
+				if(Math.abs(accum.GetX()) >= splitThreshold)
 				{
-					thisMovement.SetX(thisMovement.GetX() + GetSign(accum.GetX()));
-					accum.SetX(accum.GetX() - GetSign(accum.GetX()));
+					thisMovement.SetX(thisMovement.GetX() + splitThreshold * GetSign(accum.GetX()));
+					accum.SetX(accum.GetX() - splitThreshold * GetSign(accum.GetX()));
 				}
 				if(Math.abs(accum.GetY()) >= 1.0f)
 				{
-					thisMovement.SetY(thisMovement.GetY() + GetSign(accum.GetY()));
-					accum.SetY(accum.GetY() - GetSign(accum.GetY()));
+					thisMovement.SetY(thisMovement.GetY() + splitThreshold * GetSign(accum.GetY()));
+					accum.SetY(accum.GetY() - splitThreshold * GetSign(accum.GetY()));
 				}
 
 				// Truncate floating point values.
@@ -177,7 +178,7 @@ class MouseMovementHelper
 				}
 
 				// Correct edge cases
-				if(totalMovementInt.IsMovement() && totalMovementInt.GetLengthInt() <= 2)
+				if(totalMovementInt.IsMovement() && totalMovementInt.GetLengthInt() <= 2 * splitThreshold)
 				{
 					_tmpMovements.add(totalMovementInt);
 					break;	// Finished.
@@ -386,12 +387,12 @@ class MouseMovementHelper
 	}
 
 
-	private static final int INPUT_EVENT_NUM_PER_MS = 32;
+	private static final int INPUT_EVENT_NUM_PER_MS = 64;
 	private static final int DEFAULT_TICK_WAIT_US = 1000;
 	private static final int INPUT_BUFFERING_WAIT_PER_INPUT_EVENT_NUM = 128; // TODO: Think of a better way to do this.
 	private static final int INPUT_BUFFERING_WAIT_TIME_MS = 1;
-	private static final int MAX_PENDING = 255;	// This shouldn't be ever exceeded.
-	private static final int SPLIT_THRESHOLD = 4;
+	private static final int MAX_PENDING = 1024;	// This shouldn't be ever exceeded.
+	private static final int SPLIT_THRESHOLD = 2;
 
 	private Thread _thread = null;
 	private SendEventWrapper _sendEventWrapper = null;

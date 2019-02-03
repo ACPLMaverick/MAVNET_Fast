@@ -31,6 +31,18 @@ class EventCoder
 		public MouseEvent Ev;
 		public int Value;
 
+		public MouseEventConversion()
+		{
+			Ev = null;
+			Value = 0;
+		}
+
+		public MouseEventConversion(MouseEvent ev, int value)
+		{
+			Ev = ev;
+			Value = value;
+		}
+
 		@Override
 		public String toString()
 		{
@@ -86,7 +98,7 @@ class EventCoder
 		}
 		else if(evType == ActionEvent.Type.MouseClicks)
 		{
-			MakeInputDeviceEventsForMouseEvent(ConvertMouseClickEvent(ev), outCodes, 0.0f);
+			MouseClickEventToCodes(ev.GetMouseEv(), outCodes);
 			return true;
 		}
 		else if(evType == ActionEvent.Type.Movement)
@@ -134,6 +146,17 @@ class EventCoder
 		outCodes.add(new InputDeviceEvent(0, 0, 0));
 	}
 
+	private void MouseClickEventToCodes(final ActionEvent.MouseClickTypes clickType, List<InputDeviceEvent> outCodes)
+	{
+		ArrayList<MouseEventConversion> eventConversions = new ArrayList<>();
+		ConvertMouseClickEvent(clickType, eventConversions);
+		for(MouseEventConversion conversion : eventConversions)
+		{
+			MakeInputDeviceEventsForMouseEvent(conversion, outCodes,0.0f);
+			MakeSync(outCodes);
+		}
+	}
+
     private boolean TryKeyEventToCodes(int keyEvent, List<InputDeviceEvent> outCodes)
     {
     	Utility.Assert(keyEvent < KEYCODES_NUM);
@@ -174,36 +197,31 @@ class EventCoder
 		outCodes.add(new InputDeviceEvent(evTypeInt, evCode, conv.Value, delay));
 	}
 
-	private MouseEventConversion ConvertMouseClickEvent(final ActionEvent ev)
+	private void ConvertMouseClickEvent(final ActionEvent.MouseClickTypes clickType, List<MouseEventConversion> outConversions)
 	{
-		ActionEvent.MouseClickTypes clickTypes = ev.GetMouseEv();
-		MouseEventConversion conv = new MouseEventConversion();
-
-		switch (clickTypes)
+		switch (clickType)
 		{
+			case LMBClick:
+				outConversions.add(new MouseEventConversion(MouseEvent.BtnLeft, 1));
+				outConversions.add(new MouseEventConversion(MouseEvent.BtnLeft, 0));
+				break;
 			case LMBDown:
-				conv.Ev = MouseEvent.BtnLeft;
-				conv.Value = 1;
+				outConversions.add(new MouseEventConversion(MouseEvent.BtnLeft, 1));
 				break;
 			case LMBUp:
-				conv.Ev = MouseEvent.BtnLeft;
-				conv.Value = 0;
+				outConversions.add(new MouseEventConversion(MouseEvent.BtnLeft, 0));
 				break;
 			case RMBDown:
-				conv.Ev = MouseEvent.BtnRight;
-				conv.Value = 1;
+				outConversions.add(new MouseEventConversion(MouseEvent.BtnRight, 1));
 				break;
 			case RMBUp:
-				conv.Ev = MouseEvent.BtnRight;
-				conv.Value = 0;
+				outConversions.add(new MouseEventConversion(MouseEvent.BtnRight, 0));
 				break;
 			default:
 				Utility.Assert(false, "Not supported enum value.");
 				break;
 
 		}
-
-		return conv;
 	}
 
 	private void ConvertMouseMovementEvent(final Movement movement, List<MouseEventConversion> outConversions)

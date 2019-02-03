@@ -32,12 +32,12 @@ public final class ConnectivityHelper
 
     public void Update()
     {
-        long delta = Calendar.getInstance().getTimeInMillis() - _updateTimer;
+        long delta = App.GetCurrentTimeMs() - _updateTimer;
         if(delta < UPDATE_PERIOD_MILLIS)
         {
             return;
         }
-        _updateTimer = Calendar.getInstance().getTimeInMillis();
+        _updateTimer = App.GetCurrentTimeMs();
 
 
         _netInfo = _cm.getActiveNetworkInfo();

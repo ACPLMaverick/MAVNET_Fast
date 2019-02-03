@@ -14,6 +14,7 @@ import com.example.maverick.mavremote.R;
 import com.example.maverick.mavremote.System;
 import com.example.maverick.mavremote.UI.Menu;
 import com.example.maverick.mavremote.UI.UIManager;
+import com.example.maverick.mavremote.Utility;
 
 import java.util.HashMap;
 
@@ -285,7 +286,7 @@ public class InputSystem extends System
                     public boolean onLongClick(View view)
                     {
                         _longClickHelper.put((Button)view, (Button)view);
-                        PassKeyboardEvent(kbEventHoldIn);
+                        PassKeyboardEvent(kbEventHoldIn, true);
                         return true;
                     }
                 });
@@ -402,7 +403,17 @@ public class InputSystem extends System
 
     private void PassKeyboardEvent(int kbEvent)
     {
+        PassKeyboardEvent(kbEvent, false);
+    }
+
+    private void PassKeyboardEvent(int kbEvent, boolean isButtonHoldDown)
+    {
         App.LogLine("[InputSystem] Pressing key: " + KeyEvent.keyCodeToString(kbEvent));
+
+        if(isButtonHoldDown)
+        {
+            Utility.Vibrate(BUTTON_HOLD_VIBRATION_TIME_MS);
+        }
 
         ActionEvent ev = new ActionEvent(kbEvent);
 
@@ -412,6 +423,16 @@ public class InputSystem extends System
     private void PassMouseClick(ActionEvent.MouseClickTypes mouseClick)
     {
         App.LogLine("[InputSystem] Mouse button: " + mouseClick.toString());
+
+        if(mouseClick == ActionEvent.MouseClickTypes.LMBDown
+            || mouseClick == ActionEvent.MouseClickTypes.RMBDown)   // Vibrate on hold.
+        {
+            Utility.Vibrate(MOUSE_DOWN_VIBRATION_TIME_MS);
+        }
+        else if(mouseClick == ActionEvent.MouseClickTypes.LMBClick)
+        {
+            Utility.Vibrate(MOUSE_CLICK_VIBRATION_TIME_MS);
+        }
 
         ActionEvent ev = new ActionEvent(mouseClick);
 
@@ -446,6 +467,9 @@ public class InputSystem extends System
     }
 
 
+    private static final long BUTTON_HOLD_VIBRATION_TIME_MS = 60;
+    private static final long MOUSE_CLICK_VIBRATION_TIME_MS = 30;
+    private static final long MOUSE_DOWN_VIBRATION_TIME_MS = 80;
     private static final int BUTTON_HOLD_PERIOD_MILLIS = 750;
     private static final float TOUCH_SCALE = 1.3f;
     private static final float SCROLL_SCALE = 0.1f;

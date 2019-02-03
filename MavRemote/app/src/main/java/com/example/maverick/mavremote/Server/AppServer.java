@@ -155,7 +155,7 @@ public final class AppServer extends App
 
         // ++notification test
 //        _notificationMgr.DisplayNotificationText("Server running...");
-//        appstart = Calendar.getInstance().getTimeInMillis();
+//        appstart = App.GetCurrentTimeMs();
         // --notification test
 
         _bIsRunning = true;
@@ -205,9 +205,9 @@ public final class AppServer extends App
         while(_bIsRunning)
         {
             // ++notification test
-//            if(Calendar.getInstance().getTimeInMillis() - timer > 5000)
+//            if(App.GetCurrentTimeMs() - timer > 5000)
 //            {
-//                timer = Calendar.getInstance().getTimeInMillis();
+//                timer = App.GetCurrentTimeMs();
 //                long delta = timer - appstart;
 //
 //                _notificationMgr.DisplayNotificationText("App running: " + Long.toString(delta));

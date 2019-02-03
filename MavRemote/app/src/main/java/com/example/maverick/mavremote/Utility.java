@@ -1,5 +1,9 @@
 package com.example.maverick.mavremote;
 
+import android.content.Context;
+import android.os.Build;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.Log;
 
 import com.example.maverick.mavremote.Server.AppServer;
@@ -134,5 +138,37 @@ public final class Utility
         }
 
         return bytes;
+    }
+
+    public static void Vibrate(long vibrationTimeMs)
+    {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+        {
+            Vibrate(vibrationTimeMs, VibrationEffect.DEFAULT_AMPLITUDE);
+        }
+        else
+        {
+            Vibrate(vibrationTimeMs, -1);
+        }
+    }
+
+    public static void Vibrate(long vibrationTimeMs, int amplitude)
+    {
+        try
+        {
+            Vibrator vibrator = (Vibrator) App.GetInstance().GetActivity().getSystemService(Context.VIBRATOR_SERVICE);
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            {
+                vibrator.vibrate(VibrationEffect.createOneShot(vibrationTimeMs, amplitude));
+            }
+            else
+            {
+                vibrator.vibrate(vibrationTimeMs);
+            }
+        }
+        catch (Exception e)
+        {
+            App.LogLine("Error creating vibration for " + String.valueOf(vibrationTimeMs) + " ms.");
+        }
     }
 }

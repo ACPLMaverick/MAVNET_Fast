@@ -67,10 +67,10 @@ public class ServerNetworkSystem extends NetworkSystem
 
 // In specified frequency, send broadcast packet over broadcast endpoint.
 
-        long delta = Calendar.getInstance().getTimeInMillis() - _timerBroadcast;
+        long delta = App.GetCurrentTimeMs() - _timerBroadcast;
         if(delta >= ENDPOINT_BROADCAST_SEND_PERIOD_MILLIS)
         {
-            _timerBroadcast = Calendar.getInstance().getTimeInMillis();
+            _timerBroadcast = App.GetCurrentTimeMs();
 
             _endpointBroadcast.SendDataBroadcast(_broadcastPacket);
             _packetCounterBroadcast.IncPacketNumCorrect();

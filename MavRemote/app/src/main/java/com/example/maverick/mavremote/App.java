@@ -1,6 +1,7 @@
 package com.example.maverick.mavremote;
 
 import android.content.Context;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 
@@ -35,6 +36,21 @@ public abstract class App
     {
         if(GetInstance().CanUseUI())
             GetInstance().GetUIController().LogLine(str);
+    }
+
+    public static long GetCurrentTimeMs()
+    {
+        return java.lang.System.nanoTime() / 1000000;
+    }
+
+    public static long GetCurrentTimeUs()
+    {
+        return java.lang.System.nanoTime() / 1000;
+    }
+
+    public static long GetCurrentTimeNs()
+    {
+        return java.lang.System.nanoTime();
     }
 
     public final void Run(AppCompatActivity activity)
@@ -133,15 +149,6 @@ public abstract class App
         return _uiController;
     }
 
-    public Calendar GetCalendar()
-    {
-        if(_calendar == null)
-        {
-            _calendar = Calendar.getInstance();
-        }
-        return _calendar;
-    }
-
     private void RunCommon()
     {
         if(CanUseUI())
@@ -197,5 +204,4 @@ public abstract class App
     protected UIManager _uiManager = null;
     protected UIController _uiController = null;
     protected NotificationHelper _notificationMgr = null;
-    protected Calendar _calendar = null;
 }

@@ -75,7 +75,7 @@ public class OSKHelper
 
         if(_hidingTimer > 0)
         {
-            long timeElapsed = Calendar.getInstance().getTimeInMillis() - _hidingTimer;
+            long timeElapsed = App.GetCurrentTimeMs() - _hidingTimer;
             if(timeElapsed >= HIDE_ACTION_DELAY_MILLIS)
             {
                 OnHide();
@@ -218,7 +218,7 @@ public class OSKHelper
         if(heightDiff < 0) // meaning kb is getting smaller, i.e. is hiding.
         {
             // This trigger delay for hide action.
-            _hidingTimer = Calendar.getInstance().getTimeInMillis();
+            _hidingTimer = App.GetCurrentTimeMs();
         }
     }
 
