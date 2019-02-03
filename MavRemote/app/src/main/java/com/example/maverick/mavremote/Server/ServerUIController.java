@@ -44,15 +44,23 @@ public class ServerUIController extends UIController
 
     public void UpdateReceived(final PacketCounter pck)
     {
-        if(_currentReceivedDisplayed == null || _currentReceivedDisplayed.IsTheSame(pck))
+        final boolean bIsCurrentNull = _currentReceivedDisplayed == null;
+        final boolean bPerformUpdate =  bIsCurrentNull || !_currentReceivedDisplayed.IsTheSame(pck);
+
+        if(bIsCurrentNull)
         {
-            _currentReceivedDisplayed = new PacketCounter(pck);
+            _currentReceivedDisplayed = new PacketCounter();
+        }
+
+        if(bPerformUpdate)
+        {
+            _currentReceivedDisplayed.Copy(pck);
             _manager.PerformAction(new Runnable()
             {
                 @Override
                 public void run()
                 {
-                    _tvReceived.setText(pck.toString());
+                    _tvReceived.setText(_currentReceivedDisplayed.toString());
                 }
             });
         }

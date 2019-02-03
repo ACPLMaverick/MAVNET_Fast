@@ -32,7 +32,13 @@ public class Endpoint
             return false;
         }
 
-        return _sock.isBound() && _sock.isConnected();
+        final boolean bSuccess = _sock.isBound() && _sock.isConnected();
+        if(bSuccess)
+        {
+            _sockAddress = new InetSocketAddress(_sock.getInetAddress(), _sock.getPort());
+        }
+
+        return bSuccess;
     }
 
     public boolean Close()
@@ -136,15 +142,17 @@ public class Endpoint
     {
         if(!IsConnected())
         {
-            return new InetSocketAddress("0.0.0.0", 0);
+            return BAD_ADDRESS;
         }
-        return new InetSocketAddress(_sock.getInetAddress(), _sock.getPort());
+        return _sockAddress;
     }
 
 
     protected static final int READ_BUFFER_SIZE = 1024;
+    protected static InetSocketAddress BAD_ADDRESS = new InetSocketAddress("0.0.0.0", 0);
 
     protected Socket _sock = null;
+    protected SocketAddress _sockAddress = null;
     protected ByteBuffer _readBuffer = ByteBuffer.allocate(READ_BUFFER_SIZE);
     protected ByteBuffer _testBuffer = ByteBuffer.allocate(1);
 }

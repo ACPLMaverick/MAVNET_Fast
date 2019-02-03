@@ -114,15 +114,15 @@ class EventCoder
 
 	public void MouseMoveEventToCodes(final Movement movement, List<InputDeviceEvent> outCodes)
 	{
-		ArrayList<MouseEventConversion> conversions = new ArrayList<>();
-		ConvertMouseMovementEvent(movement, conversions);
+		ConvertMouseMovementEvent(movement, _tmpConversions);
 
-		for(MouseEventConversion conversion : conversions)
+		for(MouseEventConversion conversion : _tmpConversions)
 		{
 			MakeInputDeviceEventsForMouseEvent(conversion, outCodes, 0.0f);
 		}
 
 		MakeSync(outCodes);
+		_tmpConversions.clear();
 	}
 
 	public Movement GetMovementFromInputEventCode(final InputDeviceEvent event)
@@ -148,13 +148,13 @@ class EventCoder
 
 	private void MouseClickEventToCodes(final ActionEvent.MouseClickTypes clickType, List<InputDeviceEvent> outCodes)
 	{
-		ArrayList<MouseEventConversion> eventConversions = new ArrayList<>();
-		ConvertMouseClickEvent(clickType, eventConversions);
-		for(MouseEventConversion conversion : eventConversions)
+		ConvertMouseClickEvent(clickType, _tmpConversions);
+		for(MouseEventConversion conversion : _tmpConversions)
 		{
 			MakeInputDeviceEventsForMouseEvent(conversion, outCodes,0.0f);
 			MakeSync(outCodes);
 		}
+		_tmpConversions.clear();
 	}
 
     private boolean TryKeyEventToCodes(int keyEvent, List<InputDeviceEvent> outCodes)
@@ -325,4 +325,6 @@ class EventCoder
 	private final int[] _mouseCodes = new int[MOUSE_CODES_NUM];
 
 	private final int[] _mouseCodeTypes = new int[MOUSE_CODES_NUM];
+
+	private ArrayList<MouseEventConversion> _tmpConversions = new ArrayList<>();
 }

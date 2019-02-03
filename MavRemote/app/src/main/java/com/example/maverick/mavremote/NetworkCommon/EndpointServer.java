@@ -142,9 +142,9 @@ public class EndpointServer
     {
         if(!IsConnected())
         {
-            return new InetSocketAddress("0.0.0.0", 0);
+            return Endpoint.BAD_ADDRESS;
         }
-        return new InetSocketAddress(_connectionSock.getInetAddress(), _connectionSock.getPort());
+        return _connectionSockAddress;
     }
 
 
@@ -159,6 +159,7 @@ public class EndpointServer
             if(connSock != null)
             {
                 _connectionSock = connSock;
+                _connectionSockAddress = new InetSocketAddress(_connectionSock.getInetAddress(), _connectionSock.getPort());
             }
             else
             {
@@ -201,6 +202,7 @@ public class EndpointServer
 
     private ServerSocket _sock = null;
     private Socket _connectionSock = null;
+    private InetSocketAddress _connectionSockAddress = null;
 
     private byte[] _connectionReadBuffer = new byte[CONNECTION_BUFFER_SIZE];
 }

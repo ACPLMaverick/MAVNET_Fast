@@ -7,7 +7,7 @@ public class PacketCounter
         Reset();
     }
 
-    public PacketCounter(final PacketCounter copy)
+    public void Copy(final PacketCounter copy)
     {
         _packetNumCorrect = copy._packetNumCorrect;
         _packetNumWrong = copy._packetNumWrong;

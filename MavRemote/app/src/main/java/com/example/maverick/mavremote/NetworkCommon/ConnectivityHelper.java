@@ -39,6 +39,10 @@ public final class ConnectivityHelper
         }
         _updateTimer = App.GetCurrentTimeMs();
 
+        if(IsConnectedToLocalNetwork())
+        {
+            return;
+        }
 
         _netInfo = _cm.getActiveNetworkInfo();
 
@@ -78,6 +82,9 @@ public final class ConnectivityHelper
                         _netInterface = intf;
                         _netAddress = addr.getAddress();
                         _broadcastAddress = addr.getBroadcast();
+
+                        _netAddressSocket = new InetSocketAddress(_netAddress, CONNECTION_PORT_BASE);
+                        _broadcastAddressSocket = new InetSocketAddress(_broadcastAddress, BROADCAST_PORT);
 
                         bFoundAddress = true;
                         break;
@@ -135,26 +142,22 @@ public final class ConnectivityHelper
 
     public SocketAddress GetConnectionLocalAddress()
     {
-        if(_netAddress != null)
-        {
-            return new InetSocketAddress(_netAddress, CONNECTION_PORT_BASE);
-        }
-        else
+        if(!IsConnectedToLocalNetwork())
         {
             return null;
         }
+
+        return _netAddressSocket;
     }
 
     public SocketAddress GetBroadcastAddress()
     {
-        if(_netAddress != null)
-        {
-            return new InetSocketAddress(_broadcastAddress, BROADCAST_PORT);
-        }
-        else
+        if(!IsConnectedToLocalNetwork())
         {
             return null;
         }
+
+        return _broadcastAddressSocket;
     }
 
     public SocketAddress GetLocalhostAddress()
@@ -174,6 +177,8 @@ public final class ConnectivityHelper
     private NetworkInterface _netInterface = null;
     private InetAddress _netAddress = null;
     private InetAddress _broadcastAddress = null;
+    private SocketAddress _netAddressSocket = null;
+    private SocketAddress _broadcastAddressSocket = null;
 
     private long _updateTimer = 0;
 }
