@@ -1,7 +1,5 @@
 package com.example.maverick.mavremote.NetworkCommon;
 
-import android.util.Log;
-
 import com.example.maverick.mavremote.App;
 
 import java.io.IOException;
@@ -11,7 +9,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 
 import javax.net.ServerSocketFactory;
 
@@ -72,40 +69,12 @@ public class EndpointServer
     // Returns null if there is no data.
     public ByteBuffer GetData()
     {
-        try
+        if(_connectionSockInputStream == null)
         {
-            InputStream stream = _connectionSock.getInputStream();
-            if(stream.available() <= 0)
-            {
-                return null;
-            }
-
-            boolean bAvailable = true;
-            ArrayList<Byte> allBytes = new ArrayList<>();
-            do
-            {
-                int bytesRead = stream.read(_connectionReadBuffer, 0, CONNECTION_BUFFER_SIZE);
-                for(int i = 0; i < bytesRead; ++i)
-                    allBytes.add(_connectionReadBuffer[i]);
-
-                bAvailable = stream.available() > 0;
-            }while(bAvailable);
-
-            byte[] fundamentalBytes = new byte[allBytes.size()];
-            for(int i = 0; i < allBytes.size(); ++i)
-                fundamentalBytes[i] = allBytes.get(i);
-
-            return ByteBuffer.wrap(fundamentalBytes);
-        }
-        catch(IOException e)
-        {
-            App.LogLine("Error reading from Server Connection Socket with address: "
-                    + _connectionSock.getLocalSocketAddress().toString() + " and port: "
-                    + Integer.toString(_connectionSock.getLocalPort()) + "\n"
-                    + e.getMessage());
-
             return null;
         }
+
+        return _inputReader.Read();
     }
 
     public int GetTimeout()
@@ -159,7 +128,9 @@ public class EndpointServer
             if(connSock != null)
             {
                 _connectionSock = connSock;
+                _connectionSockInputStream = _connectionSock.getInputStream();
                 _connectionSockAddress = new InetSocketAddress(_connectionSock.getInetAddress(), _connectionSock.getPort());
+                _inputReader.Init(_connectionSockInputStream);
             }
             else
             {
@@ -180,6 +151,8 @@ public class EndpointServer
         if(_connectionSock != null
                 && !(_connectionSock.isBound() || _connectionSock.isConnected()))
         {
+            _inputReader.Stop();
+
             if(!_connectionSock.isClosed())
             {
                 try
@@ -193,16 +166,16 @@ public class EndpointServer
             }
 
             _connectionSock = null;
+            _connectionSockInputStream = null;
+            _connectionSockAddress = null;
         }
     }
 
 
-    private static final int CONNECTION_BUFFER_SIZE = 1024;
-
-
     private ServerSocket _sock = null;
     private Socket _connectionSock = null;
+    private InputStream _connectionSockInputStream = null;
     private InetSocketAddress _connectionSockAddress = null;
 
-    private byte[] _connectionReadBuffer = new byte[CONNECTION_BUFFER_SIZE];
+    private DataStreamReadHelper _inputReader = new DataStreamReadHelper();
 }

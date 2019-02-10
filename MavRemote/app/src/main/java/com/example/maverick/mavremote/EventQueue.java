@@ -46,6 +46,13 @@ public class EventQueue<T>
         return _queue.size();
     }
 
+    public void Clear()
+    {
+        _lock.lock();
+        _queue.clear();
+        _lock.unlock();
+    }
+
     private ArrayDeque<T> _queue = null;
     private ReentrantLock _lock = null;
 }

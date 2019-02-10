@@ -56,7 +56,7 @@ public class DataPacketFactory
         return CreatePacketInternal(header, address);
     }
 
-    public <T extends Serializable> DataPacketRetriever<T> DecodePacket(ByteBuffer packet)
+    public <T extends Serializable> void DecodePacket(ByteBuffer packet, DataPacketRetriever<T> outRetriever)
     {
         ByteArrayInputStream bis = new ByteArrayInputStream(packet.array());
         ObjectInput input = null;
@@ -73,20 +73,23 @@ public class DataPacketFactory
 
                 T obj = (T)input.readObject();
                 input.close();
-                return new DataPacketRetriever<>(PacketType.values()[header.PacketType], obj);
+                outRetriever.ObjectRef = obj;
+                outRetriever.ThisType = PacketType.values()[header.PacketType];
             }
             catch(Exception e)  // Simply. Because ClassCastException, NullPointerException and such can occur.
             {
                 // Packet not decoded properly - nothing special.
                 App.LogLine("Failed to extract data from packet: " + e.getMessage());
                 input.close();
-                return new DataPacketRetriever<>();
+                outRetriever.ObjectRef = null;
+                outRetriever.ThisType = PacketType.Unknown;
             }
         }
         catch(IOException e)
         {
             App.LogLine("Error decoding packet: " + e.getMessage());
-            return new DataPacketRetriever<>();
+            outRetriever.ObjectRef = null;
+            outRetriever.ThisType = PacketType.Unknown;
         }
     }
 

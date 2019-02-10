@@ -5,6 +5,8 @@ import android.util.Log;
 import com.example.maverick.mavremote.App;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -35,7 +37,24 @@ public class Endpoint
         final boolean bSuccess = _sock.isBound() && _sock.isConnected();
         if(bSuccess)
         {
+            try
+            {
+                _sockOutputStream = _sock.getOutputStream();
+                _sockInputStream = _sock.getInputStream();
+                _inputStreamHelper.Init(_sockInputStream);
+            }
+            catch(IOException e)
+            {
+                App.LogLine("Error obtaining streams of socket with given address: "
+                        + address.toString() + "\n" + e.getMessage());
+                _sock = null;
+                return false;
+            }
             _sockAddress = new InetSocketAddress(_sock.getInetAddress(), _sock.getPort());
+        }
+        else
+        {
+            _sock = null;
         }
 
         return bSuccess;
@@ -45,6 +64,8 @@ public class Endpoint
     {
         if(_sock == null)
             return false;
+
+        _inputStreamHelper.Stop();
 
         try
         {
@@ -65,12 +86,12 @@ public class Endpoint
 
     public boolean SendData(ByteBuffer data)
     {
-        if(_sock == null)
+        if(_sock == null || _sockInputStream == null)
             return false;
 
         try
         {
-            _sock.getOutputStream().write(data.array());
+            _sockOutputStream.write(data.array());
             return true;
         }
         catch(IOException e)
@@ -83,54 +104,12 @@ public class Endpoint
         }
     }
 
-    public Byte[] GetData()
+    public ByteBuffer GetData()
     {
-        if(_sock == null)
+        if(_sock == null || _sockInputStream == null)
             return null;
 
-        try
-        {
-            // First test if there is anything to read
-            int testRead = _sock.getChannel().read(_testBuffer);
-            if(testRead <= 0)
-                return null;
-
-            // Read all data
-            ArrayList<Byte> allBytes = new ArrayList<>();
-            allBytes.add(_testBuffer.array()[0]);
-            int bytesRead = 0;
-            do
-            {
-                bytesRead = _sock.getChannel().read(_readBuffer);
-                for(int i = 0; i < bytesRead; ++i)
-                {
-                    allBytes.add(_readBuffer.array()[i]);
-                }
-            }while(bytesRead > 0);
-
-            return (Byte[])allBytes.toArray();
-        }
-        catch(IOException e)
-        {
-            App.LogLine("Error on Socket.GetData with address: "
-                    + _sock.getLocalAddress().toString() + " and port: "
-                    + Integer.toString(_sock.getPort()) + "\n"
-                    + e.getMessage());
-            return null;
-        }
-    }
-
-    public ByteBuffer GetDataBB()
-    {
-        Byte[] bytes = GetData();
-        if(bytes == null || bytes.length == 0)
-            return null;
-
-        byte[] bytesFundamental = new byte[bytes.length];
-        for(int i = 0; i < bytes.length; ++i)
-            bytesFundamental[i] = bytes[i];
-
-        return ByteBuffer.wrap(bytesFundamental);
+        return _inputStreamHelper.Read();
     }
 
     public boolean IsConnected()
@@ -153,6 +132,7 @@ public class Endpoint
 
     protected Socket _sock = null;
     protected SocketAddress _sockAddress = null;
-    protected ByteBuffer _readBuffer = ByteBuffer.allocate(READ_BUFFER_SIZE);
-    protected ByteBuffer _testBuffer = ByteBuffer.allocate(1);
+    protected OutputStream _sockOutputStream = null;
+    protected InputStream _sockInputStream = null;
+    protected DataStreamReadHelper _inputStreamHelper = new DataStreamReadHelper();
 }

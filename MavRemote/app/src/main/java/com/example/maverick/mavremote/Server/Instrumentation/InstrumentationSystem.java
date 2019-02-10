@@ -121,14 +121,14 @@ public final class InstrumentationSystem extends System
         else
         {
             // Use event coder for any other case.
-            ArrayList<InputDeviceEvent> deviceEvents = new ArrayList<>();
-            final boolean bCoded = _eventCoder.ActionEventToCodes(ev, evType, deviceEvents);
+            _tmpDeviceEvents.clear();
+            final boolean bCoded = _eventCoder.ActionEventToCodes(ev, evType, _tmpDeviceEvents);
             if(bCoded)
             {
                 final SendEventWrapper.DeviceType deviceType =
                         evType == ActionEvent.Type.Keyboard
                                 ? SendEventWrapper.DeviceType.Keyboard : SendEventWrapper.DeviceType.Mouse;
-                for(InputDeviceEvent inputDeviceEvent : deviceEvents)
+                for(InputDeviceEvent inputDeviceEvent : _tmpDeviceEvents)
                 {
                     _sendEventWrapper.SendInputEvent(deviceType, inputDeviceEvent);
                     millisWaited = PerformDelay();    // Delay after each sendinputevent.
@@ -185,7 +185,7 @@ public final class InstrumentationSystem extends System
 
     private void CloseRootShell()
     {
-        assert (_shellProc != null);
+        Utility.Assert(_shellProc != null);
 
         try
         {
@@ -193,7 +193,7 @@ public final class InstrumentationSystem extends System
             _shellStream.close();
             _shellStream = null;
         }
-        catch(IOException e)
+        catch(Exception e)
         {
             Log.e(AppServer.TAG, "Failed to close root shell: " + e.getMessage());
             return;
@@ -204,7 +204,7 @@ public final class InstrumentationSystem extends System
             _shellProc.waitFor();
             _shellProc = null;
         }
-        catch(InterruptedException e)
+        catch(Exception e)
         {
             Log.e(AppServer.TAG, "Failed to close root shell: " + e.getMessage());
             return;
@@ -317,6 +317,8 @@ public final class InstrumentationSystem extends System
     */
 
     private EventQueue<ActionEvent> _queue = null;
+
+    private ArrayList<InputDeviceEvent> _tmpDeviceEvents = new ArrayList<>();
 
     private Process _shellProc = null;
     private DataOutputStream _shellStream = null;

@@ -101,7 +101,7 @@ public class ServerNetworkSystem extends NetworkSystem
 
         _endpoint.Update();
 
-        if(!_endpoint.IsConnected())
+        if(!_endpoint.IsConnected())    // TODO: This is probably not working. Check.
         {
             App.LogLine("[ServerNetworkSystem] Lost connection with Client.");
             if(!StartAwaitingConnections())
@@ -116,11 +116,11 @@ public class ServerNetworkSystem extends NetworkSystem
         ByteBuffer receivedBuffer = _endpoint.GetData();
         if(receivedBuffer != null)
         {
-            DataPacketRetriever<ActionEvent> retriever = _packetFactory.DecodePacket(receivedBuffer);
-            if(retriever.IsValid())
+            _packetFactory.DecodePacket(receivedBuffer, _tmpRetriever);
+            if(_tmpRetriever.IsValid())
             {
                 _packetCounter.IncPacketNumCorrect();
-                _actionEventQueue.Enqueue(retriever.ObjectRef);
+                _actionEventQueue.Enqueue(_tmpRetriever.ObjectRef);
             }
             else
             {
@@ -175,5 +175,6 @@ public class ServerNetworkSystem extends NetworkSystem
     protected EndpointServer _endpoint = null;
 
     protected ByteBuffer _broadcastPacket = null;
+    private DataPacketRetriever<ActionEvent> _tmpRetriever = new DataPacketRetriever<>();
     protected long _timerBroadcast = 0;
 }

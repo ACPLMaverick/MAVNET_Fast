@@ -45,10 +45,10 @@ public class ClientNetworkSystem extends NetworkSystem
         ByteBuffer buffer = _endpointBroadcast.GetDataBroadcast();
         if(buffer != null)
         {
-            DataPacketRetriever<SocketAddress> retriever = _packetFactory.DecodePacket(buffer);
-            if(retriever.IsValid())
+            _packetFactory.DecodePacket(buffer, _tmpRetriever);
+            if(_tmpRetriever.IsValid())
             {
-                if(CreateConnectionEndpoint(retriever.ObjectRef) && _endpoint.IsConnected())
+                if(CreateConnectionEndpoint(_tmpRetriever.ObjectRef) && _endpoint.IsConnected())
                 {
                     GoToState(State.Connected);
                 }
@@ -117,4 +117,5 @@ public class ClientNetworkSystem extends NetworkSystem
     protected static final int ENDPOINT_TIMEOUT_MILLIS = 1000;
 
     protected Endpoint _endpoint = null;
+    protected DataPacketRetriever<SocketAddress> _tmpRetriever = new DataPacketRetriever<>();
 }

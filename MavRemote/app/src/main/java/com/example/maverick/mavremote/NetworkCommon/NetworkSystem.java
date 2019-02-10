@@ -142,6 +142,8 @@ public abstract class NetworkSystem extends System
             return false;
         }
 
+        // TODO: Virtual method for checking if peer disconnected which also should lead to ProcessConnectionLost or new ProcessPeerLost.
+
         return true;
     }
 
