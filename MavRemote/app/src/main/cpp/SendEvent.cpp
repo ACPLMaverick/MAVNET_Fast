@@ -10,25 +10,12 @@
 #include <cerrno>
 
 
-#define SE_MOUSE_MOVEMENT_SMART_SYNC 0
-#define SE_MOUSE_MOVEMENT_DONT_SYNC 1
-
 #define JNI_FUNC(funcName) Java_com_example_maverick_mavremote_Server_Instrumentation_SendEventWrapper_##funcName
 #define RET_FALSE_NONZERO(expression) \
 { \
     bool ret = (expression); \
     if(ret != 0) return false; \
 }
-
-//JNICALL JNI_FUNC(stringFromJNI)
-//        (
-//        JNIEnv *env,
-//        jobject /* this */
-//        )
-//{
-//    std::string hello = "Hello from C++";
-//    return env->NewStringUTF(hello.c_str());
-//}
 
 // Declarations
 
@@ -82,9 +69,6 @@ private:
 
     int32_t _devDescriptors[(size_t)DeviceType::NUM];
     bool _bIsInitialised;
-#if SE_MOUSE_MOVEMENT_SMART_SYNC
-    uint8_t _mouseMovementSyncState;
-#endif
 };
 
 
@@ -92,7 +76,7 @@ private:
 
 static SendEvent g_SendEvent;
 
-template <typename T> void PopulateInitArray(JNIEnv* jEnv, jintArray& inputArray,
+template <typename T> void PopulateInitArray(JNIEnv* jEnv, const jintArray& inputArray,
         std::vector<T>& outArray, T badValue)
 {
     jint num = jEnv->GetArrayLength(inputArray);
@@ -112,14 +96,31 @@ template <typename T> void PopulateInitArray(JNIEnv* jEnv, jintArray& inputArray
     jEnv->ReleaseIntArrayElements(inputArray, jKeyCodesPtr, JNI_ABORT);
 }
 
+template <typename T> void PopulateInitArray(JNIEnv* jEnv, const jobjectArray& inputArray,
+        std::vector<T>& outArray, T badValue)
+{
+    const int lengthTotal = jEnv->GetArrayLength(inputArray);
+    for(int i = 0; i < lengthTotal; ++i)
+    {
+        const auto internal = (jintArray)jEnv->GetObjectArrayElement(inputArray, i);
+        if(internal == nullptr)
+        {
+            continue;
+        }
+
+        PopulateInitArray<T>(jEnv, internal, outArray, badValue);
+        jEnv->DeleteLocalRef(internal);
+    }
+}
+
 extern "C" JNIEXPORT jboolean JNICALL JNI_FUNC(SendEventInitialize) (JNIEnv* env, jobject _this,
-                                                    jintArray jKeyCodes, jintArray jMouseCodes,
+                                                    jobjectArray jKeyCodes, jintArray jMouseCodes,
                                                     jintArray jMouseCodeTypes, jint jBadCode)
 {
     std::vector<int32_t> keyCodes;
     std::vector<int32_t> mouseCodes;
     std::vector<SendEvent::MouseCodeType> mouseCodeTypes;
-    int32_t badCode = (int32_t)jBadCode;
+    auto badCode = (int32_t)jBadCode;
 
     PopulateInitArray<int32_t>(env, jKeyCodes, keyCodes, badCode);
     PopulateInitArray<int32_t>(env, jMouseCodes, mouseCodes, badCode);
@@ -151,10 +152,10 @@ extern "C" JNIEXPORT jboolean JNICALL JNI_FUNC(SendEventSendInputEvent) (JNIEnv*
         return jboolean(false);
     }
 
-    const SendEvent::DeviceType devType = (SendEvent::DeviceType)jDeviceType;
-    const uint16_t strType = (uint16_t)jStrType;
-    const uint16_t strCode = (uint16_t)jStrCode;
-    const uint32_t strValue = (uint32_t)jStrValue;
+    const auto devType = (SendEvent::DeviceType)jDeviceType;
+    const auto strType = (uint16_t)jStrType;
+    const auto strCode = (uint16_t)jStrCode;
+    const auto strValue = (uint32_t)jStrValue;
 
     const bool ret = g_SendEvent.SendInputEvent(devType, strType, strCode, strValue);
 
@@ -166,9 +167,6 @@ extern "C" JNIEXPORT jboolean JNICALL JNI_FUNC(SendEventSendInputEvent) (JNIEnv*
 
 SendEvent::SendEvent()
     : _bIsInitialised(false)
-#if SE_MOUSE_MOVEMENT_SMART_SYNC
-    , _mouseMovementSyncState(MOUSE_MOVEMENT_SYNC_STATE_CLEAR)
-#endif
 {
     for(size_t i = 0; i < (size_t)DeviceType::NUM; ++i)
     {
@@ -248,47 +246,7 @@ bool SendEvent::SendInputEvent(DeviceType devType, uint16_t evType, uint16_t evC
 //    if(!_bIsInitialised)
 //        return false;
 
-    bool bSuccess = WriteToDevice(devType, evType, evCode, evValue);
-
-#if SE_MOUSE_MOVEMENT_SMART_SYNC
-    const bool bIsMouseMovement = (devType == DeviceType::Mouse
-            && evType == EV_REL && (evCode == REL_X || evCode == REL_Y));
-
-    if(bIsMouseMovement)
-    {
-        switch(_mouseMovementSyncState)
-        {
-            case MOUSE_MOVEMENT_SYNC_STATE_CLEAR:
-                _mouseMovementSyncState = (uint8_t)evCode;
-                break;
-            case REL_X:
-                if(evCode == REL_Y)
-                {
-                    bSuccess &= WriteSync(devType);
-                    _mouseMovementSyncState = MOUSE_MOVEMENT_SYNC_STATE_CLEAR;
-                }
-                break;
-            case REL_Y:
-                if(evCode == REL_X)
-                {
-                    bSuccess &= WriteSync(devType);
-                    _mouseMovementSyncState = MOUSE_MOVEMENT_SYNC_STATE_CLEAR;
-                }
-                break;
-            default:
-                break;
-        }
-    }
-    else
-#endif
-#if SE_MOUSE_MOVEMENT_DONT_SYNC
-    if(devType != DeviceType::Mouse)
-#endif
-    {
-        bSuccess &= WriteSync(devType);
-    }
-
-    return bSuccess;
+    return WriteToDevice(devType, evType, evCode, evValue);
 }
 
 bool SendEvent::OpenDeviceFile(int32_t& outDescriptor)

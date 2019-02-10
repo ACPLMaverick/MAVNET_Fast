@@ -131,7 +131,7 @@ public final class InstrumentationSystem extends System
                 for(InputDeviceEvent inputDeviceEvent : _tmpDeviceEvents)
                 {
                     _sendEventWrapper.SendInputEvent(deviceType, inputDeviceEvent);
-                    millisWaited = PerformDelay();    // Delay after each sendinputevent.
+                    PerformDelay((int)(inputDeviceEvent.GetDelay() * 1000.0f));    // Delay after each sendinputevent.
                 }
             }
             else
@@ -147,20 +147,13 @@ public final class InstrumentationSystem extends System
                 }
             }
         }
-
-        // TODO: What to do with this?
-        final int millisToWait = ev.GetDelayMillis() - millisWaited;
-        if(millisToWait > 0)
-        {
-            Utility.SleepThread(millisToWait);
-        }
     }
 
-    private int PerformDelay()
+    private int PerformDelay(int millis)
     {
-        final int timeToWait = WAIT_AFTER_EACH_EVENT_MICROS;
+        final int timeToWait = millis == 0 ? WAIT_AFTER_EACH_EVENT_MICROS : millis;
         if(timeToWait > 0)
-            Utility.SleepThreadUs(timeToWait);
+            Utility.SleepThread(timeToWait);
         return timeToWait;
     }
 

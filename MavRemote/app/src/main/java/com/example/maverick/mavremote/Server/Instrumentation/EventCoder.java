@@ -74,7 +74,7 @@ class EventCoder
 		return BAD_CODE;
 	}
 
-	public int[] GetKeycodes()
+	public int[][] GetKeycodes()
 	{
 		return _keycodes;
 	}
@@ -146,6 +146,11 @@ class EventCoder
 		outCodes.add(new InputDeviceEvent(0, 0, 0));
 	}
 
+	public void MakeSync(List<InputDeviceEvent> outCodes, float delay)
+	{
+		outCodes.add(new InputDeviceEvent(0, 0, 0, delay));
+	}
+
 	private void MouseClickEventToCodes(final ActionEvent.MouseClickTypes clickType, List<InputDeviceEvent> outCodes)
 	{
 		ConvertMouseClickEvent(clickType, _tmpConversions);
@@ -160,22 +165,64 @@ class EventCoder
     private boolean TryKeyEventToCodes(int keyEvent, List<InputDeviceEvent> outCodes)
     {
     	Utility.Assert(keyEvent < KEYCODES_NUM);
-    	final int keyCode = _keycodes[keyEvent];
-    	if(keyCode == BAD_CODE)
+    	final int[] keyCodes = _keycodes[keyEvent];
+    	final float delay = _keycodeDelays[keyEvent];
+    	if(keyCodes == null || keyCodes.length < 1 || keyCodes[0] == BAD_CODE)
 		{
 			return false;
 		}
 		else
 		{
-			MakeInputDeviceEventsForKeycode(keyCode, outCodes);
-			return true;
+			boolean bSuccess = true;
+			if(keyCodes.length == 1)
+			{
+				MakeInputDeviceEventsForKeycode(keyCodes[0], delay, outCodes);
+			}
+			else
+			{
+				bSuccess = TryMakeInputDeviceEventsForMultipleKeycodes(keyEvent, delay, keyCodes, outCodes);
+			}
+			return bSuccess;
 		}
     }
 
-	private void MakeInputDeviceEventsForKeycode(int keyCode, List<InputDeviceEvent> outCodes)
+	private void MakeInputDeviceEventsForKeycode(int keyCode, float delay, List<InputDeviceEvent> outCodes)
 	{
 		outCodes.add(new InputDeviceEvent(EV_KEY, keyCode, EV_KEY_VALUE_DOWN));
+		MakeSync(outCodes, delay);
 		outCodes.add(new InputDeviceEvent(EV_KEY, keyCode, EV_KEY_VALUE_UP));
+		MakeSync(outCodes);
+	}
+
+	private boolean TryMakeInputDeviceEventsForMultipleKeycodes(int keyEvent, float delay, int[] keyCodes,
+																List<InputDeviceEvent> outCodes)
+	{
+		boolean bAddedAnyCode = false;
+		for(int keyCode : keyCodes)
+		{
+			if(keyCode == BAD_CODE)
+				continue;
+
+			bAddedAnyCode = true;
+			outCodes.add(new InputDeviceEvent(EV_KEY, keyCode, EV_KEY_VALUE_DOWN));
+		}
+
+		if(!bAddedAnyCode)
+			return false;
+
+		MakeSync(outCodes, delay);
+
+		for(int keyCode : keyCodes)
+		{
+			if(keyCode == BAD_CODE)
+				continue;
+
+			outCodes.add(new InputDeviceEvent(EV_KEY, keyCode, EV_KEY_VALUE_UP));
+		}
+
+		MakeSync(outCodes);
+
+		return true;
 	}
 
     private void MakeInputDeviceEventsForMouseEvent(MouseEventConversion conv, List<InputDeviceEvent> outCodes, final float delay)
@@ -260,32 +307,35 @@ class EventCoder
 	{
 		for(int i = 0; i < KEYCODES_NUM; ++i)
 		{
-			_keycodes[i] = BAD_CODE;
+			_keycodes[i] = null;
+			_keycodeDelays[i] = 0.0f;
 		}
 
 		// According to input-event-codes.h from NDK.
 
-		_keycodes[KeyEvent.KEYCODE_ESCAPE] = 1;
-		_keycodes[KeyEvent.KEYCODE_DPAD_UP] = 103;	// DPad keys are not working, must use arrows.
-		_keycodes[KeyEvent.KEYCODE_DPAD_RIGHT] = 106;
-		_keycodes[KeyEvent.KEYCODE_DPAD_DOWN] = 108;
-		_keycodes[KeyEvent.KEYCODE_DPAD_LEFT] = 105;
-		_keycodes[KeyEvent.KEYCODE_ENTER] = 28;
-		_keycodes[KeyEvent.KEYCODE_BACK] = 1;	// 158 is BACK but it is not working.
-		_keycodes[KeyEvent.KEYCODE_HOME] = 172;	// Might be 102.
-		_keycodes[ActionEvent.GetIntFromSpecialKeyEvent(ActionEvent.SpecialKeyEvent.TaskManager)] = -1; // TODO
-		_keycodes[KeyEvent.KEYCODE_MEDIA_PAUSE] = 119;	// 164, 201
-		_keycodes[KeyEvent.KEYCODE_MEDIA_PLAY] = 207;	// 200, 0x183
-		_keycodes[KeyEvent.KEYCODE_MEDIA_FAST_FORWARD] = 208;
-		_keycodes[KeyEvent.KEYCODE_MEDIA_NEXT] = 0x197;
-		_keycodes[KeyEvent.KEYCODE_MEDIA_REWIND] = 168; // 0x275
-		_keycodes[KeyEvent.KEYCODE_MEDIA_PREVIOUS] = 0x19C;
-		_keycodes[KeyEvent.KEYCODE_MUTE] = 113;	// unmute: 0x274
-		_keycodes[KeyEvent.KEYCODE_SYSRQ] = 99;
-		_keycodes[KeyEvent.KEYCODE_MEDIA_RECORD] = 167; // stoprecord, pauserecord: 0x271, 0x272
-		_keycodes[KeyEvent.KEYCODE_DEL] = 14;
-		_keycodes[KeyEvent.KEYCODE_VOLUME_UP] = 115;
-		_keycodes[KeyEvent.KEYCODE_VOLUME_DOWN] = 114;
+		_keycodes[KeyEvent.KEYCODE_ESCAPE] = new int[]{ 1 };
+		_keycodes[KeyEvent.KEYCODE_DPAD_UP] = new int[]{ 103 };	// DPad keys are not working, must use arrows.
+		_keycodes[KeyEvent.KEYCODE_DPAD_RIGHT] = new int[]{ 106 };
+		_keycodes[KeyEvent.KEYCODE_DPAD_DOWN] = new int[]{ 108 };
+		_keycodes[KeyEvent.KEYCODE_DPAD_LEFT] = new int[]{ 105 };
+		_keycodes[KeyEvent.KEYCODE_ENTER] = new int[]{ 28 };
+		_keycodes[KeyEvent.KEYCODE_BACK] = new int[]{ 1 };	// 158 is BACK but it is not working.
+		_keycodes[KeyEvent.KEYCODE_HOME] = new int[]{ 172 };	// Might be 102.
+		_keycodes[ActionEvent.GetIntFromSpecialKeyEvent(ActionEvent.SpecialKeyEvent.TaskManager)] = new int[]{ BAD_CODE }; // TODO
+		_keycodes[KeyEvent.KEYCODE_MEDIA_PAUSE] = new int[]{ 119 };	// 164, 201
+		_keycodes[KeyEvent.KEYCODE_MEDIA_PLAY] = new int[]{ 207 };	// 200, 0x183
+		_keycodes[KeyEvent.KEYCODE_MEDIA_FAST_FORWARD] = new int[]{ 208 };
+		_keycodes[KeyEvent.KEYCODE_MEDIA_NEXT] = new int[]{ 0x197 };
+		_keycodes[KeyEvent.KEYCODE_MEDIA_REWIND] = new int[]{ 168 }; // 0x275
+		_keycodes[KeyEvent.KEYCODE_MEDIA_PREVIOUS] = new int[]{ 0x19C };
+		_keycodes[KeyEvent.KEYCODE_MUTE] = new int[]{ -1 };	// unmute: 0x274 // Not working. Leaving it like this for now.
+		_keycodes[KeyEvent.KEYCODE_SYSRQ] = new int[]{ 0x74, 0x72 }; // Should be combination of POWER + Volume down (0x74 + 0x72)
+		_keycodes[KeyEvent.KEYCODE_MEDIA_RECORD] = new int[]{ -1 }; // Not working: 167. stoprecord, pauserecord: 0x271, 0x272
+		_keycodes[KeyEvent.KEYCODE_DEL] = new int[]{ 14 };
+		_keycodes[KeyEvent.KEYCODE_VOLUME_UP] = new int[]{ 115 };
+		_keycodes[KeyEvent.KEYCODE_VOLUME_DOWN] = new int[]{ 114 };
+
+		_keycodeDelays[KeyEvent.KEYCODE_SYSRQ] = 1.0f;
 	}
 
 	private void BuildMouseCodeArray()
@@ -319,7 +369,8 @@ class EventCoder
     private final int EV_REL = 2;
 
 	private final int KEYCODES_NUM = KeyEvent.getMaxKeyCode() + 2;
-	private final int[] _keycodes = new int[KEYCODES_NUM];
+	private final int[][] _keycodes = new int[KEYCODES_NUM][];
+	private final float[] _keycodeDelays = new float[KEYCODES_NUM];
 
 	private final int MOUSE_CODES_NUM = MouseEvent.values().length;
 	private final int[] _mouseCodes = new int[MOUSE_CODES_NUM];

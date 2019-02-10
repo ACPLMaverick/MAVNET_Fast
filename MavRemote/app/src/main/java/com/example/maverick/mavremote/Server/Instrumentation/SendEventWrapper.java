@@ -11,7 +11,7 @@ public class SendEventWrapper
         java.lang.System.loadLibrary("SendEvent");
     }
 
-    public native boolean SendEventInitialize(int[] jKeyCodes, int[] jMouseCodes,
+    public native boolean SendEventInitialize(int[][] jKeyCodes, int[] jMouseCodes,
                                               int[] jMouseCodeTypes, int jBadCode);
     public native boolean SendEventCleanup();
     public native boolean SendEventSendInputEvent(int devType,
@@ -30,7 +30,7 @@ public class SendEventWrapper
     {
     }
 
-    public void Initialize(int[] keyCodes, int[] mouseCodes, int[] mouseCodeTypes, int badCode)
+    public void Initialize(int[][] keyCodes, int[] mouseCodes, int[] mouseCodeTypes, int badCode)
     {
         final boolean ret = SendEventInitialize(keyCodes, mouseCodes, mouseCodeTypes, badCode);
         if(!ret)
