@@ -92,9 +92,9 @@ class EventCoder
 	public boolean ActionEventToCodes(final ActionEvent ev, final ActionEvent.Type evType,
 									  List<InputDeviceEvent> outCodes)
 	{
-		if(evType == ActionEvent.Type.Keyboard)
+		if(ActionEvent.IsKeyboardEvent(evType))
 		{
-			return TryKeyEventToCodes(ev.GetKeyboardEv(), outCodes);
+			return TryKeyEventToCodes(ev.GetKeyboardEv(), evType, outCodes);
 		}
 		else if(evType == ActionEvent.Type.MouseClicks)
 		{
@@ -162,9 +162,13 @@ class EventCoder
 		_tmpConversions.clear();
 	}
 
-    private boolean TryKeyEventToCodes(int keyEvent, List<InputDeviceEvent> outCodes)
+    private boolean TryKeyEventToCodes(int keyEvent, ActionEvent.Type keyEventType, List<InputDeviceEvent> outCodes)
     {
-    	Utility.Assert(keyEvent < KEYCODES_NUM);
+    	if(keyEvent >= KEYCODES_NUM)
+		{
+			return false;
+		}
+
     	final int[] keyCodes = _keycodes[keyEvent];
     	final float delay = _keycodeDelays[keyEvent];
     	if(keyCodes == null || keyCodes.length < 1 || keyCodes[0] == BAD_CODE)
@@ -176,10 +180,22 @@ class EventCoder
 			boolean bSuccess = true;
 			if(keyCodes.length == 1)
 			{
-				MakeInputDeviceEventsForKeycode(keyCodes[0], delay, outCodes);
+				switch (keyEventType)
+				{
+					case KeyClick:
+						MakeInputDeviceEventsForKeycode(keyCodes[0], delay, outCodes);
+						break;
+					case KeyDown:
+						MakeInputDeviceEventsForKeycodeDown(keyCodes[0], outCodes);
+						break;
+					case KeyUp:
+						MakeInputDeviceEventsForKeycodeUp(keyCodes[0], outCodes);
+						break;
+				}
 			}
 			else
 			{
+				Utility.Assert(keyEventType == ActionEvent.Type.KeyClick); // Other types not supported in this case.
 				bSuccess = TryMakeInputDeviceEventsForMultipleKeycodes(keyEvent, delay, keyCodes, outCodes);
 			}
 			return bSuccess;
@@ -190,6 +206,18 @@ class EventCoder
 	{
 		outCodes.add(new InputDeviceEvent(EV_KEY, keyCode, EV_KEY_VALUE_DOWN));
 		MakeSync(outCodes, delay);
+		outCodes.add(new InputDeviceEvent(EV_KEY, keyCode, EV_KEY_VALUE_UP));
+		MakeSync(outCodes);
+	}
+
+	private void MakeInputDeviceEventsForKeycodeDown(int keyCode, List<InputDeviceEvent> outCodes)
+	{
+		outCodes.add(new InputDeviceEvent(EV_KEY, keyCode, EV_KEY_VALUE_DOWN));
+		MakeSync(outCodes);
+	}
+
+	private void MakeInputDeviceEventsForKeycodeUp(int keyCode, List<InputDeviceEvent> outCodes)
+	{
 		outCodes.add(new InputDeviceEvent(EV_KEY, keyCode, EV_KEY_VALUE_UP));
 		MakeSync(outCodes);
 	}
@@ -321,16 +349,14 @@ class EventCoder
 		_keycodes[KeyEvent.KEYCODE_ENTER] = new int[]{ 28 };
 		_keycodes[KeyEvent.KEYCODE_BACK] = new int[]{ 1 };	// 158 is BACK but it is not working.
 		_keycodes[KeyEvent.KEYCODE_HOME] = new int[]{ 172 };	// Might be 102.
-		_keycodes[ActionEvent.GetIntFromSpecialKeyEvent(ActionEvent.SpecialKeyEvent.TaskManager)] = new int[]{ BAD_CODE }; // TODO
-		_keycodes[KeyEvent.KEYCODE_MEDIA_PAUSE] = new int[]{ 119 };	// 164, 201
-		_keycodes[KeyEvent.KEYCODE_MEDIA_PLAY] = new int[]{ 207 };	// 200, 0x183
+		_keycodes[KeyEvent.KEYCODE_MEDIA_PLAY] = new int[]{ 0xA4 };	// 200, 0x183
 		_keycodes[KeyEvent.KEYCODE_MEDIA_FAST_FORWARD] = new int[]{ 208 };
-		_keycodes[KeyEvent.KEYCODE_MEDIA_NEXT] = new int[]{ 0x197 };
+		_keycodes[KeyEvent.KEYCODE_MEDIA_NEXT] = new int[]{ 0xA3 };
 		_keycodes[KeyEvent.KEYCODE_MEDIA_REWIND] = new int[]{ 168 }; // 0x275
-		_keycodes[KeyEvent.KEYCODE_MEDIA_PREVIOUS] = new int[]{ 0x19C };
-		_keycodes[KeyEvent.KEYCODE_MUTE] = new int[]{ -1 };	// unmute: 0x274 // Not working. Leaving it like this for now.
+		_keycodes[KeyEvent.KEYCODE_MEDIA_PREVIOUS] = new int[]{ 0xA5 };
+		_keycodes[KeyEvent.KEYCODE_MUTE] = new int[]{ -1 };	// unmute: 0x274 // Works via inputevent.
 		_keycodes[KeyEvent.KEYCODE_SYSRQ] = new int[]{ 0x74, 0x72 }; // Should be combination of POWER + Volume down (0x74 + 0x72)
-		_keycodes[KeyEvent.KEYCODE_MEDIA_RECORD] = new int[]{ -1 }; // Not working: 167. stoprecord, pauserecord: 0x271, 0x272
+		_keycodes[KeyEvent.KEYCODE_MEDIA_RECORD] = new int[]{ -1 }; // Forefit this as it is supposedly not supported by android 4.2.2. stoprecord, pauserecord: 0x271, 0x272
 		_keycodes[KeyEvent.KEYCODE_DEL] = new int[]{ 14 };
 		_keycodes[KeyEvent.KEYCODE_VOLUME_UP] = new int[]{ 115 };
 		_keycodes[KeyEvent.KEYCODE_VOLUME_DOWN] = new int[]{ 114 };
@@ -368,7 +394,7 @@ class EventCoder
 	private final int EV_KEY_VALUE_UP = 0;
     private final int EV_REL = 2;
 
-	private final int KEYCODES_NUM = KeyEvent.getMaxKeyCode() + 2;
+	private final int KEYCODES_NUM = KeyEvent.getMaxKeyCode();
 	private final int[][] _keycodes = new int[KEYCODES_NUM][];
 	private final float[] _keycodeDelays = new float[KEYCODES_NUM];
 

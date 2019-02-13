@@ -19,12 +19,14 @@ class HoldElement
         EventPeriod = eventPeriod;
         Timer = eventPeriod;    // So the event fires on the nearest update.
         Event = event;
+        HasVibrated = false;
     }
 
     public final Button Btn;
     public final Runnable Event;
     public final int EventPeriod;
     public int Timer;
+    public boolean HasVibrated;
 }
 
 public class ButtonHoldHelper
@@ -52,7 +54,12 @@ public class ButtonHoldHelper
 
             if(element.Timer >= element.EventPeriod)
             {
+                _bLastHasVibrated = element.HasVibrated;
                 element.Event.run();
+                if(!element.HasVibrated)
+                {
+                    element.HasVibrated = true;
+                }
                 element.Timer = 0;
             }
         }
@@ -85,6 +92,7 @@ public class ButtonHoldHelper
         _lock.unlock();
     }
 
+    public boolean GetLastHasVibrated() { return _bLastHasVibrated; }
 
     protected void InitDelta()
     {
@@ -110,4 +118,6 @@ public class ButtonHoldHelper
 
     protected long _currentTime = 0;
     protected long _prevTime = 0;
+
+    protected boolean _bLastHasVibrated = false;
 }

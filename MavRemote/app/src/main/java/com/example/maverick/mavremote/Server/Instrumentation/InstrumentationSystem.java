@@ -1,6 +1,5 @@
 package com.example.maverick.mavremote.Server.Instrumentation;
 
-import android.os.SystemClock;
 import android.util.Log;
 
 import com.example.maverick.mavremote.Actions.ActionEvent;
@@ -103,11 +102,7 @@ public final class InstrumentationSystem extends System
 
         assert(_shellStream != null);
 
-        int millisWaited = 0;
-
         final ActionEvent.Type evType = ev.ResolveType();
-
-        long now = SystemClock.uptimeMillis();
 
         if(evType == ActionEvent.Type.Text)
         {
@@ -125,8 +120,7 @@ public final class InstrumentationSystem extends System
             final boolean bCoded = _eventCoder.ActionEventToCodes(ev, evType, _tmpDeviceEvents);
             if(bCoded)
             {
-                final SendEventWrapper.DeviceType deviceType =
-                        evType == ActionEvent.Type.Keyboard
+                final SendEventWrapper.DeviceType deviceType = ActionEvent.IsKeyboardEvent(evType)
                                 ? SendEventWrapper.DeviceType.Keyboard : SendEventWrapper.DeviceType.Mouse;
                 for(InputDeviceEvent inputDeviceEvent : _tmpDeviceEvents)
                 {
@@ -137,16 +131,43 @@ public final class InstrumentationSystem extends System
             else
             {
                 // If coder has failed, resort to the legacy slower methods.
-                if(evType == ActionEvent.Type.Keyboard)
+                if(evType == ActionEvent.Type.KeyClick)
                 {
-                    ExecuteRootShellCommand("input keyevent " + String.valueOf(ev.GetKeyboardEv()));
+                    if(!TryPerformSpecialKeyEvents(ev.GetKeyboardEv()))
+                    {
+                        // Last resort...
+                        ExecuteRootShellCommand("input keyevent " + String.valueOf(ev.GetKeyboardEv()));
+                    }
                 }
                 else
                 {
-                    App.LogLine("Instrumentation couldn't resolve an ActionEvent!");
+                    App.LogLine("Instrumentation couldn't resolve an ActionEvent: " + ev.toString());
                 }
             }
         }
+    }
+
+    private boolean TryPerformSpecialKeyEvents(int keyEvent)
+    {
+        final ActionEvent.SpecialKeyEvent specialKeyEvent = ActionEvent.GetSpecialKeyEventFromInt(keyEvent);
+
+        switch (specialKeyEvent)
+        {
+            case TaskManager:
+                SendTouchTap(200, 700);
+                return true;
+            case Subtitles: // This works ONLY for MX Player. Maybe send two different clicks..?
+                SendTouchTap(1147, 31);
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    // Arguments are position in 1280x720 screen space.
+    private void SendTouchTap(final int posX, final int posY)
+    {
+        ExecuteRootShellCommand("input touchscreen tap " + String.valueOf(posX) + " " + String.valueOf(posY));
     }
 
     private int PerformDelay(int millis)

@@ -2,6 +2,8 @@ package com.example.maverick.mavremote.Actions;
 
 import android.view.KeyEvent;
 
+import com.example.maverick.mavremote.Utility;
+
 import java.io.Serializable;
 
 public class ActionEvent implements Serializable
@@ -9,16 +11,17 @@ public class ActionEvent implements Serializable
     @Override
     public String toString() {
         return "ActionEvent{" +
-                "_keyboardMouseEv=" + _keyboardMouseEv +
+                "_keyboardMouseEv=" + GetKeyboardEv() +
                 ", _movementEv=" + _movementEv +
-                ", _delayMillis=" + _delayMillis +
                 ", _text=" + _text +
                 '}';
     }
 
     public enum Type
     {
-        Keyboard,
+        KeyClick,
+        KeyDown,
+        KeyUp,
         MouseClicks,
         Movement,
         Text
@@ -37,28 +40,20 @@ public class ActionEvent implements Serializable
     public enum SpecialKeyEvent
     {
         InvalidValue,
-        TaskManager
+        TaskManager,
+        Brightness,
+        Subtitles
     }
 
 
     public static int GetIntFromSpecialKeyEvent(SpecialKeyEvent keyEvent)
     {
-        if(_specialKeyEventBaseValue == -1)
-        {
-            _specialKeyEventBaseValue = KeyEvent.getMaxKeyCode();
-        }
-
         return _specialKeyEventBaseValue + keyEvent.ordinal();
     }
 
     // Returns InvalidValue if code is not a special key event.
     public static SpecialKeyEvent GetSpecialKeyEventFromInt(int code)
     {
-        if(_specialKeyEventBaseValue == -1)
-        {
-            _specialKeyEventBaseValue = KeyEvent.getMaxKeyCode();
-        }
-
         if(code < _specialKeyEventBaseValue || code >= _specialKeyEventBaseValue + SpecialKeyEvent.values().length)
         {
             return SpecialKeyEvent.InvalidValue;
@@ -70,14 +65,19 @@ public class ActionEvent implements Serializable
         }
     }
 
+    public static boolean IsKeyboardEvent(Type evType)
+    {
+        return evType == Type.KeyClick || evType == Type.KeyDown || evType == Type.KeyUp;
+    }
+
 
     public ActionEvent
     (
-            int keyboardEv,
-            int delayMillis
+            Type keyboardEvType,
+            int keyboardEv
     )
     {
-        Init(keyboardEv, null, delayMillis, false);
+        Init(keyboardEv, keyboardEvType, null, false);
     }
 
     public ActionEvent
@@ -85,16 +85,7 @@ public class ActionEvent implements Serializable
                     int keyboardEv
             )
     {
-        Init(keyboardEv, null, 0, false);
-    }
-
-    public ActionEvent
-            (
-                    MouseClickTypes mouseEv,
-                    int delayMillis
-            )
-    {
-        Init(mouseEv.ordinal(), null, delayMillis, true);
+        Init(keyboardEv, null, null, false);
     }
 
     public ActionEvent
@@ -102,16 +93,7 @@ public class ActionEvent implements Serializable
                     MouseClickTypes mouseEv
             )
     {
-        Init(mouseEv.ordinal(), null, 0, true);
-    }
-
-    public ActionEvent
-            (
-                    Movement movementEv,
-                    int delayMillis
-            )
-    {
-        Init(KEYBOARD_EV_UNUSED, movementEv, delayMillis, false);
+        Init(mouseEv.ordinal(), null, null, true);
     }
 
     public ActionEvent
@@ -119,7 +101,7 @@ public class ActionEvent implements Serializable
                     Movement movementEv
             )
     {
-        Init(KEYBOARD_EV_UNUSED, movementEv, 0, false);
+        Init(KEYBOARD_EV_UNUSED, null, movementEv, false);
     }
 
     public ActionEvent(final String text)
@@ -129,7 +111,7 @@ public class ActionEvent implements Serializable
 
     public int GetKeyboardEv()
     {
-        return _keyboardMouseEv;
+        return _keyboardMouseEv & 0x0000FFFF;
     }
 
     public MouseClickTypes GetMouseEv()
@@ -150,11 +132,6 @@ public class ActionEvent implements Serializable
         return _text;
     }
 
-    public int GetDelayMillis()
-    {
-        return _delayMillis;
-    }
-
     public Type ResolveType()
     {
         if(!_text.equals(""))
@@ -170,7 +147,7 @@ public class ActionEvent implements Serializable
             }
             else
             {
-                return Type.Keyboard;
+                return GetKeyboardEventType();
             }
         }
         else if(_keyboardMouseEv == KEYBOARD_EV_UNUSED && _movementEv != null)
@@ -178,42 +155,53 @@ public class ActionEvent implements Serializable
             return Type.Movement;
         }
 
-        assert(false); // Cant get here.
+        Utility.Assert(false); // Cant get here.
 
-        return Type.Keyboard;
+        return Type.KeyClick;
     }
 
 
-    private void Init(int keyboardMouseEv, Movement movement, int delayMillis, boolean isMouseEv)
+    private void Init(int keyboardMouseEv, Type keyboardEvType, Movement movement, boolean isMouseEv)
     {
         if(isMouseEv)
         {
             SetMouseEv(keyboardMouseEv);
         }
-        else
+        else if(keyboardMouseEv != KEYBOARD_EV_UNUSED)
         {
+            Utility.Assert((keyboardMouseEv & 0xFFFF0000) == 0);
             _keyboardMouseEv = keyboardMouseEv;
+            if(keyboardEvType == null)
+            {
+                keyboardEvType = Type.KeyClick;
+            }
+            final int masked = keyboardEvType.ordinal() << 16;
+            _keyboardMouseEv |= masked;
         }
         _movementEv = movement;
-        _delayMillis = delayMillis;
     }
 
     private void SetMouseEv(int value)
     {
         ++value;
         _keyboardMouseEv = ~value;
-        assert(_keyboardMouseEv < 0);
+        Utility.Assert(_keyboardMouseEv < 0);
     }
 
+    private ActionEvent.Type GetKeyboardEventType()
+    {
+        final int masked = _keyboardMouseEv >>> 16;
+        Utility.Assert(masked >= Type.KeyClick.ordinal() && masked <= Type.KeyUp.ordinal());
+        return Type.values()[masked];
+    }
 
 
     private static final int KEYBOARD_EV_UNUSED = 0xFADEBEEF;
 
-    private static int _specialKeyEventBaseValue = -1;
+    private static int _specialKeyEventBaseValue = 0x0000FFFF - SpecialKeyEvent.values().length;
 
 
     private int _keyboardMouseEv = KEYBOARD_EV_UNUSED;
     private Movement _movementEv = null;
-    private int _delayMillis = 0;
     private String _text = "";
 }

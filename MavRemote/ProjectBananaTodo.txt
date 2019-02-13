@@ -1,11 +1,7 @@
-- Rewinding works but only for one skip (0xA5) (0xA3)
-- Pause not working PLAYPAUSE - (0xA4)
-- Start/stop not working
-
-- Rec not working   (???)
-
 - Make buildsystem without two applications appearing in android.
+- Try lowering CPU and battery usage.
 
+- Client's UI can get broken.
 
 - Crash on EndpointServer update when failed to connect.
 - Error on creating EndpointDatagram: bind failed: EADDRINUSE (Address already in use)
@@ -15,6 +11,10 @@
 - Something weird happened on clicking server notification (do you want to exit message appeared)
 
 - Notification does not disappear on exit.
+
+- Set up autostart & autorestart for:
+	- MavRemote
+	- FTP Server
 
 
 - 12-31 21:20:00.858 25375-25503/com.example.maverick.mavremote E/dalvikvm-heap: Out of memory on a 16400-byte allocation.

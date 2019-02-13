@@ -1,6 +1,5 @@
 package com.example.maverick.mavremote.Client;
 
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -98,19 +97,17 @@ public class InputSystem extends System
         // Task manager needs to be handled with a special key code.
         AssignClickEventToButton(btn, ActionEvent.GetIntFromSpecialKeyEvent(ActionEvent.SpecialKeyEvent.TaskManager));
 
-        btn = GetMenu().GetButtons().get(R.id.btnMediaPause);
-        AssignClickEventToButton(btn, KeyEvent.KEYCODE_MEDIA_PAUSE);
-
-        btn = GetMenu().GetButtons().get(R.id.btnMediaPlay);
+        btn = GetMenu().GetButtons().get(R.id.btnMediaPlayPause);
         AssignClickEventToButton(btn, KeyEvent.KEYCODE_MEDIA_PLAY);
 
+        btn = GetMenu().GetButtons().get(R.id.btnMediaSubtitles);
+        AssignClickEventToButton(btn, ActionEvent.GetIntFromSpecialKeyEvent(ActionEvent.SpecialKeyEvent.Subtitles));
+
         btn = GetMenu().GetButtons().get(R.id.btnMediaForward);
-        AssignHoldAndClickEventsToButton(btn, KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
-                KeyEvent.KEYCODE_MEDIA_PLAY, KeyEvent.KEYCODE_MEDIA_NEXT);
+        AssignHoldAndClickEventsToButton(btn, KeyEvent.KEYCODE_MEDIA_FAST_FORWARD, KeyEvent.KEYCODE_MEDIA_NEXT);
 
         btn = GetMenu().GetButtons().get(R.id.btnMediaBackwards);
-        AssignHoldAndClickEventsToButton(btn, KeyEvent.KEYCODE_MEDIA_REWIND,
-                KeyEvent.KEYCODE_MEDIA_PLAY, KeyEvent.KEYCODE_MEDIA_PREVIOUS);
+        AssignHoldAndClickEventsToButton(btn, KeyEvent.KEYCODE_MEDIA_REWIND, KeyEvent.KEYCODE_MEDIA_PREVIOUS);
 
         btn = GetMenu().GetButtons().get(R.id.btnMute);
         AssignClickEventToButton(btn, KeyEvent.KEYCODE_MUTE);
@@ -118,8 +115,8 @@ public class InputSystem extends System
         btn = GetMenu().GetButtons().get(R.id.btnScreen);
         AssignClickEventToButton(btn, KeyEvent.KEYCODE_SYSRQ);
 
-        btn = GetMenu().GetButtons().get(R.id.btnRec);
-        AssignClickEventToButton(btn, KeyEvent.KEYCODE_MEDIA_RECORD);
+        btn = GetMenu().GetButtons().get(R.id.btnBrightness);
+        AssignClickEventToButton(btn, ActionEvent.GetIntFromSpecialKeyEvent(ActionEvent.SpecialKeyEvent.Brightness));
 
         btn = GetMenu().GetButtons().get(R.id.btnBackspace);
         AssignClickEventToButton(btn, KeyEvent.KEYCODE_DEL, new Runnable()
@@ -175,7 +172,7 @@ public class InputSystem extends System
                                 || ke.getKeyCode() == KeyEvent.KEYCODE_VOLUME_DOWN
                         )
                 {
-                    PassKeyboardEvent(ke.getKeyCode());
+                    PassKeyboardEvent(ke.getKeyCode(), false);
                 }
                 else if(ke.getKeyCode() == KeyEvent.KEYCODE_BACK)
                 {
@@ -243,7 +240,7 @@ public class InputSystem extends System
                                             @Override
                                             public void run()
                                             {
-                                                PassKeyboardEvent(kbEvent);
+                                                PassKeyboardEvent(kbEvent, _buttonHoldHelper.GetLastHasVibrated());
                                             }
                                         });
                             }
@@ -263,8 +260,7 @@ public class InputSystem extends System
         });
     }
 
-    private void AssignHoldAndClickEventsToButton(final Button button, final int kbEventHoldIn,
-                                                  final int kbEventHoldOut, final int kbEventClick)
+    private void AssignHoldAndClickEventsToButton(final Button button, final int kbEventHold, final int kbEventClick)
     {
         App.GetInstance().GetUIManager().PerformAction(new Runnable()
         {
@@ -286,7 +282,7 @@ public class InputSystem extends System
                     public boolean onLongClick(View view)
                     {
                         _longClickHelper.put((Button)view, (Button)view);
-                        PassKeyboardEvent(kbEventHoldIn, true);
+                        PassKeyboardHoldEvent(kbEventHold, false);
                         return true;
                     }
                 });
@@ -304,7 +300,7 @@ public class InputSystem extends System
                                 if(_longClickHelper.containsKey(btn))
                                 {
                                     _longClickHelper.remove(btn);
-                                    PassKeyboardEvent(kbEventHoldOut);
+                                    PassKeyboardHoldEvent(kbEventHold, true);
                                 }
                             }
                             break;
@@ -351,9 +347,43 @@ public class InputSystem extends System
             @Override
             public void run()
             {
-                PassScroll(-_scrollAreaHelper.GetLatestMovementDeltaY());
+                ProcessScroll(-_scrollAreaHelper.GetLatestMovementDeltaYFlt());
             }
         });
+        _scrollAreaHelper.AssignEventHandlerToButtonAction(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                ResetScroll();
+            }
+        });
+    }
+
+    private void ProcessScroll(float scroll)
+    {
+        int scrollInt;
+        if(Math.abs(scroll) < 1.0f)
+        {
+            _scrollAccumulator += scroll;
+            scrollInt = (int)_scrollAccumulator;
+            _scrollAccumulator -= (float)scrollInt;
+        }
+        else
+        {
+            ResetScroll();
+            scrollInt = (int)scroll;
+        }
+
+        if(scrollInt != 0)
+        {
+            PassScroll(scrollInt);
+        }
+    }
+
+    private void ResetScroll()
+    {
+        _scrollAccumulator = 0.0f;
     }
 
     private Menu GetMenu()
@@ -403,20 +433,36 @@ public class InputSystem extends System
 
     private void PassKeyboardEvent(int kbEvent)
     {
-        PassKeyboardEvent(kbEvent, false);
+        PassKeyboardEvent(kbEvent, true);
     }
 
-    private void PassKeyboardEvent(int kbEvent, boolean isButtonHoldDown)
+    private void PassKeyboardEvent(int kbEvent, boolean bVibrate)
     {
         App.LogLine("[InputSystem] Pressing key: " + KeyEvent.keyCodeToString(kbEvent));
 
-        if(isButtonHoldDown)
+        if(bVibrate)
         {
-            Utility.Vibrate(BUTTON_HOLD_VIBRATION_TIME_MS);
+            Utility.Vibrate(MOUSE_OR_BUTTON_CLICK_VIBRATION_TIME_MS);
         }
 
         ActionEvent ev = new ActionEvent(kbEvent);
+        _eventQueue.Enqueue(ev);
+    }
 
+    private void PassKeyboardHoldEvent(int kbEvent, boolean isUp)
+    {
+        App.LogLine("[InputSystem] " + (isUp ? "Releasing" : "Holding down") + " key: " + KeyEvent.keyCodeToString(kbEvent));
+
+        if(!isUp)
+        {
+            Utility.Vibrate(BUTTON_HOLD_VIBRATION_TIME_MS);
+        }
+        else
+        {
+            Utility.Vibrate(MOUSE_OR_BUTTON_CLICK_VIBRATION_TIME_MS);
+        }
+
+        ActionEvent ev = new ActionEvent(isUp ? ActionEvent.Type.KeyUp : ActionEvent.Type.KeyDown, kbEvent);
         _eventQueue.Enqueue(ev);
     }
 
@@ -431,7 +477,7 @@ public class InputSystem extends System
         }
         else if(mouseClick == ActionEvent.MouseClickTypes.LMBClick)
         {
-            Utility.Vibrate(MOUSE_CLICK_VIBRATION_TIME_MS);
+            Utility.Vibrate(MOUSE_OR_BUTTON_CLICK_VIBRATION_TIME_MS);
         }
 
         ActionEvent ev = new ActionEvent(mouseClick);
@@ -468,17 +514,18 @@ public class InputSystem extends System
 
 
     private static final long BUTTON_HOLD_VIBRATION_TIME_MS = 60;
-    private static final long MOUSE_CLICK_VIBRATION_TIME_MS = 30;
+    private static final long MOUSE_OR_BUTTON_CLICK_VIBRATION_TIME_MS = 30;
     private static final long MOUSE_DOWN_VIBRATION_TIME_MS = 80;
-    private static final int BUTTON_HOLD_PERIOD_MILLIS = 750;
+    private static final int BUTTON_HOLD_PERIOD_MILLIS = 350;
     private static final float TOUCH_SCALE = 1.3f;
-    private static final float SCROLL_SCALE = 0.1f;
+    private static final float SCROLL_SCALE = 0.01f;
 
     private ButtonHoldHelper _buttonHoldHelper = null;
     private TouchAreaHelper _touchAreaHelper = null;
     private TouchAreaHelper _scrollAreaHelper = null;
     private HashMap<Button, Button> _longClickHelper = null;
     private OSKHelper _oskHelper = null;
+    private float _scrollAccumulator = 0.0f;
 
     private EventQueue<ActionEvent> _eventQueue = null;
 }

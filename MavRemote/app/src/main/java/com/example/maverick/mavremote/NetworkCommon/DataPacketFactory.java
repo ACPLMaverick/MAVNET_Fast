@@ -56,6 +56,7 @@ public class DataPacketFactory
         return CreatePacketInternal(header, address);
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends Serializable> void DecodePacket(ByteBuffer packet, DataPacketRetriever<T> outRetriever)
     {
         ByteArrayInputStream bis = new ByteArrayInputStream(packet.array());

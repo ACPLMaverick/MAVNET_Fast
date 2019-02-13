@@ -112,15 +112,16 @@ public class TouchAreaHelper
         return _latestClickType;
     }
 
+    public float GetLatestMovementDeltaXFlt() { return _latestMovementDeltaX * _movementScale; }
+
+    public float GetLatestMovementDeltaYFlt() { return _latestMovementDeltaY * _movementScale; }
+
     public int GetLatestMovementDeltaX()
     {
-        return (int)(_latestMovementDeltaX * _movementScale);
+        return (int)(GetLatestMovementDeltaXFlt());
     }
 
-    public int GetLatestMovementDeltaY()
-    {
-        return (int)(_latestMovementDeltaY * _movementScale);
-    }
+    public int GetLatestMovementDeltaY() { return (int)(GetLatestMovementDeltaYFlt()); }
 
     public boolean IsReady()
     {

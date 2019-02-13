@@ -97,28 +97,17 @@ public final class TestSystem extends System
     {
         Log.d(AppServer.TAG, "Test 01 started...");
         final int delayTime = 500;
-        
-        if(_kbVersion == 1)
-        {
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_LEFT));
-            Utility.SleepThread(delayTime);
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_RIGHT));
-            Utility.SleepThread(delayTime);
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_RIGHT));
-            Utility.SleepThread(delayTime);
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_LEFT));
-            Utility.SleepThread(delayTime);
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_DOWN));
-            Utility.SleepThread(delayTime);
-        }
-        else if(_kbVersion == 2)
-        {
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_LEFT, delayTime));
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_RIGHT, delayTime));
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_RIGHT, delayTime));
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_LEFT, delayTime));
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_DOWN, delayTime));
-        }
+
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_LEFT));
+        Utility.SleepThread(delayTime);
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_RIGHT));
+        Utility.SleepThread(delayTime);
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_RIGHT));
+        Utility.SleepThread(delayTime);
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_LEFT));
+        Utility.SleepThread(delayTime);
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_DOWN));
+        Utility.SleepThread(delayTime);
     }
 
     private void RunTestKb02()
@@ -138,32 +127,19 @@ public final class TestSystem extends System
     {
         final int sleepTime = 1250;
 
-        if(_kbVersion == 1)
-        {
-            Utility.SleepThread(sleepTime);
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_DOWN));
-            Utility.SleepThread(sleepTime);
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_DOWN));
-            Utility.SleepThread(sleepTime);
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_DOWN));
-            Utility.SleepThread(sleepTime);
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_RIGHT));
-            Utility.SleepThread(sleepTime);
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_DOWN));
-            Utility.SleepThread(sleepTime);
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_ENTER));
-            Utility.SleepThread(1500);
-        }
-        else if(_kbVersion == 2)
-        {
-            Utility.SleepThread(sleepTime);
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_DOWN, sleepTime));
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_DOWN, sleepTime));
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_DOWN, sleepTime));
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_RIGHT, sleepTime));
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_DOWN, sleepTime));
-            InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_ENTER, 1500));
-        }
+        Utility.SleepThread(sleepTime);
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_DOWN));
+        Utility.SleepThread(sleepTime);
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_DOWN));
+        Utility.SleepThread(sleepTime);
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_DOWN));
+        Utility.SleepThread(sleepTime);
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_RIGHT));
+        Utility.SleepThread(sleepTime);
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_DPAD_DOWN));
+        Utility.SleepThread(sleepTime);
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_ENTER));
+        Utility.SleepThread(1500);
 
         for(int i = 0; i < 12; ++i)
         {
@@ -229,7 +205,8 @@ public final class TestSystem extends System
 
     private void RunTestMouse02()
     {
-        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_BACK, 1500));
+        InstrumentationSystem.Enqueue(new ActionEvent(KeyEvent.KEYCODE_BACK));
+        Utility.SleepThread(1500);
         final int oneMovementLength = 5;
         final int oneSideMovementCount = 25;
         final int movementDelay = 100;
@@ -264,6 +241,4 @@ public final class TestSystem extends System
             }
         }
     }
-
-    private static final int _kbVersion = 2;
 }
