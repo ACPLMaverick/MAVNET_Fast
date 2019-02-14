@@ -25,6 +25,31 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'armeabi-v7a', 'arm64-v8a' //select ABIs to build APKs for
+            universalApk false //generate an additional APK that contains all the ABIs
+        }
+    }
+
+    flavorDimensions "version"
+
+    productFlavors {
+        server {
+            dimension "version"
+            applicationIdSuffix ".server"
+            versionNameSuffix "-server"
+        }
+        client {
+            dimension "version"
+            applicationIdSuffix ".client"
+            versionNameSuffix "-client"
+        }
+    }
+
     externalNativeBuild {
         cmake {
             path "CMakeLists.txt"

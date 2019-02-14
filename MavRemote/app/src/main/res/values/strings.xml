@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">MavRemote</string>
+    <string name="app_name_server">MavRemote Server</string>
+    <string name="app_name_client">MavRemote Client</string>
 </resources>

@@ -1,5 +1,4 @@
-- Make buildsystem without two applications appearing in android.
-- Try lowering CPU and battery usage.
+- Try lowering CPU usage.
 
 - Client's UI can get broken.
 
