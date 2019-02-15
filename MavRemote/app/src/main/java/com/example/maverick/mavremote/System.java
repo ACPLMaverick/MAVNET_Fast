@@ -48,7 +48,7 @@ public abstract class System
 
     protected abstract void MainLoop();
 
-    protected long GetTickSleepMs() { return 0; }
+    protected long GetTickSleepMs() { return 1; }
 
 
     protected ReentrantLock _systemLock = new ReentrantLock();

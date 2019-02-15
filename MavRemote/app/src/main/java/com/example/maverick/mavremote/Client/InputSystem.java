@@ -240,7 +240,7 @@ public class InputSystem extends System
                                             @Override
                                             public void run()
                                             {
-                                                PassKeyboardEvent(kbEvent, _buttonHoldHelper.GetLastHasVibrated());
+                                                PassKeyboardEvent(kbEvent, !_buttonHoldHelper.GetLastHasVibrated());
                                             }
                                         });
                             }

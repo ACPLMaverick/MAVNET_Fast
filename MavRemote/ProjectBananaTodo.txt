@@ -1,26 +1,27 @@
-- Try lowering CPU usage.
-
-- Client's UI can get broken.
+- Server doesn't know whether client disconnects and vice versa
 
 - Crash on EndpointServer update when failed to connect.
 - Error on creating EndpointDatagram: bind failed: EADDRINUSE (Address already in use)
 
-- Server doesn't know whether client disconnects and vice versa
-
 - Something weird happened on clicking server notification (do you want to exit message appeared)
-
-- Notification does not disappear on exit.
 
 - Set up autostart & autorestart for:
 	- MavRemote
 	- FTP Server
 
 
+
+
+BUGS:
+
+- Client's UI can get broken.
+
 - 12-31 21:20:00.858 25375-25503/com.example.maverick.mavremote E/dalvikvm-heap: Out of memory on a 16400-byte allocation.
 
 
 CLIENT:
 
+-
 2018-12-29 16:52:22.376 31933-31933/com.example.maverick.mavremote E/AndroidRuntime: FATAL EXCEPTION: main
     Process: com.example.maverick.mavremote, PID: 31933
     java.lang.NullPointerException: Attempt to invoke virtual method 'void com.example.maverick.mavremote.EventQueue.Enqueue(java.lang.Object)' on a null object reference
