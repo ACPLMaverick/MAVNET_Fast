@@ -77,6 +77,7 @@ public abstract class NetworkSystem extends System
     protected void Finish()
     {
         _connHelper.Cleanup();
+        ProcessConnectionLost();
         GoToState(State.NotConnectedIdle);
     }
 
@@ -136,16 +137,16 @@ public abstract class NetworkSystem extends System
 
     protected boolean ProcessStateConnected()
     {
-        if(!_connHelper.IsConnectedToLocalNetwork())
+        if(!_connHelper.IsConnectedToLocalNetwork() || !IsConnectedToRemoteHost())
         {
             ProcessConnectionLost();
             return false;
         }
 
-        // TODO: Virtual method for checking if peer disconnected which also should lead to ProcessConnectionLost or new ProcessPeerLost.
-
         return true;
     }
+
+    protected abstract boolean IsConnectedToRemoteHost();
 
     protected boolean ProcessDisconnect()
     {

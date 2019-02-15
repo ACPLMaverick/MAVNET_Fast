@@ -1,5 +1,6 @@
 package com.example.maverick.mavremote;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class System
@@ -12,11 +13,9 @@ public abstract class System
     {
         Start();
 
-        _systemLock.lock();
-        _bIsRunning = true;
-        _systemLock.unlock();
+        _bIsRunning.set(true);
 
-        while (_bIsRunning)
+        while (_bIsRunning.get())
         {
             _systemMainLoopLock.lock();
             MainLoop();
@@ -29,17 +28,12 @@ public abstract class System
 
     public void Stop()
     {
-        _systemLock.lock();
-        _bIsRunning = false;
-        _systemLock.unlock();
+        _bIsRunning.set(false);
     }
 
     public boolean IsRunning()
     {
-        _systemLock.lock();
-        boolean bRunning = _bIsRunning;
-        _systemLock.unlock();
-        return bRunning;
+        return _bIsRunning.get();
     }
 
     protected abstract void Start();
@@ -51,7 +45,6 @@ public abstract class System
     protected long GetTickSleepMs() { return 1; }
 
 
-    protected ReentrantLock _systemLock = new ReentrantLock();
     protected ReentrantLock _systemMainLoopLock = new ReentrantLock();
-    protected boolean _bIsRunning = false;
+    protected AtomicBoolean _bIsRunning = new AtomicBoolean(false);
 }

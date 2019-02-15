@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DataStreamReadHelper
 {
@@ -53,6 +54,11 @@ public class DataStreamReadHelper
 		return _syncedQueue.Dequeue();
 	}
 
+	public int GetFailuresInRow()
+	{
+		return _readFailuresInRow.get();
+	}
+
 
 	private void PollingThread()
 	{
@@ -72,7 +78,14 @@ public class DataStreamReadHelper
 
 					currentReadBytes = _inputStream.read(_tempBuf, readBytes, _tempBuf.length - readBytes);
 					if(currentReadBytes < 0)
+					{
+						_readFailuresInRow.addAndGet(1);
 						currentReadBytes = 0;
+					}
+					else
+					{
+						_readFailuresInRow.set(0);
+					}
 					readBytes += currentReadBytes;
 
 //					if(_inputStream.available() <= 0)
@@ -82,9 +95,12 @@ public class DataStreamReadHelper
 
 				}while (currentReadBytes > 0);
 
-				byte[] readBuffer = Arrays.copyOf(_tempBuf, readBytes);
+				if(readBytes > 0)
+				{
+					byte[] readBuffer = Arrays.copyOf(_tempBuf, readBytes);
 
-				_syncedQueue.Enqueue(ByteBuffer.wrap(readBuffer));
+					_syncedQueue.Enqueue(ByteBuffer.wrap(readBuffer));
+				}
 			}
 			catch(Exception e)
 			{
@@ -104,6 +120,7 @@ public class DataStreamReadHelper
 	private InputStream _inputStream = null;
 	private EventQueue<ByteBuffer> _syncedQueue = new EventQueue<>();
 	private AtomicBoolean _threadRunFlag = new AtomicBoolean(true);
+	private AtomicInteger _readFailuresInRow = new AtomicInteger(0);
 	private static final int POLLING_THREAD_SLEEP_MS = 1;
 
 	private static final int TEMP_BUFFER_INITIAL_SIZE = 2048;

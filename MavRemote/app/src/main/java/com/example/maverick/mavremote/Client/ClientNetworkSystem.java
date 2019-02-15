@@ -2,8 +2,10 @@ package com.example.maverick.mavremote.Client;
 
 
 import com.example.maverick.mavremote.Actions.ActionEvent;
+import com.example.maverick.mavremote.App;
 import com.example.maverick.mavremote.EventQueue;
 import com.example.maverick.mavremote.NetworkCommon.ConnectivityHelper;
+import com.example.maverick.mavremote.NetworkCommon.DataPacketFactory;
 import com.example.maverick.mavremote.NetworkCommon.DataPacketRetriever;
 import com.example.maverick.mavremote.NetworkCommon.Endpoint;
 import com.example.maverick.mavremote.NetworkCommon.EndpointDatagram;
@@ -48,9 +50,13 @@ public class ClientNetworkSystem extends NetworkSystem
             _packetFactory.DecodePacket(buffer, _tmpRetriever);
             if(_tmpRetriever.IsValid())
             {
-                if(CreateConnectionEndpoint(_tmpRetriever.ObjectRef) && _endpoint.IsConnected())
+                if(_tmpRetriever.ThisType == DataPacketFactory.PacketType.Broadcast)
                 {
-                    GoToState(State.Connected);
+                    SocketAddress address = (SocketAddress)_tmpRetriever.ObjectRef;
+                    if(CreateConnectionEndpoint(address) && IsConnectedToRemoteHost())
+                    {
+                        GoToState(State.Connected);
+                    }
                 }
             }
         }
@@ -70,9 +76,31 @@ public class ClientNetworkSystem extends NetworkSystem
             ActionEvent ev = _actionEventQueue.Dequeue();
             ByteBuffer packet = _packetFactory.CreatePacket(ev);
             _endpoint.SendData(packet);
+            _lastPacketSentTime = App.GetCurrentTimeMs();
         }
 
+        ProcessPingServer();
+
         return true;
+    }
+
+    protected void ProcessPingServer()
+    {
+        final long currTime = App.GetCurrentTimeMs();
+        if(currTime - _lastPacketSentTime <= PING_INTERVAL_MS)
+        {
+            return;
+        }
+
+        ByteBuffer packet = _packetFactory.CreatePacketPing();
+        _endpoint.SendData(packet);
+        _lastPacketSentTime = currTime;
+    }
+
+    @Override
+    protected boolean IsConnectedToRemoteHost()
+    {
+        return _endpoint != null && _endpoint.IsConnected();
     }
 
     @Override
@@ -114,8 +142,10 @@ public class ClientNetworkSystem extends NetworkSystem
     }
 
 
+    protected static final long PING_INTERVAL_MS = 1000;
     protected static final int ENDPOINT_TIMEOUT_MILLIS = 1000;
 
     protected Endpoint _endpoint = null;
-    protected DataPacketRetriever<SocketAddress> _tmpRetriever = new DataPacketRetriever<>();
+    protected DataPacketRetriever _tmpRetriever = new DataPacketRetriever();
+    protected long _lastPacketSentTime = 0;
 }

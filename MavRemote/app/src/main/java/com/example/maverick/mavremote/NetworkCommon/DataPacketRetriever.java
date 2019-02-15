@@ -1,8 +1,7 @@
 package com.example.maverick.mavremote.NetworkCommon;
 
-import com.example.maverick.mavremote.Utility;
 
-public class DataPacketRetriever<T>
+public class DataPacketRetriever
 {
     public DataPacketRetriever()
     {
@@ -14,5 +13,5 @@ public class DataPacketRetriever<T>
 
 
     public DataPacketFactory.PacketType ThisType;
-    public T ObjectRef;
+    public Object ObjectRef;
 }

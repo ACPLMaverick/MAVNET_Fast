@@ -92,6 +92,7 @@ public class Endpoint
         try
         {
             _sockOutputStream.write(data.array());
+            _dataWriteFailuresInRow = 0;
             return true;
         }
         catch(IOException e)
@@ -100,6 +101,7 @@ public class Endpoint
                     + _sock.getLocalAddress().toString() + " and port: "
                     + Integer.toString(_sock.getPort()) + "\n"
                     + e.getMessage());
+            ++_dataWriteFailuresInRow;
             return false;
         }
     }
@@ -114,7 +116,12 @@ public class Endpoint
 
     public boolean IsConnected()
     {
-        return (_sock != null && _sock.isConnected());
+        return (_sock != null
+                && _sock.isBound()
+                && _sock.isConnected()
+                && _inputStreamHelper != null
+                && _inputStreamHelper.GetFailuresInRow() <= SOCK_MAX_READ_FAILURES_IN_ROW
+                && _dataWriteFailuresInRow <= SOCK_MAX_WRITE_FAILURES_IN_ROW);
     }
 
     public SocketAddress GetAddress()
@@ -127,7 +134,8 @@ public class Endpoint
     }
 
 
-    protected static final int READ_BUFFER_SIZE = 1024;
+    private static int SOCK_MAX_READ_FAILURES_IN_ROW = 16;
+    private static int SOCK_MAX_WRITE_FAILURES_IN_ROW = 3;
     protected static InetSocketAddress BAD_ADDRESS = new InetSocketAddress("0.0.0.0", 0);
 
     protected Socket _sock = null;
@@ -135,4 +143,5 @@ public class Endpoint
     protected OutputStream _sockOutputStream = null;
     protected InputStream _sockInputStream = null;
     protected DataStreamReadHelper _inputStreamHelper = new DataStreamReadHelper();
+    protected int _dataWriteFailuresInRow = 0;
 }

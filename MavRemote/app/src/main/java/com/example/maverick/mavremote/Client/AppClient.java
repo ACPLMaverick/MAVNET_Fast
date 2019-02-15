@@ -10,6 +10,7 @@ import com.example.maverick.mavremote.Utility;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class AppClient extends App
 {
@@ -37,7 +38,7 @@ public final class AppClient extends App
 
     public void OnBackButtonPressed() { _bBackPressed = true; }
 
-    public boolean IsRunning() { return _bIsRunning; }
+    public boolean IsRunning() { return _bIsRunning.get(); }
 
 
     @Override
@@ -84,7 +85,7 @@ public final class AppClient extends App
     @Override
     public void Stop()
     {
-        _bIsRunning = false;
+        _bIsRunning.set(false);
     }
 
     private void InternalStart()
@@ -123,12 +124,12 @@ public final class AppClient extends App
             _uiManager.SetMenuCurrent(UIManager.MenuType.ClientRemote);
         }
 
-        _bIsRunning = true;
+        _bIsRunning.set(true);
     }
 
     private void InternalMainLoop()
     {
-        while(_bIsRunning)
+        while(_bIsRunning.get())
         {
             if(CanUseUI())
                 _uiController.Update();
@@ -283,7 +284,9 @@ public final class AppClient extends App
                     _bIsConnected = false;
                 }
                 else
-                    _bIsRunning = false;
+                {
+                    _bIsRunning.set(false);
+                }
 
                 _bBackPressed = false;
             }
@@ -298,7 +301,9 @@ public final class AppClient extends App
                 _bIsConnected = false;
             }
             else
-                _bIsRunning = false;
+            {
+                _bIsRunning.set(false);
+            }
 
             _bBackPressed = false;
         }
@@ -320,5 +325,5 @@ public final class AppClient extends App
     private boolean _bTryingConnect = false;
     private boolean _bIsConnected = false;
 
-    private boolean _bIsRunning = false;
+    private AtomicBoolean _bIsRunning = new AtomicBoolean(false);
 }

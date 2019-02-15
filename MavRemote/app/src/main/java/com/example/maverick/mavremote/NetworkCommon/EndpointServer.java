@@ -35,6 +35,11 @@ public class EndpointServer
 
     public boolean Close()
     {
+        if(_connectionSock != null)
+        {
+            CloseConnectionSock();
+        }
+
         if(_sock == null)
             return false;
 
@@ -91,21 +96,14 @@ public class EndpointServer
         }
     }
 
-    public void SetTimeout(int timeout)
+    public boolean IsConnected()
     {
-        try
-        {
-            _sock.setSoTimeout(timeout);
-        }
-        catch(IOException e)
-        {
-            App.LogLine("Error on socket SetTimeout: " + e.getMessage());
-
-            return;
-        }
+        return _connectionSock != null
+            && _connectionSock.isBound()
+            && _connectionSock.isConnected()
+            && _inputReader != null
+            && _inputReader.GetFailuresInRow() <= CONNECTION_SOCK_MAX_FAILURES_IN_ROW;
     }
-
-    public boolean IsConnected() { return _connectionSock != null; }
 
     public SocketAddress GetAddress()
     {
@@ -118,6 +116,18 @@ public class EndpointServer
 
 
 
+    private void SetTimeout(int timeout)
+    {
+        try
+        {
+            _sock.setSoTimeout(timeout);
+        }
+        catch(IOException e)
+        {
+            App.LogLine("Error on socket SetTimeout: " + e.getMessage());
+        }
+    }
+
     private void ListenForConnections()
     {
         try
@@ -127,10 +137,7 @@ public class EndpointServer
             // If no exception has been thrown, assuming the connection has been made.
             if(connSock != null)
             {
-                _connectionSock = connSock;
-                _connectionSockInputStream = _connectionSock.getInputStream();
-                _connectionSockAddress = new InetSocketAddress(_connectionSock.getInetAddress(), _connectionSock.getPort());
-                _inputReader.Init(_connectionSockInputStream);
+                InitConnectionSock(connSock);
             }
             else
             {
@@ -148,29 +155,56 @@ public class EndpointServer
 
     private void CheckConnectionState()
     {
-        if(_connectionSock != null
-                && !(_connectionSock.isBound() || _connectionSock.isConnected()))
+        if(_connectionSock == null)
         {
-            _inputReader.Stop();
+            return;
+        }
 
-            if(!_connectionSock.isClosed())
-            {
-                try
-                {
-                    _connectionSock.close();
-                }
-                catch(IOException e)
-                {
-                    App.LogLine("Error on connection socket close: " + e.getMessage());
-                }
-            }
-
-            _connectionSock = null;
-            _connectionSockInputStream = null;
-            _connectionSockAddress = null;
+        if(!IsConnected())
+        {
+            CloseConnectionSock();
         }
     }
 
+    private void InitConnectionSock(Socket newConnectionSock)
+    {
+        _connectionSock = newConnectionSock;
+        try
+        {
+            _connectionSockInputStream = _connectionSock.getInputStream();
+            _connectionSockAddress = new InetSocketAddress(_connectionSock.getInetAddress(), _connectionSock.getPort());
+            _inputReader.Init(_connectionSockInputStream);
+        }
+        catch(IOException e)
+        {
+            App.LogLine("Error initializing connection socket: " + e.getMessage());
+            CloseConnectionSock();
+        }
+    }
+
+    private void CloseConnectionSock()
+    {
+        _inputReader.Stop();
+
+        if(!_connectionSock.isClosed())
+        {
+            try
+            {
+                _connectionSock.close();
+            }
+            catch(IOException e)
+            {
+                App.LogLine("Error on connection socket close: " + e.getMessage());
+            }
+        }
+
+        _connectionSock = null;
+        _connectionSockInputStream = null;
+        _connectionSockAddress = null;
+    }
+
+
+    private static int CONNECTION_SOCK_MAX_FAILURES_IN_ROW = 16;
 
     private ServerSocket _sock = null;
     private Socket _connectionSock = null;

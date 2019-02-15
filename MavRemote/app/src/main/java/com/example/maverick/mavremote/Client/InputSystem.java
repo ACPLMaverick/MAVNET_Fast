@@ -146,9 +146,6 @@ public class InputSystem extends System
         // Set up touch and scroll/swipe field areas and register for touch events.
         SetupTouchArea();
         SetupScrollArea();
-
-
-        _bIsRunning = true;
     }
 
     @Override

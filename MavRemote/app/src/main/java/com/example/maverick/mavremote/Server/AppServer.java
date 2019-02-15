@@ -12,6 +12,7 @@ import com.example.maverick.mavremote.UI.UIManager;
 import com.example.maverick.mavremote.Utility;
 
 import java.util.Calendar;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class AppServer extends App
 {
@@ -30,7 +31,7 @@ public final class AppServer extends App
 
     public InfraredSystem GetInfraredSystem() { return _infr; }
 
-    public boolean IsRunning() { return _bIsRunning; }
+    public boolean IsRunning() { return _bIsRunning.get(); }
 
     public void SetForceConnect(boolean bForceConnect)
     {
@@ -89,7 +90,7 @@ public final class AppServer extends App
     @Override
     public void Stop()
     {
-        _bIsRunning = false;
+        _bIsRunning.set(false);
     }
 
     private void Start()
@@ -158,7 +159,7 @@ public final class AppServer extends App
 //        appstart = App.GetCurrentTimeMs();
         // --notification test
 
-        _bIsRunning = true;
+        _bIsRunning.set(true);
 
         // ++instrumentation test
         if(B_TESTER)
@@ -202,7 +203,7 @@ public final class AppServer extends App
 
     private void MainLoop()
     {
-        while(_bIsRunning)
+        while(_bIsRunning.get())
         {
             // ++notification test
 //            if(App.GetCurrentTimeMs() - timer > 5000)
@@ -308,14 +309,14 @@ public final class AppServer extends App
                 {
                     App.LogLine("WARNING: Failed to create pop-up message!");
                     App.LogLine("Exiting.");
-                    _bIsRunning = false;
+                    _bIsRunning.set(false);
                     SetBackPressed(false);
                 }
             }
             else if(msgState == NotificationHelper.MessageState.Positive)
             {
                 App.LogLine("Exiting.");
-                _bIsRunning = false;
+                _bIsRunning.set(false);
                 SetBackPressed(false);
             }
             else if(msgState == NotificationHelper.MessageState.Negative)
@@ -336,7 +337,7 @@ public final class AppServer extends App
     private NetworkSystem.State _cachedServerState = null;
     private TestSystem _tester = null;
     private ServerUIController _uiControllerServer = null;
-    private boolean _bIsRunning = false;
+    private AtomicBoolean _bIsRunning = new AtomicBoolean(false);
     private boolean _bForceConnect = false;
     private boolean _bChangeConnectionState = false;
     private boolean _bBackPressed = false;

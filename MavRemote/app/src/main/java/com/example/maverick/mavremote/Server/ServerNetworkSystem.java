@@ -1,7 +1,5 @@
 package com.example.maverick.mavremote.Server;
 
-import android.util.Log;
-
 import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.App;
 import com.example.maverick.mavremote.NetworkCommon.ConnectivityHelper;
@@ -12,7 +10,6 @@ import com.example.maverick.mavremote.NetworkCommon.NetworkSystem;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.Calendar;
 
 public class ServerNetworkSystem extends NetworkSystem
 {
@@ -101,7 +98,7 @@ public class ServerNetworkSystem extends NetworkSystem
 
         _endpoint.Update();
 
-        if(!_endpoint.IsConnected())    // TODO: This is probably not working. Check.
+        if(!_endpoint.IsConnected())
         {
             App.LogLine("[ServerNetworkSystem] Lost connection with Client.");
             if(!StartAwaitingConnections())
@@ -111,7 +108,7 @@ public class ServerNetworkSystem extends NetworkSystem
         }
 
 
-        // Check for incoming packet data, and add them to received queue.
+        // Check for incoming packet data, and process them.
 
         ByteBuffer receivedBuffer = _endpoint.GetData();
         if(receivedBuffer != null)
@@ -120,7 +117,7 @@ public class ServerNetworkSystem extends NetworkSystem
             if(_tmpRetriever.IsValid())
             {
                 _packetCounter.IncPacketNumCorrect();
-                _actionEventQueue.Enqueue(_tmpRetriever.ObjectRef);
+                ProcessRetrievedObject(_tmpRetriever);
             }
             else
             {
@@ -130,6 +127,30 @@ public class ServerNetworkSystem extends NetworkSystem
         }
 
         return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void ProcessRetrievedObject(DataPacketRetriever retriever)
+    {
+        switch (retriever.ThisType)
+        {
+            case ActionEvent:
+            {
+                ActionEvent actionEvent = (ActionEvent)retriever.ObjectRef;
+                _actionEventQueue.Enqueue(actionEvent);
+            }
+                break;
+            case Unknown:
+            case Broadcast:
+            default:
+                break;
+        }
+    }
+
+    @Override
+    protected boolean IsConnectedToRemoteHost()
+    {
+        return _endpoint != null && _endpoint.IsConnected();
     }
 
     @Override
@@ -175,6 +196,6 @@ public class ServerNetworkSystem extends NetworkSystem
     protected EndpointServer _endpoint = null;
 
     protected ByteBuffer _broadcastPacket = null;
-    private DataPacketRetriever<ActionEvent> _tmpRetriever = new DataPacketRetriever<>();
+    private DataPacketRetriever _tmpRetriever = new DataPacketRetriever();
     protected long _timerBroadcast = 0;
 }

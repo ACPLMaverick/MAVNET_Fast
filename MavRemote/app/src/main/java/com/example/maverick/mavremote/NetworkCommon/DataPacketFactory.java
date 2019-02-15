@@ -25,39 +25,33 @@ public class DataPacketFactory
     {
         Unknown,
         Broadcast,
-        ActionEvent
+        ActionEvent,
+        Ping
     }
 
     public DataPacketFactory()
     {
     }
 
-    public ByteBuffer CreatePacket(byte[] bytes, PacketType type)
-    {
-        DataPacketHeader header = new DataPacketHeader(type.ordinal());
-        return CreatePacketInternal(header, bytes);
-    }
-
-    public ByteBuffer CreatePacket(Byte[] bytes, PacketType type)
-    {
-        DataPacketHeader header = new DataPacketHeader(type.ordinal());
-        return CreatePacketInternal(header, bytes);
-    }
-
     public ByteBuffer CreatePacket(ActionEvent actionEvent)
     {
-        DataPacketHeader header = new DataPacketHeader(PacketType.ActionEvent.ordinal());
+        DataPacketHeader header = new DataPacketHeader(PacketType.ActionEvent);
         return CreatePacketInternal(header, actionEvent);
     }
 
     public ByteBuffer CreatePacketBroadcast(SocketAddress address)
     {
-        DataPacketHeader header = new DataPacketHeader(PacketType.Broadcast.ordinal());
+        DataPacketHeader header = new DataPacketHeader(PacketType.Broadcast);
         return CreatePacketInternal(header, address);
     }
 
-    @SuppressWarnings("unchecked")
-    public <T extends Serializable> void DecodePacket(ByteBuffer packet, DataPacketRetriever<T> outRetriever)
+    public ByteBuffer CreatePacketPing()
+    {
+        DataPacketHeader header = new DataPacketHeader(PacketType.Ping);
+        return CreatePacketInternal(header, PING_DATA);
+    }
+
+    public void DecodePacket(ByteBuffer packet, DataPacketRetriever outRetriever)
     {
         ByteArrayInputStream bis = new ByteArrayInputStream(packet.array());
         ObjectInput input = null;
@@ -72,7 +66,7 @@ public class DataPacketFactory
                     throw new InvalidObjectException("AppId does not match.");
                 }
 
-                T obj = (T)input.readObject();
+                Object obj = input.readObject();
                 input.close();
                 outRetriever.ObjectRef = obj;
                 outRetriever.ThisType = PacketType.values()[header.PacketType];
@@ -119,4 +113,7 @@ public class DataPacketFactory
 
 
     public static final int AppId = (App.TAG).hashCode();
+
+
+    private static final char[] PING_DATA = { 'P' };
 }
