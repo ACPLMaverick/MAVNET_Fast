@@ -41,7 +41,7 @@ public class ActionEvent implements Serializable
     {
         InvalidValue,
         TaskManager,
-        Brightness,
+        Statistics,
         Subtitles
     }
 

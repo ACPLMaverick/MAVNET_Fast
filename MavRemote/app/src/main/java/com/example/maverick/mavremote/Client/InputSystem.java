@@ -115,8 +115,8 @@ public class InputSystem extends System
         btn = GetMenu().GetButtons().get(R.id.btnScreen);
         AssignClickEventToButton(btn, KeyEvent.KEYCODE_SYSRQ);
 
-        btn = GetMenu().GetButtons().get(R.id.btnBrightness);
-        AssignClickEventToButton(btn, ActionEvent.GetIntFromSpecialKeyEvent(ActionEvent.SpecialKeyEvent.Brightness));
+        btn = GetMenu().GetButtons().get(R.id.btnStat);
+        AssignClickEventToButton(btn, ActionEvent.GetIntFromSpecialKeyEvent(ActionEvent.SpecialKeyEvent.Statistics));
 
         btn = GetMenu().GetButtons().get(R.id.btnBackspace);
         AssignClickEventToButton(btn, KeyEvent.KEYCODE_DEL, new Runnable()

@@ -3,4 +3,6 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+    <color name="colorTouchArea">#96D2EC</color>
+    <color name="colorScrollArea">#96ECD8</color>
 </resources>

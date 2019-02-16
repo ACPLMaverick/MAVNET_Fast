@@ -52,11 +52,15 @@ public final class InstrumentationSystem extends System
 
         _movementHelper = new MouseMovementHelper();
         _movementHelper.Start(_sendEventWrapper, _eventCoder);
+
+        _systemSettingsHelper = new SettingsHelper();
+        _systemSettingsHelper.Initialize();
     }
 
     @Override
     protected void Finish()
     {
+        _systemSettingsHelper.Cleanup();
         _movementHelper.Stop();
         _sendEventWrapper.Cleanup();
 
@@ -158,6 +162,9 @@ public final class InstrumentationSystem extends System
                 return true;
             case Subtitles: // This works ONLY for MX Player. Maybe send two different clicks..?
                 SendTouchTap(1147, 31);
+                return true;
+            case Statistics:
+                _systemSettingsHelper.ToggleStatistics();
                 return true;
             default:
                 return false;
@@ -339,6 +346,7 @@ public final class InstrumentationSystem extends System
 
     private EventCoder _eventCoder = null;
     private MouseMovementHelper _movementHelper = null;
+    private SettingsHelper _systemSettingsHelper = null;
     private SendEventWrapper _sendEventWrapper = null;
 
     private boolean _bShellCreated = false;

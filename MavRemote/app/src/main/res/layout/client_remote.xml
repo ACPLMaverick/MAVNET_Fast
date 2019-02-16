@@ -44,10 +44,12 @@
         android:id="@+id/clAreas"
         android:layout_width="380dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/clMedia">
+        app:layout_constraintTop_toBottomOf="@+id/clMedia"
+        app:layout_constraintVertical_bias="0.0">
 
         <ImageView
             android:id="@+id/ivScrollArea"
@@ -55,7 +57,7 @@
             android:layout_height="180dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/ivTouchArea"
-            app:srcCompat="@android:color/holo_blue_light" />
+            app:srcCompat="@color/colorScrollArea" />
 
         <ImageView
             android:id="@+id/ivTouchArea"
@@ -63,7 +65,34 @@
             android:layout_height="180dp"
             app:layout_constraintEnd_toStartOf="@+id/ivScrollArea"
             app:layout_constraintStart_toStartOf="parent"
-            app:srcCompat="@android:color/holo_blue_bright" />
+            app:srcCompat="@color/colorTouchArea" />
+
+        <TextView
+            android:id="@+id/txtTouch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Touch area"
+            android:textColor="@android:color/background_light"
+            android:textSize="24sp"
+            app:layout_constraintBottom_toBottomOf="@+id/ivTouchArea"
+            app:layout_constraintEnd_toEndOf="@+id/ivTouchArea"
+            app:layout_constraintStart_toStartOf="@+id/ivTouchArea"
+            app:layout_constraintTop_toTopOf="@+id/ivTouchArea" />
+
+        <TextView
+            android:id="@+id/txtScroll"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:rotation="90"
+            android:text="Scroll area"
+            android:textColor="@android:color/background_light"
+            android:textSize="24sp"
+            app:layout_constraintBottom_toBottomOf="@+id/ivScrollArea"
+            app:layout_constraintEnd_toEndOf="@+id/ivScrollArea"
+            app:layout_constraintStart_toStartOf="@+id/ivScrollArea"
+            app:layout_constraintTop_toTopOf="@+id/ivScrollArea" />
     </android.support.constraint.ConstraintLayout>
 
     <android.support.constraint.ConstraintLayout
@@ -135,10 +164,10 @@
         android:id="@+id/clButtons"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/clOSKField">
+        app:layout_constraintTop_toBottomOf="@+id/clAreas">
 
         <Button
             android:id="@+id/btnApps"
@@ -176,8 +205,8 @@
             android:id="@+id/btnHome"
             android:layout_width="84dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
             android:text="[__]"
             android:textAlignment="center"
             app:layout_constraintEnd_toStartOf="@+id/btnApps"
@@ -194,7 +223,7 @@
         android:layout_marginTop="10dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/clButtons">
+        app:layout_constraintTop_toBottomOf="@+id/clOSKField">
 
         <Button
             android:id="@+id/btnMediaPlayPause"
@@ -242,15 +271,15 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <Button
-            android:id="@+id/btnBrightness"
+            android:id="@+id/btnStat"
             android:layout_width="72dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:clickable="true"
-            android:enabled="false"
-            android:text="BRGHT"
+            android:clickable="false"
+            android:text="STAT"
+            android:visibility="gone"
             app:layout_constraintTop_toBottomOf="@+id/btnScreen"
-            tools:visibility="invisible" />
+            tools:visibility="gone" />
 
         <Button
             android:id="@+id/btnScreen"

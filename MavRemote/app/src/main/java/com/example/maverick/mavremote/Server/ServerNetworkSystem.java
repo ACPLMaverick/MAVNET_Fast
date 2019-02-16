@@ -158,6 +158,8 @@ public class ServerNetworkSystem extends NetworkSystem
     {
         super.ProcessConnectionLost();
 
+        _packetCounter.Reset();
+
         if(_endpoint != null)
             _endpoint.Close();
 
