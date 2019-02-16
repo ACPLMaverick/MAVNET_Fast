@@ -71,7 +71,7 @@ public class ServerNetworkSystem extends NetworkSystem
 
             _endpointBroadcast.SendDataBroadcast(_broadcastPacket);
             _packetCounterBroadcast.IncPacketNumCorrect();
-            App.LogLine("Sending broadcast packet " + _packetCounterBroadcast.GetPacketNumCorrect());
+            // App.LogLine("Sending broadcast packet " + _packetCounterBroadcast.GetPacketNumCorrect());
         }
 
 
