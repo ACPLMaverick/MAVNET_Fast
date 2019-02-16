@@ -39,12 +39,12 @@ public final class ConnectivityHelper
         }
         _updateTimer = App.GetCurrentTimeMs();
 
+        _netInfo = _cm.getActiveNetworkInfo();
+
         if(IsConnectedToLocalNetwork())
         {
             return;
         }
-
-        _netInfo = _cm.getActiveNetworkInfo();
 
         try
         {

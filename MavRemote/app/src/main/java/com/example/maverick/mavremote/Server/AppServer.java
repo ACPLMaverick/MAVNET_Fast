@@ -33,11 +33,6 @@ public final class AppServer extends App
 
     public boolean IsRunning() { return _bIsRunning.get(); }
 
-    public void SetForceConnect(boolean bForceConnect)
-    {
-        _bForceConnect = bForceConnect;
-    }
-
     public void SetBackPressed(boolean val)
     {
         _lockApp.lock();
@@ -134,22 +129,6 @@ public final class AppServer extends App
             , "ServerNetworkSystem", 5);
             _cachedServerState = _server.GetState();
             _notificationMgr.DisplayNotificationText(_cachedServerState.name());
-
-            if(B_AUTO_START)
-            {
-                _uiControllerServer.DeactivateStartStopButton();
-            }
-            else
-            {
-                _uiControllerServer.RegisterOnConnectionClick(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        _bChangeConnectionState = !_bChangeConnectionState;
-                    }
-                });
-            }
         }
 
         _cachedServerState = _server.GetState();
@@ -262,32 +241,21 @@ public final class AppServer extends App
         }
 
 
-        if(_bForceConnect && _server.GetState() == NetworkSystem.State.NotConnectedIdle)
+        switch (_server.GetState())
         {
-            _bChangeConnectionState = true;
-        }
-
-
-        if(_bChangeConnectionState)
-        {
-            if(_server.GetState() == NetworkSystem.State.NotConnectedIdle)
+            case NotConnectedIdle:
             {
-                _server.StartAwaitingConnections();
+                if(_server.IsConnectedToLocalNetwork())
+                {
+                    _server.StartAwaitingConnections();
+                }
             }
-            else
-            {
-                _server.Disconnect();
-            }
-
-            _bChangeConnectionState = false;
-        }
-
-        if(B_AUTO_START)
-        {
-            if(_server.GetState() == NetworkSystem.State.NotConnectedIdle)
-            {
-                _bChangeConnectionState = !_bChangeConnectionState;
-            }
+                break;
+            case WaitingForConnection:
+            case Connected:
+            case Invalid:
+            default:
+                break;
         }
     }
 
@@ -328,7 +296,6 @@ public final class AppServer extends App
     }
 
     private static final boolean B_USE_INFRARED = false;
-    private static final boolean B_AUTO_START = true;
     private static final boolean B_TESTER = false;
 
     private InstrumentationSystem _instr = null;
@@ -338,8 +305,6 @@ public final class AppServer extends App
     private TestSystem _tester = null;
     private ServerUIController _uiControllerServer = null;
     private AtomicBoolean _bIsRunning = new AtomicBoolean(false);
-    private boolean _bForceConnect = false;
-    private boolean _bChangeConnectionState = false;
     private boolean _bBackPressed = false;
 
     // ++notification test

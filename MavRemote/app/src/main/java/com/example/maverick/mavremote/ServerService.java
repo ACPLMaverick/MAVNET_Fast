@@ -33,7 +33,6 @@ public class ServerService extends Service {
         {
             if(!bLaunchedFromActivity)
             {
-                AppServer.GetInstance().SetForceConnect(true);
                 AppServer.GetInstance().Run(ctx);
             }
             else

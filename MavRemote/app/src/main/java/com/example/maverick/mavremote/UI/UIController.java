@@ -59,6 +59,10 @@ public abstract class UIController
                 public void run()
                 {
                     Editable et = _etLog.getText();
+                    if(et.length() > 16384)
+                    {
+                        et.clear();
+                    }
                     et.append(text);
                 }
             });

@@ -55,6 +55,8 @@ public abstract class NetworkSystem extends System
         }
     }
 
+    public boolean IsConnectedToLocalNetwork() { return _connHelper != null && _connHelper.IsConnectedToLocalNetwork();}
+
 
     @Override
     protected void Start()

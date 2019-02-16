@@ -71,15 +71,6 @@ public class ServerUIController extends UIController
         _startStopRunnable = runnable;
     }
 
-    public void DeactivateStartStopButton()
-    {
-        if(_btnStartStop != null)
-        {
-            _btnStartStop.setActivated(false);
-            _btnStartStop.setVisibility(View.INVISIBLE);
-        }
-    }
-
 
     @Override
     protected void AcquireUIElements()
@@ -92,18 +83,6 @@ public class ServerUIController extends UIController
                 .GetTextViews().get(R.id.tvSrvClientAddress2);
         _tvReceived = _manager.GetMenu(UIManager.MenuType.ServerNetwork)
                 .GetTextViews().get(R.id.tvSrvReceived);
-
-        _btnStartStop = _manager.GetMenu(UIManager.MenuType.ServerNetwork)
-                .GetButtons().get(R.id.btnSrvStartStop);
-
-        _btnStartStop.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View view)
-            {
-                OnStartStopClicked();
-            }
-        });
     }
 
     @Override
@@ -113,45 +92,11 @@ public class ServerUIController extends UIController
                 .GetEditTextViews().get(R.id.etSrvLog);
     }
 
-    protected void OnStartStopClicked()
-    {
-        // Process button state change.
-        if(_bStartStopButtonState)
-        {
-            _manager.PerformAction(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    _btnStartStop.setText("STOP");
-                }
-            });
-        }
-        else
-        {
-            _manager.PerformAction(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    _btnStartStop.setText("START");
-                }
-            });
-        }
-        _bStartStopButtonState = !_bStartStopButtonState;
-
-        // Fire assigned runnable.
-        if(_startStopRunnable != null)
-            _startStopRunnable.run();
-    }
-
 
     private TextView _tvStatus = null;
     private TextView _tvMyAddress = null;
     private TextView _tvClientAddress = null;
     private TextView _tvReceived = null;
-
-    private Button _btnStartStop = null;
 
     private NetworkSystem.State _currentStateDisplayed = NetworkSystem.State.Invalid;
     private SocketAddress _currentMyAddressDisplayed = null;

@@ -94,19 +94,7 @@ public class ServerNetworkSystem extends NetworkSystem
         if(!super.ProcessStateConnected())
             return false;
 
-        // Monitor endpoint connection.
-
         _endpoint.Update();
-
-        if(!_endpoint.IsConnected())
-        {
-            App.LogLine("[ServerNetworkSystem] Lost connection with Client.");
-            if(!StartAwaitingConnections())
-            {
-                ProcessConnectionLost();
-            }
-        }
-
 
         // Check for incoming packet data, and process them.
 
