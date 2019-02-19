@@ -2,6 +2,7 @@ package com.example.maverick.mavremote;
 
 import android.content.Context;
 import android.os.Build;
+import android.os.PowerManager;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
@@ -157,6 +158,11 @@ public final class Utility
         try
         {
             Vibrator vibrator = (Vibrator) App.GetInstance().GetActivity().getSystemService(Context.VIBRATOR_SERVICE);
+            if(vibrator == null)
+            {
+                return;
+            }
+
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             {
                 vibrator.vibrate(VibrationEffect.createOneShot(vibrationTimeMs, amplitude));
@@ -170,5 +176,16 @@ public final class Utility
         {
             App.LogLine("Error creating vibration for " + String.valueOf(vibrationTimeMs) + " ms.");
         }
+    }
+
+    public static boolean IsScreenOn()
+    {
+        PowerManager powerManager = (PowerManager)App.GetInstance().GetActivity().getSystemService(Context.POWER_SERVICE);
+        if(powerManager == null)
+        {
+            return true;
+        }
+
+        return powerManager.isScreenOn();
     }
 }

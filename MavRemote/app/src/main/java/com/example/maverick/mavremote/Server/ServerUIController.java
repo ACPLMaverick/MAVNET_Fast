@@ -66,6 +66,22 @@ public class ServerUIController extends UIController
         }
     }
 
+    public void UpdateBroadcasted(final int broadcastedNum)
+    {
+        if(broadcastedNum != _currentBroadcastedNum)
+        {
+            _currentBroadcastedNum = broadcastedNum;
+            _manager.PerformAction(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    _tvBroadcasted.setText(String.valueOf(_currentBroadcastedNum));
+                }
+            });
+        }
+    }
+
     public void RegisterOnConnectionClick(final Runnable runnable)
     {
         _startStopRunnable = runnable;
@@ -83,6 +99,8 @@ public class ServerUIController extends UIController
                 .GetTextViews().get(R.id.tvSrvClientAddress2);
         _tvReceived = _manager.GetMenu(UIManager.MenuType.ServerNetwork)
                 .GetTextViews().get(R.id.tvSrvReceived);
+        _tvBroadcasted = _manager.GetMenu(UIManager.MenuType.ServerNetwork)
+                .GetTextViews().get(R.id.tvSrvBroadcasted);
     }
 
     @Override
@@ -97,11 +115,13 @@ public class ServerUIController extends UIController
     private TextView _tvMyAddress = null;
     private TextView _tvClientAddress = null;
     private TextView _tvReceived = null;
+    private TextView _tvBroadcasted = null;
 
     private NetworkSystem.State _currentStateDisplayed = NetworkSystem.State.Invalid;
     private SocketAddress _currentMyAddressDisplayed = null;
     private SocketAddress _currentClientAddressDisplayed = null;
     private PacketCounter _currentReceivedDisplayed = null;
+    private int _currentBroadcastedNum = 0;
 
     private Runnable _startStopRunnable = null;
 

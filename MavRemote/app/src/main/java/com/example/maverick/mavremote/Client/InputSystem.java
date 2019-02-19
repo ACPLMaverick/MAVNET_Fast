@@ -115,8 +115,8 @@ public class InputSystem extends System
         btn = GetMenu().GetButtons().get(R.id.btnScreen);
         AssignClickEventToButton(btn, KeyEvent.KEYCODE_SYSRQ);
 
-        btn = GetMenu().GetButtons().get(R.id.btnStat);
-        AssignClickEventToButton(btn, ActionEvent.GetIntFromSpecialKeyEvent(ActionEvent.SpecialKeyEvent.Statistics));
+        btn = GetMenu().GetButtons().get(R.id.btnLock);
+        AssignClickEventToButton(btn, KeyEvent.KEYCODE_POWER);
 
         btn = GetMenu().GetButtons().get(R.id.btnBackspace);
         AssignClickEventToButton(btn, KeyEvent.KEYCODE_DEL, new Runnable()
@@ -435,7 +435,8 @@ public class InputSystem extends System
 
     private void PassKeyboardEvent(int kbEvent, boolean bVibrate)
     {
-        App.LogLine("[InputSystem] Pressing key: " + KeyEvent.keyCodeToString(kbEvent));
+        if(B_ENABLE_LOGGING)
+            App.LogLine("[InputSystem] Pressing key: " + KeyEvent.keyCodeToString(kbEvent));
 
         if(bVibrate)
         {
@@ -448,7 +449,8 @@ public class InputSystem extends System
 
     private void PassKeyboardHoldEvent(int kbEvent, boolean isUp)
     {
-        App.LogLine("[InputSystem] " + (isUp ? "Releasing" : "Holding down") + " key: " + KeyEvent.keyCodeToString(kbEvent));
+        if(B_ENABLE_LOGGING)
+            App.LogLine("[InputSystem] " + (isUp ? "Releasing" : "Holding down") + " key: " + KeyEvent.keyCodeToString(kbEvent));
 
         if(!isUp)
         {
@@ -465,7 +467,8 @@ public class InputSystem extends System
 
     private void PassMouseClick(ActionEvent.MouseClickTypes mouseClick)
     {
-        App.LogLine("[InputSystem] Mouse button: " + mouseClick.toString());
+        if(B_ENABLE_LOGGING)
+            App.LogLine("[InputSystem] Mouse button: " + mouseClick.toString());
 
         if(mouseClick == ActionEvent.MouseClickTypes.LMBDown
             || mouseClick == ActionEvent.MouseClickTypes.RMBDown)   // Vibrate on hold.
@@ -484,7 +487,8 @@ public class InputSystem extends System
 
     private void PassMovement(int dx, int dy)
     {
-        App.LogLine("[InputSystem] Movement: " + Integer.toString(dx) + ", "  + Integer.toString(dy));
+        if(B_ENABLE_LOGGING)
+            App.LogLine("[InputSystem] Movement: " + Integer.toString(dx) + ", "  + Integer.toString(dy));
 
         ActionEvent ev = new ActionEvent(new Movement(dx, dy));
 
@@ -493,7 +497,8 @@ public class InputSystem extends System
 
     private void PassScroll(int dy)
     {
-        App.LogLine("[InputSystem] Scroll: " + Integer.toString(dy));
+        if(B_ENABLE_LOGGING)
+            App.LogLine("[InputSystem] Scroll: " + Integer.toString(dy));
 
         ActionEvent ev = new ActionEvent(new Movement(dy));
 
@@ -502,7 +507,8 @@ public class InputSystem extends System
 
     private void PassOSK(final String oskText)
     {
-        App.LogLine("Sending OSK event with text: " + oskText);
+        if(B_ENABLE_LOGGING)
+            App.LogLine("Sending OSK event with text: " + oskText);
 
         ActionEvent ev = new ActionEvent(oskText);
 
@@ -516,6 +522,7 @@ public class InputSystem extends System
     private static final int BUTTON_HOLD_PERIOD_MILLIS = 350;
     private static final float TOUCH_SCALE = 1.3f;
     private static final float SCROLL_SCALE = 0.01f;
+    private static final boolean B_ENABLE_LOGGING = false;
 
     private ButtonHoldHelper _buttonHoldHelper = null;
     private TouchAreaHelper _touchAreaHelper = null;
