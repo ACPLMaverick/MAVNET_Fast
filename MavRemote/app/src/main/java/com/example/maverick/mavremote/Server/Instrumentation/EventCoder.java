@@ -360,6 +360,7 @@ class EventCoder
 		_keycodes[KeyEvent.KEYCODE_DEL] = new int[]{ 14 };
 		_keycodes[KeyEvent.KEYCODE_VOLUME_UP] = new int[]{ 115 };
 		_keycodes[KeyEvent.KEYCODE_VOLUME_DOWN] = new int[]{ 114 };
+		_keycodes[KeyEvent.KEYCODE_POWER] = new int[]{ 0x74 };
 
 		_keycodeDelays[KeyEvent.KEYCODE_SYSRQ] = 1.0f;
 	}

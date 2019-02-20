@@ -7,6 +7,7 @@ import com.example.maverick.mavremote.NetworkCommon.DataPacketRetriever;
 import com.example.maverick.mavremote.NetworkCommon.EndpointDatagram;
 import com.example.maverick.mavremote.NetworkCommon.EndpointServer;
 import com.example.maverick.mavremote.NetworkCommon.NetworkSystem;
+import com.example.maverick.mavremote.Utility;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -43,9 +44,14 @@ public class ServerNetworkSystem extends NetworkSystem
         return !_actionEventQueue.IsEmpty();
     }
 
-    public PacketCounter GetPacketCounter()
+    public PacketCounter GetPacketCounterReceived()
     {
         return _packetCounter;
+    }
+
+    public PacketCounter GetPacketCounterBroadcasted()
+    {
+        return _packetCounterBroadcast;
     }
 
     @Override
@@ -69,9 +75,13 @@ public class ServerNetworkSystem extends NetworkSystem
         {
             _timerBroadcast = App.GetCurrentTimeMs();
 
-            _endpointBroadcast.SendDataBroadcast(_broadcastPacket);
-            _packetCounterBroadcast.IncPacketNumCorrect();
-            // App.LogLine("Sending broadcast packet " + _packetCounterBroadcast.GetPacketNumCorrect());
+            // Do that only if the screen is on.
+            if(Utility.IsScreenOn())
+            {
+                _endpointBroadcast.SendDataBroadcast(_broadcastPacket);
+                _packetCounterBroadcast.IncPacketNumCorrect();
+                // App.LogLine("Sending broadcast packet " + _packetCounterBroadcast.GetPacketNumCorrect());
+            }
         }
 
 

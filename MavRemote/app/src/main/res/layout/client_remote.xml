@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/clClientRemote"
+    android:screenOrientation="portrait"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -271,30 +272,30 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <Button
-            android:id="@+id/btnStat"
-            android:layout_width="72dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:clickable="false"
-            android:text="STAT"
-            android:visibility="gone"
-            app:layout_constraintTop_toBottomOf="@+id/btnScreen"
-            tools:visibility="gone" />
+            android:id="@+id/btnLock"
+            android:layout_width="80dp"
+            android:layout_height="57dp"
+            android:clickable="true"
+            android:text="LOCK"
+            android:visibility="visible"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="visible" />
 
         <Button
             android:id="@+id/btnScreen"
-            android:layout_width="72dp"
-            android:layout_height="wrap_content"
+            android:layout_width="80dp"
+            android:layout_height="57dp"
             android:layout_marginTop="8dp"
             android:text="SCRN"
-            app:layout_constraintTop_toBottomOf="@+id/btnMute" />
+            app:layout_constraintTop_toBottomOf="@+id/btnLock" />
 
         <Button
             android:id="@+id/btnMute"
-            android:layout_width="72dp"
-            android:layout_height="wrap_content"
+            android:layout_width="80dp"
+            android:layout_height="57dp"
+            android:layout_marginTop="8dp"
             android:text="MUTE"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toBottomOf="@+id/btnScreen" />
     </android.support.constraint.ConstraintLayout>
 
 </android.support.constraint.ConstraintLayout>

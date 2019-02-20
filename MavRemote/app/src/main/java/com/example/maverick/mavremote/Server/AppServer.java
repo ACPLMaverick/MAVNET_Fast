@@ -1,7 +1,5 @@
 package com.example.maverick.mavremote.Server;
 
-import android.util.Log;
-
 import com.example.maverick.mavremote.Actions.ActionEvent;
 import com.example.maverick.mavremote.App;
 import com.example.maverick.mavremote.NetworkCommon.NetworkSystem;
@@ -11,7 +9,6 @@ import com.example.maverick.mavremote.UI.NotificationHelper;
 import com.example.maverick.mavremote.UI.UIManager;
 import com.example.maverick.mavremote.Utility;
 
-import java.util.Calendar;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class AppServer extends App
@@ -264,7 +261,8 @@ public final class AppServer extends App
         _uiControllerServer.UpdateCurrentNetworkState(_server.GetState());
         _uiControllerServer.UpdateCurrentMyAddress(_server.GetMyAddress());
         _uiControllerServer.UpdateCurrentClientAddress(_server.GetConnectedAddress());
-        _uiControllerServer.UpdateReceived(_server.GetPacketCounter());
+        _uiControllerServer.UpdateReceived(_server.GetPacketCounterReceived());
+        _uiControllerServer.UpdateBroadcasted(_server.GetPacketCounterBroadcasted().GetPacketNumCorrect());
 
         if(GetBackPressed())
         {
