@@ -22,6 +22,14 @@ namespace Rendering
 
 		// Implemented an empty function for convenience.
 		virtual void Initialize() { }
+
+		// This should be called in situations when resources or dependencies change or are lost (e.g. resolution change).
+		virtual void Reinitialize()
+		{
+			Cleanup();
+			Initialize();
+		}
+
 		// Cleanup and destroy all cached resources.
 		virtual void Cleanup()
 		{

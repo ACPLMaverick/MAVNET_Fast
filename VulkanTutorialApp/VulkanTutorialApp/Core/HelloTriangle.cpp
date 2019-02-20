@@ -5,7 +5,7 @@
 #include "Rendering/Helper.h"
 #include "Rendering/SystemDrawable.h"
 
-#include "Rendering/buffer/UboCommon.h" // TODO: temp
+#include "Rendering/resource/buffer/UboCommon.h" // TODO: temp
 
 namespace Core
 {
@@ -25,11 +25,9 @@ namespace Core
 		, _presentQueue(VK_NULL_HANDLE)
 		, _surface(VK_NULL_HANDLE)
 		, _swapChain(VK_NULL_HANDLE)
-		, _renderPass(VK_NULL_HANDLE)
-		, _pipelineLayout(VK_NULL_HANDLE)
-		, _graphicsPipeline(VK_NULL_HANDLE)
 		, _commandPool(VK_NULL_HANDLE)
 		, _currentFrame(0)
+		, _currentRenderPassKey(0)
 		, _bMinimized(false)
 	{
 		JE_AssertThrow(HelloTriangle::_singletonInstance == nullptr, "HelloTriangle can only have one instance!");
@@ -68,12 +66,23 @@ namespace Core
 
 	void HelloTriangle::InitVulkan()
 	{
+		//
 		CreateInstance();
 		SetupDebugCallback();
 		CreateSurface();
 		PickPhysicalDevice();
 		CreateLogicalDeviceAndGetQueues();
 		CreateCommandPool();
+
+		CreateSyncObjects();
+		CreateSwapChain();
+		RetrieveSwapChainImages();
+		CreateSwapChainImageViews();
+		//
+
+		CreateDepthResources();
+
+		CreatePushConstantRange(); // TODO: Delegate elsewhere.
 
 		::Rendering::Helper::GetInstance()->Initialize();
 
@@ -83,21 +92,24 @@ namespace Core
 		_pipelineMgr.Initialize();
 		_renderPassMgr.Initialize();
 
-		::Rendering::Mesh::LoadOptions meshOptions;
-		_mesh.Initialize(&MODEL_NAME_MESH, &meshOptions);
+		// TODO: This will probably be merged with or placed within Pipeline object.
+		_currentRenderPassKey = (::Rendering::RenderPassKey)::Rendering::RenderPassCommon::Id::Tutorial;
 
+		CreateFramebuffers();
+
+		// Material init. This also creates pipeline.
 		_material.Initialize();
-		
+
+		// Mesh init.
+		::Rendering::Mesh::LoadOptions meshOptions;
+		//_mesh.Initialize(&MODEL_NAME_MESH, &meshOptions);
+		_mesh.Initialize(Rendering::Mesh::GeneratedType::Quad, &meshOptions);
 		_mesh.AdjustBuffersForVertexDeclaration(_material.GetVertexDeclaration());
 
-		CreatePushConstantRange();
+		CreateCommandBuffers();
 
+		// TODO GOM init goes here: Move it elsewhere in the future.
 		InitObjects();
-
-		RecreateSwapChain();
-
-		_camera.SetDimension(static_cast<float>(_swapChainExtent.width) / _swapChainExtent.height);
-		_camera.Update();
 	}
 
 	void HelloTriangle::CreateInstance()
@@ -563,7 +575,7 @@ namespace Core
 
 	void HelloTriangle::InitObjects()
 	{
-		glm::vec3 pos(0.0f, -2.2f, 1.2f);
+		glm::vec3 pos(0.0f, 2.2f, 1.2f);
 		glm::vec3 tgt(0.0f, 0.0f, 0.3f);
 		_camera.Initialize
 		(
@@ -574,9 +586,13 @@ namespace Core
 			0.5f,
 			3.0f
 		);
+		_camera.SetDimension(static_cast<float>(_swapChainExtent.width) / _swapChainExtent.height);
+		_camera.Update();
 
 		glm::vec3 col(1.0f, 1.0f, 0.0f);
-		glm::vec3 dir(-1.0f, 1.0f, -1.0f);
+		glm::vec3 dir(tgt - pos);
+		dir.z = 0.0f;
+		dir.x += 0.2f;
 		dir = glm::normalize(dir);
 		_lightDirectional.Initialize
 		(
@@ -597,6 +613,8 @@ namespace Core
 
 	void HelloTriangle::CreateRenderPass()
 	{
+		JE_Assert(false); // Legacy code.
+
 		VkAttachmentDescription colorAttachment = {};
 		colorAttachment.format = _swapChainFormat;
 		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -649,11 +667,13 @@ namespace Core
 		renderPassInfo.dependencyCount = 1;
 		renderPassInfo.pDependencies = &dependency;
 
-		JE_AssertThrowVkResult(vkCreateRenderPass(_device, &renderPassInfo, _pAllocator, &_renderPass));
+		//JE_AssertThrowVkResult(vkCreateRenderPass(_device, &renderPassInfo, _pAllocator, &_renderPass));
 	}
 
 	void HelloTriangle::CreateGraphicsPipeline()
 	{
+		JE_Assert(false); // Legacy code.
+
 		// Shader modules.
 
 		std::vector<uint8_t> vertShaderData, fragShaderData;
@@ -809,7 +829,7 @@ namespace Core
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 		pipelineLayoutInfo.pPushConstantRanges = &_pushConstantRange;
 
-		JE_AssertThrowVkResult(vkCreatePipelineLayout(_device, &pipelineLayoutInfo, _pAllocator, &_pipelineLayout));
+		//JE_AssertThrowVkResult(vkCreatePipelineLayout(_device, &pipelineLayoutInfo, _pAllocator, &_pipelineLayout));
 
 
 		// Finally create graphics pipeline, yay.
@@ -829,15 +849,15 @@ namespace Core
 		pipelineInfo.pColorBlendState = &colorBlending;
 		pipelineInfo.pDynamicState = nullptr;
 
-		pipelineInfo.layout = _pipelineLayout;
-		pipelineInfo.renderPass = _renderPass;
+		//pipelineInfo.layout = _pipelineLayout;
+		//pipelineInfo.renderPass = _renderPass;
 		pipelineInfo.subpass = 0;
 
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 		pipelineInfo.basePipelineIndex = -1;
 		//pipelineInfo.flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT; // You can use this to derive from existing pipeline which is faster than creating one from scratch.
 
-		JE_AssertThrowVkResult(vkCreateGraphicsPipelines(_device, nullptr, 1, &pipelineInfo, _pAllocator, &_graphicsPipeline));
+		//JE_AssertThrowVkResult(vkCreateGraphicsPipelines(_device, nullptr, 1, &pipelineInfo, _pAllocator, &_graphicsPipeline));
 
 		// Shader modules cleanup.
 
@@ -858,7 +878,10 @@ namespace Core
 
 			VkFramebufferCreateInfo framebufferInfo = {};
 			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			framebufferInfo.renderPass = _renderPass;
+
+			const ::Rendering::RenderPassKey key = (::Rendering::RenderPassKey)::Rendering::RenderPassCommon::Id::Tutorial;
+			framebufferInfo.renderPass = GetManagerRenderPass()->Get(&key)->GetVkRenderPass();
+
 			framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 			framebufferInfo.pAttachments = attachments.data();
 			framebufferInfo.width = _swapChainExtent.width;
@@ -927,7 +950,7 @@ namespace Core
 
 			VkRenderPassBeginInfo renderPassInfo = {};
 			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			renderPassInfo.renderPass = _renderPass;
+			renderPassInfo.renderPass = GetManagerRenderPass()->Get(&_currentRenderPassKey)->GetVkRenderPass();
 			renderPassInfo.framebuffer = _swapChainFramebuffers[i];
 			renderPassInfo.renderArea.offset = { 0, 0 };
 			renderPassInfo.renderArea.extent = _swapChainExtent;
@@ -936,8 +959,10 @@ namespace Core
 
 			vkCmdBeginRenderPass(_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-			vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
+			vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _material.GetPipeline()->GetVkPipeline());
 
+			// TODO: Support push constants.
+			/*
 			Rendering::UboCommon::SceneGlobal pco;
 			pco.FogColor = *_fog.GetColor();
 			pco.FogDepthNear = _fog.GetStartDepth();
@@ -945,9 +970,10 @@ namespace Core
 			pco.LightColor = *_lightDirectional.GetColor();
 			pco.LightDirectionV = *_lightDirectional.GetDirectionV();
 			vkCmdPushConstants(_commandBuffers[i], _pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Rendering::UboCommon::SceneGlobal), &pco);
+			*/
 
 			VkDescriptorSet descriptorSets[] = { _material.GetDescriptorSet()->GetVkDescriptorSet() };
-			vkCmdBindDescriptorSets(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _pipelineLayout, 0, 1, descriptorSets, 0, nullptr);
+			vkCmdBindDescriptorSets(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _material.GetPipeline()->GetVkPipelineLayout(), 0, 1, descriptorSets, 0, nullptr);
 			vkCmdBindVertexBuffers(_commandBuffers[i], 0, _mesh.GetVertexBufferCount(), _mesh.GetVertexBuffers(), _mesh.GetVertexBufferOffsets());
 			vkCmdBindIndexBuffer(_commandBuffers[i], _mesh.GetIndexBuffer(), 0, JE_IndexTypeVk);
 			vkCmdDrawIndexed(_commandBuffers[i], _mesh.GetIndexCount(), 1, 0, 0, 0);
@@ -1251,6 +1277,8 @@ namespace Core
 
 	void HelloTriangle::RecreateSwapChain()
 	{
+		JE_Assert(false); // TODO: Reimplement this function.
+
 		vkDeviceWaitIdle(_device);
 
 		CleanupSwapChain();
@@ -1454,7 +1482,7 @@ namespace Core
 
 	void HelloTriangle::CleanupSwapChain()
 	{
-		if (_renderPass == VK_NULL_HANDLE)
+		if (_depthImageView == VK_NULL_HANDLE)
 			return;
 
 		vkDestroyImageView(_device, _depthImageView, _pAllocator);
@@ -1479,15 +1507,6 @@ namespace Core
 			vkDestroyFramebuffer(_device, framebuffer, _pAllocator);
 		}
 		_swapChainFramebuffers.clear();
-
-		vkDestroyPipeline(_device, _graphicsPipeline, _pAllocator);
-		_graphicsPipeline = VK_NULL_HANDLE;
-
-		vkDestroyPipelineLayout(_device, _pipelineLayout, _pAllocator);
-		_pipelineLayout = VK_NULL_HANDLE;
-
-		vkDestroyRenderPass(_device, _renderPass, _pAllocator);
-		_renderPass = VK_NULL_HANDLE;
 
 		for (auto imageView : _swapChainImageViews)
 		{

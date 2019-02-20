@@ -2,7 +2,7 @@
 
 #include "Core/HelloTriangle.h"
 #include "Texture.h"
-#include "Rendering/buffer/UniformBuffer.h"
+#include "Rendering/resource/buffer/UniformBuffer.h"
 
 #include "Rendering/descriptor/ManagerDescriptor.h"
 #include "Rendering/descriptor/DescriptorSet.h"
@@ -13,7 +13,7 @@ namespace Rendering
 		: Resource()
 		, _descriptorSet(nullptr)
 		, _uboPerObject(nullptr)
-		, _uboPerMaterial(nullptr)
+		, _uboGlobal(nullptr)
 	{
 		_type = ResourceCommon::Type::Material;
 	}
@@ -42,8 +42,8 @@ namespace Rendering
 		_uboPerObject->Initialize(&options);
 
 		options.DataSize = sizeof(UboCommon::SceneGlobal);
-		_uboPerMaterial = new UniformBuffer();
-		_uboPerMaterial->Initialize(&options);
+		_uboGlobal = new UniformBuffer();
+		_uboGlobal->Initialize(&options);
 
 		// This as well.
 		::Rendering::Texture::LoadOptions texOptions;
@@ -52,7 +52,7 @@ namespace Rendering
 		texture->Initialize(&texName, &texOptions);
 		_textures.push_back(texture);
 
-		
+		// TODO: Why the fuck bindings are global and not per-stage?
 		DescriptorSet::Info info;
 		info.LayInfo.Bindings[0] = DescriptorCommon::LayoutInfo::Binding
 		(
@@ -67,10 +67,18 @@ namespace Rendering
 			DescriptorCommon::ShaderStage::Fragment,
 			1,
 			1,
+			ResourceCommon::Type::UniformBuffer
+		);
+		info.LayInfo.Bindings[2] = DescriptorCommon::LayoutInfo::Binding
+		(
+			DescriptorCommon::ShaderStage::Fragment,
+			2,
+			1,
 			ResourceCommon::Type::Texture2D
 		);
 		info.Resources[0][0] = _uboPerObject;
-		info.Resources[1][0] = _textures[0];
+		info.Resources[1][0] = _uboGlobal;
+		info.Resources[2][0] = _textures[0];
 		_descriptorSet = JE_GetRenderer()->GetManagerDescriptor()->Get(&info);
 
 
@@ -119,7 +127,7 @@ namespace Rendering
 	void Material::Update()
 	{
 		UpdateUboPerObject();
-		UpdateUboPerMaterial();
+		UpdateUboGlobal();
 	}
 
 	void Material::Cleanup()
@@ -139,11 +147,11 @@ namespace Rendering
 			delete _uboPerObject;
 			_uboPerObject = nullptr;
 		}
-		if (_uboPerMaterial != nullptr)	// TODO: Do not cleanup, instead make manager do this.
+		if (_uboGlobal != nullptr)	// TODO: Do not cleanup, instead make manager do this.
 		{
-			_uboPerMaterial->Cleanup();
-			delete _uboPerMaterial;
-			_uboPerMaterial = nullptr;
+			_uboGlobal->Cleanup();
+			delete _uboGlobal;
+			_uboGlobal = nullptr;
 		}
 
 		_pipeline = nullptr;
@@ -158,6 +166,7 @@ namespace Rendering
 		auto currentTime = std::chrono::high_resolution_clock::now();
 
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+		//float time = 0.0f;
 
 		UboCommon::StaticMeshCommon matrices;
 
@@ -168,14 +177,25 @@ namespace Rendering
 		mv_translation = mv_translation * rotation * scale;
 
 		matrices.MVP = *JE_GetRenderer()->GetCamera()->GetViewProj() * mv_translation;
-		matrices.MV = mv_translation;
+		matrices.MV = *JE_GetRenderer()->GetCamera()->GetView() * mv_translation;
 		matrices.MVInverseTranspose = glm::transpose(glm::inverse(mv_translation));
 
 		_uboPerObject->UpdateWithData(reinterpret_cast<uint8_t*>(&matrices), sizeof(matrices));
 	}
 
-	void Material::UpdateUboPerMaterial()
+	void Material::UpdateUboGlobal()
 	{
+		const Fog& fog = *JE_GetRenderer()->GetFog();
+		const LightDirectional& lightDirectional = *JE_GetRenderer()->GetLightDirectional();
+
+		Rendering::UboCommon::SceneGlobal pco;
+		pco.FogColor = *fog.GetColor();
+		pco.FogDepthNear = fog.GetStartDepth();
+		pco.FogDepthFar = fog.GetEndDepth();
+		pco.LightColor = *lightDirectional.GetColor();
+		pco.LightDirectionV = *lightDirectional.GetDirectionV();
+
+		_uboGlobal->UpdateWithData(reinterpret_cast<uint8_t*>(&pco), sizeof(pco));
 	}
 
 }

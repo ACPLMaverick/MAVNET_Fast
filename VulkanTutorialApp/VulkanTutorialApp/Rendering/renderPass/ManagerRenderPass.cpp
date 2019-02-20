@@ -51,11 +51,11 @@ namespace Rendering
 
 			RenderPass::Attachment depthAttachment = {};
 			depthAttachment.bClearOnLoad = true;
-			colorAttachment.bStore = false;
-			colorAttachment.bUseStencil = false;
-			colorAttachment.Format = JE_GetRenderer()->FindDepthFormat();
-			colorAttachment.MyMultisamplingMode = RenderState::MultisamplingMode::None;
-			colorAttachment.Usage = RenderPass::UsageMode::DepthStencil;
+			depthAttachment.bStore = false;
+			depthAttachment.bUseStencil = false;
+			depthAttachment.Format = JE_GetRenderer()->FindDepthFormat();
+			depthAttachment.MyMultisamplingMode = RenderState::MultisamplingMode::None;
+			depthAttachment.Usage = RenderPass::UsageMode::DepthStencil;
 			outInfo->DepthStencilAttachments.push_back(depthAttachment);
 
 			RenderPass::Subpass subpass;

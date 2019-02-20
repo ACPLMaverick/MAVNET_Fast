@@ -48,7 +48,7 @@ namespace Rendering
 		JE_Inline const VertexDeclaration* GetVertexDeclaration() const { return &_vertexDeclaration; }
 		JE_Inline const DescriptorSet* GetDescriptorSet() const { return _descriptorSet; }
 		JE_Inline const UniformBuffer* GetUboPerObject() const { return _uboPerObject; }
-		JE_Inline const UniformBuffer* GetUboPerMaterial() const { return _uboPerMaterial; }
+		JE_Inline const UniformBuffer* GetUboPerMaterial() const { return _uboGlobal; }
 		JE_Inline const Pipeline* GetPipeline() const { return _pipeline; }
 
 	protected:
@@ -60,12 +60,12 @@ namespace Rendering
 		DescriptorSet* _descriptorSet;
 		
 		UniformBuffer* _uboPerObject;
-		UniformBuffer* _uboPerMaterial;
+		UniformBuffer* _uboGlobal;
 
 		Pipeline* _pipeline;
 
 
 		void UpdateUboPerObject();
-		void UpdateUboPerMaterial();
+		void UpdateUboGlobal();
 	};
 }

@@ -68,6 +68,7 @@ extern bool IsBitWidthEqualOrLesserThan(uint64_t val, uint8_t bitWidth);
 #define JE_PrintLineErr(text) std::cerr << (text) << std::endl
 
 #define JE_VectorSizeBytes(arrayName) (sizeof((arrayName)[0]) * (arrayName).size())
+#define JE_ArrayLength(arrayName) (sizeof(arrayName)/sizeof(arrayName[0]))
 
 #define JE_VA_ARGS_COUNT(...) std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value
 

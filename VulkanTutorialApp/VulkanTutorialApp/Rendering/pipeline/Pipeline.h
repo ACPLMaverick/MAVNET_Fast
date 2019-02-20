@@ -67,6 +67,8 @@ namespace Rendering
 
 		JE_Inline const Shader* GetAssociatedShader() const { return _associatedShader; }
 		JE_Inline Type GetType() const { return _type; }
+		JE_Inline VkPipeline GetVkPipeline() const { return _pipeline; }
+		JE_Inline VkPipelineLayout GetVkPipelineLayout() const { return _associatedPipelineLayout; }
 
 	private:
 

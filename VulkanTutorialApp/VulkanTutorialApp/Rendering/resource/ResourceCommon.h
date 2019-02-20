@@ -15,6 +15,10 @@ namespace Rendering
 			, Material
 		JE_EnumEnd()
 
+		static const size_t Type_ShaderResourceMin = 1;
+		static const size_t Type_ShaderResourceMax = 2;
+		static const size_t Type_ShaderResourceNum = Type_ShaderResourceMax - Type_ShaderResourceMin + 1;
+
 		extern VkDescriptorType TypeToDescriptorType(ResourceCommon::Type type);
 	}
 }

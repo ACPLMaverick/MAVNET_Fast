@@ -163,7 +163,7 @@
     <ClCompile Include="Rendering\resource\Texture.cpp" />
     <ClCompile Include="Rendering\sampler\ManagerSampler.cpp" />
     <ClCompile Include="Rendering\sampler\Sampler.cpp" />
-    <ClCompile Include="Rendering\buffer\UniformBuffer.cpp" />
+    <ClCompile Include="Rendering\resource\buffer\UniformBuffer.cpp" />
     <ClCompile Include="Rendering\resource\Resource.cpp" />
     <ClCompile Include="Rendering\resource\VertexDeclaration.cpp" />
     <ClCompile Include="Rendering\resource\Shader.cpp" />
@@ -194,8 +194,8 @@
     <ClInclude Include="Rendering\resource\Texture.h" />
     <ClInclude Include="Rendering\sampler\ManagerSampler.h" />
     <ClInclude Include="Rendering\sampler\Sampler.h" />
-    <ClInclude Include="Rendering\buffer\UniformBuffer.h" />
-    <ClInclude Include="Rendering\buffer\UboCommon.h" />
+    <ClInclude Include="Rendering\resource\buffer\UniformBuffer.h" />
+    <ClInclude Include="Rendering\resource\buffer\UboCommon.h" />
     <ClInclude Include="Rendering\resource\Resource.h" />
     <ClInclude Include="Rendering\resource\VertexDeclaration.h" />
     <ClInclude Include="Rendering\resource\Shader.h" />

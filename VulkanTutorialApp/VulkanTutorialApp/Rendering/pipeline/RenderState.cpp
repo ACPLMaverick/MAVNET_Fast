@@ -93,7 +93,7 @@ namespace Rendering
 	{
 		for (uint32_t i = 0; i < _info.FramebufferCount; ++i)
 		{
-			VkPipelineColorBlendAttachmentState attachmentState;
+			VkPipelineColorBlendAttachmentState attachmentState = {};
 			CreateColorBlendAttachment(i, &attachmentState);
 			outAttachmentStates->push_back(attachmentState);
 		}

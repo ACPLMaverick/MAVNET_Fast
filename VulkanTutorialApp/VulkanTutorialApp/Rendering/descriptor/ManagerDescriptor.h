@@ -34,7 +34,6 @@ namespace Rendering
 		static const uint32_t MAX_SETS_PER_POOL = 100;
 		static constexpr const uint32_t _poolDescriptorCountsPerType[] = 
 		{
-			0,
 			128,
 			128,
 			4
@@ -42,7 +41,6 @@ namespace Rendering
 
 		static constexpr const VkDescriptorType _poolDescriptorTypeToVk[] =
 		{
-			static_cast<VkDescriptorType>(-1),
 			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER

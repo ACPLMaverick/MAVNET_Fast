@@ -80,21 +80,21 @@ namespace Rendering
 	{
 		VkDescriptorPool pool;
 
-		VkDescriptorPoolSize sizeInfoArray[static_cast<uint32_t>(ResourceCommon::Type::ENUM_SIZE)];
+		VkDescriptorPoolSize sizeInfoArray[ResourceCommon::Type_ShaderResourceNum];
 
-		for (size_t i = 0; i < static_cast<size_t>(ResourceCommon::Type::ENUM_SIZE); ++i)
+		JE_AssertStatic(JE_ArrayLength(_poolDescriptorCountsPerType) >= ResourceCommon::Type_ShaderResourceNum);
+		JE_AssertStatic(JE_ArrayLength(_poolDescriptorTypeToVk) >= ResourceCommon::Type_ShaderResourceNum);
+
+		for (size_t i = 0; i < ResourceCommon::Type_ShaderResourceNum; ++i)
 		{
-			if(i == 0)
-				continue; // Omit Unknown.
-
 			sizeInfoArray[i].descriptorCount = _poolDescriptorCountsPerType[i];
 			sizeInfoArray[i].type = _poolDescriptorTypeToVk[i];
 		}
 
 		VkDescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		poolInfo.poolSizeCount = static_cast<uint32_t>(ResourceCommon::Type::ENUM_SIZE) - 1; // Omit Unknown.
-		poolInfo.pPoolSizes = &sizeInfoArray[1]; // Omit Unknown.
+		poolInfo.poolSizeCount = static_cast<uint32_t>(ResourceCommon::Type_ShaderResourceNum);
+		poolInfo.pPoolSizes = sizeInfoArray; // Omit Unknown.
 		poolInfo.maxSets = MAX_SETS_PER_POOL;
 
 		/*

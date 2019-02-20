@@ -98,11 +98,12 @@ namespace Rendering
 		{
 			JE_Assert(_info.Subpasses[i].ColorAttachmentIndices.size() <= RenderState::MAX_COLOR_FRAMEBUFFERS_ATTACHED);
 
-			std::vector<VkAttachmentReference> colorAttachmentRefs;
+			colorAttachmentRefsForEachSubpass.push_back(std::vector<VkAttachmentReference>());
+			std::vector<VkAttachmentReference>& colorAttachmentRefs = colorAttachmentRefsForEachSubpass.back();
 
 			for (size_t j = 0; j < _info.Subpasses[i].ColorAttachmentIndices.size(); ++j)
 			{
-				VkAttachmentReference attachmentRef;
+				VkAttachmentReference attachmentRef = {};
 				attachmentRef.attachment = _info.Subpasses[i].ColorAttachmentIndices[j];
 				switch (_info.ColorAttachments[_info.Subpasses[i].ColorAttachmentIndices[j]].Usage)	// TODO: Do this based on real framebuffer's layout.
 				{
@@ -111,6 +112,7 @@ namespace Rendering
 				case UsageMode::Transferable:
 				default:
 					attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+					break;
 				case UsageMode::DepthStencil:
 					attachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 					break;
@@ -119,21 +121,19 @@ namespace Rendering
 				colorAttachmentRefs.push_back(attachmentRef);
 			}
 
-			colorAttachmentRefsForEachSubpass.push_back(colorAttachmentRefs);
-
 
 			VkAttachmentReference depthAttachmentRef = {};
 			if (bUseDepth)
 			{
-				depthAttachmentRef.attachment = _info.ColorAttachments.size() + _info.Subpasses[i].DepthAttachmentIndex; // "next" attachment index after all colors
+				depthAttachmentRef.attachment = (uint32_t)(_info.ColorAttachments.size() + _info.Subpasses[i].DepthAttachmentIndex); // "next" attachment index after all colors
 				depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 			}
 			depthAttachmentRefsForEachSubpass.push_back(depthAttachmentRef);
 
 
-			VkSubpassDescription desc;
+			VkSubpassDescription desc = {};
 			desc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-			desc.colorAttachmentCount = colorAttachmentRefs.size();
+			desc.colorAttachmentCount = (uint32_t)colorAttachmentRefs.size();
 			desc.pColorAttachments = colorAttachmentRefs.data();
 			desc.pDepthStencilAttachment = bUseDepth ? &depthAttachmentRef : nullptr;
 

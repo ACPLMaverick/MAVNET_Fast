@@ -84,6 +84,8 @@ namespace Core
 		VkAllocationCallbacks* GetAllocatorPtr() { return _pAllocator; }
 
 		::Rendering::Camera* GetCamera() { return &_camera; }
+		::Rendering::Fog* GetFog() { return &_fog; }
+		::Rendering::LightDirectional* GetLightDirectional() { return &_lightDirectional; }
 
 		ManagerUid* GetManagerUid() { return &_uidMgr; }
 		::Rendering::ManagerSampler* GetManagerSampler() { return &_samplerMgr; }
@@ -210,15 +212,13 @@ namespace Core
 		VkFormat _swapChainFormat;
 		VkExtent2D _swapChainExtent;
 
-		VkRenderPass _renderPass;
-		VkPipelineLayout _pipelineLayout;
-		VkPipeline _graphicsPipeline;
-
 		std::vector<VkFramebuffer> _swapChainFramebuffers;
 
 		VkCommandPool _commandPool;
 		VkCommandPool _commandPoolTransient;
 		std::vector<VkCommandBuffer> _commandBuffers;
+
+		VkPushConstantRange _pushConstantRange; // TODO: Delegate elsewhere.
 
 		std::vector<VkSemaphore> _semsImageAvailable;
 		std::vector<VkSemaphore> _semsRenderFinished;
@@ -226,11 +226,14 @@ namespace Core
 
 		uint32_t _currentFrame;
 
+		::Rendering::RenderPassKey _currentRenderPassKey;
+
+
+		// ++TODO delegate elsewhere.
 		::Rendering::Camera _camera;
 		::Rendering::LightDirectional _lightDirectional;
 		::Rendering::Fog _fog;
-
-		VkPushConstantRange _pushConstantRange;
+		// --
 
 		VkDeviceMemory _depthImageMemory;
 

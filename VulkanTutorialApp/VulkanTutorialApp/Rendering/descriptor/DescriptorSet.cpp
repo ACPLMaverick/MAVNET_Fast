@@ -1,7 +1,7 @@
 #include "DescriptorSet.h"
 
 #include "Core/HelloTriangle.h"
-#include "Rendering/buffer/UniformBuffer.h"
+#include "Rendering/resource/buffer/UniformBuffer.h"
 #include "Rendering/resource/Texture.h"
 
 namespace Rendering
@@ -47,13 +47,17 @@ namespace Rendering
 		{
 			// TODO: Make selective updating, with only things that changed updated.
 
-			std::vector<VkDescriptorBufferInfo> bufferInfos;
-			std::vector<VkDescriptorImageInfo> imageInfos;
+			VkDescriptorBufferInfo bufferInfos[DescriptorCommon::MAX_BINDINGS_PER_LAYOUT][DescriptorCommon::MAX_DESCRIPTORS_PER_BINDING] = {};
+			VkDescriptorImageInfo imageInfos[DescriptorCommon::MAX_BINDINGS_PER_LAYOUT][DescriptorCommon::MAX_DESCRIPTORS_PER_BINDING] = {};
 
-			std::vector<VkWriteDescriptorSet> descriptorWrites;
+			VkWriteDescriptorSet descriptorWrites[DescriptorCommon::MAX_BINDINGS_PER_LAYOUT] = {};
 
-			size_t bufferGlobalOffset = 0;
-			size_t imageGlobalOffset = 0;
+			uint32_t bufferInfosNum[DescriptorCommon::MAX_BINDINGS_PER_LAYOUT] = {};
+			uint32_t imageInfosNum[DescriptorCommon::MAX_BINDINGS_PER_LAYOUT] = {};
+			uint32_t descriptorWritesNum = 0;
+
+			uint32_t bufferGlobalOffset = 0;
+			uint32_t imageGlobalOffset = 0;
 			for (size_t i = 0; i < DescriptorCommon::MAX_BINDINGS_PER_LAYOUT; ++i)
 			{
 				ResourceCommon::Type thisBindingType = ResourceCommon::Type::Unknown;
@@ -77,24 +81,24 @@ namespace Rendering
 						{
 							const UniformBuffer* buffer = reinterpret_cast<const UniformBuffer*>(resource);
 
-							VkDescriptorBufferInfo bufferInfo = {};
+							VkDescriptorBufferInfo& bufferInfo = bufferInfos[i][j];
 							bufferInfo.buffer = buffer->GetBuffer();
-							bufferInfo.offset = 0;
+							bufferInfo.offset = 0;	// TODO..?
 							bufferInfo.range = static_cast<uint32_t>(buffer->GetOptions()->DataSize);
 
-							bufferInfos.push_back(bufferInfo);
+							++bufferInfosNum[i];
 						}
 						else if (resource->GetType() == ResourceCommon::Type::Texture2D)
 						{
 							const Texture* texture = reinterpret_cast<const Texture*>(resource);
 
-							VkDescriptorImageInfo imageInfo = {};
+							VkDescriptorImageInfo& imageInfo = imageInfos[i][j];
 							// TODO: Support other layouts.
 							imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 							imageInfo.imageView = texture->GetImageView();
 							imageInfo.sampler = texture->GetSampler()->GetVkSampler();
 
-							imageInfos.push_back(imageInfo);
+							++imageInfosNum[i];
 						}
 						else
 						{
@@ -114,10 +118,10 @@ namespace Rendering
 					JE_Assert(
 						ResourceCommon::TypeToDescriptorType(thisBindingType) == static_cast<VkDescriptorType>(_info.LayInfo.Bindings[i].Type), "Assigned resource does not match the layout.");
 
-					VkWriteDescriptorSet write = {};
+					VkWriteDescriptorSet& write = descriptorWrites[i];
 					write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 					write.dstSet = _descriptorSet;
-					write.dstBinding = static_cast<uint32_t>(i);
+					write.dstBinding = static_cast<uint32_t>(i);	// TODO !!!!!!!!!!!!!!!!!!!!!!!
 					write.dstArrayElement = 0;
 
 					switch (thisBindingType)
@@ -125,15 +129,15 @@ namespace Rendering
 					case ResourceCommon::Type::UniformBuffer:
 
 						write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-						write.descriptorCount = static_cast<uint32_t>(bufferInfos.size());
-						write.pBufferInfo = bufferInfos.data();
+						write.descriptorCount = bufferInfosNum[i];
+						write.pBufferInfo = bufferInfos[i];
 
 						break;
 					case ResourceCommon::Type::Texture2D:
 
 						write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-						write.descriptorCount = static_cast<uint32_t>(imageInfos.size());
-						write.pImageInfo = imageInfos.data();
+						write.descriptorCount = imageInfosNum[i];
+						write.pImageInfo = imageInfos[i];
 
 						break;
 					default:
@@ -141,55 +145,13 @@ namespace Rendering
 						break;
 					}
 
-					descriptorWrites.push_back(write);
-
-					imageInfos.clear();
-					bufferInfos.clear();
+					++descriptorWritesNum;
 				}
 			}
 
-			vkUpdateDescriptorSets(JE_GetRenderer()->GetDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+			vkUpdateDescriptorSets(JE_GetRenderer()->GetDevice(), descriptorWritesNum, descriptorWrites, 0, nullptr);
 
 			_bResourcesDirty = false;
-
-			/*
-
-			// Legacy code.
-
-			VkDescriptorBufferInfo bufferInfo = {};
-			bufferInfo.buffer = _uniformBuffer;
-			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(UniformBufferObject); // If you're overwriting the whole buffer, like we are in this case, then it is is also possible to use the VK_WHOLE_SIZE value for the range. 
-
-			VkDescriptorImageInfo imageInfo = {};
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = _texture.GetImageView();
-			imageInfo.sampler = _texture.GetSampler()->GetVkSampler();
-
-			std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
-
-			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[0].dstSet = _descriptorSet;
-			descriptorWrites[0].dstBinding = 0;
-			descriptorWrites[0].dstArrayElement = 0;
-			descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			descriptorWrites[0].descriptorCount = 1;
-			descriptorWrites[0].pBufferInfo = &bufferInfo;
-			descriptorWrites[0].pImageInfo = nullptr;
-			descriptorWrites[0].pTexelBufferView = nullptr;
-
-			descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[1].dstSet = _descriptorSet;
-			descriptorWrites[1].dstBinding = 1;
-			descriptorWrites[1].dstArrayElement = 0;
-			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrites[1].descriptorCount = 1;
-			descriptorWrites[1].pBufferInfo = nullptr;
-			descriptorWrites[1].pImageInfo = &imageInfo;
-			descriptorWrites[1].pTexelBufferView = nullptr;
-
-			vkUpdateDescriptorSets(_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-			*/
 		}
 	}
 

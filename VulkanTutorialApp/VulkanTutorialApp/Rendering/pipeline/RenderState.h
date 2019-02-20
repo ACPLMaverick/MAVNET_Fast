@@ -165,6 +165,7 @@ namespace Rendering
 
 			bool operator==(const Key& other) const
 			{
+				// TODO: this is wrong :V
 				JE_AssertStatic(sizeof(Key) <= PACKED_STATE_PREFERRED_SIZE_BYTES);
 				const uint32_t arrayNum = PACKED_STATE_PREFERRED_SIZE_BYTES / sizeof(uint64_t);
 				const uint64_t* arrayMy = reinterpret_cast<const uint64_t*>(this);

@@ -24,6 +24,12 @@ namespace Rendering
 	{
 	public:
 
+		JE_EnumBegin(GeneratedType)
+			Quad,
+			Box,
+			Sphere
+		JE_EnumEnd()
+
 		struct LoadOptions
 		{
 			bool bReadOnly = true;
@@ -107,6 +113,7 @@ namespace Rendering
 		JE_Inline const VertexDeclaration* GetVertexDeclarationIsAdjustedTo() const { return _adjustment; }
 
 		void Initialize(const std::string* name, const LoadOptions* loadOptions);
+		void Initialize(GeneratedType generatedType, const LoadOptions* loadOptions);
 		void Cleanup();
 
 		void AdjustBuffersForVertexDeclaration(const VertexDeclaration* declaration);
@@ -115,13 +122,26 @@ namespace Rendering
 		
 		Mesh(const Mesh& mesh) {}
 
+		void InitializeCommon(const LoadOptions* loadOptions);
+
 		void LoadData(const std::string* name, const LoadOptions* loadOptions);
 		void LoadDataObj(const std::string* name, const LoadOptions* loadOptions);
+
+		void GenerateData(GeneratedType generatedType, const LoadOptions* loadOptions);
+		void GenerateQuad(const LoadOptions* loadOptions);
+		void GenerateBox(const LoadOptions* loadOptions);
+		void GenerateSphere(const LoadOptions* loadOptions);
+
 		void CleanupData();
 
 		void CreateVertexBufferArray();
 		void CreateVertexBuffer(const VertexArray* arr, VkDeviceMemory* outDeviceMemory, VkBuffer* outBuffer);
 		void CreateIndexBuffer();
+
+	protected:
+
+		typedef void (Mesh::*GenerateFunc)(const LoadOptions*);
+		static GenerateFunc _generateFunctions[(size_t)GeneratedType::ENUM_SIZE];
 
 	protected:
 

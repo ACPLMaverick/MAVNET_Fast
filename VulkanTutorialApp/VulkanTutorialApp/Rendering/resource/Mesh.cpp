@@ -13,7 +13,6 @@ namespace Rendering
 	{
 	}
 
-
 	Mesh::~Mesh()
 	{
 	}
@@ -21,16 +20,13 @@ namespace Rendering
 	void Mesh::Initialize(const std::string * name, const LoadOptions * loadOptions)
 	{
 		LoadData(name, loadOptions);
+		InitializeCommon(loadOptions);
+	}
 
-		CreateVertexBufferArray();
-		CreateIndexBuffer();
-
-		AdjustBuffersForVertexDeclaration(nullptr);
-
-		if (loadOptions->bReadOnly)
-		{
-			CleanupData();
-		}
+	void Mesh::Initialize(GeneratedType generatedType, const LoadOptions* loadOptions)
+	{
+		GenerateData(generatedType, loadOptions);
+		InitializeCommon(loadOptions);
 	}
 
 	void Mesh::Cleanup()
@@ -111,6 +107,19 @@ namespace Rendering
 		}
 	}
 
+	void Mesh::InitializeCommon(const LoadOptions* loadOptions)
+	{
+		CreateVertexBufferArray();
+		CreateIndexBuffer();
+
+		AdjustBuffersForVertexDeclaration(nullptr);
+
+		if (loadOptions->bReadOnly)
+		{
+			CleanupData();
+		}
+	}
+
 	void Mesh::LoadData(const std::string * name, const LoadOptions * loadOptions)
 	{
 		// TODO: implement different formats support (FBX?)
@@ -130,7 +139,7 @@ namespace Rendering
 
 		JE_AssertThrow(tinyobj::LoadObj(&attrib, &shapes, &materials, &err, finalPath.c_str()), err);
 
-		glm::vec3 dummyNormal = glm::vec3(0.0f, 0.0f, 1.0f);
+		glm::vec3 dummyNormal = glm::vec3(0.0f, 0.0f, 0.0f);
 		const bool bIncludeNormals = attrib.normals.size() > 0;
 
 		VertexArray* arrayPosition = nullptr;
@@ -226,6 +235,73 @@ namespace Rendering
 		_info.IndexCount = static_cast<uint32_t>(_info.IndexArray.size());
 	}
 
+	void Mesh::GenerateData(GeneratedType generatedType, const LoadOptions* loadOptions)
+	{
+		const size_t index = (size_t)generatedType;
+		JE_Assert(index < JE_ArrayLength(_generateFunctions));
+
+		(this->*(Mesh::_generateFunctions[index]))(loadOptions);
+	}
+
+	void Mesh::GenerateQuad(const LoadOptions* loadOptions)
+	{
+		_info.VertexArrays.resize(4);
+		VertexArray* arrayPosition = &_info.VertexArrays[0];
+		VertexArray* arrayNormal = &_info.VertexArrays[1];
+		VertexArray* arrayUv = &_info.VertexArrays[2];
+		VertexArray* arrayColor = &_info.VertexArrays[3];
+
+		*arrayPosition = VertexArray(VertexDeclaration::ComponentType::Position);
+		*arrayNormal = VertexArray(VertexDeclaration::ComponentType::Normal);
+		*arrayUv = VertexArray(VertexDeclaration::ComponentType::Uv);
+		*arrayColor = VertexArray(VertexDeclaration::ComponentType::Color);
+		arrayPosition->ComponentCount = arrayNormal->ComponentCount = arrayUv->ComponentCount = arrayColor->ComponentCount = 4;
+
+		const float diam = 0.5f;
+		arrayPosition->Array.push_back(diam); arrayPosition->Array.push_back(diam); arrayPosition->Array.push_back(0.0f);
+		arrayPosition->Array.push_back(diam); arrayPosition->Array.push_back(-diam); arrayPosition->Array.push_back(0.0f);
+		arrayPosition->Array.push_back(-diam); arrayPosition->Array.push_back(-diam); arrayPosition->Array.push_back(0.0f);
+		arrayPosition->Array.push_back(-diam); arrayPosition->Array.push_back(diam); arrayPosition->Array.push_back(0.0f);
+
+		arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(1.0f);
+		arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(1.0f);
+		arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(1.0f);
+		arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(1.0f);
+
+		arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(0.0f);
+		arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(1.0f);
+		arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(1.0f);
+		arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(0.0f);
+
+		const float col = 0.7f;
+		const float a = 1.0f;
+		arrayColor->Array.push_back(col); arrayPosition->Array.push_back(col); arrayPosition->Array.push_back(col); arrayPosition->Array.push_back(a);
+		arrayColor->Array.push_back(col); arrayPosition->Array.push_back(col); arrayPosition->Array.push_back(col); arrayPosition->Array.push_back(a);
+		arrayColor->Array.push_back(col); arrayPosition->Array.push_back(col); arrayPosition->Array.push_back(col); arrayPosition->Array.push_back(a);
+		arrayColor->Array.push_back(col); arrayPosition->Array.push_back(col); arrayPosition->Array.push_back(col); arrayPosition->Array.push_back(a);
+
+		_info.IndexArray.push_back(0);
+		_info.IndexArray.push_back(2);
+		_info.IndexArray.push_back(1);
+		_info.IndexArray.push_back(0);
+		_info.IndexArray.push_back(3);
+		_info.IndexArray.push_back(2);
+
+
+		_info.VertexCount = static_cast<uint32_t>(_info.VertexArrays[0].Array.size());
+		_info.IndexCount = static_cast<uint32_t>(_info.IndexArray.size());
+	}
+
+	void Mesh::GenerateBox(const LoadOptions* loadOptions)
+	{
+
+	}
+
+	void Mesh::GenerateSphere(const LoadOptions* loadOptions)
+	{
+
+	}
+
 	void Mesh::CleanupData()
 	{
 		for (auto& arr : _info.VertexArrays)
@@ -304,4 +380,12 @@ namespace Rendering
 		CopyBuffer_CPU_GPU(reinterpret_cast<const void*>(_info.IndexArray.data()), _indexBufferMemory, static_cast<size_t>(bufferSize));
 #endif
 	}
+
+	Rendering::Mesh::GenerateFunc Mesh::_generateFunctions[] = 
+	{
+		&Mesh::GenerateQuad,
+		&Mesh::GenerateBox,
+		&Mesh::GenerateSphere
+	};
+
 }
