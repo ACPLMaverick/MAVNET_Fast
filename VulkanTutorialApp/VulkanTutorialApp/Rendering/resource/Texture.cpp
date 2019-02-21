@@ -47,33 +47,22 @@ namespace Rendering
 		JE_Assert(_image == VK_NULL_HANDLE);
 	}
 
-	void Texture::Initialize(const std::string * loadPath, const LoadOptions * loadOptions)
+	void Texture::Load(const std::string& loadPath, const LoadOptions * loadOptions)
 	{
-		JE_Assert(loadPath != nullptr && loadOptions != nullptr);
+		JE_Assert(loadOptions != nullptr);
 
-		_info.Format = loadOptions->DesiredFormat;
-
-		LoadData(loadPath, loadOptions);
-
-		InitializeCommon(loadOptions);
-	}
-
-	void Texture::Initialize(uint8_t * dataToOwn, uint32_t sizeBytes, uint16_t width, uint16_t height, uint8_t mipCount, const LoadOptions * loadOptions)
-	{
-		JE_Assert(dataToOwn != nullptr && sizeBytes != 0);
-
-		_info.bAllocatedByStbi = false;
-		_info.Data = dataToOwn;
-		_info.SizeBytes = sizeBytes;
-		_info.Width = width;
-		_info.Height = height;
-		_info.MipCount = mipCount;
-		_info.Format = loadOptions->DesiredFormat;
-		_info.Channels = GetDesiredChannelsFromFormat(loadOptions->DesiredFormat);
-
-		if (loadOptions->bGenerateMips && _info.MipCount == 1)
+		if (loadOptions->MemoryBufferInfo != nullptr)	// Load from attached buffer.
 		{
-			CalculateMipCount(true);
+			_info = *loadOptions->MemoryBufferInfo;
+			if (loadOptions->bGenerateMips && _info.MipCount == 1)
+			{
+				CalculateMipCount(true);
+			}
+		}
+		else
+		{
+			_info.Format = loadOptions->DesiredFormat;
+			LoadData(loadPath, loadOptions);
 		}
 
 		InitializeCommon(loadOptions);
@@ -120,14 +109,14 @@ namespace Rendering
 		}
 	}
 
-	void Texture::LoadData(const std::string * textureName, const LoadOptions * loadOptions)
+	void Texture::LoadData(const std::string& textureName, const LoadOptions * loadOptions)
 	{
 		int32_t width, height, chnls;
 		int32_t desiredChannels = GetDesiredChannelsFromFormat(loadOptions->DesiredFormat);
 
 		_info.Data = stbi_load
 		(
-			(::Core::HelloTriangle::RESOURCE_PATH + "Textures\\Source\\" + *textureName).c_str(),
+			(::Core::HelloTriangle::RESOURCE_PATH + "Textures\\Source\\" + textureName).c_str(),
 			&width,
 			&height,
 			&chnls,

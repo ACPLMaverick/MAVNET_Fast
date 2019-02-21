@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/ManagerUid.h"
+#include "Core/resource/ResourceManager.h"
 
 #include "Rendering/Camera.h"
 #include "Rendering/LightDirectional.h"
@@ -92,6 +93,8 @@ namespace Core
 		::Rendering::ManagerDescriptor* GetManagerDescriptor() { return &_descriptorMgr; }
 		::Rendering::ManagerPipeline* GetManagerPipeline() { return &_pipelineMgr; }
 		::Rendering::ManagerRenderPass* GetManagerRenderPass() { return &_renderPassMgr; }
+
+		ResourceManager* GetResourceManager() { return &_resourceManager; }
 
 
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -227,6 +230,7 @@ namespace Core
 		uint32_t _currentFrame;
 
 		::Rendering::RenderPassKey _currentRenderPassKey;
+		::Rendering::Pipeline::Key _currentPipelineKey;
 
 
 		// ++TODO delegate elsewhere.
@@ -247,13 +251,12 @@ namespace Core
 		::Rendering::ManagerPipeline _pipelineMgr;
 		::Rendering::ManagerRenderPass _renderPassMgr;
 
-		::Rendering::Mesh _mesh;
-		::Rendering::Material _material;
+		ResourceManager _resourceManager;
+		::Rendering::Mesh* _mesh;	// TODO: temp
+		::Rendering::Material* _material;	// TODO: temp
 
 		bool _bMinimized;
 	};
 }
 
 #define JE_GetRenderer() Core::HelloTriangle::GetInstance()
-#define JE_GetMgrSampler() Core::HelloTriangle::GetInstance()->GetManagerSampler();
-#define JE_GetMgrDescriptor() Core::HelloTriangle::GetInstance()->GetManagerDescriptor();

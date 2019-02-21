@@ -23,17 +23,20 @@ namespace Rendering
 		// Implemented an empty function for convenience.
 		virtual void Initialize() { }
 
-		// This should be called in situations when resources or dependencies change or are lost (e.g. resolution change).
-		virtual void Reinitialize()
+		void ReinitializeValue(const Key* key)
 		{
-			Cleanup();
-			Initialize();
+			ValueWrapper wrapper = TryGet(key);
+			Value* value;
+			if ((value = GetValueFromWrapper(wrapper)) != nullptr)
+			{
+				value->Reinitialize();
+			}
 		}
 
 		// Cleanup and destroy all cached resources.
 		virtual void Cleanup()
 		{
-			for (Value value : _memory)
+			for (Value& value : _memory)
 			{
 				value.Cleanup();
 			}
@@ -57,12 +60,29 @@ namespace Rendering
 		ValueWrapper Get(const Key* key, const InitializationData* initData = nullptr)
 		{
 			ValueWrapper val = TryGet(key);
-			if (!IsValidValueWrapper(&val))
+			if (GetValueFromWrapper(&val) == nullptr)
 			{
 				val = CreateValue(key, initData);
 				_map.emplace(*key, val);
 			}
 			return val;
+		}
+
+		const Key* GetKey(const Value* value)
+		{
+			auto findResult = std::find_if(std::begin(_map), std::end(_map), [&](const std::pair<Key, ValueWrapper> &pair)
+			{
+				Value* val = GetValueFromWrapper(&pair.second);
+				return val == value;
+			});
+			if (findResult != std::end(_map))
+			{
+				return &findResult->first;
+			}
+			else
+			{
+				return nullptr;
+			}
 		}
 
 	protected:
@@ -72,12 +92,11 @@ namespace Rendering
 
 		virtual Value* AllocateValue()
 		{
-			Value val;
-			_memory.push_back(val);
+			_memory.push_back(Value());
 			return &_memory.back();
 		}
 
 		virtual ValueWrapper CreateValue(const Key* key, const InitializationData* initData) = 0;
-		virtual bool IsValidValueWrapper(const ValueWrapper* val) = 0;
+		virtual Value* GetValueFromWrapper(const ValueWrapper* val) = 0;
 	};
 }

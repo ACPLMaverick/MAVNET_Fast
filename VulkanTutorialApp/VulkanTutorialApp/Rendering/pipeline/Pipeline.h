@@ -44,7 +44,7 @@ namespace Rendering
 
 		struct Info
 		{
-			const RenderState::Info* RenderStateInfo;
+			RenderState::Info RenderStateInfo;
 			const Shader* MyShader;
 			const DescriptorCommon::LayoutData* DescriptorLayoutData;
 			const VertexDeclaration* MyVertexDeclaration;
@@ -55,29 +55,28 @@ namespace Rendering
 	public:
 
 		Pipeline() { }
-		~Pipeline() { JE_Assert(_associatedShader == nullptr); }
+		~Pipeline() { JE_Assert(_info.MyShader == nullptr); }
 
 		void Initialize
 		(
 			const Info* initData
 		);
 		void Cleanup();
+		void Reinitialize();
 
 		static void CreateKey(const Info* info, Key* outKey);
 
-		JE_Inline const Shader* GetAssociatedShader() const { return _associatedShader; }
-		JE_Inline Type GetType() const { return _type; }
+		JE_Inline const Shader* GetAssociatedShader() const { return _info.MyShader; }
+		JE_Inline Type GetType() const { return _info.MyType; }
 		JE_Inline VkPipeline GetVkPipeline() const { return _pipeline; }
 		JE_Inline VkPipelineLayout GetVkPipelineLayout() const { return _associatedPipelineLayout; }
 
 	private:
 
+		Info _info = {};
+		Key _key = {};
 		RenderState _renderState = {};
-		const Shader* _associatedShader = nullptr;
-		const DescriptorCommon::LayoutData* _associatedDescriptorLayoutData;
-		const VertexDeclaration* _associatedVertexDeclaration;
 		const RenderPass* _associatedRenderPass;
-		Type _type;
 
 		VkPipelineLayout _associatedPipelineLayout = VK_NULL_HANDLE;	// TODO: Can there be many pipelines with the same pipeline layout? I think yes.
 		VkPipeline _pipeline = VK_NULL_HANDLE;

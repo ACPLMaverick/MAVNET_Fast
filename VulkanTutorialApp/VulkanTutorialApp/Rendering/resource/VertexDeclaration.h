@@ -17,7 +17,7 @@ namespace Rendering
 			Weight,
 			Index
 
-			JE_EnumEnd()
+		JE_EnumEnd()
 
 	public:
 
@@ -64,10 +64,6 @@ namespace Rendering
 			VK_FORMAT_R32G32B32A32_SFLOAT,
 			VK_FORMAT_R32G32_UINT		// For 8 bytes, will have to unpack it probably.
 		};
-
-	private:
-
-		VertexDeclaration(const VertexDeclaration& copy);
 
 	private:
 

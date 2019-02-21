@@ -74,7 +74,7 @@ namespace Core
 		CreateLogicalDeviceAndGetQueues();
 		CreateCommandPool();
 
-		CreateSyncObjects();
+		CreateSyncObjects();	// Only once.
 		CreateSwapChain();
 		RetrieveSwapChainImages();
 		CreateSwapChainImageViews();
@@ -92,21 +92,23 @@ namespace Core
 		_pipelineMgr.Initialize();
 		_renderPassMgr.Initialize();
 
+		_resourceManager.Initialize();
+
 		// TODO: This will probably be merged with or placed within Pipeline object.
 		_currentRenderPassKey = (::Rendering::RenderPassKey)::Rendering::RenderPassCommon::Id::Tutorial;
 
-		CreateFramebuffers();
+		CreateFramebuffers();	// TODO: ???
 
 		// Material init. This also creates pipeline.
-		_material.Initialize();
+		_material = JE_GetApp()->GetResourceManager()->CacheMaterials.Get("TutorialMaterial");
 
-		// Mesh init.
-		::Rendering::Mesh::LoadOptions meshOptions;
-		//_mesh.Initialize(&MODEL_NAME_MESH, &meshOptions);
-		_mesh.Initialize(Rendering::Mesh::GeneratedType::Quad, &meshOptions);
-		_mesh.AdjustBuffersForVertexDeclaration(_material.GetVertexDeclaration());
+		_currentPipelineKey = *(_pipelineMgr.GetKey(_material->GetPipeline()));
 
-		CreateCommandBuffers();
+		// Mesh.
+		_mesh = JE_GetApp()->GetResourceManager()->CacheMeshes.Get("AutoGen_Quad");
+		_mesh->AdjustBuffersForVertexDeclaration(_material->GetVertexDeclaration());	// TODO: OMG what to do wit dis.
+
+		CreateCommandBuffers();	// TODO: Delegate this to command buffer creation system or sth like that.
 
 		// TODO GOM init goes here: Move it elsewhere in the future.
 		InitObjects();
@@ -603,7 +605,7 @@ namespace Core
 		col.r = _clearColor.color.float32[0];
 		col.g = _clearColor.color.float32[1];
 		col.b = _clearColor.color.float32[2];
-		_fog.Initialize(&col, 2.3f, 3.0f);
+		_fog.Initialize(&col, 2.9f, 3.0f);
 	}
 
 	void HelloTriangle::RefreshCameraProj(uint32_t newWidth, uint32_t newHeight)
@@ -689,8 +691,8 @@ namespace Core
 
 		std::vector<VkVertexInputBindingDescription> bindingDescriptions;
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
-		_material.GetVertexDeclaration()->GetBindingDescriptions(&bindingDescriptions);
-		_material.GetVertexDeclaration()->GetAttributeDescriptions(&attributeDescriptions);
+		_material->GetVertexDeclaration()->GetBindingDescriptions(&bindingDescriptions);
+		_material->GetVertexDeclaration()->GetAttributeDescriptions(&attributeDescriptions);
 
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -820,7 +822,7 @@ namespace Core
 
 		// Pipeline layout create info.
 
-		VkDescriptorSetLayout layouts[] = { _material.GetDescriptorSet()->GetAssociatedVkDescriptorSetLayout() };
+		VkDescriptorSetLayout layouts[] = { _material->GetDescriptorSet()->GetAssociatedVkDescriptorSetLayout() };
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -879,8 +881,7 @@ namespace Core
 			VkFramebufferCreateInfo framebufferInfo = {};
 			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 
-			const ::Rendering::RenderPassKey key = (::Rendering::RenderPassKey)::Rendering::RenderPassCommon::Id::Tutorial;
-			framebufferInfo.renderPass = GetManagerRenderPass()->Get(&key)->GetVkRenderPass();
+			framebufferInfo.renderPass = GetManagerRenderPass()->Get(&_currentRenderPassKey)->GetVkRenderPass();
 
 			framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 			framebufferInfo.pAttachments = attachments.data();
@@ -959,7 +960,7 @@ namespace Core
 
 			vkCmdBeginRenderPass(_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-			vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _material.GetPipeline()->GetVkPipeline());
+			vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _material->GetPipeline()->GetVkPipeline());
 
 			// TODO: Support push constants.
 			/*
@@ -972,11 +973,11 @@ namespace Core
 			vkCmdPushConstants(_commandBuffers[i], _pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Rendering::UboCommon::SceneGlobal), &pco);
 			*/
 
-			VkDescriptorSet descriptorSets[] = { _material.GetDescriptorSet()->GetVkDescriptorSet() };
-			vkCmdBindDescriptorSets(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _material.GetPipeline()->GetVkPipelineLayout(), 0, 1, descriptorSets, 0, nullptr);
-			vkCmdBindVertexBuffers(_commandBuffers[i], 0, _mesh.GetVertexBufferCount(), _mesh.GetVertexBuffers(), _mesh.GetVertexBufferOffsets());
-			vkCmdBindIndexBuffer(_commandBuffers[i], _mesh.GetIndexBuffer(), 0, JE_IndexTypeVk);
-			vkCmdDrawIndexed(_commandBuffers[i], _mesh.GetIndexCount(), 1, 0, 0, 0);
+			VkDescriptorSet descriptorSets[] = { _material->GetDescriptorSet()->GetVkDescriptorSet() };
+			vkCmdBindDescriptorSets(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _material->GetPipeline()->GetVkPipelineLayout(), 0, 1, descriptorSets, 0, nullptr);
+			vkCmdBindVertexBuffers(_commandBuffers[i], 0, _mesh->GetVertexBufferCount(), _mesh->GetVertexBuffers(), _mesh->GetVertexBufferOffsets());
+			vkCmdBindIndexBuffer(_commandBuffers[i], _mesh->GetIndexBuffer(), 0, JE_IndexTypeVk);
+			vkCmdDrawIndexed(_commandBuffers[i], _mesh->GetIndexCount(), 1, 0, 0, 0);
 
 			vkCmdEndRenderPass(_commandBuffers[i]);
 
@@ -1045,7 +1046,7 @@ namespace Core
 		_lightDirectional.Update();
 		_camera.Update();
 
-		_material.Update();
+		_material->Update();
 	}
 
 	void HelloTriangle::DrawFrame()
@@ -1277,21 +1278,42 @@ namespace Core
 
 	void HelloTriangle::RecreateSwapChain()
 	{
-		JE_Assert(false); // TODO: Reimplement this function.
-
 		vkDeviceWaitIdle(_device);
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			if (_fencesInFlight[i] != nullptr)
+			{
+				vkDestroyFence(_device, _fencesInFlight[i], _pAllocator);
+				_fencesInFlight[i] = nullptr;
+			}
+			if (_semsImageAvailable[i] != nullptr) 
+			{
+				vkDestroySemaphore(_device, _semsImageAvailable[i], _pAllocator);
+				_semsImageAvailable[i] = nullptr;
+			}
+			if (_semsRenderFinished[i] != nullptr) 
+			{
+				vkDestroySemaphore(_device, _semsRenderFinished[i], _pAllocator);
+				_semsRenderFinished[i] = nullptr;
+			}
+		}
 
 		CleanupSwapChain();
 
-		if (!_bMinimized)
+		if(!_bMinimized)
 		{
-			CreateSyncObjects();
 			CreateSwapChain();
 			RetrieveSwapChainImages();
 			CreateSwapChainImageViews();
-			CreateRenderPass();
-			CreateGraphicsPipeline();
 			CreateDepthResources();
+			CreateSyncObjects();
+
+			_renderPassMgr.Get(&_currentRenderPassKey)->Reinitialize();
+			_pipelineMgr.Get(&_currentPipelineKey)->Reinitialize();
+			//CreateRenderPass();
+			//CreateGraphicsPipeline();
+			
 			CreateFramebuffers();
 			CreateCommandBuffers();
 		}
@@ -1426,9 +1448,7 @@ namespace Core
 	{
 		CleanupObjects();
 
-		_material.Cleanup();
-
-		_mesh.Cleanup();
+		_resourceManager.Cleanup();
 
 		_renderPassMgr.Cleanup();
 		_pipelineMgr.Cleanup();
@@ -1444,6 +1464,13 @@ namespace Core
 		::Rendering::Helper::DestroyInstance();
 
 		CleanupSwapChain();
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			vkDestroyFence(_device, _fencesInFlight[i], _pAllocator);
+			vkDestroySemaphore(_device, _semsImageAvailable[i], _pAllocator);
+			vkDestroySemaphore(_device, _semsRenderFinished[i], _pAllocator);
+		}
 
 		vkDestroyCommandPool(_device, _commandPoolTransient, _pAllocator);
 		_commandPoolTransient = VK_NULL_HANDLE;
@@ -1491,13 +1518,6 @@ namespace Core
 		_depthImage = VK_NULL_HANDLE;
 		vkFreeMemory(_device, _depthImageMemory, _pAllocator);
 		_depthImageMemory = VK_NULL_HANDLE;
-
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-		{
-			vkDestroyFence(_device, _fencesInFlight[i], _pAllocator);
-			vkDestroySemaphore(_device, _semsImageAvailable[i], _pAllocator);
-			vkDestroySemaphore(_device, _semsRenderFinished[i], _pAllocator);
-		}
 
 		vkFreeCommandBuffers(_device, _commandPool, static_cast<uint32_t>(_commandBuffers.size()), _commandBuffers.data());
 		_commandBuffers.clear();

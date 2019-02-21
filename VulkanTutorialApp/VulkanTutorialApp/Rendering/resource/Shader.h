@@ -41,7 +41,7 @@ namespace Rendering
 		Shader() { _type = ResourceCommon::Type::Shader; }
 		~Shader() { }
 
-		void Load(const char* shaderName);
+		void Load(const std::string& shaderName, const ::Util::NullType* loadOpts = nullptr);
 		void Cleanup();
 
 		JE_Inline VkShaderModule GetModule(Stage stage) const { return _modules[static_cast<uint8_t>(Stage::ENUM_SIZE)]; }
@@ -51,7 +51,7 @@ namespace Rendering
 
 	private:
 
-		static bool LoadShader(const char* shaderName, Stage shaderType, std::vector<uint8_t>* outData);
+		static bool LoadShader(const std::string& shaderName, Stage shaderType, std::vector<uint8_t>* outData);
 		static VkShaderModule CreateShaderModule(const std::vector<uint8_t>* code);
 		static VkShaderStageFlagBits ShaderStageToVkShaderStageFlag(Stage stage);
 

@@ -140,6 +140,7 @@
   <ItemGroup>
     <ClCompile Include="Core\GlobalIncludes.cpp" />
     <ClCompile Include="Core\ManagerUid.cpp" />
+    <ClCompile Include="Core\resource\ResourceManager.cpp" />
     <ClCompile Include="Rendering\renderPass\ManagerRenderPass.cpp" />
     <ClCompile Include="Rendering\pipeline\ManagerPipeline.cpp" />
     <ClCompile Include="Rendering\descriptor\DescriptorCommon.cpp" />
@@ -190,6 +191,7 @@
     <ClInclude Include="GOM\Entity.h" />
     <ClInclude Include="Rendering\pipeline\RenderState.h" />
     <ClInclude Include="Rendering\resource\ResourceCommon.h" />
+    <ClInclude Include="Core\resource\ResourceManager.h" />
     <ClInclude Include="Rendering\SystemDrawable.h" />
     <ClInclude Include="Rendering\resource\Texture.h" />
     <ClInclude Include="Rendering\sampler\ManagerSampler.h" />
@@ -200,6 +202,7 @@
     <ClInclude Include="Rendering\resource\VertexDeclaration.h" />
     <ClInclude Include="Rendering\resource\Shader.h" />
     <ClInclude Include="Rendering\renderPass\RenderPass.h" />
+    <ClInclude Include="Core\resource\ResourceCache.h" />
     <ClInclude Include="Util\GlobalIncludes.h" />
     <ClInclude Include="Util\Singleton.h" />
   </ItemGroup>

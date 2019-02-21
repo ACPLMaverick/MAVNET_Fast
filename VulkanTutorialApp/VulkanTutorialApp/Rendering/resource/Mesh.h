@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Resource.h"
 #include "VertexDeclaration.h"
 
 namespace Rendering
@@ -20,11 +21,12 @@ namespace Rendering
 
 #define JE_IndexTypeVk VK_INDEX_TYPE_UINT32
 
-	class Mesh
+	class Mesh : public Resource
 	{
 	public:
 
-		JE_EnumBegin(GeneratedType)
+		JE_EnumBegin(AutoGenMode)
+			None,
 			Quad,
 			Box,
 			Sphere
@@ -32,6 +34,7 @@ namespace Rendering
 
 		struct LoadOptions
 		{
+			AutoGenMode AutoGenerateMode;
 			bool bReadOnly = true;
 		};
 
@@ -112,22 +115,19 @@ namespace Rendering
 
 		JE_Inline const VertexDeclaration* GetVertexDeclarationIsAdjustedTo() const { return _adjustment; }
 
-		void Initialize(const std::string* name, const LoadOptions* loadOptions);
-		void Initialize(GeneratedType generatedType, const LoadOptions* loadOptions);
+		void Load(const std::string& name, const LoadOptions* loadOptions);
 		void Cleanup();
 
 		void AdjustBuffersForVertexDeclaration(const VertexDeclaration* declaration);
 
 	protected:
-		
-		Mesh(const Mesh& mesh) {}
 
 		void InitializeCommon(const LoadOptions* loadOptions);
 
-		void LoadData(const std::string* name, const LoadOptions* loadOptions);
-		void LoadDataObj(const std::string* name, const LoadOptions* loadOptions);
+		void LoadData(const std::string& name, const LoadOptions* loadOptions);
+		void LoadDataObj(const std::string& name, const LoadOptions* loadOptions);
 
-		void GenerateData(GeneratedType generatedType, const LoadOptions* loadOptions);
+		void GenerateData(AutoGenMode generatedType, const LoadOptions* loadOptions);
 		void GenerateQuad(const LoadOptions* loadOptions);
 		void GenerateBox(const LoadOptions* loadOptions);
 		void GenerateSphere(const LoadOptions* loadOptions);
@@ -141,7 +141,7 @@ namespace Rendering
 	protected:
 
 		typedef void (Mesh::*GenerateFunc)(const LoadOptions*);
-		static GenerateFunc _generateFunctions[(size_t)GeneratedType::ENUM_SIZE];
+		static GenerateFunc _generateFunctions[(size_t)AutoGenMode::ENUM_SIZE];
 
 	protected:
 

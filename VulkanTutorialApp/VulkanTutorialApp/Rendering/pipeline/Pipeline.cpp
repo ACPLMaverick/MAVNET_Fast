@@ -14,25 +14,22 @@ namespace Rendering
 		JE_Assert
 		(
 			initData != nullptr
-			&& initData->RenderStateInfo != nullptr
 			&& initData->MyShader != nullptr
 			&& initData->DescriptorLayoutData != nullptr
 			&& initData->MyVertexDeclaration != nullptr
 		);
 
-		_associatedShader = initData->MyShader;
-		_associatedDescriptorLayoutData = initData->DescriptorLayoutData;
-		_associatedVertexDeclaration = initData->MyVertexDeclaration;
+		_info = *initData;
+
 		RenderPassKey key = static_cast<RenderPassKey>(initData->MyPass);
 		_associatedRenderPass = JE_GetRenderer()->GetManagerRenderPass()->Get(&key);
-		_type = initData->MyType;
 
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-		_associatedShader->CreatePipelineShaderStageInfos(&shaderStages);
+		_info.MyShader->CreatePipelineShaderStageInfos(&shaderStages);
 
 		// Pipeline layout creation.
 
-		VkDescriptorSetLayout layouts[] = { _associatedDescriptorLayoutData->Layout };
+		VkDescriptorSetLayout layouts[] = { _info.DescriptorLayoutData->Layout };
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -48,13 +45,13 @@ namespace Rendering
 
 		if (initData->MyType == Type::Graphics)
 		{
-			_renderState.Initialize(initData->RenderStateInfo);
+			_renderState.Initialize(&initData->RenderStateInfo);
 
 			std::vector<VkVertexInputBindingDescription> bindingDescriptions;
 			std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 
-			_associatedVertexDeclaration->GetBindingDescriptions(&bindingDescriptions);
-			_associatedVertexDeclaration->GetAttributeDescriptions(&attributeDescriptions);
+			_info.MyVertexDeclaration->GetBindingDescriptions(&bindingDescriptions);
+			_info.MyVertexDeclaration->GetAttributeDescriptions(&attributeDescriptions);
 
 			VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 			vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -128,12 +125,27 @@ namespace Rendering
 
 	void Pipeline::Cleanup()
 	{
-		JE_Assert(_associatedShader != nullptr);
-		JE_Assert(_associatedDescriptorLayoutData != nullptr);
-		_associatedShader = nullptr;
-		_associatedDescriptorLayoutData = nullptr;
-		_associatedRenderPass = nullptr;
+		JE_Assert(_info.MyShader != nullptr);
+		JE_Assert(_info.DescriptorLayoutData != nullptr);
+		JE_FillZeros(_info);
 		_renderState.Cleanup();
+
+		JE_Assert(_pipeline != nullptr);
+		JE_Assert(_associatedPipelineLayout != nullptr);
+		vkDestroyPipelineLayout(JE_GetRenderer()->GetDevice(), _associatedPipelineLayout, JE_GetRenderer()->GetAllocatorPtr()); // TODO: Need to have some manager for that...
+		vkDestroyPipeline(JE_GetRenderer()->GetDevice(), _pipeline, JE_GetRenderer()->GetAllocatorPtr());
+	}
+
+	void Pipeline::Reinitialize()
+	{
+		Info tmpInfo = _info;
+		tmpInfo.RenderStateInfo.ScissorWidth = JE_GetRenderer()->GetSwapChainExtent().width;
+		tmpInfo.RenderStateInfo.ScissorHeight = JE_GetRenderer()->GetSwapChainExtent().height;
+		tmpInfo.RenderStateInfo.ViewportWidth = JE_GetRenderer()->GetSwapChainExtent().width;
+		tmpInfo.RenderStateInfo.ViewportHeight = JE_GetRenderer()->GetSwapChainExtent().height;
+
+		Cleanup();
+		Initialize(&tmpInfo);
 	}
 
 	void Pipeline::CreateKey(const Info* info, Key* outKey)

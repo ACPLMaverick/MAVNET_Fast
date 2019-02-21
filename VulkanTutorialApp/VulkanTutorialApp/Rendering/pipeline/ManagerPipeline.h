@@ -19,9 +19,9 @@ namespace Rendering
 	protected:
 
 		virtual Pipeline* CreateValue(const Pipeline::Key* key, const Pipeline::Info* initData) override;
-		virtual bool IsValidValueWrapper(Pipeline* const* val) override
+		virtual Pipeline* GetValueFromWrapper(Pipeline* const* val) override
 		{
-			return (*val) != nullptr;
+			return (*val);
 		}
 	};
 }

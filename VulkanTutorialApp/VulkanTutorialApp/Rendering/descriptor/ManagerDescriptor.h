@@ -17,9 +17,9 @@ namespace Rendering
 	protected:
 
 		virtual DescriptorSet* CreateValue(const DescriptorSet::Info* key, const Util::NullType* info) override;
-		virtual bool IsValidValueWrapper(DescriptorSet* const* val) override
+		virtual DescriptorSet* GetValueFromWrapper(DescriptorSet* const* val) override
 		{
-			return (*val) != nullptr;
+			return (*val);
 		}
 
 		// May create new descriptor layouts.

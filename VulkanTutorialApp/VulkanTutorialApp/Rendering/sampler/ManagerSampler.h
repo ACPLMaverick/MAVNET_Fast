@@ -14,9 +14,9 @@ namespace Rendering
 	protected:
 
 		virtual Sampler* CreateValue(const Sampler::Options* key, const Util::NullType* initData = nullptr) override;
-		virtual bool IsValidValueWrapper(Sampler* const* val) override
+		virtual Sampler* GetValueFromWrapper(Sampler* const* val) override
 		{
-			return (*val) != nullptr;
+			return (*val);
 		}
 	};
 }

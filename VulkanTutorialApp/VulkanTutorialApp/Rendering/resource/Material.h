@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Resource.h"
+#include "Rendering/pipeline/Pipeline.h"
 #include "VertexDeclaration.h"
 
 namespace Rendering
 {
-	class Pipeline;
 	class Texture;
 	class DescriptorSet;
 	class UniformBuffer;
@@ -41,7 +41,7 @@ namespace Rendering
 		Material();
 		~Material();
 
-		void Initialize();
+		void Load(const std::string& name, const ::Util::NullType* loadOptions = nullptr);
 		void Update();
 		void Cleanup();
 
@@ -54,6 +54,7 @@ namespace Rendering
 	protected:
 
 		VertexDeclaration _vertexDeclaration;
+		Pipeline::Key _pipelineKey;
 
 		std::vector<Texture*> _textures;
 

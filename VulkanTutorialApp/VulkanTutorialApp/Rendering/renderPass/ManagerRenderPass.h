@@ -18,9 +18,9 @@ namespace Rendering
 	protected:
 
 		virtual RenderPass* CreateValue(const RenderPassKey* key, const RenderPass::Info* initData) override;
-		virtual bool IsValidValueWrapper(RenderPass* const* val) override
+		virtual RenderPass* GetValueFromWrapper(RenderPass* const* val) override
 		{
-			return (*val) != nullptr;
+			return (*val);
 		}
 
 		void FillUpInfoForRenderPassId(RenderPassCommon::Id id, RenderPass::Info* outInfo);

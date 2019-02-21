@@ -63,6 +63,7 @@ namespace Rendering
 
 		void Initialize(const Info* info);
 		void Cleanup();
+		void Reinitialize();
 
 		JE_Inline const Info* GetInfo() const { return &_info; }
 		JE_Inline VkRenderPass GetVkRenderPass() const { return _renderPass; }

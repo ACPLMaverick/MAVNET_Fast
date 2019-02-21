@@ -11,21 +11,26 @@ namespace Rendering
 		: _indexBuffer(VK_NULL_HANDLE)
 		, _adjustment(nullptr)
 	{
+		_type = ResourceCommon::Type::Mesh;
 	}
 
 	Mesh::~Mesh()
 	{
 	}
 
-	void Mesh::Initialize(const std::string * name, const LoadOptions * loadOptions)
+	void Mesh::Load(const std::string& name, const LoadOptions * loadOptions)
 	{
-		LoadData(name, loadOptions);
-		InitializeCommon(loadOptions);
-	}
+		JE_Assert(loadOptions != nullptr);
 
-	void Mesh::Initialize(GeneratedType generatedType, const LoadOptions* loadOptions)
-	{
-		GenerateData(generatedType, loadOptions);
+		if (loadOptions->AutoGenerateMode == AutoGenMode::None)
+		{
+			LoadData(name, loadOptions);
+		}
+		else
+		{
+			GenerateData(loadOptions->AutoGenerateMode, loadOptions);
+		}
+
 		InitializeCommon(loadOptions);
 	}
 
@@ -120,17 +125,17 @@ namespace Rendering
 		}
 	}
 
-	void Mesh::LoadData(const std::string * name, const LoadOptions * loadOptions)
+	void Mesh::LoadData(const std::string& name, const LoadOptions * loadOptions)
 	{
 		// TODO: implement different formats support (FBX?)
 		LoadDataObj(name, loadOptions);
 	}
 
-	void Mesh::LoadDataObj(const std::string * name, const LoadOptions * loadOptions)
+	void Mesh::LoadDataObj(const std::string& name, const LoadOptions * loadOptions)
 	{
 		JE_Assert(IsReadOnly());	// i.e. !IsLoaded()
 
-		const std::string finalPath = (::Core::HelloTriangle::RESOURCE_PATH + "Meshes\\Source\\" + *name);
+		const std::string finalPath = (::Core::HelloTriangle::RESOURCE_PATH + "Meshes\\Source\\" + name);
 
 		tinyobj::attrib_t attrib;
 		std::vector<tinyobj::shape_t> shapes;
@@ -235,12 +240,15 @@ namespace Rendering
 		_info.IndexCount = static_cast<uint32_t>(_info.IndexArray.size());
 	}
 
-	void Mesh::GenerateData(GeneratedType generatedType, const LoadOptions* loadOptions)
+	void Mesh::GenerateData(AutoGenMode generatedType, const LoadOptions* loadOptions)
 	{
 		const size_t index = (size_t)generatedType;
 		JE_Assert(index < JE_ArrayLength(_generateFunctions));
-
-		(this->*(Mesh::_generateFunctions[index]))(loadOptions);
+		GenerateFunc func = _generateFunctions[index];
+		if (func != nullptr)
+		{
+			(this->*(func))(loadOptions);
+		}
 	}
 
 	void Mesh::GenerateQuad(const LoadOptions* loadOptions)
@@ -273,12 +281,12 @@ namespace Rendering
 		arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(1.0f);
 		arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(0.0f);
 
-		const float col = 0.7f;
+		const float col = 1.0f;
 		const float a = 1.0f;
-		arrayColor->Array.push_back(col); arrayPosition->Array.push_back(col); arrayPosition->Array.push_back(col); arrayPosition->Array.push_back(a);
-		arrayColor->Array.push_back(col); arrayPosition->Array.push_back(col); arrayPosition->Array.push_back(col); arrayPosition->Array.push_back(a);
-		arrayColor->Array.push_back(col); arrayPosition->Array.push_back(col); arrayPosition->Array.push_back(col); arrayPosition->Array.push_back(a);
-		arrayColor->Array.push_back(col); arrayPosition->Array.push_back(col); arrayPosition->Array.push_back(col); arrayPosition->Array.push_back(a);
+		arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(a);
+		arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(a);
+		arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(a);
+		arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(a);
 
 		_info.IndexArray.push_back(0);
 		_info.IndexArray.push_back(2);
@@ -294,12 +302,12 @@ namespace Rendering
 
 	void Mesh::GenerateBox(const LoadOptions* loadOptions)
 	{
-
+		JE_TODO();
 	}
 
 	void Mesh::GenerateSphere(const LoadOptions* loadOptions)
 	{
-
+		JE_TODO();
 	}
 
 	void Mesh::CleanupData()
@@ -383,6 +391,7 @@ namespace Rendering
 
 	Rendering::Mesh::GenerateFunc Mesh::_generateFunctions[] = 
 	{
+		nullptr,
 		&Mesh::GenerateQuad,
 		&Mesh::GenerateBox,
 		&Mesh::GenerateSphere

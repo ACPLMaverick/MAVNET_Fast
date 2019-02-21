@@ -15,7 +15,7 @@ namespace Rendering
 	};
 
 
-	void Shader::Load(const char * shaderName)
+	void Shader::Load(const std::string& shaderName, const ::Util::NullType* loadOpts /*= nullptr*/)
 	{
 		_key = {};
 		std::vector<uint8_t> shaderData;
@@ -84,7 +84,7 @@ namespace Rendering
 		}
 	}
 
-	bool Shader::LoadShader(const char* shaderName, Stage shaderType, std::vector<uint8_t>* outData)
+	bool Shader::LoadShader(const std::string& shaderName, Stage shaderType, std::vector<uint8_t>* outData)
 	{
 		return ::Core::HelloTriangle::LoadFile(::Core::HelloTriangle::RESOURCE_PATH + "Shaders\\Binary\\" + shaderName + StageToExtension[static_cast<uint8_t>(shaderType)] + ".spv", *outData);
 	}

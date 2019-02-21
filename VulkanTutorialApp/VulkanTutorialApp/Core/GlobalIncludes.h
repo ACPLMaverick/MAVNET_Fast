@@ -55,8 +55,8 @@ if((expr) != VkResult::VK_SUCCESS) \
 	JE_AssertThrow(false, #expr); \
 }
 #define JE_AssertStatic(val) static_assert(val, "Static assertion failed.")
-
 #define JE_AssertBitCount(val, bitWidth) JE_Assert(IsBitWidthEqualOrLesserThan(val, bitWidth))
+#define JE_TODO() JE_Assert(false)
 
 extern bool IsBitWidthEqualOrLesserThan(uint64_t val, uint8_t bitWidth);
 
@@ -69,6 +69,7 @@ extern bool IsBitWidthEqualOrLesserThan(uint64_t val, uint8_t bitWidth);
 
 #define JE_VectorSizeBytes(arrayName) (sizeof((arrayName)[0]) * (arrayName).size())
 #define JE_ArrayLength(arrayName) (sizeof(arrayName)/sizeof(arrayName[0]))
+#define JE_FillZeros(objName) (memset(&(objName), 0, sizeof(objName)))
 
 #define JE_VA_ARGS_COUNT(...) std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value
 
@@ -114,3 +115,5 @@ private:														\
 	className();												
 
 #define JE_DefineClientClassBody(className, parentClassName)
+
+#define JE_GetApp() Core::HelloTriangle::GetInstance()

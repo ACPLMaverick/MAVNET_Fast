@@ -194,4 +194,12 @@ namespace Rendering
 		vkDestroyRenderPass(JE_GetRenderer()->GetDevice(), _renderPass, JE_GetRenderer()->GetAllocatorPtr());
 		_renderPass = VK_NULL_HANDLE;
 	}
+
+	void RenderPass::Reinitialize()
+	{
+		Info tempInfo = _info;
+		Cleanup();
+		Initialize(&tempInfo);
+	}
+
 }

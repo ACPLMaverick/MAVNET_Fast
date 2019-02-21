@@ -13,6 +13,7 @@ namespace Rendering
 
 			, Shader
 			, Material
+			, Mesh
 		JE_EnumEnd()
 
 		static const size_t Type_ShaderResourceMin = 1;

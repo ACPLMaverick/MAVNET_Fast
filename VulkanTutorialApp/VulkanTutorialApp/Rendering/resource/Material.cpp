@@ -23,7 +23,7 @@ namespace Rendering
 	{
 	}
 
-	void Material::Initialize()
+	void Material::Load(const std::string& name, const ::Util::NullType* loadOptions /*= nullptr*/)
 	{
 		// TODO: Implement proper non test code.
 
@@ -47,10 +47,8 @@ namespace Rendering
 
 		// This as well.
 		::Rendering::Texture::LoadOptions texOptions;
-		Texture* texture = new Texture();
 		std::string texName = "chalet.jpg";
-		texture->Initialize(&texName, &texOptions);
-		_textures.push_back(texture);
+		_textures.push_back(JE_GetApp()->GetResourceManager()->CacheTextures.Get(texName, &texOptions));
 
 		// TODO: Why the fuck bindings are global and not per-stage?
 		DescriptorSet::Info info;
@@ -82,46 +80,41 @@ namespace Rendering
 		_descriptorSet = JE_GetRenderer()->GetManagerDescriptor()->Get(&info);
 
 
+		Pipeline::Info pipelineInfo = {};
+
 		// Loaded from file too.
-		RenderState::Info renderStateInfo = {};
-		renderStateInfo.bAlphaToCoverage = false;
-		renderStateInfo.bAlphaToOne = false;
-		renderStateInfo.bDepthTestEnabled = true;
-		renderStateInfo.bDepthWriteEnabled = true;
-		renderStateInfo.bRasterizerDepthClamp = false;
-		renderStateInfo.bRasterizerEnabled = true;
-		renderStateInfo.bSampleShading = false;
-		renderStateInfo.bStencilTestEnabled = false;
+		pipelineInfo.RenderStateInfo.bAlphaToCoverage = false;
+		pipelineInfo.RenderStateInfo.bAlphaToOne = false;
+		pipelineInfo.RenderStateInfo.bDepthTestEnabled = true;
+		pipelineInfo.RenderStateInfo.bDepthWriteEnabled = true;
+		pipelineInfo.RenderStateInfo.bRasterizerDepthClamp = false;
+		pipelineInfo.RenderStateInfo.bRasterizerEnabled = true;
+		pipelineInfo.RenderStateInfo.bSampleShading = false;
+		pipelineInfo.RenderStateInfo.bStencilTestEnabled = false;
 
-		renderStateInfo.ColorBlends[0].SrcBlendFactor = RenderState::ColorBlend::BlendFactor::Disabled;
-		renderStateInfo.ColorBlends[0].DstBlendFactor = RenderState::ColorBlend::BlendFactor::Disabled;
+		pipelineInfo.RenderStateInfo.ColorBlends[0].SrcBlendFactor = RenderState::ColorBlend::BlendFactor::Disabled;
+		pipelineInfo.RenderStateInfo.ColorBlends[0].DstBlendFactor = RenderState::ColorBlend::BlendFactor::Disabled;
 
-		renderStateInfo.DepthCompareOperation = RenderState::CompareOperation::Less;
-		renderStateInfo.DrawMode = RenderState::PolygonDrawMode::Solid;
-		renderStateInfo.FramebufferCount = 1; // TODO: This should be defined by render pass.
-		renderStateInfo.SampleCount = RenderState::MultisamplingMode::None;
-		renderStateInfo.SampleMask = 0xFFFFFFFF;
-		renderStateInfo.ScissorWidth = JE_GetRenderer()->GetSwapChainExtent().width;
-		renderStateInfo.ScissorHeight = JE_GetRenderer()->GetSwapChainExtent().height;
-		renderStateInfo.ViewportWidth = JE_GetRenderer()->GetSwapChainExtent().width;
-		renderStateInfo.ViewportHeight = JE_GetRenderer()->GetSwapChainExtent().height;
+		pipelineInfo.RenderStateInfo.DepthCompareOperation = RenderState::CompareOperation::Less;
+		pipelineInfo.RenderStateInfo.DrawMode = RenderState::PolygonDrawMode::Solid;
+		pipelineInfo.RenderStateInfo.FramebufferCount = 1; // TODO: This should be defined by render pass.
+		pipelineInfo.RenderStateInfo.SampleCount = RenderState::MultisamplingMode::None;
+		pipelineInfo.RenderStateInfo.SampleMask = 0xFFFFFFFF;
+		pipelineInfo.RenderStateInfo.ScissorWidth = JE_GetRenderer()->GetSwapChainExtent().width;
+		pipelineInfo.RenderStateInfo.ScissorHeight = JE_GetRenderer()->GetSwapChainExtent().height;
+		pipelineInfo.RenderStateInfo.ViewportWidth = JE_GetRenderer()->GetSwapChainExtent().width;
+		pipelineInfo.RenderStateInfo.ViewportHeight = JE_GetRenderer()->GetSwapChainExtent().height;
 
-		
-		Shader shader;
-		shader.Load("TutorialShader"); // TODO: ResourceManagement. Load modules separately, store them and combine with each other to have shaders.
 
-		Pipeline::Info pipelineInfo;
-		pipelineInfo.RenderStateInfo = &renderStateInfo;
-		pipelineInfo.MyShader = &shader;
+		pipelineInfo.MyShader = JE_GetApp()->GetResourceManager()->CacheShaders.Get("TutorialShader");
 		pipelineInfo.DescriptorLayoutData = _descriptorSet->GetAssociatedLayout();
 		pipelineInfo.MyVertexDeclaration = &_vertexDeclaration;
 		pipelineInfo.MyType = Pipeline::Type::Graphics;
 		pipelineInfo.MyPass = RenderPassCommon::Id::Tutorial;
 
-		Pipeline::Key key;
-		Pipeline::CreateKey(&pipelineInfo, &key);
+		Pipeline::CreateKey(&pipelineInfo, &_pipelineKey);
 
-		_pipeline = JE_GetRenderer()->GetManagerPipeline()->Get(&key, &pipelineInfo);
+		_pipeline = JE_GetRenderer()->GetManagerPipeline()->Get(&_pipelineKey, &pipelineInfo);
 	}
 
 	void Material::Update()
@@ -132,11 +125,6 @@ namespace Rendering
 
 	void Material::Cleanup()
 	{
-		for (auto& tex : _textures)
-		{
-			tex->Cleanup();
-			delete tex;	// TODO: Do not remove, instead make manager do this.
-		}
 		_textures.clear();
 
 		_vertexDeclaration = VertexDeclaration();
