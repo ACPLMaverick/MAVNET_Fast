@@ -15,11 +15,11 @@ namespace Core
 
 		void Cleanup()
 		{
-			for (Value& value : _array)
+			for (auto& pair : _map)
 			{
-				value.Cleanup();
+				pair.second->Cleanup();
+				delete pair.second;
 			}
-			_array.clear();
 			_map.clear();
 		}
 
@@ -32,8 +32,7 @@ namespace Core
 			}
 			else
 			{
-				_array.push_back(Value());
-				Value* valPtr = &(_array.back());
+				Value* valPtr = new Value();
 				valPtr->Load(key, loadOpts);
 				_map.emplace(key, valPtr);
 				return valPtr;
@@ -42,7 +41,6 @@ namespace Core
 
 	private:
 
-		std::vector<Value> _array;
 		std::unordered_map<std::string, Value*> _map;
 	};
 }

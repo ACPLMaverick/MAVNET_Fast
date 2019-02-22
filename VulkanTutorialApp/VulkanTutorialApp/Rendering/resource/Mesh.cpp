@@ -236,22 +236,13 @@ namespace Rendering
 			}
 		}
 
-		_info.VertexCount = static_cast<uint32_t>(_info.VertexArrays[0].Array.size());
+		_info.VertexCount = static_cast<uint32_t>(_info.VertexArrays[0].Array.size() / (_info.VertexArrays[0].ComponentSize / 4)); // One float has 4 bytes.
 		_info.IndexCount = static_cast<uint32_t>(_info.IndexArray.size());
+		JE_Assert(_info.VertexCount != 0);
+		JE_Assert(_info.IndexCount != 0);
 	}
 
 	void Mesh::GenerateData(AutoGenMode generatedType, const LoadOptions* loadOptions)
-	{
-		const size_t index = (size_t)generatedType;
-		JE_Assert(index < JE_ArrayLength(_generateFunctions));
-		GenerateFunc func = _generateFunctions[index];
-		if (func != nullptr)
-		{
-			(this->*(func))(loadOptions);
-		}
-	}
-
-	void Mesh::GenerateQuad(const LoadOptions* loadOptions)
 	{
 		_info.VertexArrays.resize(4);
 		VertexArray* arrayPosition = &_info.VertexArrays[0];
@@ -263,18 +254,42 @@ namespace Rendering
 		*arrayNormal = VertexArray(VertexDeclaration::ComponentType::Normal);
 		*arrayUv = VertexArray(VertexDeclaration::ComponentType::Uv);
 		*arrayColor = VertexArray(VertexDeclaration::ComponentType::Color);
+		
+
+		const size_t index = (size_t)generatedType;
+		JE_Assert(index < JE_ArrayLength(_generateFunctions));
+		GenerateFunc func = _generateFunctions[index];
+		if (func != nullptr)
+		{
+			(this->*(func))(loadOptions);
+		}
+
+
+		_info.VertexCount = static_cast<uint32_t>(_info.VertexArrays[0].Array.size() / (_info.VertexArrays[0].ComponentSize / 4)); // One float has 4 bytes.
+		_info.IndexCount = static_cast<uint32_t>(_info.IndexArray.size());
+		JE_Assert(_info.VertexCount != 0);
+		JE_Assert(_info.IndexCount != 0);
+	}
+
+	void Mesh::GenerateQuad(const LoadOptions* loadOptions)
+	{
+		VertexArray* arrayPosition = &_info.VertexArrays[0];
+		VertexArray* arrayNormal = &_info.VertexArrays[1];
+		VertexArray* arrayUv = &_info.VertexArrays[2];
+		VertexArray* arrayColor = &_info.VertexArrays[3];
+
 		arrayPosition->ComponentCount = arrayNormal->ComponentCount = arrayUv->ComponentCount = arrayColor->ComponentCount = 4;
 
-		const float diam = 0.5f;
-		arrayPosition->Array.push_back(diam); arrayPosition->Array.push_back(diam); arrayPosition->Array.push_back(0.0f);
-		arrayPosition->Array.push_back(diam); arrayPosition->Array.push_back(-diam); arrayPosition->Array.push_back(0.0f);
-		arrayPosition->Array.push_back(-diam); arrayPosition->Array.push_back(-diam); arrayPosition->Array.push_back(0.0f);
-		arrayPosition->Array.push_back(-diam); arrayPosition->Array.push_back(diam); arrayPosition->Array.push_back(0.0f);
+		const float halfSize = 0.5f;
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(0.0f);
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(0.0f);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(0.0f);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(0.0f);
 
-		arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(1.0f);
-		arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(1.0f);
-		arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(1.0f);
-		arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(1.0f);
+		for (uint32_t i = 0; i < arrayNormal->ComponentCount; ++i)
+		{
+			arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(1.0f);
+		}
 
 		arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(0.0f);
 		arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(1.0f);
@@ -283,10 +298,14 @@ namespace Rendering
 
 		const float col = 1.0f;
 		const float a = 1.0f;
-		arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(a);
-		arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(a);
-		arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(a);
-		arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(a);
+		for (uint32_t i = 0; i < arrayColor->ComponentCount; ++i)
+		{
+			//arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(a);
+			arrayColor->Array.push_back(arrayPosition->Array[3 * i]); 
+			arrayColor->Array.push_back(arrayPosition->Array[3 * i + 1]); 
+			arrayColor->Array.push_back(arrayPosition->Array[3 * i + 2]); 
+			arrayColor->Array.push_back(a);
+		}
 
 		_info.IndexArray.push_back(0);
 		_info.IndexArray.push_back(2);
@@ -294,19 +313,120 @@ namespace Rendering
 		_info.IndexArray.push_back(0);
 		_info.IndexArray.push_back(3);
 		_info.IndexArray.push_back(2);
-
-
-		_info.VertexCount = static_cast<uint32_t>(_info.VertexArrays[0].Array.size());
-		_info.IndexCount = static_cast<uint32_t>(_info.IndexArray.size());
 	}
 
 	void Mesh::GenerateBox(const LoadOptions* loadOptions)
 	{
-		JE_TODO();
+		VertexArray* arrayPosition = &_info.VertexArrays[0];
+		VertexArray* arrayNormal = &_info.VertexArrays[1];
+		VertexArray* arrayUv = &_info.VertexArrays[2];
+		VertexArray* arrayColor = &_info.VertexArrays[3];
+
+		arrayPosition->ComponentCount = arrayNormal->ComponentCount = arrayUv->ComponentCount = arrayColor->ComponentCount = 24;
+
+		const float halfSize = 0.5f;
+		float colR, colG, colB;
+		const float a = 1.0f;
+		
+		// Bottom
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(-halfSize);
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(-halfSize);
+		colR = 0.0f; colG = 0.0f; colB = 1.0f; // BLUE
+		for (size_t i = 0; i < 4; ++i)
+		{
+			arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(-1.0f); arrayNormal->Array.push_back(-1.0f);
+			arrayColor->Array.push_back(colR); arrayColor->Array.push_back(colG); arrayColor->Array.push_back(colB); arrayColor->Array.push_back(a);
+		}
+
+		// Top
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(-halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(-halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(halfSize);
+		colR = 1.0f; colG = 1.0f; colB = 0.0f; // YELLOW
+		for (size_t i = 0; i < 4; ++i)
+		{
+			arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(1.0f); arrayNormal->Array.push_back(0.0f);
+			arrayColor->Array.push_back(colR); arrayColor->Array.push_back(colG); arrayColor->Array.push_back(colB); arrayColor->Array.push_back(a);
+		}
+
+		// Left
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(-halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(-halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(halfSize);
+		colR = 0.0f; colG = 1.0f; colB = 1.0f; // CYAN
+		for (size_t i = 0; i < 4; ++i)
+		{
+			arrayNormal->Array.push_back(1.0f); arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(0.0f);
+			arrayColor->Array.push_back(colR); arrayColor->Array.push_back(colG); arrayColor->Array.push_back(colB); arrayColor->Array.push_back(a);
+		}
+
+		// Right
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(-halfSize);
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(-halfSize);
+		colR = 1.0f; colG = 0.0f; colB = 0.0f; // RED
+		for (size_t i = 0; i < 4; ++i)
+		{
+			arrayNormal->Array.push_back(-1.0f); arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(0.0f);
+			arrayColor->Array.push_back(colR); arrayColor->Array.push_back(colG); arrayColor->Array.push_back(colB); arrayColor->Array.push_back(a);
+		}
+
+		// Front 
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
+		colR = 1.0f; colG = 0.0f; colB = 1.0f; // MAGENTA
+		for (size_t i = 0; i < 4; ++i)
+		{
+			arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(1.0f);
+			arrayColor->Array.push_back(colR); arrayColor->Array.push_back(colG); arrayColor->Array.push_back(colB); arrayColor->Array.push_back(a);
+		}
+
+		// Back
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize);
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize);
+		colR = 0.0f; colG = 1.0f; colB = 0.0f; // GREEN
+		for (size_t i = 0; i < 4; ++i)
+		{
+			arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(-1.0f);
+			arrayColor->Array.push_back(colR); arrayColor->Array.push_back(colG); arrayColor->Array.push_back(colB); arrayColor->Array.push_back(a);
+		}
+
+		for (size_t i = 0; i < 6; ++i)
+		{
+			arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(1.0f);
+			arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(1.0f);
+			arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(0.0f);
+			arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(0.0f);
+		}
+
+
+		for (unsigned int i = 0; i < 6 * 4; i += 4)
+		{
+			_info.IndexArray.push_back(i + 0);
+			_info.IndexArray.push_back(i + 2);
+			_info.IndexArray.push_back(i + 1);
+			_info.IndexArray.push_back(i + 0);
+			_info.IndexArray.push_back(i + 3);
+			_info.IndexArray.push_back(i + 2);
+		}
 	}
 
 	void Mesh::GenerateSphere(const LoadOptions* loadOptions)
 	{
+		VertexArray* arrayPosition = &_info.VertexArrays[0];
+		VertexArray* arrayNormal = &_info.VertexArrays[1];
+		VertexArray* arrayUv = &_info.VertexArrays[2];
+		VertexArray* arrayColor = &_info.VertexArrays[3];
+
 		JE_TODO();
 	}
 

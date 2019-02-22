@@ -153,8 +153,8 @@ namespace Rendering
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
 
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-		//float time = 0.0f;
+		//float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+		float time = 0.0f;
 
 		UboCommon::StaticMeshCommon matrices;
 
@@ -164,7 +164,7 @@ namespace Rendering
 
 		mv_translation = mv_translation * rotation * scale;
 
-		matrices.MVP = *JE_GetRenderer()->GetCamera()->GetViewProj() * mv_translation;
+		matrices.MVP = /**JE_GetRenderer()->GetCamera()->GetView() * mv_translation*/ glm::mat4(1.0f);
 		matrices.MV = *JE_GetRenderer()->GetCamera()->GetView() * mv_translation;
 		matrices.MVInverseTranspose = glm::transpose(glm::inverse(mv_translation));
 

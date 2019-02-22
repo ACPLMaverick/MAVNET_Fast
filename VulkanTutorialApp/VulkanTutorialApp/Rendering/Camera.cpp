@@ -145,7 +145,7 @@ namespace Rendering
 
 	void Camera::UpdateView()
 	{
-		_view = glm::lookAt(_position, _target, glm::vec3(0.0f, 0.0f, 1.0f));
+		_view = glm::lookAt(_position, _target, glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 
 	void Camera::UpdateProj()

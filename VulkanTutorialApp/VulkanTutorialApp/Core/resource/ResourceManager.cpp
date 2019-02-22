@@ -16,7 +16,7 @@ namespace Core
 		for (size_t i = 1; i < (size_t)::Rendering::Mesh::AutoGenMode::ENUM_SIZE; ++i)
 		{
 			// TODO: Implement more autogen meshes loading.
-			if(i > 1) continue;
+			if(i > 2) continue;
 
 			meshOptions.AutoGenerateMode = (::Rendering::Mesh::AutoGenMode)i;
 			CacheMeshes.Get("AutoGen_" + postfixes[i], &meshOptions);
