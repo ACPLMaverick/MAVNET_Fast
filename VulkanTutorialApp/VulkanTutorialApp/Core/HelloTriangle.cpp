@@ -577,24 +577,22 @@ namespace Core
 
 	void HelloTriangle::InitObjects()
 	{
-		glm::vec3 pos(0.0f, 0.0f, -1.0f);
-		glm::vec3 tgt(0.0f, 0.0f, 0.0f);
+		glm::vec3 pos(1.5f, 1.5f, -3.0f);
+		glm::vec3 tgt(0.0f, 0.5f, 0.0f);
 		_camera.Initialize
 		(
 			&pos,
 			&tgt,
 			45.0f,
 			static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT),
-			0.1f,
+			0.5f,
 			4.0f
 		);
 		_camera.SetDimension(static_cast<float>(_swapChainExtent.width) / _swapChainExtent.height);
 		_camera.Update();
 
-		glm::vec3 col(1.0f, 1.0f, 0.0f);
+		glm::vec3 col(1.0f, 1.0f, 1.0f);
 		glm::vec3 dir(tgt - pos);
-		dir.z = 0.0f;
-		dir.x += 0.2f;
 		dir = glm::normalize(dir);
 		_lightDirectional.Initialize
 		(
@@ -605,7 +603,7 @@ namespace Core
 		col.r = _clearColor.color.float32[0];
 		col.g = _clearColor.color.float32[1];
 		col.b = _clearColor.color.float32[2];
-		_fog.Initialize(&col, 3.8f, 4.0f);
+		_fog.Initialize(&col, 3.5f, 4.0f);
 	}
 
 	void HelloTriangle::RefreshCameraProj(uint32_t newWidth, uint32_t newHeight)

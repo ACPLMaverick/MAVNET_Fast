@@ -47,7 +47,7 @@ namespace Rendering
 
 		// This as well.
 		::Rendering::Texture::LoadOptions texOptions;
-		std::string texName = "chalet.jpg";
+		std::string texName = "texture.jpg";
 		_textures.push_back(JE_GetApp()->GetResourceManager()->CacheTextures.Get(texName, &texOptions));
 
 		// TODO: Why the fuck bindings are global and not per-stage?
@@ -153,20 +153,23 @@ namespace Rendering
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
 
-		//float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-		float time = 0.0f;
+		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+		//float time = 0.0f;
 
 		UboCommon::StaticMeshCommon matrices;
 
 		glm::mat4 mv_translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 
 		mv_translation = mv_translation * rotation * scale;
 
-		matrices.MVP = /**JE_GetRenderer()->GetCamera()->GetView() * mv_translation*/ glm::mat4(1.0f);
-		matrices.MV = *JE_GetRenderer()->GetCamera()->GetView() * mv_translation;
-		matrices.MVInverseTranspose = glm::transpose(glm::inverse(mv_translation));
+		const glm::mat4& viewProj = *JE_GetRenderer()->GetCamera()->GetViewProj();
+		const glm::mat4& view = *JE_GetRenderer()->GetCamera()->GetView();
+
+		matrices.MVP = viewProj * mv_translation;
+		matrices.MV = view * mv_translation;
+		matrices.MVInverseTranspose = glm::transpose(glm::inverse(matrices.MV));
 
 		_uboPerObject->UpdateWithData(reinterpret_cast<uint8_t*>(&matrices), sizeof(matrices));
 	}
@@ -178,10 +181,10 @@ namespace Rendering
 
 		Rendering::UboCommon::SceneGlobal pco;
 		pco.FogColor = *fog.GetColor();
-		pco.FogDepthNear = fog.GetStartDepth();
-		pco.FogDepthFar = fog.GetEndDepth();
+		pco.FogDistNear = fog.GetStartDistance();
+		pco.FogDistFar = fog.GetEndDistance();
 		pco.LightColor = *lightDirectional.GetColor();
-		pco.LightDirectionV = *lightDirectional.GetDirectionV();
+		pco.InvLightDirectionV = -*lightDirectional.GetDirectionV();
 
 		_uboGlobal->UpdateWithData(reinterpret_cast<uint8_t*>(&pco), sizeof(pco));
 	}

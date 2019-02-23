@@ -72,6 +72,13 @@ extern bool IsBitWidthEqualOrLesserThan(uint64_t val, uint8_t bitWidth);
 #define JE_ArrayLength(arrayName) (sizeof(arrayName)/sizeof(arrayName[0]))
 #define JE_FillZeros(objName) (memset(&(objName), 0, sizeof(objName)))
 
+#define JE_NewAligned(typeName, alignment, ...) (new (_aligned_malloc(sizeof(typeName), alignment)) typeName(__VA_ARGS__))
+#define JE_DeleteAligned(object, typeName, alignment)	\
+{	\
+	object->~typeName();	\
+	_aligned_free((void*)object);	\
+}
+
 #define JE_VA_ARGS_COUNT(...) std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value
 
 

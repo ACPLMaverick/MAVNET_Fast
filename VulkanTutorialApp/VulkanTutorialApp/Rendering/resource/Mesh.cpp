@@ -281,10 +281,10 @@ namespace Rendering
 		arrayPosition->ComponentCount = arrayNormal->ComponentCount = arrayUv->ComponentCount = arrayColor->ComponentCount = 4;
 
 		const float halfSize = 0.5f;
-		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(0.0f);
-		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(0.0f);
-		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(0.0f);
-		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(0.0f);
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(0.0f); arrayPosition->Array.push_back(-halfSize);
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(0.0f); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(0.0f); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(0.0f); arrayPosition->Array.push_back(-halfSize);
 
 		for (uint32_t i = 0; i < arrayNormal->ComponentCount; ++i)
 		{
@@ -300,19 +300,22 @@ namespace Rendering
 		const float a = 1.0f;
 		for (uint32_t i = 0; i < arrayColor->ComponentCount; ++i)
 		{
-			//arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(a);
+			arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(a);
+			/*
 			arrayColor->Array.push_back(arrayPosition->Array[3 * i]); 
 			arrayColor->Array.push_back(arrayPosition->Array[3 * i + 1]); 
 			arrayColor->Array.push_back(arrayPosition->Array[3 * i + 2]); 
 			arrayColor->Array.push_back(a);
+			*/
 		}
 
+		// Counter-clockwise -> Because we flip vertices on Y axis with projection matrix.
 		_info.IndexArray.push_back(0);
-		_info.IndexArray.push_back(2);
 		_info.IndexArray.push_back(1);
-		_info.IndexArray.push_back(0);
-		_info.IndexArray.push_back(3);
 		_info.IndexArray.push_back(2);
+		_info.IndexArray.push_back(0);
+		_info.IndexArray.push_back(2);
+		_info.IndexArray.push_back(3);
 	}
 
 	void Mesh::GenerateBox(const LoadOptions* loadOptions)
@@ -330,21 +333,29 @@ namespace Rendering
 		
 		// Bottom
 		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(-halfSize);
-		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
-		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
 		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(-halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(0.0f);
+		arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(0.0f);
+		arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(1.0f);
+		arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(1.0f);
 		colR = 0.0f; colG = 0.0f; colB = 1.0f; // BLUE
 		for (size_t i = 0; i < 4; ++i)
 		{
-			arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(-1.0f); arrayNormal->Array.push_back(-1.0f);
+			arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(-1.0f); arrayNormal->Array.push_back(0.0f);
 			arrayColor->Array.push_back(colR); arrayColor->Array.push_back(colG); arrayColor->Array.push_back(colB); arrayColor->Array.push_back(a);
 		}
 
 		// Top
 		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(-halfSize);
-		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(-halfSize);
-		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(halfSize);
 		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(-halfSize);
+		arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(1.0f);
+		arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(0.0f);
+		arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(0.0f);
+		arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(1.0f);
 		colR = 1.0f; colG = 1.0f; colB = 0.0f; // YELLOW
 		for (size_t i = 0; i < 4; ++i)
 		{
@@ -354,33 +365,45 @@ namespace Rendering
 
 		// Left
 		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(-halfSize);
-		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(-halfSize);
-		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
 		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(-halfSize);
+		arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(0.0f);
+		arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(0.0f);
+		arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(1.0f);
+		arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(1.0f);
 		colR = 0.0f; colG = 1.0f; colB = 1.0f; // CYAN
-		for (size_t i = 0; i < 4; ++i)
-		{
-			arrayNormal->Array.push_back(1.0f); arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(0.0f);
-			arrayColor->Array.push_back(colR); arrayColor->Array.push_back(colG); arrayColor->Array.push_back(colB); arrayColor->Array.push_back(a);
-		}
-
-		// Right
-		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(-halfSize);
-		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(halfSize);
-		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
-		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(-halfSize);
-		colR = 1.0f; colG = 0.0f; colB = 0.0f; // RED
 		for (size_t i = 0; i < 4; ++i)
 		{
 			arrayNormal->Array.push_back(-1.0f); arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(0.0f);
 			arrayColor->Array.push_back(colR); arrayColor->Array.push_back(colG); arrayColor->Array.push_back(colB); arrayColor->Array.push_back(a);
 		}
 
+		// Right
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(-halfSize);
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(-halfSize);
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(0.0f);
+		arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(1.0f);
+		arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(1.0f);
+		arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(0.0f);
+		colR = 1.0f; colG = 0.0f; colB = 0.0f; // RED
+		for (size_t i = 0; i < 4; ++i)
+		{
+			arrayNormal->Array.push_back(1.0f); arrayNormal->Array.push_back(0.0f); arrayNormal->Array.push_back(0.0f);
+			arrayColor->Array.push_back(colR); arrayColor->Array.push_back(colG); arrayColor->Array.push_back(colB); arrayColor->Array.push_back(a);
+		}
+
 		// Front 
 		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(halfSize);
-		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(halfSize);
-		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
 		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize); arrayPosition->Array.push_back(halfSize);
+		arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(0.0f);
+		arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(1.0f);
+		arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(1.0f);
+		arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(0.0f);
 		colR = 1.0f; colG = 0.0f; colB = 1.0f; // MAGENTA
 		for (size_t i = 0; i < 4; ++i)
 		{
@@ -393,6 +416,10 @@ namespace Rendering
 		arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize);
 		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(halfSize);	arrayPosition->Array.push_back(-halfSize);
 		arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize);	arrayPosition->Array.push_back(-halfSize);
+		arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(1.0f);
+		arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(0.0f);
+		arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(0.0f);
+		arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(1.0f);
 		colR = 0.0f; colG = 1.0f; colB = 0.0f; // GREEN
 		for (size_t i = 0; i < 4; ++i)
 		{
@@ -400,23 +427,14 @@ namespace Rendering
 			arrayColor->Array.push_back(colR); arrayColor->Array.push_back(colG); arrayColor->Array.push_back(colB); arrayColor->Array.push_back(a);
 		}
 
-		for (size_t i = 0; i < 6; ++i)
-		{
-			arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(1.0f);
-			arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(1.0f);
-			arrayUv->Array.push_back(1.0f); arrayUv->Array.push_back(0.0f);
-			arrayUv->Array.push_back(0.0f); arrayUv->Array.push_back(0.0f);
-		}
-
-
 		for (unsigned int i = 0; i < 6 * 4; i += 4)
 		{
 			_info.IndexArray.push_back(i + 0);
-			_info.IndexArray.push_back(i + 2);
 			_info.IndexArray.push_back(i + 1);
-			_info.IndexArray.push_back(i + 0);
-			_info.IndexArray.push_back(i + 3);
 			_info.IndexArray.push_back(i + 2);
+			_info.IndexArray.push_back(i + 0);
+			_info.IndexArray.push_back(i + 2);
+			_info.IndexArray.push_back(i + 3);
 		}
 	}
 
@@ -427,6 +445,16 @@ namespace Rendering
 		VertexArray* arrayUv = &_info.VertexArrays[2];
 		VertexArray* arrayColor = &_info.VertexArrays[3];
 
+		JE_TODO();
+	}
+
+	void Mesh::GenerateCylinder(const LoadOptions* loadOptions)
+	{
+		JE_TODO();
+	}
+
+	void Mesh::GenerateCapsule(const LoadOptions* loadOptions)
+	{
 		JE_TODO();
 	}
 
@@ -514,7 +542,9 @@ namespace Rendering
 		nullptr,
 		&Mesh::GenerateQuad,
 		&Mesh::GenerateBox,
-		&Mesh::GenerateSphere
+		&Mesh::GenerateSphere,
+		&Mesh::GenerateCylinder,
+		&Mesh::GenerateCapsule
 	};
 
 }

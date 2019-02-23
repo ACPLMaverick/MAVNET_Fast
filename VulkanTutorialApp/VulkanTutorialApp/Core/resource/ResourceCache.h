@@ -18,7 +18,7 @@ namespace Core
 			for (auto& pair : _map)
 			{
 				pair.second->Cleanup();
-				delete pair.second;
+				JE_DeleteAligned(pair.second, Value, 32);
 			}
 			_map.clear();
 		}
@@ -32,7 +32,8 @@ namespace Core
 			}
 			else
 			{
-				Value* valPtr = new Value();
+				// Doing that because of the warning C4316...
+				Value* valPtr = JE_NewAligned(Value, 32);
 				valPtr->Load(key, loadOpts);
 				_map.emplace(key, valPtr);
 				return valPtr;

@@ -13,25 +13,24 @@ layout(binding = 2) uniform sampler2D texSampler;
 layout(set = 0, binding = 1) uniform SceneGlobal
 {
 	vec3 LightColor;
-	vec3 LightDirectionV;
-	float FogDepthNear;
+	vec3 InvLightDirectionV;
+	float FogDistNear;
 	vec3 FogColor;
-	float FogDepthFar;
+	float FogDistFar;
 } sceneGlobal;
 
 layout(location = 0) out vec4 outColor;
 
 void main()
 {
-	vec3 objColor = inColor.rgb;
-//	vec3 objColor = texture(texSampler, inUv).rgb;
-//	objColor *= inColor.rgb;
+	vec3 objColor = texture(texSampler, inUv).rgb;
+	objColor *= inColor.rgb;
 
-//	float diffuse = max(dot(normalize(-inNormal), sceneGlobal.LightDirectionV), 0.0f);
-//	objColor *= sceneGlobal.LightColor * diffuse;
-//
-	float depth = inWVPositionDepth.w;
-	float fogCoeff = smoothstep(sceneGlobal.FogDepthNear, sceneGlobal.FogDepthFar, depth);
-	outColor.rgb = mix(objColor, sceneGlobal.FogColor, 0.0f);
+	float diffuse = max(dot(normalize(inNormal), sceneGlobal.InvLightDirectionV), 0.0f);
+	objColor *= sceneGlobal.LightColor * diffuse;
+
+	float dist = inWVPositionDepth.z;
+	float fogCoeff = smoothstep(sceneGlobal.FogDistNear, sceneGlobal.FogDistFar, dist);
+	outColor.rgb = mix(objColor, sceneGlobal.FogColor, fogCoeff);
 	outColor.a = 1.0f;
 }

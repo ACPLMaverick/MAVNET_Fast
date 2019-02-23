@@ -29,11 +29,25 @@ namespace Rendering
 			None,
 			Quad,
 			Box,
-			Sphere
+			Sphere,
+			Cylinder,
+			Capsule
 		JE_EnumEnd()
 
 		struct LoadOptions
 		{
+			float CapsuleHeight;
+			union
+			{
+				uint8_t CylinderHorEdges;
+				uint8_t SphereHorEdges;
+			};
+			union
+			{
+				uint8_t CapsuleVertEdges;
+				uint8_t CylinderVertEdges;
+				uint8_t SphereVertEdges;
+			};
 			AutoGenMode AutoGenerateMode;
 			bool bReadOnly = true;
 		};
@@ -131,6 +145,8 @@ namespace Rendering
 		void GenerateQuad(const LoadOptions* loadOptions);
 		void GenerateBox(const LoadOptions* loadOptions);
 		void GenerateSphere(const LoadOptions* loadOptions);
+		void GenerateCylinder(const LoadOptions* loadOptions);
+		void GenerateCapsule(const LoadOptions* loadOptions);
 
 		void CleanupData();
 

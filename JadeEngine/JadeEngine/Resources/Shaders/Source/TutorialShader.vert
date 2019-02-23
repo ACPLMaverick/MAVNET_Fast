@@ -29,6 +29,6 @@ void main()
 	outColor = inColor;
 	outWVPositionDepth.xyz = (ubo.MV * vec4(inPosition, 1.0f)).xyz;
 	outWVPositionDepth.w = gl_Position.z / gl_Position.w;
-	outNormal = (ubo.MVInverseTranspose * vec4(inNormal, 0.0f)).xyz;
+	outNormal = normalize((ubo.MVInverseTranspose * vec4(inNormal, 0.0f)).xyz);
 	outUv = inUv;
 }

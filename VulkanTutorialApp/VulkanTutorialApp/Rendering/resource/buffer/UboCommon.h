@@ -21,10 +21,10 @@ namespace Rendering
 		struct SceneGlobal
 		{
 			JE_AlignAs(16) glm::vec3 LightColor;
-			JE_AlignAs(16) glm::vec3 LightDirectionV;
-			float FogDepthNear;
+			JE_AlignAs(16) glm::vec3 InvLightDirectionV;
+			float FogDistNear;
 			glm::vec3 FogColor;
-			float FogDepthFar;
+			float FogDistFar;
 		};
 	}
 }
