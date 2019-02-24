@@ -236,7 +236,7 @@ namespace Rendering
 			}
 		}
 
-		_info.VertexCount = static_cast<uint32_t>(_info.VertexArrays[0].Array.size() / (_info.VertexArrays[0].ComponentSize / 4)); // One float has 4 bytes.
+		_info.VertexCount = static_cast<uint32_t>(_info.VertexArrays[0].GetArrayComponentCount());
 		_info.IndexCount = static_cast<uint32_t>(_info.IndexArray.size());
 		JE_Assert(_info.VertexCount != 0);
 		JE_Assert(_info.IndexCount != 0);
@@ -265,7 +265,7 @@ namespace Rendering
 		}
 
 
-		_info.VertexCount = static_cast<uint32_t>(_info.VertexArrays[0].Array.size() / (_info.VertexArrays[0].ComponentSize / 4)); // One float has 4 bytes.
+		_info.VertexCount = static_cast<uint32_t>(_info.VertexArrays[0].GetArrayComponentCount());
 		_info.IndexCount = static_cast<uint32_t>(_info.IndexArray.size());
 		JE_Assert(_info.VertexCount != 0);
 		JE_Assert(_info.IndexCount != 0);
@@ -445,7 +445,122 @@ namespace Rendering
 		VertexArray* arrayUv = &_info.VertexArrays[2];
 		VertexArray* arrayColor = &_info.VertexArrays[3];
 
-		JE_TODO();
+		static const float DEFAULT_RADIUS = 1.0f;
+		static const uint32_t DEFAULT_NUM_EDGES_VERT = 26;
+		static const uint32_t DEFAULT_NUM_EDGES_HOR = 32;
+		const uint32_t numEdgesVert = loadOptions->SphereEdgesVert >= 3 ? loadOptions->SphereEdgesVert : DEFAULT_NUM_EDGES_VERT;
+		const uint32_t numEdgesHor = loadOptions->SphereEdgesHor >= 1 ? loadOptions->SphereEdgesHor : DEFAULT_NUM_EDGES_HOR;
+		const float radius = DEFAULT_RADIUS;
+
+		arrayPosition->ComponentCount = arrayNormal->ComponentCount = arrayUv->ComponentCount = arrayColor->ComponentCount = (numEdgesVert + 1) * numEdgesHor + 2;
+
+		const float stepAngleVert = 180.0f / (float)(numEdgesHor + 1);
+		const float stepAngleHor = 360.0f / (float)(numEdgesVert);
+		const glm::mat4 stepRotateVert = glm::rotate(glm::mat4(1.0f), glm::radians(stepAngleVert), glm::vec3(1.0f, 0.0f, 0.0f));
+		const glm::mat4 stepRotateHor = glm::rotate(glm::mat4(1.0f), glm::radians(stepAngleHor), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::vec4 vertex(0.0f, -radius, 0.0f, 0.0f);
+
+		const uint32_t numStep = numEdgesHor + 2;
+
+		// Place lowest vertex.
+		arrayPosition->Array.push_back(0.0f); arrayPosition->Array.push_back(-radius); arrayPosition->Array.push_back(0.0f);
+		arrayUv->Array.push_back(0.5f); arrayUv->Array.push_back(1.0f);
+
+		// Place vertices along horizontal rings and draw a horizontal strip with lower level.
+		for (uint32_t i = 1; i < numStep - 1; ++i)
+		{
+			const float currentUvY = 1.0f - ((float)i / (float)(numStep - 1));
+			const uint32_t currentBaseIndex = arrayPosition->GetArrayComponentCount();
+
+			vertex = stepRotateVert * vertex;
+			
+			for (uint32_t j = 0; j <= numEdgesVert; ++j)	// Duplicating first horizontal edge because we need to have UV seam there.
+			{
+				arrayPosition->Array.push_back(vertex.x); arrayPosition->Array.push_back(vertex.y); arrayPosition->Array.push_back(vertex.z);
+				arrayUv->Array.push_back((float)j / (float)(numEdgesVert));
+				arrayUv->Array.push_back(currentUvY);
+
+				if (j < numEdgesVert)
+				{
+					vertex = stepRotateHor * vertex;
+				}
+			}
+
+			if (i == 1) // Make faces with lowest vertex.
+			{
+				for (uint32_t j = 0; j < numEdgesVert; ++j)
+				{
+					_info.IndexArray.push_back(0);
+					_info.IndexArray.push_back(j + 1);
+					_info.IndexArray.push_back(j + 2);
+				}
+			}
+			else // Make faces with lower ring.
+			{
+				for (uint32_t j = 0; j < numEdgesVert; ++j)
+				{
+					const uint32_t thisIndex = currentBaseIndex + j;
+					const uint32_t thisNextIndex = currentBaseIndex + j + 1;
+					const uint32_t lowerIndex = thisIndex - (numEdgesVert + 1);
+					const uint32_t lowerNextIndex = thisNextIndex - (numEdgesVert + 1);
+
+					_info.IndexArray.push_back(thisIndex);
+					_info.IndexArray.push_back(thisNextIndex);
+					_info.IndexArray.push_back(lowerIndex);
+					_info.IndexArray.push_back(thisNextIndex);
+					_info.IndexArray.push_back(lowerNextIndex);
+					_info.IndexArray.push_back(lowerIndex);
+				}
+			}
+		}
+
+		// Place highest vertex.
+		const uint32_t lastRingBaseIndex = (uint32_t)arrayPosition->GetArrayComponentCount() - (numEdgesVert + 1);
+		arrayPosition->Array.push_back(0.0f); arrayPosition->Array.push_back(radius); arrayPosition->Array.push_back(0.0f);
+		arrayUv->Array.push_back(0.5f); arrayUv->Array.push_back(0.0f);
+		const uint32_t finalVertexIndex = (uint32_t)arrayPosition->GetArrayComponentCount() - 1;
+		// Make faces with previous ring.
+		for (uint32_t j = 0; j < numEdgesVert; ++j)
+		{
+			_info.IndexArray.push_back(lastRingBaseIndex + j + 1);
+			_info.IndexArray.push_back(lastRingBaseIndex + j);
+			_info.IndexArray.push_back(finalVertexIndex);
+		}
+
+		// Fill white color.
+		const float col = 1.0f;
+		const float a = 1.0f;
+		for (uint32_t i = 0; i < arrayColor->ComponentCount; ++i)
+		{
+			arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(a);
+		}
+
+		ComputeNormalsSmooth();
+
+		// Fix seam edge normals.
+		const uint32_t normStride = arrayNormal->ComponentSize / sizeof(float);
+		for (uint32_t i = normStride; i < (uint32_t)arrayNormal->Array.size() - normStride; i += normStride * (numEdgesVert + 1)) // Omitting first and last vertex, stepping by numEdgesVert+1
+		{
+			const glm::vec3 firstNormal
+			(
+				arrayNormal->Array[i],
+				arrayNormal->Array[i + 1],
+				arrayNormal->Array[i + 2]
+			);
+			const glm::vec3 lastNormal
+			(
+				arrayNormal->Array[i + normStride * numEdgesVert],
+				arrayNormal->Array[i + normStride * numEdgesVert + 1],
+				arrayNormal->Array[i + normStride * numEdgesVert + 2]
+			);
+
+			glm::vec3 avg = glm::normalize(firstNormal + lastNormal);
+
+			// debug
+			arrayNormal->Array[i] = arrayNormal->Array[i + normStride * numEdgesVert] = avg.x;
+			arrayNormal->Array[i + 1] = arrayNormal->Array[i + normStride * numEdgesVert + 1] = avg.y;
+			arrayNormal->Array[i + 2] = arrayNormal->Array[i + normStride * numEdgesVert + 2] = avg.z;
+		}
 	}
 
 	void Mesh::GenerateCylinder(const LoadOptions* loadOptions)
@@ -456,6 +571,75 @@ namespace Rendering
 	void Mesh::GenerateCapsule(const LoadOptions* loadOptions)
 	{
 		JE_TODO();
+	}
+
+	void Mesh::ComputeNormalsSmooth()
+	{
+		VertexArray* arrayPosition = &_info.VertexArrays[0];
+		VertexArray* arrayNormal = &_info.VertexArrays[1];
+
+		arrayNormal->Array.resize(arrayPosition->Array.size(), 0.0f);
+
+		const size_t indexNum = _info.IndexArray.size();
+		uint32_t compStride = arrayPosition->ComponentSize / sizeof(float);
+		glm::vec3 positions[3];
+		glm::vec3 edges[2];
+		
+		for (size_t i = 0; i < indexNum; i += 3)
+		{
+			positions[0] = glm::vec3
+			(
+				arrayPosition->Array[_info.IndexArray[i] * compStride], 
+				arrayPosition->Array[_info.IndexArray[i] * compStride + 1], 
+				arrayPosition->Array[_info.IndexArray[i] * compStride + 2]
+			);
+			positions[1] = glm::vec3
+			(
+				arrayPosition->Array[_info.IndexArray[i + 1] * compStride], 
+				arrayPosition->Array[_info.IndexArray[i + 1] * compStride + 1], 
+				arrayPosition->Array[_info.IndexArray[i + 1] * compStride + 2]
+			);
+			positions[2] = glm::vec3
+			(
+				arrayPosition->Array[_info.IndexArray[i + 2] * compStride], 
+				arrayPosition->Array[_info.IndexArray[i + 2] * compStride + 1], 
+				arrayPosition->Array[_info.IndexArray[i + 2] * compStride + 2]
+			);
+
+			edges[0] = glm::normalize(positions[1] - positions[0]);
+			edges[1] = glm::normalize(positions[2] - positions[0]);
+
+			glm::vec3 cross = glm::normalize(glm::cross(edges[1], edges[0]));
+
+
+			arrayNormal->Array[_info.IndexArray[i] * compStride] += cross.x;
+			arrayNormal->Array[_info.IndexArray[i] * compStride + 1] += cross.y;
+			arrayNormal->Array[_info.IndexArray[i] * compStride + 2] += cross.z;
+
+			arrayNormal->Array[_info.IndexArray[i + 1] * compStride] += cross.x;
+			arrayNormal->Array[_info.IndexArray[i + 1] * compStride + 1] += cross.y;
+			arrayNormal->Array[_info.IndexArray[i + 1] * compStride + 2] += cross.z;
+
+			arrayNormal->Array[_info.IndexArray[i + 2] * compStride] += cross.x;
+			arrayNormal->Array[_info.IndexArray[i + 2] * compStride + 1] += cross.y;
+			arrayNormal->Array[_info.IndexArray[i + 2] * compStride + 2] += cross.z;
+		}
+
+		const size_t normalArraySize = arrayNormal->Array.size();
+		compStride = arrayNormal->ComponentSize / sizeof(float);
+		for (size_t i = 0; i < normalArraySize; i += compStride)
+		{
+			glm::vec3 normal
+			(
+				arrayNormal->Array[i],
+				arrayNormal->Array[i + 1],
+				arrayNormal->Array[i + 2]
+			);
+			normal = glm::normalize(normal);
+			arrayNormal->Array[i] = normal.x;
+			arrayNormal->Array[i + 1] = normal.y;
+			arrayNormal->Array[i + 2] = normal.z;
+		}
 	}
 
 	void Mesh::CleanupData()
@@ -547,4 +731,5 @@ namespace Rendering
 		&Mesh::GenerateCapsule
 	};
 
+	const char* Rendering::Mesh::AutogenPostfixes[] = { "", "Quad", "Box", "Sphere", "Cylinder", "Capsule" };
 }

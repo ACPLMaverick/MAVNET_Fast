@@ -105,7 +105,7 @@ namespace Core
 		_currentPipelineKey = *(_pipelineMgr.GetKey(_material->GetPipeline()));
 
 		// Mesh.
-		_mesh = JE_GetApp()->GetResourceManager()->CacheMeshes.Get("AutoGen_Box");
+		_mesh = JE_GetApp()->GetResourceManager()->CacheMeshes.Get("AutoGen_Sphere");
 		_mesh->AdjustBuffersForVertexDeclaration(_material->GetVertexDeclaration());	// TODO: OMG what to do wit dis.
 
 		CreateCommandBuffers();	// TODO: Delegate this to command buffer creation system or sth like that.
@@ -577,7 +577,7 @@ namespace Core
 
 	void HelloTriangle::InitObjects()
 	{
-		glm::vec3 pos(1.5f, 1.5f, -3.0f);
+		glm::vec3 pos(1.5f, 1.5f, -3.5f);
 		glm::vec3 tgt(0.0f, 0.5f, 0.0f);
 		_camera.Initialize
 		(

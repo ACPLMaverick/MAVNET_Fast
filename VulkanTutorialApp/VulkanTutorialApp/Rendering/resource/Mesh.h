@@ -39,14 +39,14 @@ namespace Rendering
 			float CapsuleHeight;
 			union
 			{
-				uint8_t CylinderHorEdges;
-				uint8_t SphereHorEdges;
+				uint8_t CylinderEdgesHor;
+				uint8_t SphereEdgesHor;
 			};
 			union
 			{
-				uint8_t CapsuleVertEdges;
-				uint8_t CylinderVertEdges;
-				uint8_t SphereVertEdges;
+				uint8_t CapsuleEdgesVert;
+				uint8_t CylinderEdgesVert;
+				uint8_t SphereEdgesVert;
 			};
 			AutoGenMode AutoGenerateMode;
 			bool bReadOnly = true;
@@ -70,6 +70,7 @@ namespace Rendering
 			}
 
 			JE_Inline uint32_t GetArraySizeBytes() const { return ComponentSize * ComponentCount; }
+			JE_Inline uint32_t GetArrayComponentCount() const { return (uint32_t)Array.size() / (ComponentSize / sizeof(float)); }
 		};
 
 		// This contains ALL possible vertex elements. Used for vertex comparison when loading from OBJ.
@@ -107,6 +108,10 @@ namespace Rendering
 			uint32_t VertexCount = 0;
 			uint32_t IndexCount = 0;
 		};
+
+	public:
+
+		static const char* AutogenPostfixes[];
 
 	public:
 		
@@ -147,6 +152,8 @@ namespace Rendering
 		void GenerateSphere(const LoadOptions* loadOptions);
 		void GenerateCylinder(const LoadOptions* loadOptions);
 		void GenerateCapsule(const LoadOptions* loadOptions);
+
+		void ComputeNormalsSmooth();
 
 		void CleanupData();
 
