@@ -446,38 +446,60 @@ namespace Rendering
 		VertexArray* arrayColor = &_info.VertexArrays[3];
 
 		static const float DEFAULT_RADIUS = 1.0f;
-		static const uint32_t DEFAULT_NUM_EDGES_VERT = 26;
-		static const uint32_t DEFAULT_NUM_EDGES_HOR = 32;
-		const uint32_t numEdgesVert = loadOptions->SphereEdgesVert >= 3 ? loadOptions->SphereEdgesVert : DEFAULT_NUM_EDGES_VERT;
-		const uint32_t numEdgesHor = loadOptions->SphereEdgesHor >= 1 ? loadOptions->SphereEdgesHor : DEFAULT_NUM_EDGES_HOR;
+		static const uint32_t DEFAULT_NUM_EDGES_VERT = /*26*/4;
+		static const uint32_t DEFAULT_NUM_EDGES_HOR = /*32*/1;
+		const bool bIsHalf = loadOptions->AutoGenerateOptions.SphereMode != AutoGenSphereMode::Whole;
+		const uint32_t numEdgesVert = (loadOptions->AutoGenerateOptions.SphereEdgesVert >= 3 ? loadOptions->AutoGenerateOptions.SphereEdgesVert : DEFAULT_NUM_EDGES_VERT);
+
+		uint32_t numEdgesHor = (loadOptions->AutoGenerateOptions.SphereEdgesHor >= 1 ? loadOptions->AutoGenerateOptions.SphereEdgesHor : DEFAULT_NUM_EDGES_HOR);
+		if (bIsHalf)
+		{
+			if (numEdgesHor % 2 == 0 || numEdgesHor == 1)
+			{
+				++numEdgesHor;
+			}
+			numEdgesHor /= 2;
+		}
+
 		const float radius = DEFAULT_RADIUS;
 
 		arrayPosition->ComponentCount = arrayNormal->ComponentCount = arrayUv->ComponentCount = arrayColor->ComponentCount = (numEdgesVert + 1) * numEdgesHor + 2;
 
-		const float stepAngleVert = 180.0f / (float)(numEdgesHor + 1);
+		const float stepAngleVert = 180.0f / (float)(numEdgesHor + 1) / (bIsHalf ? 2.0f : 1.0f);
 		const float stepAngleHor = 360.0f / (float)(numEdgesVert);
 		const glm::mat4 stepRotateVert = glm::rotate(glm::mat4(1.0f), glm::radians(stepAngleVert), glm::vec3(1.0f, 0.0f, 0.0f));
 		const glm::mat4 stepRotateHor = glm::rotate(glm::mat4(1.0f), glm::radians(stepAngleHor), glm::vec3(0.0f, 1.0f, 0.0f));
-		glm::vec4 vertex(0.0f, -radius, 0.0f, 0.0f);
+		glm::vec4 vertex;
+		if (loadOptions->AutoGenerateOptions.SphereMode == AutoGenSphereMode::UpperHalf)
+		{
+			vertex = glm::vec4(0.0f, 0.0f, radius, 0.0f);	
+		}
+		else
+		{
+			vertex = glm::vec4(0.0f, -radius, 0.0f, 0.0f);
+		}
 
 		const uint32_t numStep = numEdgesHor + 2;
 
 		// Place lowest vertex.
-		arrayPosition->Array.push_back(0.0f); arrayPosition->Array.push_back(-radius); arrayPosition->Array.push_back(0.0f);
-		arrayUv->Array.push_back(0.5f); arrayUv->Array.push_back(1.0f);
+		if (loadOptions->AutoGenerateOptions.SphereMode != AutoGenSphereMode::UpperHalf)
+		{
+			arrayPosition->Array.push_back(0.0f); arrayPosition->Array.push_back(-radius); arrayPosition->Array.push_back(0.0f);
+			arrayUv->Array.push_back(0.5f); arrayUv->Array.push_back(1.0f);
+
+			vertex = stepRotateVert * vertex;
+		}
 
 		// Place vertices along horizontal rings and draw a horizontal strip with lower level.
 		for (uint32_t i = 1; i < numStep - 1; ++i)
 		{
 			const float currentUvY = 1.0f - ((float)i / (float)(numStep - 1));
 			const uint32_t currentBaseIndex = arrayPosition->GetArrayComponentCount();
-
-			vertex = stepRotateVert * vertex;
 			
 			for (uint32_t j = 0; j <= numEdgesVert; ++j)	// Duplicating first horizontal edge because we need to have UV seam there.
 			{
 				arrayPosition->Array.push_back(vertex.x); arrayPosition->Array.push_back(vertex.y); arrayPosition->Array.push_back(vertex.z);
-				arrayUv->Array.push_back((float)j / (float)(numEdgesVert));
+				arrayUv->Array.push_back(1.0f - (float)j / (float)(numEdgesVert));
 				arrayUv->Array.push_back(currentUvY);
 
 				if (j < numEdgesVert)
@@ -486,13 +508,18 @@ namespace Rendering
 				}
 			}
 
+			vertex = stepRotateVert * vertex;
+
 			if (i == 1) // Make faces with lowest vertex.
 			{
-				for (uint32_t j = 0; j < numEdgesVert; ++j)
+				if (loadOptions->AutoGenerateOptions.SphereMode != AutoGenSphereMode::UpperHalf)
 				{
-					_info.IndexArray.push_back(0);
-					_info.IndexArray.push_back(j + 1);
-					_info.IndexArray.push_back(j + 2);
+					for (uint32_t j = 0; j < numEdgesVert; ++j)
+					{
+						_info.IndexArray.push_back(0);
+						_info.IndexArray.push_back(j + 1);
+						_info.IndexArray.push_back(j + 2);
+					}
 				}
 			}
 			else // Make faces with lower ring.
@@ -515,22 +542,26 @@ namespace Rendering
 		}
 
 		// Place highest vertex.
-		const uint32_t lastRingBaseIndex = (uint32_t)arrayPosition->GetArrayComponentCount() - (numEdgesVert + 1);
-		arrayPosition->Array.push_back(0.0f); arrayPosition->Array.push_back(radius); arrayPosition->Array.push_back(0.0f);
-		arrayUv->Array.push_back(0.5f); arrayUv->Array.push_back(0.0f);
-		const uint32_t finalVertexIndex = (uint32_t)arrayPosition->GetArrayComponentCount() - 1;
-		// Make faces with previous ring.
-		for (uint32_t j = 0; j < numEdgesVert; ++j)
+		if (loadOptions->AutoGenerateOptions.SphereMode != AutoGenSphereMode::LowerHalf)
 		{
-			_info.IndexArray.push_back(lastRingBaseIndex + j + 1);
-			_info.IndexArray.push_back(lastRingBaseIndex + j);
-			_info.IndexArray.push_back(finalVertexIndex);
+			const uint32_t lastRingBaseIndex = (uint32_t)arrayPosition->GetArrayComponentCount() - (numEdgesVert + 1);
+			arrayPosition->Array.push_back(0.0f); arrayPosition->Array.push_back(radius); arrayPosition->Array.push_back(0.0f);
+			arrayUv->Array.push_back(0.5f); arrayUv->Array.push_back(0.0f);
+			const uint32_t finalVertexIndex = (uint32_t)arrayPosition->GetArrayComponentCount() - 1;
+			// Make faces with previous ring.
+			for (uint32_t j = 0; j < numEdgesVert; ++j)
+			{
+				_info.IndexArray.push_back(lastRingBaseIndex + j + 1);
+				_info.IndexArray.push_back(lastRingBaseIndex + j);
+				_info.IndexArray.push_back(finalVertexIndex);
+			}
 		}
 
 		// Fill white color.
 		const float col = 1.0f;
 		const float a = 1.0f;
-		for (uint32_t i = 0; i < arrayColor->ComponentCount; ++i)
+		uint32_t currCompCount = arrayPosition->GetArrayComponentCount();
+		for (uint32_t i = 0; i < currCompCount; ++i)
 		{
 			arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(a);
 		}
@@ -565,12 +596,115 @@ namespace Rendering
 
 	void Mesh::GenerateCylinder(const LoadOptions* loadOptions)
 	{
-		JE_TODO();
-	}
+		VertexArray* arrayPosition = &_info.VertexArrays[0];
+		VertexArray* arrayNormal = &_info.VertexArrays[1];
+		VertexArray* arrayUv = &_info.VertexArrays[2];
+		VertexArray* arrayColor = &_info.VertexArrays[3];
 
-	void Mesh::GenerateCapsule(const LoadOptions* loadOptions)
-	{
-		JE_TODO();
+		static const float DEFAULT_HEIGHT = 1.0f;
+		static const float DEFAULT_CAP_RADIUS = 0.5f;
+		static const uint32_t DEFAULT_NUM_EDGES_VERT = 32;
+		const uint32_t numEdgesVert = loadOptions->AutoGenerateOptions.CylinderEdgesVert >= 3 ? loadOptions->AutoGenerateOptions.CylinderEdgesVert : DEFAULT_NUM_EDGES_VERT;
+		const float halfHeight = DEFAULT_HEIGHT * 0.5f;
+		const float capRadius = DEFAULT_CAP_RADIUS;
+
+		arrayPosition->ComponentCount = arrayNormal->ComponentCount = arrayUv->ComponentCount = arrayColor->ComponentCount = (numEdgesVert + 1) * 4;
+
+
+		const float stepAngleHor = 360.0f / (float)(numEdgesVert);
+		const glm::mat4 stepRotateHor = glm::rotate(glm::mat4(1.0f), glm::radians(stepAngleHor), glm::vec3(0.0f, 1.0f, 0.0f));
+		const glm::mat4 stepRotateHorUv = glm::rotate(glm::mat4(1.0f), glm::radians(stepAngleHor), glm::vec3(0.0f, 0.0f, 1.0f));
+
+		// Make caps.
+
+		glm::vec3 vertices[2] = { glm::vec3(0.0f, -halfHeight, capRadius), glm::vec3(0.0f, halfHeight, -capRadius) };
+		glm::vec3 normals[2] = { glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f) };
+		glm::vec2 uv(0.0f, -0.5f);
+		for (uint32_t i = 0; i < 2; ++i)
+		{
+			// Middle vertex.
+			const glm::vec3 middle = normals[i] * halfHeight;
+			arrayPosition->Array.push_back(middle.x); arrayPosition->Array.push_back(middle.y); arrayPosition->Array.push_back(middle.z);
+			arrayUv->Array.push_back(0.5f); arrayUv->Array.push_back(0.5f);
+			arrayNormal->Array.push_back(normals[i].x); arrayNormal->Array.push_back(normals[i].y); arrayNormal->Array.push_back(normals[i].z);
+
+			for (uint32_t j = 0; j < numEdgesVert; ++j)
+			{
+				const glm::vec2 currUv = uv + glm::vec2(0.5f, 0.5f);
+				arrayPosition->Array.push_back(vertices[i].x); arrayPosition->Array.push_back(vertices[i].y); arrayPosition->Array.push_back(vertices[i].z);
+				arrayUv->Array.push_back(currUv.x); arrayUv->Array.push_back(currUv.y);
+				arrayNormal->Array.push_back(normals[i].x); arrayNormal->Array.push_back(normals[i].y); arrayNormal->Array.push_back(normals[i].z);
+
+				vertices[i] = stepRotateHor * glm::vec4(vertices[i], 0.0f);
+				uv = stepRotateHorUv * glm::vec4(uv, 0.0f, 0.0f);
+			}
+		}
+
+		const uint32_t upperCapOffset = numEdgesVert + 1;
+
+		// Lower cap face.
+		for (uint32_t i = 0; i < numEdgesVert; ++i)
+		{
+			_info.IndexArray.push_back(0);
+			_info.IndexArray.push_back(i + 1);
+			_info.IndexArray.push_back(((i + 1) % numEdgesVert) + 1);
+		}
+
+		// Upper cap face.
+		for (uint32_t i = 0; i < numEdgesVert; ++i)
+		{
+			_info.IndexArray.push_back(upperCapOffset);
+			_info.IndexArray.push_back(((i + 1) % numEdgesVert) + upperCapOffset + 1);
+			_info.IndexArray.push_back(i + upperCapOffset + 1);
+		}
+
+
+		// Make side.
+		const uint32_t indexOffset = (uint32_t)(arrayPosition->GetArrayComponentCount());
+		glm::vec3 vertex(0.0f, 0.0f, capRadius);
+		for (uint32_t i = 0; i <= numEdgesVert; ++i)
+		{
+			// Lower and upper vertex.
+			arrayPosition->Array.push_back(vertex.x); arrayPosition->Array.push_back(-halfHeight); arrayPosition->Array.push_back(vertex.z);
+			arrayPosition->Array.push_back(vertex.x); arrayPosition->Array.push_back(halfHeight); arrayPosition->Array.push_back(vertex.z);
+			
+			const float uvX = 1.0f - (float)i / (float)numEdgesVert;
+			arrayUv->Array.push_back(uvX); arrayUv->Array.push_back(1.0f);
+			arrayUv->Array.push_back(uvX); arrayUv->Array.push_back(0.0f);
+			
+			const glm::vec3 normal(glm::normalize(vertex));
+			arrayNormal->Array.push_back(normal.x); arrayNormal->Array.push_back(normal.y); arrayNormal->Array.push_back(normal.z);
+			arrayNormal->Array.push_back(normal.x); arrayNormal->Array.push_back(normal.y); arrayNormal->Array.push_back(normal.z);
+
+			vertex = stepRotateHor * glm::vec4(vertex, 0.0f);
+
+			if (i == 0)
+			{
+				continue;
+			}
+			else
+			{
+				const uint32_t indexThisLower = indexOffset + i * 2;
+				const uint32_t indexThisUpper = indexOffset + i * 2 + 1;
+				const uint32_t indexPrevLower = indexOffset + (i - 1) * 2;
+				const uint32_t indexPrevUpper = indexOffset + (i - 1) * 2 + 1;
+
+				_info.IndexArray.push_back(indexThisLower);
+				_info.IndexArray.push_back(indexPrevLower);
+				_info.IndexArray.push_back(indexThisUpper);
+				_info.IndexArray.push_back(indexPrevLower);
+				_info.IndexArray.push_back(indexPrevUpper);
+				_info.IndexArray.push_back(indexThisUpper);
+			}
+		}
+
+		// Fill white color.
+		const float col = 1.0f;
+		const float a = 1.0f;
+		for (uint32_t i = 0; i < arrayColor->ComponentCount; ++i)
+		{
+			arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(col); arrayColor->Array.push_back(a);
+		}
 	}
 
 	void Mesh::ComputeNormalsSmooth()
@@ -727,9 +861,8 @@ namespace Rendering
 		&Mesh::GenerateQuad,
 		&Mesh::GenerateBox,
 		&Mesh::GenerateSphere,
-		&Mesh::GenerateCylinder,
-		&Mesh::GenerateCapsule
+		&Mesh::GenerateCylinder
 	};
 
-	const char* Rendering::Mesh::AutogenPostfixes[] = { "", "Quad", "Box", "Sphere", "Cylinder", "Capsule" };
+	const char* Rendering::Mesh::AutogenPostfixes[] = { "", "Quad", "Box", "Sphere", "Cylinder" };
 }

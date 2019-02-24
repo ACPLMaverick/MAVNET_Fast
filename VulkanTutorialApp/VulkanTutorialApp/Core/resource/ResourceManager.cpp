@@ -12,11 +12,11 @@ namespace Core
 
 		// TODO: Preload some default objects, like temp shader or white/black textures.
 		::Rendering::Mesh::LoadOptions meshOptions = {};
+		// ++Test
+		//meshOptions.AutoGenerateOptions.SphereMode = ::Rendering::Mesh::AutoGenSphereMode::LowerHalf;
+		// --Test
 		for (size_t i = 1; i < (size_t)::Rendering::Mesh::AutoGenMode::ENUM_SIZE; ++i)
 		{
-			// TODO: Implement more autogen meshes loading.
-			if(i > 3) continue;
-
 			meshOptions.AutoGenerateMode = (::Rendering::Mesh::AutoGenMode)i;
 			CacheMeshes.Get("AutoGen_" + std::string(::Rendering::Mesh::AutogenPostfixes[i]), &meshOptions);
 		}

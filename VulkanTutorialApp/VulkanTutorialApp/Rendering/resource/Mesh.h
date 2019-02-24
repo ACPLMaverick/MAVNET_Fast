@@ -30,24 +30,33 @@ namespace Rendering
 			Quad,
 			Box,
 			Sphere,
-			Cylinder,
-			Capsule
+			Cylinder
 		JE_EnumEnd()
+
+		JE_EnumBegin(AutoGenSphereMode)
+			Whole,
+			LowerHalf,
+			UpperHalf
+		JE_EnumEnd()
+
+		struct AutoGenOptions
+		{
+			uint8_t SphereEdgesHor;
+			union
+			{
+				uint8_t SphereEdgesVert;
+				uint8_t CylinderEdgesVert;
+			};
+			union
+			{
+				AutoGenSphereMode SphereMode;
+				bool CylinderNoCaps;
+			};
+		};
 
 		struct LoadOptions
 		{
-			float CapsuleHeight;
-			union
-			{
-				uint8_t CylinderEdgesHor;
-				uint8_t SphereEdgesHor;
-			};
-			union
-			{
-				uint8_t CapsuleEdgesVert;
-				uint8_t CylinderEdgesVert;
-				uint8_t SphereEdgesVert;
-			};
+			AutoGenOptions AutoGenerateOptions;
 			AutoGenMode AutoGenerateMode;
 			bool bReadOnly = true;
 		};
@@ -151,7 +160,6 @@ namespace Rendering
 		void GenerateBox(const LoadOptions* loadOptions);
 		void GenerateSphere(const LoadOptions* loadOptions);
 		void GenerateCylinder(const LoadOptions* loadOptions);
-		void GenerateCapsule(const LoadOptions* loadOptions);
 
 		void ComputeNormalsSmooth();
 
