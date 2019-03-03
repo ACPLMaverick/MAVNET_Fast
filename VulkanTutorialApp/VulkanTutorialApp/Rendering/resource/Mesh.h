@@ -121,6 +121,8 @@ namespace Rendering
 	public:
 
 		static const char* AutogenPostfixes[];
+		static const char* AutogenSphereModePostfixes[];
+		static const char* AutogenNoCapsPostfix;
 
 	public:
 		
