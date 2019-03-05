@@ -70,16 +70,16 @@ public class InputSystem extends System
 
         // Register onClick with hold methods for remote buttons.
         btn = GetMenu().GetButtons().get(R.id.btnDpadUp);
-        AssignHoldEventToButton(btn, KeyEvent.KEYCODE_DPAD_UP);
+        AssignHoldEventToButton(btn, KeyEvent.KEYCODE_DPAD_UP, BUTTON_HOLD_DPAD_PERIOD_MILLIS);
 
         btn = GetMenu().GetButtons().get(R.id.btnDpadRight);
-        AssignHoldEventToButton(btn, KeyEvent.KEYCODE_DPAD_RIGHT);
+        AssignHoldEventToButton(btn, KeyEvent.KEYCODE_DPAD_RIGHT, BUTTON_HOLD_DPAD_PERIOD_MILLIS);
 
         btn = GetMenu().GetButtons().get(R.id.btnDpadDown);
-        AssignHoldEventToButton(btn, KeyEvent.KEYCODE_DPAD_DOWN);
+        AssignHoldEventToButton(btn, KeyEvent.KEYCODE_DPAD_DOWN, BUTTON_HOLD_DPAD_PERIOD_MILLIS);
 
         btn = GetMenu().GetButtons().get(R.id.btnDpadLeft);
-        AssignHoldEventToButton(btn, KeyEvent.KEYCODE_DPAD_LEFT);
+        AssignHoldEventToButton(btn, KeyEvent.KEYCODE_DPAD_LEFT, BUTTON_HOLD_DPAD_PERIOD_MILLIS);
 
         // Dpad center gets simple click
         btn = GetMenu().GetButtons().get(R.id.btnDpadCenter);
@@ -119,14 +119,7 @@ public class InputSystem extends System
         AssignClickEventToButton(btn, KeyEvent.KEYCODE_POWER);
 
         btn = GetMenu().GetButtons().get(R.id.btnBackspace);
-        AssignClickEventToButton(btn, KeyEvent.KEYCODE_DEL, new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                _oskHelper.OnBackspaceBtnClicked();
-            }
-        });
+        AssignHoldEventToButton(btn, KeyEvent.KEYCODE_DEL, BUTTON_HOLD_DEL_PERIOD_MILLIS);
         // TODO: Maybe implement some general-purpose recording?
         // TODO: Button state changes in case of MUTE and RECORD.
 
@@ -213,7 +206,20 @@ public class InputSystem extends System
         });
     }
 
-    private void AssignHoldEventToButton(final Button button, final int kbEvent)
+    private void AssignHoldEventToButton(final Button button, final int kbEvent, final int holdPeriodMillis)
+    {
+        AssignHoldEventToButton(button, kbEvent, holdPeriodMillis, new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                PassKeyboardEvent(kbEvent, !_buttonHoldHelper.GetLastHasVibrated());
+            }
+        });
+    }
+
+    private void AssignHoldEventToButton(final Button button, final int kbEvent,
+                                         final int holdPeriodMillis, final Runnable runnable)
     {
         App.GetInstance().GetUIManager().PerformAction(new Runnable()
         {
@@ -231,15 +237,8 @@ public class InputSystem extends System
                             {
                                 _buttonHoldHelper.AddHoldButton(
                                         (Button) view,
-                                        BUTTON_HOLD_PERIOD_MILLIS,
-                                        new Runnable()
-                                        {
-                                            @Override
-                                            public void run()
-                                            {
-                                                PassKeyboardEvent(kbEvent, !_buttonHoldHelper.GetLastHasVibrated());
-                                            }
-                                        });
+                                        holdPeriodMillis,
+                                        runnable);
                             }
                             break;
                             case MotionEvent.ACTION_UP:
@@ -519,7 +518,8 @@ public class InputSystem extends System
     private static final long BUTTON_HOLD_VIBRATION_TIME_MS = 60;
     private static final long MOUSE_OR_BUTTON_CLICK_VIBRATION_TIME_MS = 30;
     private static final long MOUSE_DOWN_VIBRATION_TIME_MS = 80;
-    private static final int BUTTON_HOLD_PERIOD_MILLIS = 350;
+    private static final int BUTTON_HOLD_DPAD_PERIOD_MILLIS = 350;
+    private static final int BUTTON_HOLD_DEL_PERIOD_MILLIS = 150;
     private static final float TOUCH_SCALE = 1.3f;
     private static final float SCROLL_SCALE = 0.01f;
     private static final boolean B_ENABLE_LOGGING = false;

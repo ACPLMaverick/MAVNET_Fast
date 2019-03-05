@@ -110,8 +110,7 @@ public final class InstrumentationSystem extends System
 
         if(evType == ActionEvent.Type.Text)
         {
-            // Can use input for such matters, because it doesn't require speed.
-            ExecuteRootShellCommand("input text \"" + ev.GetText() + "\"");
+            SendText(ev.GetText());
         }
         else if(evType == ActionEvent.Type.Movement && !ev.GetMovementEv().IsScroll())
         {
@@ -175,6 +174,22 @@ public final class InstrumentationSystem extends System
     private void SendTouchTap(final int posX, final int posY)
     {
         ExecuteRootShellCommand("input touchscreen tap " + String.valueOf(posX) + " " + String.valueOf(posY));
+    }
+
+    private void SendText(final String text)
+    {
+        // Can use input for such matters, because it doesn't require speed.
+        String[] textSplitBySpace = text.split("\\s+");
+        for(int i = 0; i < textSplitBySpace.length; ++i)
+        {
+            ExecuteRootShellCommand("input text " + textSplitBySpace[i]);
+
+            if(i < textSplitBySpace.length - 1)
+            {
+                // Insert space.
+                ExecuteRootShellCommand("input keyevent KEYCODE_SPACE");
+            }
+        }
     }
 
     private int PerformDelay(int millis)
