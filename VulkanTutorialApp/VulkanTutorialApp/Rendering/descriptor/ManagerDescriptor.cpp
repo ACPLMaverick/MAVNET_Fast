@@ -211,4 +211,8 @@ namespace Rendering
 
 		return descriptorSet;
 	}
+
+
+	constexpr const uint32_t ManagerDescriptor::_poolDescriptorCountsPerType[];
+	constexpr const VkDescriptorType ManagerDescriptor::_poolDescriptorTypeToVk[];
 }

@@ -95,4 +95,7 @@ namespace Rendering
 
 		return true;
 	}
+
+	constexpr const uint32_t VertexDeclaration::_typeToSizeBytes[];
+	constexpr const VkFormat VertexDeclaration::_typeToVkFormat[];
 }

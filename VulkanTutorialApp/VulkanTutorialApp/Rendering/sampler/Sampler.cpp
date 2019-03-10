@@ -67,4 +67,9 @@ namespace Rendering
 
 		JE_AssertThrowVkResult(vkCreateSampler(JE_GetRenderer()->GetDevice(), &samplerInfo, JE_GetRenderer()->GetAllocatorPtr(), &_sampler));
 	}
+
+	constexpr const VkBorderColor Sampler::_borderColorToVk[];
+	constexpr const VkSamplerAddressMode Sampler::_addressModeToVk[];
+	constexpr const VkFilter Sampler::_filterModeToVkFilter[];
+	constexpr const VkSamplerMipmapMode Sampler::_filterModeToVkMipmapMode[];
 }

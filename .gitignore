@@ -44,6 +44,8 @@
 *.spv
 VulkanTutorialApp/VulkanTutorialApp/x64/
 VulkanTutorialApp/x64/
+VulkanTutorialApp/VulkanTutorialApp/build/
+VulkanTutorialApp/VulkanTutorialApp/.vscode/
 
 JadeEngine/JadeEngine/x64/
 JadeEngine/x64/

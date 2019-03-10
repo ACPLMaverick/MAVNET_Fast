@@ -1,7 +1,10 @@
 #include "HelloTriangle.h"
 
 #if !NDEBUG
-#include <conio.h>
+#if OS_LINUX
+#elif OS_WINDOWS
+#define CHECK_KEY_AT_END 1
+#endif
 #endif
 
 int main() 
@@ -21,11 +24,13 @@ int main()
 	catch (const std::runtime_error& e)
 	{
 		std::cerr << e.what() << std::endl;
+		#if CHECK_KEY_AT_END
 		_getch();
+		#endif
 		return EXIT_FAILURE;
 	}
 
-#if !NDEBUG
+#if CHECK_KEY_AT_END
 	std::cout << "\nPress any key to exit...\n";
 	_getch();
 #endif

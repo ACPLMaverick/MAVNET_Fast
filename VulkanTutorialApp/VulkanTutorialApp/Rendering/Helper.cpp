@@ -4,6 +4,19 @@
 
 namespace Rendering
 {
+	Helper::Helper()
+		: Util::Singleton<Helper>()
+		, _voidVertexBufferMemory(nullptr)
+		, _voidVertexBuffer(nullptr)
+	{
+
+	}
+	
+	Helper::~Helper()
+	{
+
+	}
+
 	void Helper::Initialize()
 	{
 		InitializeVoidVertexBuffer();

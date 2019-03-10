@@ -16,7 +16,7 @@ namespace Rendering
 
 	protected:
 
-		virtual DescriptorSet* CreateValue(const DescriptorSet::Info* key, const Util::NullType* info) override;
+		virtual DescriptorSet* CreateValue(const DescriptorSet::Info* key, const Util::NullType* info);
 		virtual DescriptorSet* GetValueFromWrapper(DescriptorSet* const* val) override
 		{
 			return (*val);

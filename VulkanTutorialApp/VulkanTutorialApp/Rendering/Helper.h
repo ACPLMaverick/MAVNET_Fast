@@ -14,8 +14,8 @@ namespace Rendering
 		VkBuffer GetVoidVertexBuffer(uint32_t requestedMinSizeBytes = 0);
 
 	private:
-		Helper() {}
-		~Helper() {}
+		Helper();
+		~Helper();
 
 		void InitializeVoidVertexBuffer();
 		void CleanupVoidVertexBuffer();
