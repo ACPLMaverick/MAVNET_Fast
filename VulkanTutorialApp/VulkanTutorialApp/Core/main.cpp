@@ -1,10 +1,14 @@
 #include "HelloTriangle.h"
 
 #if !NDEBUG
-#if OS_LINUX
-#elif OS_WINDOWS
+#if PLATFORM_LINUX
+#elif PLATFORM_WINDOWS
 #define CHECK_KEY_AT_END 1
 #endif
+#endif
+
+#if PLATFORM_WINDOWS
+#include <conio.h>
 #endif
 
 int main() 

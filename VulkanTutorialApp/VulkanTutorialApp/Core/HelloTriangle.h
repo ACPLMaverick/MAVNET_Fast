@@ -15,6 +15,8 @@
 #include "Rendering/pipeline/ManagerPipeline.h"
 #include "Rendering/renderPass/ManagerRenderPass.h"
 
+#include "GOM/system/System.h"
+
 namespace Core
 {
 	class HelloTriangle
@@ -95,6 +97,8 @@ namespace Core
 		::Rendering::ManagerRenderPass* GetManagerRenderPass() { return &_renderPassMgr; }
 
 		ResourceManager* GetResourceManager() { return &_resourceManager; }
+
+		::GOM::System* GetSystem() { return &_system; }
 
 
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -252,6 +256,8 @@ namespace Core
 		::Rendering::ManagerRenderPass _renderPassMgr;
 
 		ResourceManager _resourceManager;
+		::GOM::System _system;
+
 		::Rendering::Mesh* _mesh;	// TODO: temp
 		::Rendering::Material* _material;	// TODO: temp
 

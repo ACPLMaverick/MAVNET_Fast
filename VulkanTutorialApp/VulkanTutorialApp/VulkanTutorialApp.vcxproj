@@ -91,7 +91,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PLATFORM_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ForcedIncludeFiles>$(ProjectDir)Core\GlobalIncludes.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
@@ -124,7 +124,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PLATFORM_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ForcedIncludeFiles>$(ProjectDir)Core\GlobalIncludes.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
@@ -141,6 +141,8 @@
     <ClCompile Include="Core\GlobalIncludes.cpp" />
     <ClCompile Include="Core\ManagerUid.cpp" />
     <ClCompile Include="Core\resource\ResourceManager.cpp" />
+    <ClCompile Include="GOM\system\Drawable.cpp" />
+    <ClCompile Include="GOM\system\System.cpp" />
     <ClCompile Include="Rendering\renderPass\ManagerRenderPass.cpp" />
     <ClCompile Include="Rendering\pipeline\ManagerPipeline.cpp" />
     <ClCompile Include="Rendering\descriptor\DescriptorCommon.cpp" />
@@ -160,7 +162,6 @@
     <ClCompile Include="GOM\Entity.cpp" />
     <ClCompile Include="Rendering\pipeline\RenderState.cpp" />
     <ClCompile Include="Rendering\resource\ResourceCommon.cpp" />
-    <ClCompile Include="Rendering\SystemDrawable.cpp" />
     <ClCompile Include="Rendering\resource\Texture.cpp" />
     <ClCompile Include="Rendering\sampler\ManagerSampler.cpp" />
     <ClCompile Include="Rendering\sampler\Sampler.cpp" />
@@ -172,6 +173,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\ManagerUid.h" />
+    <ClInclude Include="GOM\system\Drawable.h" />
+    <ClInclude Include="GOM\system\System.h" />
     <ClInclude Include="Rendering\renderPass\ManagerRenderPass.h" />
     <ClInclude Include="Rendering\Manager.h" />
     <ClInclude Include="Rendering\pipeline\ManagerPipeline.h" />
@@ -192,7 +195,6 @@
     <ClInclude Include="Rendering\pipeline\RenderState.h" />
     <ClInclude Include="Rendering\resource\ResourceCommon.h" />
     <ClInclude Include="Core\resource\ResourceManager.h" />
-    <ClInclude Include="Rendering\SystemDrawable.h" />
     <ClInclude Include="Rendering\resource\Texture.h" />
     <ClInclude Include="Rendering\sampler\ManagerSampler.h" />
     <ClInclude Include="Rendering\sampler\Sampler.h" />

@@ -73,14 +73,14 @@ extern bool IsBitWidthEqualOrLesserThan(uint64_t val, uint8_t bitWidth);
 #define JE_ArrayLength(arrayName) (sizeof(arrayName)/sizeof(arrayName[0]))
 #define JE_FillZeros(objName) (memset(&(objName), 0, sizeof(objName)))
 
-#if OS_LINUX
+#if PLATFORM_LINUX
 #define JE_NewAligned(typeName, alignment, ...) (new (aligned_alloc(alignment, sizeof(typeName))) typeName(__VA_ARGS__))
 #define JE_DeleteAligned(object, typeName, alignment)	\
 {	\
 	object->~typeName();	\
 	free((void*)object);	\
 }
-#elif OS_WINDOWS
+#elif PLATFORM_WINDOWS
 #define JE_NewAligned(typeName, alignment, ...) (new (_aligned_malloc(sizeof(typeName), alignment)) typeName(__VA_ARGS__))
 #define JE_DeleteAligned(object, typeName, alignment)	\
 {	\

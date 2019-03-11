@@ -3,7 +3,6 @@
 #include <fstream>
 
 #include "Rendering/Helper.h"
-#include "Rendering/SystemDrawable.h"
 
 #include "Rendering/resource/buffer/UboCommon.h" // TODO: temp
 
@@ -112,6 +111,7 @@ namespace Core
 
 		// TODO GOM init goes here: Move it elsewhere in the future.
 		InitObjects();
+		_system.Initialize();
 	}
 
 	void HelloTriangle::CreateInstance()
@@ -1035,17 +1035,15 @@ namespace Core
 		vkDeviceWaitIdle(_device);
 	}
 
-#include "Rendering/SystemDrawable.h"
-
 	void HelloTriangle::UpdateObjects()
 	{
-		Rendering::SystemDrawable* sys = Rendering::SystemDrawable::GetInstance();
-
 		_fog.Update();
 		_lightDirectional.Update();
 		_camera.Update();
 
 		_material->Update();
+
+		_system.Update();
 	}
 
 	void HelloTriangle::DrawFrame()
@@ -1066,6 +1064,9 @@ namespace Core
 		{
 			JE_AssertThrowVkResult(result);
 		}
+
+		// Here command buffer creation takes place.
+		_system.Draw();
 
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1446,6 +1447,7 @@ namespace Core
 	void HelloTriangle::Cleanup()
 	{
 		CleanupObjects();
+		_system.Cleanup();
 
 		_resourceManager.Cleanup();
 
@@ -1454,9 +1456,6 @@ namespace Core
 		_descriptorMgr.Cleanup();
 		_samplerMgr.Cleanup();
 		_uidMgr.Cleanup();
-
-		// System instances destruction.
-		::Rendering::SystemDrawable::DestroyInstance();
 
 		// Other singleton instances destruction.
 		::Rendering::Helper::GetInstance()->Cleanup();
