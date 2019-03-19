@@ -1,3 +1,4 @@
+add_subdirectory(command)
 add_subdirectory(descriptor)
 add_subdirectory(pipeline)
 add_subdirectory(renderPass)

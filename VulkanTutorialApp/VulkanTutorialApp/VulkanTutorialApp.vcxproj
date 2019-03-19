@@ -143,6 +143,7 @@
     <ClCompile Include="Core\resource\ResourceManager.cpp" />
     <ClCompile Include="GOM\system\Drawable.cpp" />
     <ClCompile Include="GOM\system\System.cpp" />
+    <ClCompile Include="Rendering\command\SecondaryCommandBuffer.cpp" />
     <ClCompile Include="Rendering\renderPass\ManagerRenderPass.cpp" />
     <ClCompile Include="Rendering\pipeline\ManagerPipeline.cpp" />
     <ClCompile Include="Rendering\descriptor\DescriptorCommon.cpp" />
@@ -175,6 +176,7 @@
     <ClInclude Include="Core\ManagerUid.h" />
     <ClInclude Include="GOM\system\Drawable.h" />
     <ClInclude Include="GOM\system\System.h" />
+    <ClInclude Include="Rendering\command\SecondaryCommandBuffer.h" />
     <ClInclude Include="Rendering\renderPass\ManagerRenderPass.h" />
     <ClInclude Include="Rendering\Manager.h" />
     <ClInclude Include="Rendering\pipeline\ManagerPipeline.h" />

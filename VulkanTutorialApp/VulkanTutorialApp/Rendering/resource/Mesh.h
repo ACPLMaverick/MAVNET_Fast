@@ -132,23 +132,15 @@ namespace Rendering
 		JE_Inline bool IsReadOnly() const { return _info.VertexArrays.size() == 0; }
 		JE_Inline const Info* GetInfo() const { return &_info; }
 
-		JE_Inline const VkBuffer* GetVertexBuffers() const { return _adjVertexBufferArray.data(); }
-		JE_Inline const VkDeviceSize* GetVertexBufferOffsets() const { return _adjOffsetArray.data(); }
-		JE_Inline uint32_t GetVertexBufferCount() const { return static_cast<uint32_t>(_adjVertexBufferArray.size()); }
-
-		JE_Inline const VkBuffer* GetOriginalVertexBuffers() const { return _vertexBufferArray.data(); }
-		JE_Inline const VkDeviceSize* GetOriginalVertexBufferOffsets() const { return _offsetArray.data(); }
-		JE_Inline uint32_t GetOriginalVertexBufferCount() const { return static_cast<uint32_t>(_vertexBufferMemoryArray.size()); }
+		JE_Inline const std::vector<VkBuffer>* GetVertexBuffers() const { return &_vertexBufferArray; }
+		JE_Inline const std::vector<VkDeviceSize>* GetVertexBufferOffsets() const { return &_offsetArray; }
+		JE_Inline uint32_t GetVertexBufferCount() const { return static_cast<uint32_t>(_vertexBufferMemoryArray.size()); }
 
 		JE_Inline VkBuffer GetIndexBuffer() const { return _indexBuffer; }
 		JE_Inline uint32_t GetIndexCount() const { return static_cast<uint32_t>(_info.IndexCount); }
 
-		JE_Inline const VertexDeclaration* GetVertexDeclarationIsAdjustedTo() const { return _adjustment; }
-
 		void Load(const std::string& name, const LoadOptions* loadOptions);
 		void Cleanup();
-
-		void AdjustBuffersForVertexDeclaration(const VertexDeclaration* declaration);
 
 	protected:
 
@@ -186,12 +178,7 @@ namespace Rendering
 
 		std::vector<VkDeviceSize> _offsetArray;
 
-		std::vector<VkBuffer> _adjVertexBufferArray;
-		std::vector<VkDeviceSize> _adjOffsetArray;
-
 		Info _info;
-
-		const VertexDeclaration* _adjustment;
 	};
 }
 

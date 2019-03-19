@@ -119,7 +119,7 @@ namespace Rendering
 
 	void Material::Update()
 	{
-		UpdateUboPerObject();
+		UpdateUboPerObject();	// TODO: Move this to transform class.
 		UpdateUboGlobal();
 	}
 

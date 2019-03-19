@@ -1,16 +1,17 @@
 #pragma once
 
 #if !defined(NDEBUG)
-#define JE_System_Behaviour_CheckObject virtual void CheckObject(SystemDataObject* obj) = 0
-#define JE_System_Behaviour_CheckObjectOverride virtual void CheckObject(SystemDataObject* obj) override
+#define JE_System_Behaviour_CheckObject virtual void CheckObject(const SystemObject* obj) = 0
+#define JE_System_Behaviour_CheckObjectOverride virtual void CheckObject(const SystemObject* obj) override
 #else
-#define JE_System_Behaviour_CheckObject void CheckObject(SystemDataObject* obj) { }
-#define JE_System_Behaviour_CheckObjectOverride void CheckObject(SystemDataObject* obj) { }
+#define JE_System_Behaviour_CheckObject void CheckObject(const SystemObject* obj) { }
+#define JE_System_Behaviour_CheckObjectOverride void CheckObject(const SystemObject* obj) { }
 #endif
 
 #define JE_System_Behaviour_Body_Declaration(Type, ObjectType) \
 	public: \
-		static inline ObjectType* ObjectCast(SystemDataObject* obj) { return reinterpret_cast<ObjectType*>(obj); } \
+		static JE_Inline ObjectType* ObjectCast(SystemObject* obj) { return reinterpret_cast<ObjectType*>(obj); } \
+		static JE_Inline const ObjectType* ObjectCast(const SystemObject* obj) { return reinterpret_cast<const ObjectType*>(obj); } \
 	private:
 
 namespace GOM
@@ -18,18 +19,18 @@ namespace GOM
 	class SystemBehaviour;
 	class System;
 
-	class SystemDataObject
+	class SystemObject
 	{
 	public:
 
 	// All assignable data should be public.
 
 	protected:
-		SystemDataObject();
-		SystemDataObject(const SystemDataObject& copy);
-		SystemDataObject(const SystemDataObject&& move);
-		SystemDataObject& operator=(const SystemDataObject& copy);
-		virtual ~SystemDataObject();
+		SystemObject();
+		SystemObject(const SystemObject& copy);
+		SystemObject(const SystemObject&& move);
+		SystemObject& operator=(const SystemObject& copy);
+		virtual ~SystemObject();
 
 		friend class SystemBehaviour;
 	};
@@ -43,9 +44,10 @@ namespace GOM
 
 		void CleanupRemainingObjects();
 
-		SystemDataObject* ConstructObject();
-		void InitializeObject(SystemDataObject* obj);	// Initialize object which should have all fields assigned.
-		void CleanupObject(SystemDataObject* obj);
+		SystemObject* ConstructObject();
+		void InitializeObject(SystemObject* obj);	// Initialize object which should have all fields assigned.
+		void CleanupObject(SystemObject* obj);
+		SystemObject* CloneObject(const SystemObject* source);
 
 	protected:
 		SystemBehaviour() { }
@@ -54,13 +56,14 @@ namespace GOM
 		SystemBehaviour& operator=(const SystemBehaviour& copy) = delete;
 		virtual ~SystemBehaviour() { }
 
-		virtual SystemDataObject* ConstructObject_Internal() = 0;
-		virtual void InitializeObject_Internal(SystemDataObject* obj) = 0;
-		virtual void CleanupObject_Internal(SystemDataObject* obj) = 0;
+		virtual SystemObject* ConstructObject_Internal() = 0;
+		virtual void InitializeObject_Internal(SystemObject* obj) = 0;
+		virtual void CleanupObject_Internal(SystemObject* obj) = 0;
+		virtual void CloneObject_Internal(SystemObject* destination, const SystemObject* source) = 0;
 		JE_System_Behaviour_CheckObject;
 
 
-		typedef std::vector<SystemDataObject*> ObjectCollection;
+		typedef std::vector<SystemObject*> ObjectCollection;
 
 		ObjectCollection _objectsAll;
 		bool _bIsPersistent = false;

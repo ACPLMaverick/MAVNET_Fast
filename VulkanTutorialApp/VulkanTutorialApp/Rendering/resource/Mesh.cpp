@@ -9,7 +9,6 @@ namespace Rendering
 {
 	Mesh::Mesh()
 		: _indexBuffer(VK_NULL_HANDLE)
-		, _adjustment(nullptr)
 	{
 		_type = ResourceCommon::Type::Mesh;
 	}
@@ -58,66 +57,10 @@ namespace Rendering
 		_indexBuffer = VK_NULL_HANDLE;
 	}
 
-	void Mesh::AdjustBuffersForVertexDeclaration(const VertexDeclaration * declaration)
-	{
-		if (declaration == nullptr)
-		{
-			_adjustment = nullptr;
-
-			_adjVertexBufferArray = _vertexBufferArray;
-			_adjOffsetArray = _offsetArray;
-
-			return;
-		}
-
-		const size_t componentCount = declaration->GetComponents()->size();
-		_adjVertexBufferArray.clear();
-		_adjVertexBufferArray.resize(componentCount);
-		_adjOffsetArray.clear();
-		_adjOffsetArray.resize(componentCount);
-
-		for(size_t i = 0; i < componentCount; ++i)
-		{
-			VertexDeclaration::ComponentType thisType = (*declaration->GetComponents())[i];
-
-			// Find this type in our vertex arrays.
-			size_t foundIndex = -1;
-			for (size_t j = 0; j < _info.VertexArrays.size(); ++j)
-			{
-				if (_info.VertexArrays[j].Type == thisType)
-				{
-					foundIndex = j;
-					break;
-				}
-			}
-
-			if (foundIndex != -1)
-			{
-				// Found this amongst vertex arrays. Assuming indices in vertex arrays correspond to these in vertex buffer array.
-				// Simply place this buffer in this position.
-
-				_adjVertexBufferArray[i] = _vertexBufferArray[foundIndex];
-				_adjOffsetArray[i] = _offsetArray[foundIndex];
-			}
-			else
-			{
-				// This component type is not present among the vertex arrays of this mesh.
-				// Place dummy vertex buffer from the helper.
-
-				uint32_t neededSizeBytes = VertexDeclaration::GetComponentSize(thisType) * _info.VertexCount;
-
-				_adjVertexBufferArray[i] = Helper::GetInstance()->GetVoidVertexBuffer(neededSizeBytes);
-				_adjOffsetArray[i] = 0;
-			}
-		}
-	}
-
 	void Mesh::InitializeCommon(const LoadOptions* loadOptions)
 	{
 		CreateVertexBufferArray();
 		CreateIndexBuffer();
-
-		AdjustBuffersForVertexDeclaration(nullptr);
 
 		if (loadOptions->bReadOnly)
 		{

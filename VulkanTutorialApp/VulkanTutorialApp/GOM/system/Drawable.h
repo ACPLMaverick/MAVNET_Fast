@@ -1,22 +1,32 @@
 #pragma once
 
 #include "System.h"
+#include "Rendering/command/SecondaryCommandBuffer.h"
 
-#include <Rendering/resource/Mesh.h>
-#include <Rendering/resource/Material.h>
+namespace Rendering
+{
+	class Mesh;
+	class Material;
+}
 
 namespace GOM
 {
 	class DrawableBehaviour;
 
-	class DrawableObject : public SystemDataObject
+	class DrawableObject : public SystemObject
 	{
 	public:
 
-		::Rendering::Mesh* PropMesh;
-		::Rendering::Material* PropMaterial;
+		::Rendering::Mesh* PropMesh = nullptr;
+		::Rendering::Material* PropMaterial = nullptr;
 
 	protected:
+
+		std::vector<VkBuffer> _adjVertexBufferArray;
+		std::vector<VkDeviceSize> _adjOffsetArray;
+
+		::Rendering::SecondaryCommandBuffer _secondaryCommandBuffer;
+
 		friend class DrawableBehaviour;
 	};
 
@@ -29,9 +39,17 @@ namespace GOM
 		// Inherited via SystemBehaviour
 		virtual void Update() override;
 		virtual void Draw() override;
-		virtual SystemDataObject * ConstructObject_Internal() override;
-		virtual void InitializeObject_Internal(SystemDataObject * obj) override;
-		virtual void CleanupObject_Internal(SystemDataObject * obj) override;
+
+	protected:
+
+		virtual SystemObject * ConstructObject_Internal() override;
+		virtual void InitializeObject_Internal(SystemObject * obj) override;
+		virtual void CleanupObject_Internal(SystemObject * obj) override;
+		virtual void CloneObject_Internal(SystemObject* destination, const SystemObject* source) override;
 		JE_System_Behaviour_CheckObjectOverride;
+
+		void AdjustBuffersForVertexDeclaration(DrawableObject* obj);
+		void CreateSecondaryCommandBuffer(DrawableObject* obj);
+		static void RecordFunc(::Rendering::SecondaryCommandBuffer::RecordContext context, VkCommandBuffer commandBuffer);
 	};
 }

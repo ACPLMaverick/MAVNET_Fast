@@ -5,32 +5,33 @@
 
 namespace GOM
 {
-	SystemDataObject::SystemDataObject()
+	SystemObject::SystemObject()
 	{
 	}
 
-	SystemDataObject::SystemDataObject(const SystemDataObject & copy)
+	SystemObject::SystemObject(const SystemObject & copy)
 	{
 	}
 
-	SystemDataObject::SystemDataObject(const SystemDataObject && move)
+	SystemObject::SystemObject(const SystemObject && move)
 	{
 	}
 
-	SystemDataObject & SystemDataObject::operator=(const SystemDataObject & copy)
+	SystemObject & SystemObject::operator=(const SystemObject & copy)
 	{
 		return *this;
 	}
 
-	SystemDataObject::~SystemDataObject()
+	SystemObject::~SystemObject()
 	{
 	}
 
 
 	void SystemBehaviour::CleanupRemainingObjects()
 	{
-		for (SystemDataObject* obj : _objectsAll)
+		for (SystemObject* obj : _objectsAll)
 		{
+			CheckObject(obj);
 			CleanupObject_Internal(obj);
 			delete obj;
 		}
@@ -38,22 +39,24 @@ namespace GOM
 		_bActiveFlag = false;
 	}
 
-	SystemDataObject * SystemBehaviour::ConstructObject()
+	SystemObject * SystemBehaviour::ConstructObject()
 	{
 		return ConstructObject_Internal();
 	}
 
-	void SystemBehaviour::InitializeObject(SystemDataObject* obj)
+	void SystemBehaviour::InitializeObject(SystemObject* obj)
 	{
 		JE_Assert(obj != nullptr);
+		CheckObject(obj);
 		InitializeObject_Internal(obj);
 		_objectsAll.push_back(obj);
 	}
 
-	void SystemBehaviour::CleanupObject(SystemDataObject * obj)
+	void SystemBehaviour::CleanupObject(SystemObject * obj)
 	{
 		JE_Assert(obj != nullptr);
 
+		CheckObject(obj);
 		CleanupObject_Internal(obj);
 
 		delete obj;
@@ -62,6 +65,17 @@ namespace GOM
 		_objectsAll.erase(it);
 
 		JE_GetApp()->GetSystem()->DeactivateBehaviourIfEmpty(this);
+	}
+
+	SystemObject * SystemBehaviour::CloneObject(const SystemObject * source)
+	{
+		CheckObject(source);
+		SystemObject* newObject = ConstructObject();
+
+		CloneObject_Internal(newObject, source);
+
+		_objectsAll.push_back(newObject);
+		return newObject;
 	}
 
 

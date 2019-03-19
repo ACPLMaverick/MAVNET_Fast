@@ -85,6 +85,9 @@ namespace Core
 
 		VkDevice GetDevice() { return _device; }
 		VkAllocationCallbacks* GetAllocatorPtr() { return _pAllocator; }
+		VkCommandPool GetCommandPool() { return _commandPool; }
+		VkCommandBuffer GetCmd() { return _commandBuffers[_imageIndex]; }
+		::Rendering::RenderPassCommon::Id GetActiveRenderPass(uint32_t* outSubpass);
 
 		::Rendering::Camera* GetCamera() { return &_camera; }
 		::Rendering::Fog* GetFog() { return &_fog; }
@@ -148,8 +151,6 @@ namespace Core
 			void InitObjects();
 			void RefreshCameraProj(uint32_t newWidth, uint32_t newHeight);
 
-			void CreateRenderPass();
-			void CreateGraphicsPipeline();
 			void CreateFramebuffers();
 			void CreateCommandPool();
 			void CreateDepthResources();
@@ -160,6 +161,7 @@ namespace Core
 		void MainLoop();
 			void UpdateObjects();
 			void DrawFrame();
+			void CreateCommandBuffer();
 			void CheckForMinimized();
 
 		void RecreateSwapChain();
@@ -232,6 +234,7 @@ namespace Core
 		std::vector<VkFence> _fencesInFlight;
 
 		uint32_t _currentFrame;
+		uint32_t _imageIndex;
 
 		::Rendering::RenderPassKey _currentRenderPassKey;
 		::Rendering::Pipeline::Key _currentPipelineKey;
@@ -257,9 +260,6 @@ namespace Core
 
 		ResourceManager _resourceManager;
 		::GOM::System _system;
-
-		::Rendering::Mesh* _mesh;	// TODO: temp
-		::Rendering::Material* _material;	// TODO: temp
 
 		bool _bMinimized;
 	};

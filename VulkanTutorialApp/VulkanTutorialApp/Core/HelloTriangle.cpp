@@ -6,6 +6,8 @@
 
 #include "Rendering/resource/buffer/UboCommon.h" // TODO: temp
 
+#include "GOM/system/Drawable.h"
+
 namespace Core
 {
 	const std::string HelloTriangle::RESOURCE_PATH = "..\\..\\JadeEngine\\JadeEngine\\Resources\\";
@@ -26,6 +28,7 @@ namespace Core
 		, _swapChain(VK_NULL_HANDLE)
 		, _commandPool(VK_NULL_HANDLE)
 		, _currentFrame(0)
+		, _imageIndex(0)
 		, _currentRenderPassKey(0)
 		, _bMinimized(false)
 	{
@@ -41,6 +44,7 @@ namespace Core
 	{
 		InitWindow();
 		InitVulkan();
+		InitObjects();	// TODO: Transfer this to GOM...
 		MainLoop();
 		Cleanup();
 	}
@@ -93,25 +97,12 @@ namespace Core
 
 		_resourceManager.Initialize();
 
-		// TODO: This will probably be merged with or placed within Pipeline object.
+		CreateFramebuffers(); // TODO ...
+
+		CreateCommandBuffers();
+
+		// TODO...
 		_currentRenderPassKey = (::Rendering::RenderPassKey)::Rendering::RenderPassCommon::Id::Tutorial;
-
-		CreateFramebuffers();	// TODO: ???
-
-		// Material init. This also creates pipeline.
-		_material = JE_GetApp()->GetResourceManager()->CacheMaterials.Get("TutorialMaterial");
-
-		_currentPipelineKey = *(_pipelineMgr.GetKey(_material->GetPipeline()));
-
-		// Mesh.
-		_mesh = JE_GetApp()->GetResourceManager()->CacheMeshes.Get("AutoGen_Box");
-		_mesh->AdjustBuffersForVertexDeclaration(_material->GetVertexDeclaration());	// TODO: OMG what to do wit dis.
-
-		CreateCommandBuffers();	// TODO: Delegate this to command buffer creation system or sth like that.
-
-		// TODO GOM init goes here: Move it elsewhere in the future.
-		InitObjects();
-		_system.Initialize();
 	}
 
 	void HelloTriangle::CreateInstance()
@@ -577,6 +568,18 @@ namespace Core
 
 	void HelloTriangle::InitObjects()
 	{
+		_system.Initialize();
+
+
+		::GOM::DrawableBehaviour* drawableBehaviour = GetSystem()->GetBehaviour<::GOM::DrawableBehaviour>();
+
+		::GOM::DrawableObject* drawableObject = static_cast<::GOM::DrawableObject*>(drawableBehaviour->ConstructObject());
+		drawableObject->PropMaterial = JE_GetApp()->GetResourceManager()->CacheMaterials.Get("TutorialMaterial");
+		_currentPipelineKey = *(_pipelineMgr.GetKey(drawableObject->PropMaterial->GetPipeline()));	// TODOTODOTODO
+		drawableObject->PropMesh = JE_GetApp()->GetResourceManager()->CacheMeshes.Get("AutoGen_Box");
+		
+		drawableBehaviour->InitializeObject(drawableObject);
+
 		glm::vec3 pos(1.5f, 1.5f, -3.0f);
 		glm::vec3 tgt(0.0f, 0.5f, 0.0f);
 		_camera.Initialize
@@ -612,6 +615,7 @@ namespace Core
 		_camera.SetDimension(static_cast<float>(newWidth) / static_cast<float>(newHeight));
 	}
 
+	/*
 	void HelloTriangle::CreateRenderPass()
 	{
 		JE_Assert(false); // Legacy code.
@@ -670,7 +674,8 @@ namespace Core
 
 		//JE_AssertThrowVkResult(vkCreateRenderPass(_device, &renderPassInfo, _pAllocator, &_renderPass));
 	}
-
+	*/
+	/*
 	void HelloTriangle::CreateGraphicsPipeline()
 	{
 		JE_Assert(false); // Legacy code.
@@ -864,6 +869,7 @@ namespace Core
 
 		shader.Cleanup();
 	}
+	*/
 
 	void HelloTriangle::CreateFramebuffers()
 	{
@@ -934,54 +940,6 @@ namespace Core
 		allocInfo.commandBufferCount = static_cast<uint32_t>(_commandBuffers.size());
 
 		JE_AssertThrowVkResult(vkAllocateCommandBuffers(_device, &allocInfo, _commandBuffers.data()));
-
-		for (size_t i = 0; i < _commandBuffers.size(); i++) 
-		{
-			VkCommandBufferBeginInfo beginInfo = {};
-			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-			beginInfo.pInheritanceInfo = nullptr;
-
-			JE_AssertThrowVkResult(vkBeginCommandBuffer(_commandBuffers[i], &beginInfo));
-
-			std::array<VkClearValue, 2> clearValues = {};
-			clearValues[0] = _clearColor;
-			clearValues[1] = { 1.0f, 0 };
-
-			VkRenderPassBeginInfo renderPassInfo = {};
-			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			renderPassInfo.renderPass = GetManagerRenderPass()->Get(&_currentRenderPassKey)->GetVkRenderPass();
-			renderPassInfo.framebuffer = _swapChainFramebuffers[i];
-			renderPassInfo.renderArea.offset = { 0, 0 };
-			renderPassInfo.renderArea.extent = _swapChainExtent;
-			renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-			renderPassInfo.pClearValues = clearValues.data();
-
-			vkCmdBeginRenderPass(_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-			vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _material->GetPipeline()->GetVkPipeline());
-
-			// TODO: Support push constants.
-			/*
-			Rendering::UboCommon::SceneGlobal pco;
-			pco.FogColor = *_fog.GetColor();
-			pco.FogDepthNear = _fog.GetStartDepth();
-			pco.FogDepthFar = _fog.GetEndDepth();
-			pco.LightColor = *_lightDirectional.GetColor();
-			pco.LightDirectionV = *_lightDirectional.GetDirectionV();
-			vkCmdPushConstants(_commandBuffers[i], _pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Rendering::UboCommon::SceneGlobal), &pco);
-			*/
-
-			VkDescriptorSet descriptorSets[] = { _material->GetDescriptorSet()->GetVkDescriptorSet() };
-			vkCmdBindDescriptorSets(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _material->GetPipeline()->GetVkPipelineLayout(), 0, 1, descriptorSets, 0, nullptr);
-			vkCmdBindVertexBuffers(_commandBuffers[i], 0, _mesh->GetVertexBufferCount(), _mesh->GetVertexBuffers(), _mesh->GetVertexBufferOffsets());
-			vkCmdBindIndexBuffer(_commandBuffers[i], _mesh->GetIndexBuffer(), 0, JE_IndexTypeVk);
-			vkCmdDrawIndexed(_commandBuffers[i], _mesh->GetIndexCount(), 1, 0, 0, 0);
-
-			vkCmdEndRenderPass(_commandBuffers[i]);
-
-			JE_AssertThrowVkResult(vkEndCommandBuffer(_commandBuffers[i]));
-		}
 	}
 
 	void HelloTriangle::CreatePushConstantRange()
@@ -1041,8 +999,6 @@ namespace Core
 		_lightDirectional.Update();
 		_camera.Update();
 
-		_material->Update();
-
 		_system.Update();
 	}
 
@@ -1051,8 +1007,7 @@ namespace Core
 		vkWaitForFences(_device, 1, &_fencesInFlight[_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 		vkResetFences(_device, 1, &_fencesInFlight[_currentFrame]);
 
-		uint32_t imageIndex;
-		VkResult result = vkAcquireNextImageKHR(_device, _swapChain, std::numeric_limits<uint64_t>::max(), _semsImageAvailable[_currentFrame], VK_NULL_HANDLE, &imageIndex);
+		VkResult result = vkAcquireNextImageKHR(_device, _swapChain, std::numeric_limits<uint64_t>::max(), _semsImageAvailable[_currentFrame], VK_NULL_HANDLE, &_imageIndex);
 
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		{
@@ -1065,8 +1020,7 @@ namespace Core
 			JE_AssertThrowVkResult(result);
 		}
 
-		// Here command buffer creation takes place.
-		_system.Draw();
+		CreateCommandBuffer();
 
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1075,7 +1029,7 @@ namespace Core
 		submitInfo.pWaitSemaphores = &_semsImageAvailable[_currentFrame];
 		submitInfo.pWaitDstStageMask = waitStages;
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &_commandBuffers[imageIndex];
+		submitInfo.pCommandBuffers = &_commandBuffers[_imageIndex];
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = &_semsRenderFinished[_currentFrame];
 
@@ -1087,7 +1041,7 @@ namespace Core
 		presentInfo.pWaitSemaphores = &_semsRenderFinished[_currentFrame];
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = &_swapChain;
-		presentInfo.pImageIndices = &imageIndex;
+		presentInfo.pImageIndices = &_imageIndex;
 		presentInfo.pResults = nullptr;
 		
 		result = vkQueuePresentKHR(_presentQueue, &presentInfo);
@@ -1107,6 +1061,54 @@ namespace Core
 
 
 		_currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	}
+
+	void HelloTriangle::CreateCommandBuffer()
+	{
+		VkCommandBuffer cmd = GetCmd();
+
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+		beginInfo.pInheritanceInfo = nullptr;
+
+		JE_AssertThrowVkResult(vkBeginCommandBuffer(cmd, &beginInfo));
+
+
+		// Fill command buffer with PRE commands.
+		std::array<VkClearValue, 2> clearValues = {};
+		clearValues[0] = _clearColor;
+		clearValues[1] = { 1.0f, 0 };
+
+		VkRenderPassBeginInfo renderPassInfo = {};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = GetManagerRenderPass()->Get(&_currentRenderPassKey)->GetVkRenderPass();
+		renderPassInfo.framebuffer = _swapChainFramebuffers[_imageIndex];
+		renderPassInfo.renderArea.offset = { 0, 0 };
+		renderPassInfo.renderArea.extent = _swapChainExtent;
+		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+		renderPassInfo.pClearValues = clearValues.data();
+
+		vkCmdBeginRenderPass(cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		// TODO: Support push constants.
+		/*
+		Rendering::UboCommon::SceneGlobal pco;
+		pco.FogColor = *_fog.GetColor();
+		pco.FogDepthNear = _fog.GetStartDepth();
+		pco.FogDepthFar = _fog.GetEndDepth();
+		pco.LightColor = *_lightDirectional.GetColor();
+		pco.LightDirectionV = *_lightDirectional.GetDirectionV();
+		vkCmdPushConstants(cmd, _pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Rendering::UboCommon::SceneGlobal), &pco);
+		*/
+
+		// Draw 3D objects.
+		_system.Draw();
+
+		vkCmdEndRenderPass(cmd);
+
+
+		JE_AssertThrowVkResult(vkEndCommandBuffer(cmd));
 	}
 
 	void HelloTriangle::CheckForMinimized()
@@ -1558,5 +1560,15 @@ namespace Core
 		file.close();
 
 		return true;
+	}
+
+	::Rendering::RenderPassCommon::Id HelloTriangle::GetActiveRenderPass(uint32_t * outSubpass)
+	{
+		// TODO...
+		if (outSubpass)
+		{
+			*outSubpass = 0;
+		}
+		return static_cast<::Rendering::RenderPassCommon::Id>(_currentRenderPassKey);
 	}
 }
