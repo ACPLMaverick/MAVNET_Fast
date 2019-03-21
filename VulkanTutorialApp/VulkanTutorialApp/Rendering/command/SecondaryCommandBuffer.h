@@ -31,6 +31,7 @@ namespace Rendering
 
 		void Initialize(const Info* info);
 		void Cleanup();
+		void Reinitialize();
 
 		JE_Inline const Info* GetInfo() { return &_info; };
 

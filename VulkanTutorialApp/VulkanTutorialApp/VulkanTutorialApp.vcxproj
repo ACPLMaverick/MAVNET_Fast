@@ -143,6 +143,7 @@
     <ClCompile Include="Core\resource\ResourceManager.cpp" />
     <ClCompile Include="GOM\system\Drawable.cpp" />
     <ClCompile Include="GOM\system\System.cpp" />
+    <ClCompile Include="GOM\system\Transform.cpp" />
     <ClCompile Include="Rendering\command\SecondaryCommandBuffer.cpp" />
     <ClCompile Include="Rendering\renderPass\ManagerRenderPass.cpp" />
     <ClCompile Include="Rendering\pipeline\ManagerPipeline.cpp" />
@@ -176,6 +177,7 @@
     <ClInclude Include="Core\ManagerUid.h" />
     <ClInclude Include="GOM\system\Drawable.h" />
     <ClInclude Include="GOM\system\System.h" />
+    <ClInclude Include="GOM\system\Transform.h" />
     <ClInclude Include="Rendering\command\SecondaryCommandBuffer.h" />
     <ClInclude Include="Rendering\renderPass\ManagerRenderPass.h" />
     <ClInclude Include="Rendering\Manager.h" />
@@ -208,6 +210,8 @@
     <ClInclude Include="Rendering\renderPass\RenderPass.h" />
     <ClInclude Include="Core\resource\ResourceCache.h" />
     <ClInclude Include="Util\GlobalIncludes.h" />
+    <ClInclude Include="Util\ObjectPool.h" />
+    <ClInclude Include="Util\Property.h" />
     <ClInclude Include="Util\Singleton.h" />
   </ItemGroup>
   <ItemGroup>

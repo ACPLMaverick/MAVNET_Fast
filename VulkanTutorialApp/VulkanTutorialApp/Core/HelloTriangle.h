@@ -85,7 +85,8 @@ namespace Core
 
 		VkDevice GetDevice() { return _device; }
 		VkAllocationCallbacks* GetAllocatorPtr() { return _pAllocator; }
-		VkCommandPool GetCommandPool() { return _commandPool; }
+		VkCommandPool GetCommandPoolDynamic() { return _commandPoolDynamic; }
+		VkCommandPool GetCommandPoolStatic() { return _commandPoolStatic; }
 		VkCommandBuffer GetCmd() { return _commandBuffers[_imageIndex]; }
 		::Rendering::RenderPassCommon::Id GetActiveRenderPass(uint32_t* outSubpass);
 
@@ -223,7 +224,8 @@ namespace Core
 
 		std::vector<VkFramebuffer> _swapChainFramebuffers;
 
-		VkCommandPool _commandPool;
+		VkCommandPool _commandPoolDynamic;
+		VkCommandPool _commandPoolStatic;
 		VkCommandPool _commandPoolTransient;
 		std::vector<VkCommandBuffer> _commandBuffers;
 

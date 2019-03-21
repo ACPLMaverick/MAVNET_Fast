@@ -26,7 +26,9 @@ namespace Core
 		, _presentQueue(VK_NULL_HANDLE)
 		, _surface(VK_NULL_HANDLE)
 		, _swapChain(VK_NULL_HANDLE)
-		, _commandPool(VK_NULL_HANDLE)
+		, _commandPoolDynamic(VK_NULL_HANDLE)
+		, _commandPoolStatic(VK_NULL_HANDLE)
+		, _commandPoolTransient(VK_NULL_HANDLE)
 		, _currentFrame(0)
 		, _imageIndex(0)
 		, _currentRenderPassKey(0)
@@ -570,15 +572,50 @@ namespace Core
 	{
 		_system.Initialize();
 
+		std::vector<::Rendering::Material*> availableMaterials;
+		availableMaterials.push_back(JE_GetApp()->GetResourceManager()->CacheMaterials.Get("TutorialMaterial"));
+		_currentPipelineKey = *(_pipelineMgr.GetKey(availableMaterials.back()->GetPipeline()));
+
+		std::vector<::Rendering::Mesh*> availableMeshes;
+		availableMeshes.push_back(JE_GetApp()->GetResourceManager()->CacheMeshes.Get("AutoGen_Box"));
+		availableMeshes.push_back(JE_GetApp()->GetResourceManager()->CacheMeshes.Get("AutoGen_Sphere"));
+		availableMeshes.push_back(JE_GetApp()->GetResourceManager()->CacheMeshes.Get("AutoGen_Cylinder"));
+
+		const size_t materialNum = availableMaterials.size();
+		const size_t meshNum = availableMeshes.size();
+		const size_t objNumX = 2;
+		const size_t objNumZ = 1;
+		const float objSpacing = 2.0f;
+
+		float baseX = -(float)(objNumX / 2) * objSpacing;
 
 		::GOM::DrawableBehaviour* drawableBehaviour = GetSystem()->GetBehaviour<::GOM::DrawableBehaviour>();
 
-		::GOM::DrawableObject* drawableObject = static_cast<::GOM::DrawableObject*>(drawableBehaviour->ConstructObject());
-		drawableObject->PropMaterial = JE_GetApp()->GetResourceManager()->CacheMaterials.Get("TutorialMaterial");
-		_currentPipelineKey = *(_pipelineMgr.GetKey(drawableObject->PropMaterial->GetPipeline()));	// TODOTODOTODO
-		drawableObject->PropMesh = JE_GetApp()->GetResourceManager()->CacheMeshes.Get("AutoGen_Box");
-		
-		drawableBehaviour->InitializeObject(drawableObject);
+		for (size_t i = 0; i < objNumX; ++i)
+		{
+			float baseZ = -(float)(objNumZ / 2) * objSpacing;
+			for (size_t j = 0; j < objNumZ; ++j)
+			{
+				const size_t total = i * objNumZ + j;
+				const size_t matIndex = total % materialNum;
+				const size_t meshIndex = total % meshNum;
+
+				::GOM::Drawable* drawableObject = static_cast<::GOM::Drawable*>(drawableBehaviour->ConstructObject());
+				drawableObject->PropMaterial.Set(availableMaterials[matIndex]);
+				drawableObject->PropMesh.Set(availableMeshes[matIndex]);
+
+				drawableBehaviour->InitializeObject(drawableObject);
+
+				const glm::vec3 pos(baseX, 0.0f, baseZ);
+				const glm::vec3 rot(0.0f, 0.0f, 0.0f);
+				const glm::vec3 scl(1.0f, 1.0f, 1.0f);
+
+				// TODO: Init transform.
+
+				baseZ += objSpacing;
+			}
+			baseX += objSpacing;
+		}
 
 		glm::vec3 pos(1.5f, 1.5f, -3.0f);
 		glm::vec3 tgt(0.0f, 0.5f, 0.0f);
@@ -908,7 +945,11 @@ namespace Core
 		poolInfo.queueFamilyIndex = queueFamilyIndices.GraphicsFamily;
 		poolInfo.flags = 0;
 
-		JE_AssertThrowVkResult(vkCreateCommandPool(_device, &poolInfo, _pAllocator, &_commandPool));
+		JE_AssertThrowVkResult(vkCreateCommandPool(_device, &poolInfo, _pAllocator, &_commandPoolStatic));
+
+		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+		JE_AssertThrowVkResult(vkCreateCommandPool(_device, &poolInfo, _pAllocator, &_commandPoolDynamic));
 
 		poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
 
@@ -935,7 +976,7 @@ namespace Core
 
 		VkCommandBufferAllocateInfo allocInfo = {};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.commandPool = _commandPool;
+		allocInfo.commandPool = GetCommandPoolDynamic();
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		allocInfo.commandBufferCount = static_cast<uint32_t>(_commandBuffers.size());
 
@@ -1089,7 +1130,7 @@ namespace Core
 		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 		renderPassInfo.pClearValues = clearValues.data();
 
-		vkCmdBeginRenderPass(cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);	// For executing per-object command buffers.
 
 		// TODO: Support push constants.
 		/*
@@ -1313,11 +1354,10 @@ namespace Core
 
 			_renderPassMgr.Get(&_currentRenderPassKey)->Reinitialize();
 			_pipelineMgr.Get(&_currentPipelineKey)->Reinitialize();
-			//CreateRenderPass();
-			//CreateGraphicsPipeline();
-			
+
+			_system.OnSwapChainResize();
+
 			CreateFramebuffers();
-			CreateCommandBuffers();
 		}
 	}
 
@@ -1463,6 +1503,9 @@ namespace Core
 		::Rendering::Helper::GetInstance()->Cleanup();
 		::Rendering::Helper::DestroyInstance();
 
+		vkFreeCommandBuffers(_device, GetCommandPoolDynamic(), static_cast<uint32_t>(_commandBuffers.size()), _commandBuffers.data());
+		_commandBuffers.clear();
+
 		CleanupSwapChain();
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
@@ -1474,8 +1517,10 @@ namespace Core
 
 		vkDestroyCommandPool(_device, _commandPoolTransient, _pAllocator);
 		_commandPoolTransient = VK_NULL_HANDLE;
-		vkDestroyCommandPool(_device, _commandPool, _pAllocator);
-		_commandPool = VK_NULL_HANDLE;
+		vkDestroyCommandPool(_device, _commandPoolDynamic, _pAllocator);
+		_commandPoolDynamic = VK_NULL_HANDLE;
+		vkDestroyCommandPool(_device, _commandPoolStatic, _pAllocator);
+		_commandPoolStatic = VK_NULL_HANDLE;
 
 		vkDestroyDevice(_device, _pAllocator);
 		_device = VK_NULL_HANDLE;
@@ -1518,9 +1563,6 @@ namespace Core
 		_depthImage = VK_NULL_HANDLE;
 		vkFreeMemory(_device, _depthImageMemory, _pAllocator);
 		_depthImageMemory = VK_NULL_HANDLE;
-
-		vkFreeCommandBuffers(_device, _commandPool, static_cast<uint32_t>(_commandBuffers.size()), _commandBuffers.data());
-		_commandBuffers.clear();
 
 		for (auto framebuffer : _swapChainFramebuffers)
 		{

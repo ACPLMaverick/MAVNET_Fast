@@ -30,6 +30,14 @@ namespace Rendering
 		_commandBuffers.clear();
 	}
 
+	void SecondaryCommandBuffer::Reinitialize()
+	{
+		JE_Assert(_info.RecordFunc);
+		Cleanup();
+		CreateVkCommandBuffers();
+		RecordVkCommandBuffers();
+	}
+
 	void SecondaryCommandBuffer::CreateVkCommandBuffers()
 	{
 		const size_t totalNum = GetTotalVkCommandBufferNum();
@@ -41,7 +49,7 @@ namespace Rendering
 		VkCommandBufferAllocateInfo allocInfo = {};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-		allocInfo.commandPool = JE_GetRenderer()->GetCommandPool();
+		allocInfo.commandPool = JE_GetRenderer()->GetCommandPoolStatic();
 		allocInfo.commandBufferCount = (uint32_t)totalNum;
 
 		JE_AssertVkResult(vkAllocateCommandBuffers(JE_GetRenderer()->GetDevice(), &allocInfo, _tmpAllocArray.data()));
@@ -114,7 +122,7 @@ namespace Rendering
 			}
 		}
 
-		vkFreeCommandBuffers(JE_GetRenderer()->GetDevice(), JE_GetRenderer()->GetCommandPool(), (uint32_t)allocArrayIndex, _tmpAllocArray.data());
+		vkFreeCommandBuffers(JE_GetRenderer()->GetDevice(), JE_GetRenderer()->GetCommandPoolStatic(), (uint32_t)allocArrayIndex, _tmpAllocArray.data());
 	}
 
 	void SecondaryCommandBuffer::BeginRecordVkCommandBuffer(VkCommandBuffer commandBuffer, VkRenderPass renderPass, uint32_t subpass, VkFramebuffer frameBuffer)

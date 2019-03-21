@@ -10,11 +10,11 @@ namespace GOM
 {
 	void DrawableBehaviour::Update()
 	{
-		for (SystemObject* objAbstract : _objectsAll)
+		for (Component* objAbstract : _objectsAll)
 		{
-			DrawableObject* obj = ObjectCast(objAbstract);
+			Drawable* obj = ObjectCast(objAbstract);
 
-			obj->PropMaterial->Update();
+			obj->PropMaterial.Get()->Update();
 		}
 	}
 
@@ -28,9 +28,9 @@ namespace GOM
 		// Cmd must be in a recording state!
 
 		std::vector<VkCommandBuffer> secondaries;
-		for (SystemObject* objAbstract : _objectsAll)
+		for (Component* objAbstract : _objectsAll)
 		{
-			DrawableObject* obj = ObjectCast(objAbstract);
+			Drawable* obj = ObjectCast(objAbstract);
 			JE_Assert(obj);
 
 			secondaries.push_back(obj->_secondaryCommandBuffer.GetVkCommandBuffer(currentRenderPass, currentSubpass));
@@ -43,22 +43,22 @@ namespace GOM
 		}
 	}
 
-	SystemObject * DrawableBehaviour::ConstructObject_Internal()
+	Component * DrawableBehaviour::ConstructObject_Internal()
 	{
-		return new DrawableObject();
+		return new Drawable();
 	}
 
-	void DrawableBehaviour::InitializeObject_Internal(SystemObject * objAbstract)
+	void DrawableBehaviour::InitializeObject_Internal(Component * objAbstract)
 	{
-		DrawableObject* obj = ObjectCast(objAbstract);
+		Drawable* obj = ObjectCast(objAbstract);
 		
 		AdjustBuffersForVertexDeclaration(obj);
 		CreateSecondaryCommandBuffer(obj);
 	}
 
-	void DrawableBehaviour::CleanupObject_Internal(SystemObject * objAbstract)
+	void DrawableBehaviour::CleanupObject_Internal(Component * objAbstract)
 	{
-		DrawableObject* obj = ObjectCast(objAbstract);
+		Drawable* obj = ObjectCast(objAbstract);
 		
 		obj->_adjVertexBufferArray.clear();
 		obj->_adjOffsetArray.clear();
@@ -69,10 +69,10 @@ namespace GOM
 		obj->PropMesh = nullptr;
 	}
 
-	void DrawableBehaviour::CloneObject_Internal(SystemObject * destinationAbstract, const SystemObject * sourceAbstract)
+	void DrawableBehaviour::CloneObject_Internal(Component * destinationAbstract, const Component * sourceAbstract)
 	{
-		DrawableObject* destination = ObjectCast(destinationAbstract);
-		const DrawableObject* source = ObjectCast(sourceAbstract);
+		Drawable* destination = ObjectCast(destinationAbstract);
+		const Drawable* source = ObjectCast(sourceAbstract);
 
 		destination->PropMesh = source->PropMesh;
 		destination->PropMaterial = source->PropMaterial;
@@ -82,15 +82,21 @@ namespace GOM
 		destination->_secondaryCommandBuffer = source->_secondaryCommandBuffer;
 	}
 
-	void DrawableBehaviour::AdjustBuffersForVertexDeclaration(DrawableObject * obj)
+	void DrawableBehaviour::OnSwapChainResize_Internal(Component * objAbstract)
+	{
+		Drawable* obj = ObjectCast(objAbstract);
+		obj->_secondaryCommandBuffer.Reinitialize();
+	}
+
+	void DrawableBehaviour::AdjustBuffersForVertexDeclaration(Drawable * obj)
 	{
 		using namespace Rendering;
 
-		const VertexDeclaration* declaration = obj->PropMaterial->GetVertexDeclaration();
-		const std::vector<VkBuffer>* vertexBufferArray = obj->PropMesh->GetVertexBuffers();
-		const std::vector<VkDeviceSize>* offsetArray = obj->PropMesh->GetVertexBufferOffsets();
-		const uint32_t bufferNum = obj->PropMesh->GetVertexBufferCount();
-		const Mesh::Info* meshInfo = obj->PropMesh->GetInfo();
+		const VertexDeclaration* declaration = obj->PropMaterial.Get()->GetVertexDeclaration();
+		const std::vector<VkBuffer>* vertexBufferArray = obj->PropMesh.Get()->GetVertexBuffers();
+		const std::vector<VkDeviceSize>* offsetArray = obj->PropMesh.Get()->GetVertexBufferOffsets();
+		const uint32_t bufferNum = obj->PropMesh.Get()->GetVertexBufferCount();
+		const Mesh::Info* meshInfo = obj->PropMesh.Get()->GetInfo();
 
 		JE_Assert(declaration);
 		JE_Assert(vertexBufferArray);
@@ -138,7 +144,7 @@ namespace GOM
 		}
 	}
 
-	void DrawableBehaviour::CreateSecondaryCommandBuffer(DrawableObject * obj)
+	void DrawableBehaviour::CreateSecondaryCommandBuffer(Drawable * obj)
 	{
 		using namespace Rendering;
 
@@ -156,24 +162,24 @@ namespace GOM
 
 	void DrawableBehaviour::RecordFunc(::Rendering::SecondaryCommandBuffer::RecordContext context, VkCommandBuffer commandBuffer)
 	{
-		DrawableObject* obj = reinterpret_cast<DrawableObject*>(context);
+		Drawable* obj = reinterpret_cast<Drawable*>(context);
 		JE_Assert(obj);
 
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->PropMaterial->GetPipeline()->GetVkPipeline());	// I guess it'll have to be like that for now...
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->PropMaterial.Get()->GetPipeline()->GetVkPipeline());	// I guess it'll have to be like that for now...
 
-		VkDescriptorSet descriptorSets[] = { obj->PropMaterial->GetDescriptorSet()->GetVkDescriptorSet() };
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->PropMaterial->GetPipeline()->GetVkPipelineLayout(), 0, 1, descriptorSets, 0, nullptr);
+		VkDescriptorSet descriptorSets[] = { obj->PropMaterial.Get()->GetDescriptorSet()->GetVkDescriptorSet() };
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->PropMaterial.Get()->GetPipeline()->GetVkPipelineLayout(), 0, 1, descriptorSets, 0, nullptr);
 		vkCmdBindVertexBuffers(commandBuffer, 0, (uint32_t)obj->_adjVertexBufferArray.size(), obj->_adjVertexBufferArray.data(), obj->_adjOffsetArray.data());
-		vkCmdBindIndexBuffer(commandBuffer, obj->PropMesh->GetIndexBuffer(), 0, JE_IndexTypeVk);
-		vkCmdDrawIndexed(commandBuffer, obj->PropMesh->GetIndexCount(), 1, 0, 0, 0);
+		vkCmdBindIndexBuffer(commandBuffer, obj->PropMesh.Get()->GetIndexBuffer(), 0, JE_IndexTypeVk);
+		vkCmdDrawIndexed(commandBuffer, obj->PropMesh.Get()->GetIndexCount(), 1, 0, 0, 0);
 	}
 
-#if !defined(NDEBUG)
-	void DrawableBehaviour::CheckObject(const SystemObject* obj)
+#if JE_BEHAVIOUR_CHECK_OBJECT
+	void DrawableBehaviour::CheckObject(const Component* obj)
 	{
 		JE_Assert(obj != nullptr);
-		JE_Assert(ObjectCast(obj)->PropMesh != nullptr);
-		JE_Assert(ObjectCast(obj)->PropMaterial != nullptr);
+		JE_Assert(ObjectCast(obj)->PropMesh.Get() != nullptr);
+		JE_Assert(ObjectCast(obj)->PropMaterial.Get() != nullptr);
 	}
 #endif
 }

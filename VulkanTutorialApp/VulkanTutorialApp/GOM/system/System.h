@@ -1,41 +1,47 @@
 #pragma once
 
+#include "Util/Property.h"
+#include "Util/ObjectPool.h"
+
+
 #if !defined(NDEBUG)
-#define JE_System_Behaviour_CheckObject virtual void CheckObject(const SystemObject* obj) = 0
-#define JE_System_Behaviour_CheckObjectOverride virtual void CheckObject(const SystemObject* obj) override
+#define JE_BEHAVIOUR_CHECK_OBJECT 1
+#define JE_System_Behaviour_CheckObject virtual void CheckObject(const Component* obj) = 0
+#define JE_System_Behaviour_CheckObjectOverride virtual void CheckObject(const Component* obj) override
 #else
-#define JE_System_Behaviour_CheckObject void CheckObject(const SystemObject* obj) { }
-#define JE_System_Behaviour_CheckObjectOverride void CheckObject(const SystemObject* obj) { }
+#define JE_BEHAVIOUR_CHECK_OBJECT 0
+#define JE_System_Behaviour_CheckObject void CheckObject(const Component* obj) { }
+#define JE_System_Behaviour_CheckObjectOverride void CheckObject(const Component* obj) { }
 #endif
 
 #define JE_System_Behaviour_Body_Declaration(Type, ObjectType) \
 	public: \
-		static JE_Inline ObjectType* ObjectCast(SystemObject* obj) { return reinterpret_cast<ObjectType*>(obj); } \
-		static JE_Inline const ObjectType* ObjectCast(const SystemObject* obj) { return reinterpret_cast<const ObjectType*>(obj); } \
+		static JE_Inline ObjectType* ObjectCast(Component* obj) { return reinterpret_cast<ObjectType*>(obj); } \
+		static JE_Inline const ObjectType* ObjectCast(const Component* obj) { return reinterpret_cast<const ObjectType*>(obj); } \
 	private:
 
 namespace GOM
 {
-	class SystemBehaviour;
+	class Behaviour;
 	class System;
 
-	class SystemObject
+	class Component
 	{
 	public:
 
 	// All assignable data should be public.
 
 	protected:
-		SystemObject();
-		SystemObject(const SystemObject& copy);
-		SystemObject(const SystemObject&& move);
-		SystemObject& operator=(const SystemObject& copy);
-		virtual ~SystemObject();
+		Component();
+		Component(const Component& copy);
+		Component(const Component&& move);
+		Component& operator=(const Component& copy);
+		virtual ~Component();
 
-		friend class SystemBehaviour;
+		friend class Behaviour;
 	};
 
-	class SystemBehaviour
+	class Behaviour
 	{
 	public:
 
@@ -44,26 +50,29 @@ namespace GOM
 
 		void CleanupRemainingObjects();
 
-		SystemObject* ConstructObject();
-		void InitializeObject(SystemObject* obj);	// Initialize object which should have all fields assigned.
-		void CleanupObject(SystemObject* obj);
-		SystemObject* CloneObject(const SystemObject* source);
+		Component* ConstructObject();
+		void InitializeObject(Component* obj);	// Initialize object which should have all fields assigned.
+		void CleanupObject(Component* obj);
+		Component* CloneObject(const Component* source);
+
+		void OnSwapChainResize();
 
 	protected:
-		SystemBehaviour() { }
-		SystemBehaviour(const SystemBehaviour& copy) = delete;
-		SystemBehaviour(const SystemBehaviour&& move) = delete;
-		SystemBehaviour& operator=(const SystemBehaviour& copy) = delete;
-		virtual ~SystemBehaviour() { }
+		Behaviour() { }
+		Behaviour(const Behaviour& copy) = delete;
+		Behaviour(const Behaviour&& move) = delete;
+		Behaviour& operator=(const Behaviour& copy) = delete;
+		virtual ~Behaviour() { }
 
-		virtual SystemObject* ConstructObject_Internal() = 0;
-		virtual void InitializeObject_Internal(SystemObject* obj) = 0;
-		virtual void CleanupObject_Internal(SystemObject* obj) = 0;
-		virtual void CloneObject_Internal(SystemObject* destination, const SystemObject* source) = 0;
+		virtual Component* ConstructObject_Internal() = 0;
+		virtual void InitializeObject_Internal(Component* obj) = 0;
+		virtual void CleanupObject_Internal(Component* obj) = 0;
+		virtual void CloneObject_Internal(Component* destination, const Component* source) = 0;
 		JE_System_Behaviour_CheckObject;
 
+		virtual void OnSwapChainResize_Internal(Component* obj) { }
 
-		typedef std::vector<SystemObject*> ObjectCollection;
+		typedef std::vector<Component*> ObjectCollection;
 
 		ObjectCollection _objectsAll;
 		bool _bIsPersistent = false;
@@ -87,7 +96,9 @@ namespace GOM
 		void Update();
 		void Draw();
 
-		void DeactivateBehaviourIfEmpty(SystemBehaviour* behaviour);
+		void OnSwapChainResize();
+
+		void DeactivateBehaviourIfEmpty(Behaviour* behaviour);
 
 		template <class BehaviourType> BehaviourType* GetBehaviour()
 		{
@@ -105,7 +116,7 @@ namespace GOM
 		void InitBaseBehaviours();
 
 
-		typedef std::vector<SystemBehaviour*> BehaviourCollection;
+		typedef std::vector<Behaviour*> BehaviourCollection;
 
 		BehaviourCollection _activeBehaviours;
 	};

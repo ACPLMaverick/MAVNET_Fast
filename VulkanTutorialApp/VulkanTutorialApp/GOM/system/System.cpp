@@ -5,31 +5,31 @@
 
 namespace GOM
 {
-	SystemObject::SystemObject()
+	Component::Component()
 	{
 	}
 
-	SystemObject::SystemObject(const SystemObject & copy)
+	Component::Component(const Component & copy)
 	{
 	}
 
-	SystemObject::SystemObject(const SystemObject && move)
+	Component::Component(const Component && move)
 	{
 	}
 
-	SystemObject & SystemObject::operator=(const SystemObject & copy)
+	Component & Component::operator=(const Component & copy)
 	{
 		return *this;
 	}
 
-	SystemObject::~SystemObject()
+	Component::~Component()
 	{
 	}
 
 
-	void SystemBehaviour::CleanupRemainingObjects()
+	void Behaviour::CleanupRemainingObjects()
 	{
-		for (SystemObject* obj : _objectsAll)
+		for (Component* obj : _objectsAll)
 		{
 			CheckObject(obj);
 			CleanupObject_Internal(obj);
@@ -39,12 +39,12 @@ namespace GOM
 		_bActiveFlag = false;
 	}
 
-	SystemObject * SystemBehaviour::ConstructObject()
+	Component * Behaviour::ConstructObject()
 	{
 		return ConstructObject_Internal();
 	}
 
-	void SystemBehaviour::InitializeObject(SystemObject* obj)
+	void Behaviour::InitializeObject(Component* obj)
 	{
 		JE_Assert(obj != nullptr);
 		CheckObject(obj);
@@ -52,7 +52,7 @@ namespace GOM
 		_objectsAll.push_back(obj);
 	}
 
-	void SystemBehaviour::CleanupObject(SystemObject * obj)
+	void Behaviour::CleanupObject(Component * obj)
 	{
 		JE_Assert(obj != nullptr);
 
@@ -67,15 +67,23 @@ namespace GOM
 		JE_GetApp()->GetSystem()->DeactivateBehaviourIfEmpty(this);
 	}
 
-	SystemObject * SystemBehaviour::CloneObject(const SystemObject * source)
+	Component * Behaviour::CloneObject(const Component * source)
 	{
 		CheckObject(source);
-		SystemObject* newObject = ConstructObject();
+		Component* newObject = ConstructObject();
 
 		CloneObject_Internal(newObject, source);
 
 		_objectsAll.push_back(newObject);
 		return newObject;
+	}
+
+	void Behaviour::OnSwapChainResize()
+	{
+		for (Component* obj : _objectsAll)
+		{
+			OnSwapChainResize_Internal(obj);
+		}
 	}
 
 
@@ -86,7 +94,7 @@ namespace GOM
 
 	void System::Cleanup()
 	{
-		for (SystemBehaviour* behaviour : _activeBehaviours)
+		for (Behaviour* behaviour : _activeBehaviours)
 		{
 			behaviour->CleanupRemainingObjects();
 		}
@@ -97,7 +105,7 @@ namespace GOM
 	{
 		// TODO: May make this multithreaded.
 
-		for (SystemBehaviour* behaviour : _activeBehaviours)
+		for (Behaviour* behaviour : _activeBehaviours)
 		{
 			behaviour->Update();
 		}
@@ -107,13 +115,21 @@ namespace GOM
 	{
 		// TODO: May make this multithreaded.
 
-		for (SystemBehaviour* behaviour : _activeBehaviours)
+		for (Behaviour* behaviour : _activeBehaviours)
 		{
 			behaviour->Draw();
 		}
 	}
 
-	void System::DeactivateBehaviourIfEmpty(SystemBehaviour * behaviour)
+	void System::OnSwapChainResize()
+	{
+		for (Behaviour* behaviour : _activeBehaviours)
+		{
+			behaviour->OnSwapChainResize();
+		}
+	}
+
+	void System::DeactivateBehaviourIfEmpty(Behaviour * behaviour)
 	{
 		if (behaviour->_bIsPersistent || behaviour->_objectsAll.size() > 0)
 		{
