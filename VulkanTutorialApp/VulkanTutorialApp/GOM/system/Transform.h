@@ -39,7 +39,7 @@ namespace GOM
 		{
 		}
 
-		//TODO: Index to data in objectpool. // Data _data;
+		Util::ObjectPool<Data>::Index _data;
 
 		friend class TransformBehaviour;
 	};
@@ -61,5 +61,8 @@ namespace GOM
 		virtual void CleanupObject_Internal(Component * obj) override;
 		virtual void CloneObject_Internal(Component * destination, const Component * source) override;
 		JE_System_Behaviour_CheckObjectOverride;
+
+
+		Util::ObjectPool<Transform::Data> _transformDataPool;
 	};
 }

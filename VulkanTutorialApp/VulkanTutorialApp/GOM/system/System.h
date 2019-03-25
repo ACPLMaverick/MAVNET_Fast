@@ -25,7 +25,7 @@ namespace GOM
 	class Behaviour;
 	class System;
 
-	class Component
+	class Component : public Util::NullType
 	{
 	public:
 
@@ -41,7 +41,7 @@ namespace GOM
 		friend class Behaviour;
 	};
 
-	class Behaviour
+	class Behaviour : public Util::NullType
 	{
 	public:
 

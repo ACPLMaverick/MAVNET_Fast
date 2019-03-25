@@ -31,27 +31,20 @@ namespace Util
 		EnclosedType& Get() { return _object; }
 		const EnclosedType& Get() const { return _object; }
 
-		void Set(const EnclosedType& newObject)
+		void Set(ContextType* context, const EnclosedType& newObject)
 		{
-			static ContextType* context = nullptr;	// TODO
+			JE_Assert(context);
 
-			if (context)
+			if (SetFuncBefore)
 			{
-				if (SetFuncBefore)
-				{
-					(context->*SetFuncBefore)(newObject, _object);
-				}
-
-				_object = newObject;
-
-				if (SetFuncAfter)
-				{
-					(context->*SetFuncAfter)();
-				}
+				(context->*SetFuncBefore)(newObject, _object);
 			}
-			else
+
+			_object = newObject;
+
+			if (SetFuncAfter)
 			{
-				_object = newObject;
+				(context->*SetFuncAfter)();
 			}
 		}
 
@@ -60,4 +53,7 @@ namespace Util
 		EnclosedType _object;
 
 	};
+
+#define JE_SetProperty(obj, propName, propValue) ((obj).propName.Set(&(obj), (propValue)))
+#define JE_SetPropertyPtr(objPtr, propName, propValue) ((objPtr)->propName.Set((objPtr), (propValue)))
 }

@@ -601,8 +601,8 @@ namespace Core
 				const size_t meshIndex = total % meshNum;
 
 				::GOM::Drawable* drawableObject = static_cast<::GOM::Drawable*>(drawableBehaviour->ConstructObject());
-				drawableObject->PropMaterial.Set(availableMaterials[matIndex]);
-				drawableObject->PropMesh.Set(availableMeshes[matIndex]);
+				JE_SetPropertyPtr(drawableObject, PropMaterial, availableMaterials[matIndex]);
+				JE_SetPropertyPtr(drawableObject, PropMesh, availableMeshes[matIndex]);
 
 				drawableBehaviour->InitializeObject(drawableObject);
 
