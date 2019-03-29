@@ -3,22 +3,31 @@
 #include "Util/Property.h"
 #include "Util/ObjectPool.h"
 
+#define JE_GetSystem() ::GOM::System::Get()
 
 #if !defined(NDEBUG)
-#define JE_BEHAVIOUR_CHECK_OBJECT 1
-#define JE_System_Behaviour_CheckObject virtual void CheckObject(const Component* obj) = 0
-#define JE_System_Behaviour_CheckObjectOverride virtual void CheckObject(const Component* obj) override
+#define JE_BEHAVIOUR_CHECK_COMPONENT 1
+#define JE_System_Behaviour_CheckComponent virtual void CheckComponent(const Component* obj) = 0
+#define JE_System_Behaviour_CheckComponentOverride virtual void CheckComponent(const Component* obj) override
 #else
-#define JE_BEHAVIOUR_CHECK_OBJECT 0
-#define JE_System_Behaviour_CheckObject void CheckObject(const Component* obj) { }
-#define JE_System_Behaviour_CheckObjectOverride void CheckObject(const Component* obj) { }
+#define JE_BEHAVIOUR_CHECK_COMPONENT 0
+#define JE_System_Behaviour_CheckComponent void CheckObject(const Component* obj) { }
+#define JE_System_Behaviour_CheckComponentOverride void CheckObject(const Component* obj) override { }
 #endif
 
-#define JE_System_Behaviour_Body_Declaration(Type, ObjectType) \
-	public: \
-		static JE_Inline ObjectType* ObjectCast(Component* obj) { return reinterpret_cast<ObjectType*>(obj); } \
-		static JE_Inline const ObjectType* ObjectCast(const Component* obj) { return reinterpret_cast<const ObjectType*>(obj); } \
+#define JE_System_Component_Body_Declaration(BehaviourType, ComponentType)																\
+	public:																																\
+		static JE_Inline BehaviourType* GetBehaviour() { return JE_GetSystem()->GetBehaviour<BehaviourType>(); }						\
 	private:
+
+#define JE_System_Behaviour_Body_Declaration(BehaviourType, ComponentType)																\
+	public:																																\
+		static JE_Inline ComponentType* ComponentCast(Component* obj) { return static_cast<ComponentType*>(obj); }						\
+		static JE_Inline const ComponentType* ComponentCast(const Component* obj) { return static_cast<const ComponentType*>(obj); }	\
+	protected:																															\
+		JE_System_Behaviour_CheckComponentOverride;																						\
+	private:																															\
+		friend class ComponentType;
 
 namespace GOM
 {
@@ -41,6 +50,9 @@ namespace GOM
 		friend class Behaviour;
 	};
 
+	// Here can be passed any data that is crucial to be known right at object construction time.
+	class ComponentConstructionParameters : public Util::NullType { };
+
 	class Behaviour : public Util::NullType
 	{
 	public:
@@ -50,10 +62,10 @@ namespace GOM
 
 		void CleanupRemainingObjects();
 
-		Component* ConstructObject();
-		void InitializeObject(Component* obj);	// Initialize object which should have all fields assigned.
-		void CleanupObject(Component* obj);
-		Component* CloneObject(const Component* source);
+		Component* ConstructComponent(const ComponentConstructionParameters* constructionParam = nullptr);
+		void InitializeComponent(Component* obj);	// Initialize object which should have all fields assigned.
+		void CleanupComponent(Component* obj);
+		Component* CloneComponent(const Component* source);
 
 		void OnSwapChainResize();
 
@@ -64,11 +76,11 @@ namespace GOM
 		Behaviour& operator=(const Behaviour& copy) = delete;
 		virtual ~Behaviour() { }
 
-		virtual Component* ConstructObject_Internal() = 0;
-		virtual void InitializeObject_Internal(Component* obj) = 0;
-		virtual void CleanupObject_Internal(Component* obj) = 0;
-		virtual void CloneObject_Internal(Component* destination, const Component* source) = 0;
-		JE_System_Behaviour_CheckObject;
+		virtual Component* ConstructComponent_Internal(const ComponentConstructionParameters* constructionParam) = 0;
+		virtual void InitializeComponent_Internal(Component* obj) = 0;
+		virtual void CleanupComponent_Internal(Component* obj) = 0;
+		virtual void CloneComponent_Internal(Component* destination, const Component* source) = 0;
+		JE_System_Behaviour_CheckComponent;
 
 		virtual void OnSwapChainResize_Internal(Component* obj) { }
 
@@ -90,6 +102,9 @@ namespace GOM
 		System(const System&&) = delete;
 		System& operator=(const System&) = delete;
 		~System() { }
+
+		// TODO: This is only a temporary measure.
+		static System* Get();
 
 		void Initialize();
 		void Cleanup();

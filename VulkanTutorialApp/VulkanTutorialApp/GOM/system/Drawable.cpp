@@ -12,7 +12,7 @@ namespace GOM
 	{
 		for (Component* objAbstract : _objectsAll)
 		{
-			Drawable* obj = ObjectCast(objAbstract);
+			Drawable* obj = ComponentCast(objAbstract);
 
 			obj->PropMaterial.Get()->Update();
 		}
@@ -30,7 +30,7 @@ namespace GOM
 		std::vector<VkCommandBuffer> secondaries;
 		for (Component* objAbstract : _objectsAll)
 		{
-			Drawable* obj = ObjectCast(objAbstract);
+			Drawable* obj = ComponentCast(objAbstract);
 			JE_Assert(obj);
 
 			secondaries.push_back(obj->_secondaryCommandBuffer.GetVkCommandBuffer(currentRenderPass, currentSubpass));
@@ -43,22 +43,22 @@ namespace GOM
 		}
 	}
 
-	Component * DrawableBehaviour::ConstructObject_Internal()
+	Component * DrawableBehaviour::ConstructComponent_Internal(const ComponentConstructionParameters* constructionParam)
 	{
 		return new Drawable();
 	}
 
-	void DrawableBehaviour::InitializeObject_Internal(Component * objAbstract)
+	void DrawableBehaviour::InitializeComponent_Internal(Component * objAbstract)
 	{
-		Drawable* obj = ObjectCast(objAbstract);
+		Drawable* obj = ComponentCast(objAbstract);
 		
 		AdjustBuffersForVertexDeclaration(obj);
 		CreateSecondaryCommandBuffer(obj);
 	}
 
-	void DrawableBehaviour::CleanupObject_Internal(Component * objAbstract)
+	void DrawableBehaviour::CleanupComponent_Internal(Component * objAbstract)
 	{
-		Drawable* obj = ObjectCast(objAbstract);
+		Drawable* obj = ComponentCast(objAbstract);
 		
 		obj->_adjVertexBufferArray.clear();
 		obj->_adjOffsetArray.clear();
@@ -69,10 +69,10 @@ namespace GOM
 		obj->PropMesh = nullptr;
 	}
 
-	void DrawableBehaviour::CloneObject_Internal(Component * destinationAbstract, const Component * sourceAbstract)
+	void DrawableBehaviour::CloneComponent_Internal(Component * destinationAbstract, const Component * sourceAbstract)
 	{
-		Drawable* destination = ObjectCast(destinationAbstract);
-		const Drawable* source = ObjectCast(sourceAbstract);
+		Drawable* destination = ComponentCast(destinationAbstract);
+		const Drawable* source = ComponentCast(sourceAbstract);
 
 		destination->PropMesh = source->PropMesh;
 		destination->PropMaterial = source->PropMaterial;
@@ -84,7 +84,7 @@ namespace GOM
 
 	void DrawableBehaviour::OnSwapChainResize_Internal(Component * objAbstract)
 	{
-		Drawable* obj = ObjectCast(objAbstract);
+		Drawable* obj = ComponentCast(objAbstract);
 		obj->_secondaryCommandBuffer.Reinitialize();
 	}
 
@@ -174,12 +174,12 @@ namespace GOM
 		vkCmdDrawIndexed(commandBuffer, obj->PropMesh.Get()->GetIndexCount(), 1, 0, 0, 0);
 	}
 
-#if JE_BEHAVIOUR_CHECK_OBJECT
-	void DrawableBehaviour::CheckObject(const Component* obj)
+#if JE_BEHAVIOUR_CHECK_COMPONENT
+	void DrawableBehaviour::CheckComponent(const Component* obj)
 	{
 		JE_Assert(obj != nullptr);
-		JE_Assert(ObjectCast(obj)->PropMesh.Get() != nullptr);
-		JE_Assert(ObjectCast(obj)->PropMaterial.Get() != nullptr);
+		JE_Assert(ComponentCast(obj)->PropMesh.Get() != nullptr);
+		JE_Assert(ComponentCast(obj)->PropMaterial.Get() != nullptr);
 	}
 #endif
 }

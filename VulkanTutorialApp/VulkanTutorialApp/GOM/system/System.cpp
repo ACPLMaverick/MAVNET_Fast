@@ -31,33 +31,33 @@ namespace GOM
 	{
 		for (Component* obj : _objectsAll)
 		{
-			CheckObject(obj);
-			CleanupObject_Internal(obj);
+			CheckComponent(obj);
+			CleanupComponent_Internal(obj);
 			delete obj;
 		}
 		_objectsAll.clear();
 		_bActiveFlag = false;
 	}
 
-	Component * Behaviour::ConstructObject()
+	Component * Behaviour::ConstructComponent(const ComponentConstructionParameters* constructionParam /*= nullptr*/)
 	{
-		return ConstructObject_Internal();
+		return ConstructComponent_Internal(constructionParam);
 	}
 
-	void Behaviour::InitializeObject(Component* obj)
+	void Behaviour::InitializeComponent(Component* obj)
 	{
 		JE_Assert(obj != nullptr);
-		CheckObject(obj);
-		InitializeObject_Internal(obj);
+		CheckComponent(obj);
+		InitializeComponent_Internal(obj);
 		_objectsAll.push_back(obj);
 	}
 
-	void Behaviour::CleanupObject(Component * obj)
+	void Behaviour::CleanupComponent(Component * obj)
 	{
 		JE_Assert(obj != nullptr);
 
-		CheckObject(obj);
-		CleanupObject_Internal(obj);
+		CheckComponent(obj);
+		CleanupComponent_Internal(obj);
 
 		delete obj;
 		auto it = std::find(_objectsAll.begin(), _objectsAll.end(), obj);
@@ -67,12 +67,12 @@ namespace GOM
 		JE_GetApp()->GetSystem()->DeactivateBehaviourIfEmpty(this);
 	}
 
-	Component * Behaviour::CloneObject(const Component * source)
+	Component * Behaviour::CloneComponent(const Component * source)
 	{
-		CheckObject(source);
-		Component* newObject = ConstructObject();
+		CheckComponent(source);
+		Component* newObject = ConstructComponent();
 
-		CloneObject_Internal(newObject, source);
+		CloneComponent_Internal(newObject, source);
 
 		_objectsAll.push_back(newObject);
 		return newObject;
@@ -86,6 +86,11 @@ namespace GOM
 		}
 	}
 
+
+	GOM::System* System::Get()
+	{
+		return JE_GetApp()->GetSystem();
+	}
 
 	void System::Initialize()
 	{

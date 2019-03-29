@@ -15,6 +15,7 @@
 #include "Rendering/pipeline/ManagerPipeline.h"
 #include "Rendering/renderPass/ManagerRenderPass.h"
 
+#include "GOM/Entity.h"
 #include "GOM/system/System.h"
 
 namespace Core
@@ -262,6 +263,9 @@ namespace Core
 
 		ResourceManager _resourceManager;
 		::GOM::System _system;
+
+		// TODO: Move this to scene or sth.
+		std::vector<::GOM::Entity> _entities;
 
 		bool _bMinimized;
 	};

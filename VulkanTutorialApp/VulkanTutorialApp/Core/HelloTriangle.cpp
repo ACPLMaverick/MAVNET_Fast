@@ -600,11 +600,11 @@ namespace Core
 				const size_t matIndex = total % materialNum;
 				const size_t meshIndex = total % meshNum;
 
-				::GOM::Drawable* drawableObject = static_cast<::GOM::Drawable*>(drawableBehaviour->ConstructObject());
+				::GOM::Drawable* drawableObject = static_cast<::GOM::Drawable*>(drawableBehaviour->ConstructComponent());
 				JE_SetPropertyPtr(drawableObject, PropMaterial, availableMaterials[matIndex]);
 				JE_SetPropertyPtr(drawableObject, PropMesh, availableMeshes[matIndex]);
 
-				drawableBehaviour->InitializeObject(drawableObject);
+				drawableBehaviour->InitializeComponent(drawableObject);
 
 				const glm::vec3 pos(baseX, 0.0f, baseZ);
 				const glm::vec3 rot(0.0f, 0.0f, 0.0f);

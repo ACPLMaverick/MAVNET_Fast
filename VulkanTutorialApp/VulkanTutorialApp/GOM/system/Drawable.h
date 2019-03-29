@@ -15,6 +15,8 @@ namespace GOM
 
 	class Drawable : public Component
 	{
+		JE_System_Component_Body_Declaration(DrawableBehaviour, Drawable)
+
 	public:
 
 		Util::Property<Rendering::Mesh*> PropMesh;
@@ -49,11 +51,10 @@ namespace GOM
 
 	protected:
 
-		virtual Component * ConstructObject_Internal() override;
-		virtual void InitializeObject_Internal(Component * obj) override;
-		virtual void CleanupObject_Internal(Component * obj) override;
-		virtual void CloneObject_Internal(Component* destination, const Component* source) override;
-		JE_System_Behaviour_CheckObjectOverride;
+		virtual Component * ConstructComponent_Internal(const ComponentConstructionParameters* constructionParam) override;
+		virtual void InitializeComponent_Internal(Component * obj) override;
+		virtual void CleanupComponent_Internal(Component * obj) override;
+		virtual void CloneComponent_Internal(Component* destination, const Component* source) override;
 
 		virtual void OnSwapChainResize_Internal(Component* obj) override;
 
