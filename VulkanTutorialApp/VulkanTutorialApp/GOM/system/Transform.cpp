@@ -1,6 +1,7 @@
 #include "Transform.h"
 
 #include "Core/HelloTriangle.h"
+#include "Rendering/resource/buffer/UniformBuffer.h"
 
 namespace GOM
 {
@@ -42,7 +43,7 @@ namespace GOM
 		}
 
 		Transform* transform = new Transform(parameters.InitMovability);
-		transform->_indexData = _transformDataPerMovability[(size_t)transform->PropMovability.Get()].Create();
+		JE_SetPropertyPtr(transform, _indexData, _transformDataPerMovability[(size_t)transform->PropMovability.Get()].Create());
 
 		return transform;
 	}
@@ -53,12 +54,16 @@ namespace GOM
 
 		// Perform a first update of a world matrix. If this is a static object, this will also be the last update.
 		ProcessTransformData(transform->GetData());
+
+		CreateUboTransform(transform);
+		UpdateUboTransform(transform);
 	}
 
 	void TransformBehaviour::CleanupComponent_Internal(Component * objAbstract)
 	{
 		Transform* transform = ComponentCast(objAbstract);
-		_transformDataPerMovability[(size_t)transform->PropMovability.Get()].Free(transform->_indexData);
+		CleanupUboTransform(transform);
+		_transformDataPerMovability[(size_t)transform->PropMovability.Get()].Free(transform->_indexData.Get());
 	}
 
 	void TransformBehaviour::CloneComponent_Internal(Component * destinationAbstract, const Component * sourceAbstract)
@@ -68,7 +73,14 @@ namespace GOM
 
 		Util::ObjectPool<Transform::Data>& srcDataArray = _transformDataPerMovability[(size_t)transformSource->PropMovability.Get()];
 
-		transformDestination->_indexData = srcDataArray.Copy(srcDataArray, transformSource->_indexData);
+		JE_SetPropertyPtr(transformDestination, _indexData, srcDataArray.Copy(srcDataArray, transformSource->_indexData.Get()));
+
+		// Perform a first update of a world matrix. If this is a static object, this will also be the last update.
+		ProcessTransformData(transformDestination->GetData());
+
+		// Must create ubo anew.
+		CreateUboTransform(transformDestination);
+		UpdateUboTransform(transformDestination);
 	}
 
 	void TransformBehaviour::OnTransformMovabilityAboutToChange(Transform* transform, Transform::Movability newValue)
@@ -76,30 +88,61 @@ namespace GOM
 		CheckComponent(transform);
 
 		Transform::Movability oldValue = transform->PropMovability.Get();
-		transform->_indexData = _transformDataPerMovability[(size_t)newValue]
-			.Move(_transformDataPerMovability[(size_t)oldValue], transform->_indexData);
+		JE_SetPropertyPtr(transform, _indexData, _transformDataPerMovability[(size_t)newValue]
+			.Move(_transformDataPerMovability[(size_t)oldValue], transform->_indexData.Get()));
 	}
 
 	GOM::Transform::Data& TransformBehaviour::GetDataOfTransform(Transform* transform)
 	{
 		CheckComponent(transform);
-		return _transformDataPerMovability[(size_t)transform->PropMovability.Get()].Get(transform->_indexData);
+		return _transformDataPerMovability[(size_t)transform->PropMovability.Get()].Get(transform->_indexData.Get());
 	}
 
 	JE_Inline void TransformBehaviour::ProcessTransformData(Transform::Data& data)
 	{
-		data.WorldMatrix = glm::scale(glm::mat4::mat(), data.Scale);
-		data.WorldMatrix = glm::rotate(data.WorldMatrix, data.Rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
-		data.WorldMatrix = glm::rotate(data.WorldMatrix, data.Rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
-		data.WorldMatrix = glm::rotate(data.WorldMatrix, data.Rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
-		data.WorldMatrix = glm::translate(data.WorldMatrix, data.Position);
+		data.WLocal = glm::scale(glm::mat4::mat(), data.Scale);
+		data.WLocal = glm::rotate(data.WLocal, data.Rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+		data.WLocal = glm::rotate(data.WLocal, data.Rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+		data.WLocal = glm::rotate(data.WLocal, data.Rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+		data.WLocal = glm::translate(data.WLocal, data.Position);
+
+		// TODO: Hierarchy.
+		data.W = data.WLocal;
+
+		const glm::mat4& viewProj = *JE_GetRenderer()->GetCamera()->GetViewProj();
+		const glm::mat4& view = *JE_GetRenderer()->GetCamera()->GetView();
+
+		data.WVP = viewProj * data.W;
+		data.WV = view * data.W;
+		data.WVInverseTranspose = glm::transpose(glm::inverse(data.WV));
+	}
+
+	JE_Inline void TransformBehaviour::CreateUboTransform(Transform* transform)
+	{
+		Rendering::UniformBuffer::Options options;
+		options.DataSize = sizeof(Rendering::UboCommon::TransformData);
+		transform->_uboTransform = new Rendering::UniformBuffer();
+		transform->_uboTransform->Initialize(&options);
+	}
+
+	JE_Inline void TransformBehaviour::CleanupUboTransform(Transform* transform)
+	{
+		transform->_uboTransform->Cleanup();
+		delete transform->_uboTransform;
+		transform->_uboTransform = nullptr;
+	}
+
+	JE_Inline void TransformBehaviour::UpdateUboTransform(Transform* transform)
+	{
+		Transform::Data& data = GetDataOfTransform(transform);
+		transform->_uboTransform->UpdateWithData(reinterpret_cast<uint8_t*>(&data), sizeof(Rendering::UboCommon::TransformData));
 	}
 
 #if JE_BEHAVIOUR_CHECK_COMPONENT
 	void TransformBehaviour::CheckComponent(const GOM::Component *objAbstract)
 	{
 		const Transform* transform = ComponentCast(objAbstract);
-		JE_Assert(transform->_indexData != Util::ObjectPool<Transform::Data>::BAD_INDEX);
+		JE_Assert(transform->_indexData.Get() != Util::ObjectPool<Transform::Data>::BAD_INDEX);
 	}
 #endif
 }

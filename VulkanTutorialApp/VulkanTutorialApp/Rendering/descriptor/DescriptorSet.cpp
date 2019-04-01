@@ -41,6 +41,12 @@ namespace Rendering
 		_bResourcesDirty = false;
 	}
 
+	void DescriptorSet::Reinitialize()
+	{
+		// TODO
+		JE_TODO();
+	}
+
 	void DescriptorSet::UpdateSet()
 	{
 		if (_bResourcesDirty)

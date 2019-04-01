@@ -68,11 +68,15 @@ namespace Rendering
 				JE_Assert(pass);
 
 				subpassNum = pass->GetInfo()->Subpasses.size();
+
+				for (size_t i = 0; i < subpassNum; ++i)
+				{
+					subpassData.SubpassIndices.push_back((uint32_t)i);
+				}
 			}
 
 			for (size_t i = 0; i < subpassNum; ++i)
 			{
-				subpassData.SubpassIndices.push_back((uint32_t)i);
 				currentArray.push_back(_tmpAllocArray[tmpBufferIndex]);
 				++tmpBufferIndex;
 			}

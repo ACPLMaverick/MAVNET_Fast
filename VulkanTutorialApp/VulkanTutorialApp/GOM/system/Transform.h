@@ -1,6 +1,12 @@
 #pragma once
 
 #include "System.h"
+#include "Rendering/resource/buffer/UboCommon.h"
+
+namespace Rendering
+{
+	class UniformBuffer;
+}
 
 namespace GOM
 {
@@ -17,9 +23,11 @@ namespace GOM
 			Dynamic
 		JE_EnumEnd()
 
-		struct Data
+		struct Data : public ::Rendering::UboCommon::TransformData
 		{
-			glm::mat4 WorldMatrix = glm::mat4(1.0f);
+			glm::mat4 W = glm::mat4(1.0f);
+			glm::mat4 WLocal = glm::mat4(1.0f);
+
 			glm::vec3 Position = glm::vec3(0.0f);
 			glm::vec3 Rotation = glm::vec3(0.0f);
 			glm::vec3 Scale = glm::vec3(1.0f);
@@ -33,10 +41,11 @@ namespace GOM
 
 		Util::Property<Movability, Transform, nullptr, &Transform::OnMovabilityAboutToChange> PropMovability;
 
-		const glm::mat4& GetWorldMatrix() { return GetData().WorldMatrix; }
+		const Data& GetData() const { return GetData(); }
 		glm::vec3& GetPosition() { return GetData().Position; }
 		glm::vec3& GetRotation() { return GetData().Rotation; }
 		glm::vec3& GetScale() { return GetData().Scale; }
+		const Rendering::UniformBuffer* GetUboTransform() const { return _uboTransform; }
 
 		void SetPosition(const glm::vec3& position) { GetData().Position = position; }
 		void SetRotation(const glm::vec3& rotation) { GetData().Rotation = rotation; }
@@ -50,14 +59,16 @@ namespace GOM
 
 		Transform(Movability movability)
 			: Component()
-			, _indexData(Util::ObjectPool<Data>::BAD_INDEX)
 			, PropMovability(movability)
+			, _indexData(Util::ObjectPool<Data>::BAD_INDEX)
+			, _uboTransform(nullptr)
 		{
 		}
 
 		Data& GetData();
 
-		Util::ObjectPool<Data>::Index _indexData;
+		Util::Property<Util::ObjectPool<Data>::Index, Transform> _indexData;
+		Rendering::UniformBuffer* _uboTransform;
 
 		friend class TransformBehaviour;
 	};
@@ -89,6 +100,10 @@ namespace GOM
 		Transform::Data& GetDataOfTransform(Transform* transform);
 
 		JE_Inline void ProcessTransformData(Transform::Data& data);
+
+		JE_Inline void CreateUboTransform(Transform* transform);
+		JE_Inline void CleanupUboTransform(Transform* transform);
+		JE_Inline void UpdateUboTransform(Transform* transform);
 
 		Util::ObjectPool<Transform::Data> _transformDataPerMovability[(size_t)Transform::Movability::ENUM_SIZE];
 	};

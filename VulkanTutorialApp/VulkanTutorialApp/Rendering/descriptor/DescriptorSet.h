@@ -43,6 +43,7 @@ namespace Rendering
 		// This object is initialized via ManagerDescriptor.
 
 		void Cleanup();
+		void Reinitialize();
 
 		void UpdateSet();
 

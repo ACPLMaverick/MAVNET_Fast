@@ -12,8 +12,6 @@ namespace Rendering
 	Material::Material()
 		: Resource()
 		, _descriptorSet(nullptr)
-		, _uboPerObject(nullptr)
-		, _uboGlobal(nullptr)
 	{
 		_type = ResourceCommon::Type::Material;
 	}
@@ -36,14 +34,11 @@ namespace Rendering
 		_vertexDeclaration.Initialize(&components);
 
 		// This too.
-		UniformBuffer::Options options;
-		options.DataSize = sizeof(UboCommon::StaticMeshCommon);
-		_uboPerObject = new UniformBuffer();
-		_uboPerObject->Initialize(&options);
 
-		options.DataSize = sizeof(UboCommon::SceneGlobal);
-		_uboGlobal = new UniformBuffer();
-		_uboGlobal->Initialize(&options);
+
+		//options.DataSize = sizeof(UboCommon::SceneGlobal);
+		//_uboGlobal = new UniformBuffer();
+		//_uboGlobal->Initialize(&options);
 
 		// This as well.
 		::Rendering::Texture::LoadOptions texOptions;
@@ -74,8 +69,8 @@ namespace Rendering
 			1,
 			ResourceCommon::Type::Texture2D
 		);
-		info.Resources[0][0] = _uboPerObject;
-		info.Resources[1][0] = _uboGlobal;
+		info.Resources[0][0] = nullptr; // Is assigned via Transform.
+		info.Resources[1][0] = nullptr;	// Is assigned via GlobalWorldParameters.
 		info.Resources[2][0] = _textures[0];
 		_descriptorSet = JE_GetRenderer()->GetManagerDescriptor()->Get(&info);
 
@@ -119,8 +114,6 @@ namespace Rendering
 
 	void Material::Update()
 	{
-		UpdateUboPerObject();	// TODO: Move this to transform class.
-		UpdateUboGlobal();
 	}
 
 	void Material::Cleanup()
@@ -129,24 +122,10 @@ namespace Rendering
 
 		_vertexDeclaration = VertexDeclaration();
 
-		if (_uboPerObject != nullptr)	// TODO: Do not remove, instead make manager do this.
-		{
-			_uboPerObject->Cleanup();
-			delete _uboPerObject;
-			_uboPerObject = nullptr;
-		}
-		if (_uboGlobal != nullptr)	// TODO: Do not cleanup, instead make manager do this.
-		{
-			_uboGlobal->Cleanup();
-			delete _uboGlobal;
-			_uboGlobal = nullptr;
-		}
-
 		_pipeline = nullptr;
-
-		// TODO: Implement proper non test code.
 	}
 
+	/*
 	void Material::UpdateUboPerObject()
 	{
 		static auto startTime = std::chrono::high_resolution_clock::now();
@@ -161,19 +140,10 @@ namespace Rendering
 		glm::mat4 mv_translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
-
-		mv_translation = mv_translation * rotation * scale;
-
-		const glm::mat4& viewProj = *JE_GetRenderer()->GetCamera()->GetViewProj();
-		const glm::mat4& view = *JE_GetRenderer()->GetCamera()->GetView();
-
-		matrices.MVP = viewProj * mv_translation;
-		matrices.MV = view * mv_translation;
-		matrices.MVInverseTranspose = glm::transpose(glm::inverse(matrices.MV));
-
-		_uboPerObject->UpdateWithData(reinterpret_cast<uint8_t*>(&matrices), sizeof(matrices));
 	}
+	*/
 
+	/*
 	void Material::UpdateUboGlobal()
 	{
 		const Fog& fog = *JE_GetRenderer()->GetFog();
@@ -186,7 +156,13 @@ namespace Rendering
 		pco.LightColor = *lightDirectional.GetColor();
 		pco.InvLightDirectionV = -*lightDirectional.GetDirectionV();
 
-		_uboGlobal->UpdateWithData(reinterpret_cast<uint8_t*>(&pco), sizeof(pco));
+		
 	}
+	*/
+
+	//void Material::UpdateUboGlobal(const UboCommon::SceneGlobal& uboGlobal)
+	//{
+	//	_uboGlobal->UpdateWithData(reinterpret_cast<uint8_t*>(&uboGlobal), sizeof(uboGlobal));
+	//}
 
 }

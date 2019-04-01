@@ -5,4 +5,5 @@ target_sources(VulkanTutorialApp
 		ObjectPool.h
 		Property.h
         Singleton.h
+		StaticArray.h
 )

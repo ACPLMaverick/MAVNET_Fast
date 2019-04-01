@@ -144,6 +144,7 @@
     <ClCompile Include="GOM\system\Drawable.cpp" />
     <ClCompile Include="GOM\system\System.cpp" />
     <ClCompile Include="GOM\system\Transform.cpp" />
+    <ClCompile Include="GOM\World.cpp" />
     <ClCompile Include="Rendering\command\SecondaryCommandBuffer.cpp" />
     <ClCompile Include="Rendering\renderPass\ManagerRenderPass.cpp" />
     <ClCompile Include="Rendering\pipeline\ManagerPipeline.cpp" />
@@ -178,6 +179,7 @@
     <ClInclude Include="GOM\system\Drawable.h" />
     <ClInclude Include="GOM\system\System.h" />
     <ClInclude Include="GOM\system\Transform.h" />
+    <ClInclude Include="GOM\World.h" />
     <ClInclude Include="Rendering\command\SecondaryCommandBuffer.h" />
     <ClInclude Include="Rendering\renderPass\ManagerRenderPass.h" />
     <ClInclude Include="Rendering\Manager.h" />
@@ -213,6 +215,7 @@
     <ClInclude Include="Util\ObjectPool.h" />
     <ClInclude Include="Util\Property.h" />
     <ClInclude Include="Util\Singleton.h" />
+    <ClInclude Include="Util\StaticArray.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Shaders\Source\TutorialShader.frag" />

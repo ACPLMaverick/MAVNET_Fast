@@ -45,7 +45,7 @@ namespace Rendering
 		JE_Assert(hasAnyShader);
 
 		// Create key.
-		_key.Uid = JE_GetRenderer()->GetManagerUid()->ObtainUidForShader();
+		_key.Uid = JE_GetApp()->GetManagerUid()->UidCacheShaders.Get();
 
 		_bIsLoaded = true;
 	}

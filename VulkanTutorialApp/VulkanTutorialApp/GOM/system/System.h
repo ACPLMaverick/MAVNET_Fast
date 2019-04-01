@@ -18,6 +18,8 @@
 #define JE_System_Component_Body_Declaration(BehaviourType, ComponentType)																\
 	public:																																\
 		static JE_Inline BehaviourType* GetBehaviour() { return JE_GetSystem()->GetBehaviour<BehaviourType>(); }						\
+		JE_Inline virtual Behaviour* GetMyBehaviour() override																			\
+			{ return reinterpret_cast<Behaviour*>(JE_GetSystem()->GetBehaviour<BehaviourType>()); }										\
 	private:
 
 #define JE_System_Behaviour_Body_Declaration(BehaviourType, ComponentType)																\
@@ -36,6 +38,10 @@ namespace GOM
 
 	class Component : public Util::NullType
 	{
+	public:
+
+		JE_Inline virtual Behaviour* GetMyBehaviour() = 0;
+
 	public:
 
 	// All assignable data should be public.

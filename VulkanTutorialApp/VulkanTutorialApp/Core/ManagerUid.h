@@ -8,21 +8,41 @@ namespace Core
 	{
 	public:
 
+		template<typename UidType>
+		class UidCache
+		{
+		public:
+
+			UidType Get()
+			{
+				++_currentUid;
+				JE_Assert(_currentUid < std::numeric_limits<UidType>::max());
+				return _currentUid;
+			}
+
+			void Free(UidType uid)
+			{
+				JE_TODO();	// TODO: Implement.
+			}
+
+		private:
+
+			UidType _currentUid = std::numeric_limits<UidType>::max();
+
+			friend class ManagerUid;
+		};
+
+	public:
+
 		ManagerUid() { }
 		~ManagerUid() { }
 
 		void Initialize();
 		void Cleanup();
 
-		UidShader ObtainUidForShader();
-		UidMisc ObtainUidForMisc();
 
-		void FreeUidForShader(UidShader uid);
-		void FreeUidForMisc(UidMisc uid);
-
-	private:
-
-		UidShader _uidsShader = 0;
-		UidMisc _uidsMisc = 0;
+		UidCache<UidShader> UidCacheShaders;
+		UidCache<UidEntity> UidCacheEntities;
+		UidCache<UidMisc> UidCacheMisc;
 	};
 }

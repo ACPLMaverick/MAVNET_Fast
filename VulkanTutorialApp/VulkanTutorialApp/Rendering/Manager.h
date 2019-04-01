@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Util/StaticArray.h"
+
 namespace Rendering
 {
 	template
@@ -7,21 +9,30 @@ namespace Rendering
 		class Key, 
 		class Value, 
 		class ValueWrapper = Value,
-		class InitializationData = Util::NullType
+		class InitializationData = Util::NullType,
+		size_t MaxSize = 256
 		>
 	class Manager
 	{
 	public:
 
-		Manager() { }
+		Manager() : _memory(0) { }
 		virtual ~Manager() 
 		{
-			JE_Assert(_memory.size() == 0);
+			JE_Assert(_memory.GetCurrentSize() == 0);
 			JE_Assert(_map.size() == 0);
 		}
 
 		// Implemented an empty function for convenience.
 		virtual void Initialize() { }
+
+		virtual void Reinitialize()
+		{
+			for (size_t i = 0; i < _memory.GetCurrentSize(); ++i)
+			{
+				_memory.Get(i).Reinitialize();
+			}
+		}
 
 		void ReinitializeValue(const Key* key)
 		{
@@ -36,11 +47,11 @@ namespace Rendering
 		// Cleanup and destroy all cached resources.
 		virtual void Cleanup()
 		{
-			for (Value& value : _memory)
+			for (size_t i = 0; i < _memory.GetCurrentSize(); ++i)
 			{
-				value.Cleanup();
+				_memory.Get(i).Cleanup();
 			}
-			_memory.clear();
+			_memory.Clear();
 			_map.clear();
 		}
 
@@ -85,15 +96,20 @@ namespace Rendering
 			}
 		}
 
+	public:
+
+		static const size_t MAX_SIZE = MaxSize;
+
 	protected:
 
-		std::vector<Value> _memory;
+		Util::StaticArray<Value, MAX_SIZE> _memory;
 		std::unordered_map<Key, ValueWrapper> _map;
 
 		virtual Value* AllocateValue()
 		{
-			_memory.push_back(Value());
-			return &_memory.back();
+			JE_Assert(!_memory.IsFull());
+			Value& val = _memory.Push(Value());
+			return &val;
 		}
 
 		virtual ValueWrapper CreateValue(const Key* key, const InitializationData* initData) = 0;

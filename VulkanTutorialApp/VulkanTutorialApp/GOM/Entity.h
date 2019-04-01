@@ -5,6 +5,7 @@
 namespace GOM
 {
 	class Transform;
+	class World;
 
 	class Entity
 	{
@@ -71,9 +72,16 @@ namespace GOM
 			// TODO
 		}
 
+
+		bool operator==(const Entity& other) const;
+		bool operator!=(const Entity& other) const;
+		Entity& operator=(const Entity& other) = default;
+
 	private:
 
 		std::vector<Component*> _components;
 		Transform* _transform;
+
+		UidEntity _uid;
 	};
 }

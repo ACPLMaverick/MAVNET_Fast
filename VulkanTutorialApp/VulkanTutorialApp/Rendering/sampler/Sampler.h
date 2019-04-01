@@ -75,6 +75,7 @@ namespace Rendering
 
 		void Initialize(const Options* options);
 		void Cleanup();
+		void Reinitialize();
 
 	protected:
 

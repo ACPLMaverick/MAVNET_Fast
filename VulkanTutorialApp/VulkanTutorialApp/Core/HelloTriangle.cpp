@@ -7,6 +7,7 @@
 #include "Rendering/resource/buffer/UboCommon.h" // TODO: temp
 
 #include "GOM/system/Drawable.h"
+#include "GOM/system/Transform.h"
 
 namespace Core
 {
@@ -571,10 +572,10 @@ namespace Core
 	void HelloTriangle::InitObjects()
 	{
 		_system.Initialize();
+		_world.Initialize();
 
 		std::vector<::Rendering::Material*> availableMaterials;
 		availableMaterials.push_back(JE_GetApp()->GetResourceManager()->CacheMaterials.Get("TutorialMaterial"));
-		_currentPipelineKey = *(_pipelineMgr.GetKey(availableMaterials.back()->GetPipeline()));
 
 		std::vector<::Rendering::Mesh*> availableMeshes;
 		availableMeshes.push_back(JE_GetApp()->GetResourceManager()->CacheMeshes.Get("AutoGen_Box"));
@@ -583,34 +584,59 @@ namespace Core
 
 		const size_t materialNum = availableMaterials.size();
 		const size_t meshNum = availableMeshes.size();
+
+		::GOM::DrawableBehaviour* drawableBehaviour = GetSystem()->GetBehaviour<::GOM::DrawableBehaviour>();
+		std::vector<::GOM::Drawable*> availableDrawables;
+		// Make all permutations of drawables.
+		for (size_t i = 0; i < materialNum; ++i)
+		{
+			for (size_t j = 0; j < meshNum; ++j)
+			{
+				::GOM::Drawable* drawableComponent = static_cast<::GOM::Drawable*>(drawableBehaviour->ConstructComponent());
+				JE_SetPropertyPtr(drawableComponent, PropMaterial, availableMaterials[i]);
+				JE_SetPropertyPtr(drawableComponent, PropMesh, availableMeshes[j]);
+
+				drawableBehaviour->InitializeComponent(drawableComponent);
+
+				availableDrawables.push_back(drawableComponent);
+			}
+		}
+
+		const size_t drawableNum = availableDrawables.size();
+
 		const size_t objNumX = 2;
 		const size_t objNumZ = 1;
 		const float objSpacing = 2.0f;
 
 		float baseX = -(float)(objNumX / 2) * objSpacing;
 
-		::GOM::DrawableBehaviour* drawableBehaviour = GetSystem()->GetBehaviour<::GOM::DrawableBehaviour>();
-
 		for (size_t i = 0; i < objNumX; ++i)
 		{
 			float baseZ = -(float)(objNumZ / 2) * objSpacing;
 			for (size_t j = 0; j < objNumZ; ++j)
 			{
-				const size_t total = i * objNumZ + j;
-				const size_t matIndex = total % materialNum;
-				const size_t meshIndex = total % meshNum;
-
-				::GOM::Drawable* drawableObject = static_cast<::GOM::Drawable*>(drawableBehaviour->ConstructComponent());
-				JE_SetPropertyPtr(drawableObject, PropMaterial, availableMaterials[matIndex]);
-				JE_SetPropertyPtr(drawableObject, PropMesh, availableMeshes[matIndex]);
-
-				drawableBehaviour->InitializeComponent(drawableObject);
-
 				const glm::vec3 pos(baseX, 0.0f, baseZ);
 				const glm::vec3 rot(0.0f, 0.0f, 0.0f);
 				const glm::vec3 scl(1.0f, 1.0f, 1.0f);
 
-				// TODO: Init transform.
+				GOM::Entity* entity = _world.AddEntity();
+
+				GOM::TransfromConstructionParameters dynamicParam;
+				dynamicParam.InitMovability = GOM::Transform::Movability::Dynamic;
+
+				GOM::Transform* transform = static_cast<GOM::Transform*>(GOM::Transform::GetBehaviour()->ConstructComponent(&dynamicParam));
+				transform->SetPosition(pos);
+				transform->SetRotation(rot);
+				transform->SetScale(scl);
+				GOM::Transform::GetBehaviour()->InitializeComponent(transform);
+
+				entity->AddComponent(transform);
+
+				const size_t total = i * objNumZ + j;
+				const size_t drawableIdx = total % drawableNum;
+				GOM::Drawable* currentDrawable = availableDrawables[drawableIdx];
+
+				entity->AddComponent(currentDrawable);
 
 				baseZ += objSpacing;
 			}
@@ -1352,8 +1378,8 @@ namespace Core
 			CreateDepthResources();
 			CreateSyncObjects();
 
-			_renderPassMgr.Get(&_currentRenderPassKey)->Reinitialize();
-			_pipelineMgr.Get(&_currentPipelineKey)->Reinitialize();
+			_renderPassMgr.Reinitialize();
+			_pipelineMgr.Reinitialize();
 
 			_system.OnSwapChainResize();
 
@@ -1489,6 +1515,7 @@ namespace Core
 	void HelloTriangle::Cleanup()
 	{
 		CleanupObjects();
+		_world.Cleanup();
 		_system.Cleanup();
 
 		_resourceManager.Cleanup();

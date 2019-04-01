@@ -37,6 +37,14 @@ namespace Rendering
 		_sampler = VK_NULL_HANDLE;
 	}
 
+	void Sampler::Reinitialize()
+	{
+		Options tmpOpts = _options;
+		// TODO: Change anything..?
+		Cleanup();
+		Initialize(&tmpOpts);
+	}
+
 	void Sampler::CreateSampler(const Options * options)
 	{
 		JE_Assert(_sampler == VK_NULL_HANDLE);

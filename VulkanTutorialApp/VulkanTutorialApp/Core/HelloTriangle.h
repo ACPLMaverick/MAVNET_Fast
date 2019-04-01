@@ -15,7 +15,7 @@
 #include "Rendering/pipeline/ManagerPipeline.h"
 #include "Rendering/renderPass/ManagerRenderPass.h"
 
-#include "GOM/Entity.h"
+#include "GOM/World.h"
 #include "GOM/system/System.h"
 
 namespace Core
@@ -240,7 +240,6 @@ namespace Core
 		uint32_t _imageIndex;
 
 		::Rendering::RenderPassKey _currentRenderPassKey;
-		::Rendering::Pipeline::Key _currentPipelineKey;
 
 
 		// ++TODO delegate elsewhere.
@@ -264,8 +263,8 @@ namespace Core
 		ResourceManager _resourceManager;
 		::GOM::System _system;
 
-		// TODO: Move this to scene or sth.
-		std::vector<::GOM::Entity> _entities;
+		// Delegate this to GOM or real core.
+		::GOM::World _world;
 
 		bool _bMinimized;
 	};

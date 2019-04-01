@@ -4,16 +4,16 @@ namespace Rendering
 {
 	namespace UboCommon
 	{
-		struct StaticMeshCommon
+		struct TransformData
 		{
-			glm::mat4 MVP;
-			glm::mat4 MV;
-			glm::mat4 MVInverseTranspose;
+			glm::mat4 WVP;
+			glm::mat4 WV;
+			glm::mat4 WVInverseTranspose;
 
-			StaticMeshCommon()
-				: MVP(glm::mat4(1.0f))
-				, MV(glm::mat4(1.0f))
-				, MVInverseTranspose(glm::mat4(1.0f))
+			TransformData()
+				: WVP(glm::mat4(1.0f))
+				, WV(glm::mat4(1.0f))
+				, WVInverseTranspose(glm::mat4(1.0f))
 			{
 			}
 		};
