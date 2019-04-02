@@ -134,11 +134,11 @@ namespace GOM
 
 	JE_Inline void TransformBehaviour::ProcessTransformData(Transform::Data& data)
 	{
-		data.WLocal = glm::scale(glm::mat4(1.0f), data.Scale);
-		data.WLocal = glm::rotate(data.WLocal, data.Rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
-		data.WLocal = glm::rotate(data.WLocal, data.Rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+		data.WLocal = glm::translate(glm::mat4(1.0f), data.Position);
 		data.WLocal = glm::rotate(data.WLocal, data.Rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
-		data.WLocal = glm::translate(data.WLocal, data.Position);
+		data.WLocal = glm::rotate(data.WLocal, data.Rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+		data.WLocal = glm::rotate(data.WLocal, data.Rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+		data.WLocal = glm::scale(data.WLocal, data.Scale);
 
 		// TODO: Hierarchy.
 		data.W = data.WLocal;
