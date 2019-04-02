@@ -23,11 +23,11 @@ namespace Util
 			JE_Assert(!_used[ret]);
 			JE_Assert(ret != BAD_INDEX);
 
-			UpdateCurrentIndexOnCreate();
+			_used[ret] = true;
 
 			UpdateMaxIndexOnCreate(ret);
 
-			_used[ret] = true;
+			UpdateCurrentIndexOnCreate();
 
 			return ret;
 		}
@@ -100,12 +100,13 @@ namespace Util
 
 		void UpdateCurrentIndexOnCreate()
 		{
+			const Index startIndex = _currentIndex;
+
 			if (_currentIndex == GetLastIndex())
 				_currentIndex = 0;
 			else
 				++_currentIndex;
 
-			const Index startIndex = _currentIndex;
 			while (_used[_currentIndex])
 			{
 				if (_currentIndex < GetLastIndex())

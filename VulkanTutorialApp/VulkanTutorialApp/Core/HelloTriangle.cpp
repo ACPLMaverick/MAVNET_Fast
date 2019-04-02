@@ -88,7 +88,7 @@ namespace Core
 
 		CreateDepthResources();
 
-		CreatePushConstantRange(); // TODO: Delegate elsewhere.
+		// CreatePushConstantRange(); // TODO: Delegate elsewhere.
 
 		::Rendering::Helper::GetInstance()->Initialize();
 
@@ -572,6 +572,25 @@ namespace Core
 	void HelloTriangle::InitObjects()
 	{
 		_system.Initialize();
+
+		// TODO: Camera should be an entity component, with an ability to render to a specific RenderTarget with a given RenderPass, etc.
+		glm::vec3 pos(-3.0f, 1.5f, -3.0f);
+		const float len = 8.0f;
+		pos.x *= len;
+		pos.z *= len;
+		glm::vec3 tgt(0.0f, 0.0f, 0.0f);
+		_camera.Initialize
+		(
+			&pos,
+			&tgt,
+			45.0f,
+			static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT),
+			0.5f,
+			120.0f
+		);
+		_camera.SetDimension(static_cast<float>(_swapChainExtent.width) / _swapChainExtent.height);
+		_camera.Update();
+
 		_world.Initialize();
 
 		std::vector<::Rendering::Material*> availableMaterials;
@@ -585,27 +604,8 @@ namespace Core
 		const size_t materialNum = availableMaterials.size();
 		const size_t meshNum = availableMeshes.size();
 
-		::GOM::DrawableBehaviour* drawableBehaviour = GetSystem()->GetBehaviour<::GOM::DrawableBehaviour>();
-		std::vector<::GOM::Drawable*> availableDrawables;
-		// Make all permutations of drawables.
-		for (size_t i = 0; i < materialNum; ++i)
-		{
-			for (size_t j = 0; j < meshNum; ++j)
-			{
-				::GOM::Drawable* drawableComponent = static_cast<::GOM::Drawable*>(drawableBehaviour->ConstructComponent());
-				JE_SetPropertyPtr(drawableComponent, PropMaterial, availableMaterials[i]);
-				JE_SetPropertyPtr(drawableComponent, PropMesh, availableMeshes[j]);
-
-				drawableBehaviour->InitializeComponent(drawableComponent);
-
-				availableDrawables.push_back(drawableComponent);
-			}
-		}
-
-		const size_t drawableNum = availableDrawables.size();
-
-		const size_t objNumX = 2;
-		const size_t objNumZ = 1;
+		const size_t objNumX = 20;
+		const size_t objNumZ = 20;
 		const float objSpacing = 2.0f;
 
 		float baseX = -(float)(objNumX / 2) * objSpacing;
@@ -628,49 +628,24 @@ namespace Core
 				transform->SetPosition(pos);
 				transform->SetRotation(rot);
 				transform->SetScale(scl);
+
+				// TODO: This is ugly. But passing in entity to InitializeComponent also has its drawbacks...
+				entity->AddComponent(transform);
 				GOM::Transform::GetBehaviour()->InitializeComponent(transform);
 
-				entity->AddComponent(transform);
+				const size_t currMatIndex = JE_GetApp()->GetRandom()->Get64(0, materialNum - 1);
+				const size_t currMeshIndex = JE_GetApp()->GetRandom()->Get64(0, meshNum - 1);
+				::GOM::Drawable* drawableComponent = static_cast<::GOM::Drawable*>(GOM::Drawable::GetBehaviour()->ConstructComponent());
+				JE_SetPropertyPtr(drawableComponent, PropMaterial, availableMaterials[currMatIndex]);
+				JE_SetPropertyPtr(drawableComponent, PropMesh, availableMeshes[currMeshIndex]);
 
-				const size_t total = i * objNumZ + j;
-				const size_t drawableIdx = total % drawableNum;
-				GOM::Drawable* currentDrawable = availableDrawables[drawableIdx];
-
-				entity->AddComponent(currentDrawable);
+				entity->AddComponent(drawableComponent);
+				GOM::Drawable::GetBehaviour()->InitializeComponent(drawableComponent);
 
 				baseZ += objSpacing;
 			}
 			baseX += objSpacing;
 		}
-
-		glm::vec3 pos(1.5f, 1.5f, -3.0f);
-		glm::vec3 tgt(0.0f, 0.5f, 0.0f);
-		_camera.Initialize
-		(
-			&pos,
-			&tgt,
-			45.0f,
-			static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT),
-			0.5f,
-			4.0f
-		);
-		_camera.SetDimension(static_cast<float>(_swapChainExtent.width) / _swapChainExtent.height);
-		_camera.Update();
-
-		glm::vec3 col(1.0f, 1.0f, 1.0f);
-		//glm::vec3 dir(-1.0f, -0.5f, 0.2f);
-		glm::vec3 dir(tgt - pos);
-		dir = glm::normalize(dir);
-		_lightDirectional.Initialize
-		(
-			&col,
-			&dir
-		);
-
-		col.r = _clearColor.color.float32[0];
-		col.g = _clearColor.color.float32[1];
-		col.b = _clearColor.color.float32[2];
-		_fog.Initialize(&col, 3.8f, 4.0f);
 	}
 
 	void HelloTriangle::RefreshCameraProj(uint32_t newWidth, uint32_t newHeight)
@@ -1009,12 +984,14 @@ namespace Core
 		JE_AssertThrowVkResult(vkAllocateCommandBuffers(_device, &allocInfo, _commandBuffers.data()));
 	}
 
+	/*
 	void HelloTriangle::CreatePushConstantRange()
 	{
 		_pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		_pushConstantRange.offset = 0;
 		_pushConstantRange.size = sizeof(Rendering::UboCommon::SceneGlobal);
 	}
+	*/
 
 	void HelloTriangle::CreateSyncObjects()
 	{
@@ -1062,9 +1039,8 @@ namespace Core
 
 	void HelloTriangle::UpdateObjects()
 	{
-		_fog.Update();
-		_lightDirectional.Update();
 		_camera.Update();
+		_world.Update();
 
 		_system.Update();
 	}
@@ -1144,7 +1120,8 @@ namespace Core
 
 		// Fill command buffer with PRE commands.
 		std::array<VkClearValue, 2> clearValues = {};
-		clearValues[0] = _clearColor;
+		const glm::vec4* clearColor = _world.GetGlobalParameters()->GetClearColor();
+		clearValues[0] = { clearColor->r, clearColor->g, clearColor->b, clearColor->a };
 		clearValues[1] = { 1.0f, 0 };
 
 		VkRenderPassBeginInfo renderPassInfo = {};
@@ -1567,8 +1544,6 @@ namespace Core
 	void HelloTriangle::CleanupObjects()
 	{
 		_camera.Shutdown();
-		_lightDirectional.Shutdown();
-		_fog.Shutdown();
 	}
 
 	void HelloTriangle::CleanupDebugCallback()

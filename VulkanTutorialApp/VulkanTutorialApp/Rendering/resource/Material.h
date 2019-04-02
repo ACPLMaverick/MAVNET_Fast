@@ -3,11 +3,11 @@
 #include "Resource.h"
 #include "Rendering/pipeline/Pipeline.h"
 #include "VertexDeclaration.h"
+#include "Rendering/descriptor/DescriptorCommon.h"
 
 namespace Rendering
 {
 	class Texture;
-	class DescriptorSet;
 	class UniformBuffer;
 
 	class Material : public Resource
@@ -21,17 +21,19 @@ namespace Rendering
 		void Cleanup();
 
 		JE_Inline const VertexDeclaration* GetVertexDeclaration() const { return &_vertexDeclaration; }
-		JE_Inline const DescriptorSet* GetDescriptorSet() const { return _descriptorSet; }
+		JE_Inline const DescriptorCommon::LayoutData* GetDescriptorLayout() const { return &_descriptorLayout; }
 		JE_Inline const Pipeline* GetPipeline() const { return _pipeline; }
+		JE_Inline const Texture* GetTexture(size_t index) { return _textures[index]; }
 
 	protected:
 
 		VertexDeclaration _vertexDeclaration;
 		Pipeline::Key _pipelineKey;
 
+		// TODO: Float4, Float2, Float parameters...
 		std::vector<Texture*> _textures;
 
-		DescriptorSet* _descriptorSet;
+		DescriptorCommon::LayoutData _descriptorLayout;
 
 		Pipeline* _pipeline;
 	};

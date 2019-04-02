@@ -29,13 +29,13 @@ namespace GOM
 
 	void Behaviour::CleanupRemainingObjects()
 	{
-		for (Component* obj : _objectsAll)
+		for (Component* obj : _componentsAll)
 		{
 			CheckComponent(obj);
 			CleanupComponent_Internal(obj);
 			delete obj;
 		}
-		_objectsAll.clear();
+		_componentsAll.clear();
 		_bActiveFlag = false;
 	}
 
@@ -49,7 +49,7 @@ namespace GOM
 		JE_Assert(obj != nullptr);
 		CheckComponent(obj);
 		InitializeComponent_Internal(obj);
-		_objectsAll.push_back(obj);
+		_componentsAll.push_back(obj);
 	}
 
 	void Behaviour::CleanupComponent(Component * obj)
@@ -60,9 +60,9 @@ namespace GOM
 		CleanupComponent_Internal(obj);
 
 		delete obj;
-		auto it = std::find(_objectsAll.begin(), _objectsAll.end(), obj);
-		JE_Assert(it != _objectsAll.end());
-		_objectsAll.erase(it);
+		auto it = std::find(_componentsAll.begin(), _componentsAll.end(), obj);
+		JE_Assert(it != _componentsAll.end());
+		_componentsAll.erase(it);
 
 		JE_GetApp()->GetSystem()->DeactivateBehaviourIfEmpty(this);
 	}
@@ -74,13 +74,13 @@ namespace GOM
 
 		CloneComponent_Internal(newObject, source);
 
-		_objectsAll.push_back(newObject);
+		_componentsAll.push_back(newObject);
 		return newObject;
 	}
 
 	void Behaviour::OnSwapChainResize()
 	{
-		for (Component* obj : _objectsAll)
+		for (Component* obj : _componentsAll)
 		{
 			OnSwapChainResize_Internal(obj);
 		}
@@ -136,7 +136,7 @@ namespace GOM
 
 	void System::DeactivateBehaviourIfEmpty(Behaviour * behaviour)
 	{
-		if (behaviour->_bIsPersistent || behaviour->_objectsAll.size() > 0)
+		if (behaviour->_bIsPersistent || behaviour->_componentsAll.size() > 0)
 		{
 			return;
 		}

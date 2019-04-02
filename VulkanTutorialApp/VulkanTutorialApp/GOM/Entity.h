@@ -24,12 +24,14 @@ namespace GOM
 		template<class ComponentType> void AddComponent(ComponentType* component)
 		{
 			_components.push_back(component);
+			component->_owner = this;
 		}
 
 		void AddComponent(Transform* component)
 		{
 			JE_Assert(!_transform);
 			_transform = component;
+			reinterpret_cast<Component*>(component)->_owner = this;
 		}
 
 
@@ -59,6 +61,7 @@ namespace GOM
 		template<class ComponentType> ComponentType* GetComponent()
 		{
 			// TODO: Some kind of a simple reflection.
+			return nullptr;
 		}
 
 		Transform* GetComponent()

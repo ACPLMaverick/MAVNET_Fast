@@ -26,6 +26,16 @@ namespace GOM
 		{
 			ProcessTransformData(dynamicDataArray[i]);
 		}
+
+		if (_bNeedUpdateUbos)
+		{
+			for (Component* component : _componentsAll)
+			{
+				UpdateUboTransform(ComponentCast(component));
+			}
+
+			_bNeedUpdateUbos = false;
+		}
 	}
 
 	void TransformBehaviour::Draw()
@@ -83,6 +93,11 @@ namespace GOM
 		UpdateUboTransform(transformDestination);
 	}
 
+	void TransformBehaviour::OnSwapChainResize_Internal(Component* obj)
+	{
+		_bNeedUpdateUbos = true;
+	}
+
 	void TransformBehaviour::OnTransformMovabilityAboutToChange(Transform* transform, Transform::Movability newValue)
 	{
 		CheckComponent(transform);
@@ -100,7 +115,7 @@ namespace GOM
 
 	JE_Inline void TransformBehaviour::ProcessTransformData(Transform::Data& data)
 	{
-		data.WLocal = glm::scale(glm::mat4::mat(), data.Scale);
+		data.WLocal = glm::scale(glm::mat4(1.0f), data.Scale);
 		data.WLocal = glm::rotate(data.WLocal, data.Rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
 		data.WLocal = glm::rotate(data.WLocal, data.Rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
 		data.WLocal = glm::rotate(data.WLocal, data.Rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
@@ -109,6 +124,7 @@ namespace GOM
 		// TODO: Hierarchy.
 		data.W = data.WLocal;
 
+		// TODO: THIS HAS TO BE UPDATED FOR BOTH DYNAMIC AND STATIC OBJECTS!!!
 		const glm::mat4& viewProj = *JE_GetRenderer()->GetCamera()->GetViewProj();
 		const glm::mat4& view = *JE_GetRenderer()->GetCamera()->GetView();
 

@@ -35,6 +35,11 @@ namespace Util
 		{
 			JE_Assert(context);
 
+			if (_object == newObject)
+			{
+				return;
+			}
+
 			if (SetFuncBefore)
 			{
 				(context->*SetFuncBefore)(newObject, _object);

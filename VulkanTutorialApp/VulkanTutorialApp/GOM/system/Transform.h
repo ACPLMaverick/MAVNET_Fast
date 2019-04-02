@@ -64,6 +64,9 @@ namespace GOM
 			, _uboTransform(nullptr)
 		{
 		}
+		virtual ~Transform()
+		{
+		}
 
 		Data& GetData();
 
@@ -96,6 +99,8 @@ namespace GOM
 		virtual void CleanupComponent_Internal(Component * obj) override;
 		virtual void CloneComponent_Internal(Component * destination, const Component * source) override;
 
+		virtual void OnSwapChainResize_Internal(Component* obj) override;
+
 		void OnTransformMovabilityAboutToChange(Transform* transform, Transform::Movability newValue);
 		Transform::Data& GetDataOfTransform(Transform* transform);
 
@@ -106,5 +111,6 @@ namespace GOM
 		JE_Inline void UpdateUboTransform(Transform* transform);
 
 		Util::ObjectPool<Transform::Data> _transformDataPerMovability[(size_t)Transform::Movability::ENUM_SIZE];
+		bool _bNeedUpdateUbos = false;
 	};
 }

@@ -38,24 +38,6 @@ namespace Rendering
 		Manager::Cleanup();
 	}
 
-	DescriptorSet * ManagerDescriptor::CreateValue(const DescriptorSet::Info * key, const Util::NullType * info)
-	{
-		// Descriptor set not found! Get layout for this descriptor set then.
-		DescriptorCommon::LayoutData layout = GetDescriptorLayout(&key->LayInfo);
-
-		// Create new descriptor set with these parameters.
-		DescriptorSet* set = AllocateValue();
-
-		set->_info = *key;
-		set->_associatedLayout = layout;
-		set->_descriptorSet = CreateDescriptorSet(&layout);
-
-		set->_bResourcesDirty = true;
-		set->UpdateSet();
-
-		return set;
-	}
-
 	DescriptorCommon::LayoutData ManagerDescriptor::GetDescriptorLayout(const DescriptorCommon::LayoutInfo * info)
 	{
 		auto it = _layouts.find(*info);
@@ -74,6 +56,24 @@ namespace Rendering
 
 			return retData;
 		}
+	}
+
+	DescriptorSet * ManagerDescriptor::CreateValue(const DescriptorSet::Info * key, const Util::NullType * info)
+	{
+		// Descriptor set not found! Get layout for this descriptor set then.
+		DescriptorCommon::LayoutData layout = GetDescriptorLayout(&key->LayInfo);
+
+		// Create new descriptor set with these parameters.
+		DescriptorSet* set = AllocateValue();
+
+		set->_info = *key;
+		set->_associatedLayout = layout;
+		set->_descriptorSet = CreateDescriptorSet(&layout);
+
+		set->_bResourcesDirty = true;
+		set->UpdateSet();
+
+		return set;
 	}
 
 	VkDescriptorPool ManagerDescriptor::CreateDescriptorPool()
@@ -192,10 +192,17 @@ namespace Rendering
 		{
 			allocInfo.descriptorPool = _descriptorPools[_currentPoolIndex];
 			VkResult res = vkAllocateDescriptorSets(JE_GetRenderer()->GetDevice(), &allocInfo, &descriptorSet);
-			JE_Assert(res != VK_ERROR_OUT_OF_HOST_MEMORY && res != VK_ERROR_OUT_OF_DEVICE_MEMORY);
 			if (res == VK_SUCCESS)
 			{
 				return descriptorSet;
+			}
+			else if (res != VK_ERROR_OUT_OF_DEVICE_MEMORY)
+			{
+				JE_Assert(false);
+			}
+			else
+			{
+				// Proceed with creating new descriptor pool...
 			}
 		}
 

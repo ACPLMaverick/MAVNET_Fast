@@ -1,7 +1,13 @@
 #include "Drawable.h"
 
+#include "GOM/Entity.h"
+#include "Transform.h"
+
 #include "Rendering/resource/Mesh.h"
 #include "Rendering/resource/Material.h"
+#include "Rendering/resource/buffer/UniformBuffer.h"
+#include "Rendering/descriptor/DescriptorSet.h"
+#include "Rendering/descriptor/ManagerDescriptor.h"
 
 #include "Core/HelloTriangle.h"
 #include "Rendering/Helper.h"
@@ -10,7 +16,7 @@ namespace GOM
 {
 	void DrawableBehaviour::Update()
 	{
-		for (Component* objAbstract : _objectsAll)
+		for (Component* objAbstract : _componentsAll)
 		{
 			Drawable* obj = ComponentCast(objAbstract);
 
@@ -28,7 +34,7 @@ namespace GOM
 		// Cmd must be in a recording state!
 
 		std::vector<VkCommandBuffer> secondaries;
-		for (Component* objAbstract : _objectsAll)
+		for (Component* objAbstract : _componentsAll)
 		{
 			Drawable* obj = ComponentCast(objAbstract);
 			JE_Assert(obj);
@@ -52,7 +58,9 @@ namespace GOM
 	{
 		Drawable* obj = ComponentCast(objAbstract);
 		
+		AssignPlaceholdersIfNecessary(obj);
 		AdjustBuffersForVertexDeclaration(obj);
+		CreateDescriptorSet(obj);
 		CreateSecondaryCommandBuffer(obj);
 	}
 
@@ -86,6 +94,19 @@ namespace GOM
 	{
 		Drawable* obj = ComponentCast(objAbstract);
 		obj->_secondaryCommandBuffer.Reinitialize();
+	}
+
+	void DrawableBehaviour::AssignPlaceholdersIfNecessary(Drawable* obj)
+	{
+		if (obj->PropMaterial.Get() == nullptr)
+		{
+			JE_SetPropertyPtr(obj, PropMaterial, JE_GetApp()->GetResourceManager()->CacheMaterials.Get("TutorialMaterial"));
+		}
+
+		if (obj->PropMesh.Get() == nullptr)
+		{
+			JE_SetPropertyPtr(obj, PropMesh, JE_GetApp()->GetResourceManager()->CacheMeshes.Get("AutoGen_Box"));
+		}
 	}
 
 	void DrawableBehaviour::AdjustBuffersForVertexDeclaration(Drawable * obj)
@@ -160,14 +181,71 @@ namespace GOM
 		obj->_secondaryCommandBuffer.Initialize(&info);
 	}
 
+	void DrawableBehaviour::CreateDescriptorSet(Drawable* obj)
+	{
+		Entity* myOwner = obj->GetOwner();
+		Transform* myTransform = myOwner->GetComponent();
+		Rendering::Material* myMaterial = obj->PropMaterial.Get();
+
+		Rendering::DescriptorSet::Info info;
+		info.LayInfo = obj->PropMaterial.Get()->GetDescriptorLayout()->Info;
+
+		// TODO: This is a bit hard-coded, but should suffice for now.
+		// In future, LayoutInfo *must* specify the exact buffer or texture it wants, otherwise we can only guess...
+		for (size_t i = 0; i < Rendering::DescriptorCommon::MAX_BINDINGS_PER_LAYOUT; ++i)
+		{
+			const Rendering::DescriptorCommon::LayoutInfo::Binding& binding = info.LayInfo.Bindings[i];
+
+			if(binding.Stage == 0)	// Invalid.
+				continue;
+
+			if ((Rendering::DescriptorCommon::ShaderStage)binding.Stage == Rendering::DescriptorCommon::ShaderStage::Vertex)
+			{
+				if (binding.Index == 0)	// Transform goes here.
+				{
+					info.Resources[i][binding.Index] = myTransform->GetUboTransform();
+				}
+				else
+				{
+					JE_TODO();
+				}
+			}
+			else if ((Rendering::DescriptorCommon::ShaderStage)binding.Stage == Rendering::DescriptorCommon::ShaderStage::Fragment)
+			{
+				if (binding.Index == 1)		// Lighting Globals go here.
+				{
+					info.Resources[i][0] = JE_GetApp()->GetWorld()->GetGlobalParameters()->GetUboLighting();
+				}
+				else if(binding.Index == 2)	// Drawable textures go here...
+				{
+					for (size_t j = 0; j < binding.Count; ++j)
+					{
+						info.Resources[i][j] = myMaterial->GetTexture(j);
+					}
+				}
+				else
+				{
+					JE_TODO();
+				}
+			}
+			else
+			{
+				JE_TODO();
+			}
+		}
+
+		obj->_descriptorSet = JE_GetRenderer()->GetManagerDescriptor()->Get(&info);
+	}
+
 	void DrawableBehaviour::RecordFunc(::Rendering::SecondaryCommandBuffer::RecordContext context, VkCommandBuffer commandBuffer)
 	{
 		Drawable* obj = reinterpret_cast<Drawable*>(context);
 		JE_Assert(obj);
 
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->PropMaterial.Get()->GetPipeline()->GetVkPipeline());	// I guess it'll have to be like that for now...
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->PropMaterial.Get()->GetPipeline()->GetVkPipeline());	
+		// TODO: Test whether this approach will be faster, or re-recording every command but with pipeline bound only once.
 
-		VkDescriptorSet descriptorSets[] = { obj->PropMaterial.Get()->GetDescriptorSet()->GetVkDescriptorSet() };
+		VkDescriptorSet descriptorSets[] = { obj->_descriptorSet->GetVkDescriptorSet() };
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->PropMaterial.Get()->GetPipeline()->GetVkPipelineLayout(), 0, 1, descriptorSets, 0, nullptr);
 		vkCmdBindVertexBuffers(commandBuffer, 0, (uint32_t)obj->_adjVertexBufferArray.size(), obj->_adjVertexBufferArray.data(), obj->_adjOffsetArray.data());
 		vkCmdBindIndexBuffer(commandBuffer, obj->PropMesh.Get()->GetIndexBuffer(), 0, JE_IndexTypeVk);

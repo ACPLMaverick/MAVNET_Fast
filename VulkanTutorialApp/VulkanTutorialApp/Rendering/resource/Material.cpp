@@ -11,7 +11,6 @@ namespace Rendering
 {
 	Material::Material()
 		: Resource()
-		, _descriptorSet(nullptr)
 	{
 		_type = ResourceCommon::Type::Material;
 	}
@@ -33,21 +32,15 @@ namespace Rendering
 		components.push_back(VertexDeclaration::ComponentType::Uv);
 		_vertexDeclaration.Initialize(&components);
 
-		// This too.
-
-
-		//options.DataSize = sizeof(UboCommon::SceneGlobal);
-		//_uboGlobal = new UniformBuffer();
-		//_uboGlobal->Initialize(&options);
-
 		// This as well.
 		::Rendering::Texture::LoadOptions texOptions;
 		std::string texName = "texture.jpg";
 		_textures.push_back(JE_GetApp()->GetResourceManager()->CacheTextures.Get(texName, &texOptions));
 
+		// This too.
 		// TODO: Why the fuck bindings are global and not per-stage?
-		DescriptorSet::Info info;
-		info.LayInfo.Bindings[0] = DescriptorCommon::LayoutInfo::Binding
+		DescriptorCommon::LayoutInfo layoutInfo;
+		layoutInfo.Bindings[0] = DescriptorCommon::LayoutInfo::Binding
 		(
 			DescriptorCommon::ShaderStage::Vertex,
 			0,
@@ -55,24 +48,21 @@ namespace Rendering
 			ResourceCommon::Type::UniformBuffer
 		);
 
-		info.LayInfo.Bindings[1] = DescriptorCommon::LayoutInfo::Binding
+		layoutInfo.Bindings[1] = DescriptorCommon::LayoutInfo::Binding
 		(
 			DescriptorCommon::ShaderStage::Fragment,
 			1,
 			1,
 			ResourceCommon::Type::UniformBuffer
 		);
-		info.LayInfo.Bindings[2] = DescriptorCommon::LayoutInfo::Binding
+		layoutInfo.Bindings[2] = DescriptorCommon::LayoutInfo::Binding
 		(
 			DescriptorCommon::ShaderStage::Fragment,
 			2,
 			1,
 			ResourceCommon::Type::Texture2D
 		);
-		info.Resources[0][0] = nullptr; // Is assigned via Transform.
-		info.Resources[1][0] = nullptr;	// Is assigned via GlobalWorldParameters.
-		info.Resources[2][0] = _textures[0];
-		_descriptorSet = JE_GetRenderer()->GetManagerDescriptor()->Get(&info);
+		_descriptorLayout = JE_GetRenderer()->GetManagerDescriptor()->GetDescriptorLayout(&layoutInfo);
 
 
 		Pipeline::Info pipelineInfo = {};
@@ -102,7 +92,7 @@ namespace Rendering
 
 
 		pipelineInfo.MyShader = JE_GetApp()->GetResourceManager()->CacheShaders.Get("TutorialShader");
-		pipelineInfo.DescriptorLayoutData = _descriptorSet->GetAssociatedLayout();
+		pipelineInfo.DescriptorLayoutData = &_descriptorLayout;
 		pipelineInfo.MyVertexDeclaration = &_vertexDeclaration;
 		pipelineInfo.MyType = Pipeline::Type::Graphics;
 		pipelineInfo.MyPass = RenderPassCommon::Id::Tutorial;
@@ -142,27 +132,4 @@ namespace Rendering
 		glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 	}
 	*/
-
-	/*
-	void Material::UpdateUboGlobal()
-	{
-		const Fog& fog = *JE_GetRenderer()->GetFog();
-		const LightDirectional& lightDirectional = *JE_GetRenderer()->GetLightDirectional();
-
-		Rendering::UboCommon::SceneGlobal pco;
-		pco.FogColor = *fog.GetColor();
-		pco.FogDistNear = fog.GetStartDistance();
-		pco.FogDistFar = fog.GetEndDistance();
-		pco.LightColor = *lightDirectional.GetColor();
-		pco.InvLightDirectionV = -*lightDirectional.GetDirectionV();
-
-		
-	}
-	*/
-
-	//void Material::UpdateUboGlobal(const UboCommon::SceneGlobal& uboGlobal)
-	//{
-	//	_uboGlobal->UpdateWithData(reinterpret_cast<uint8_t*>(&uboGlobal), sizeof(uboGlobal));
-	//}
-
 }

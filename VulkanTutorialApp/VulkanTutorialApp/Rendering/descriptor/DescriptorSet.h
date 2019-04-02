@@ -13,7 +13,7 @@ namespace Rendering
 		friend class ManagerDescriptor;
 	public:
 
-		struct Info
+		struct Info		// 976 bytes...
 		{
 			const Resource* Resources[DescriptorCommon::MAX_BINDINGS_PER_LAYOUT][DescriptorCommon::MAX_DESCRIPTORS_PER_BINDING] = {};
 			DescriptorCommon::LayoutInfo LayInfo = DescriptorCommon::LayoutInfo();
@@ -25,7 +25,25 @@ namespace Rendering
 
 			JE_Inline bool operator==(const Info& other) const
 			{
-				return std::memcmp(this, &other, sizeof(Info)) == 0;
+				if (!CompareLayouts(other))
+				{
+					return false;
+				}
+				else
+				{
+					for (size_t i = 0; i < DescriptorCommon::MAX_BINDINGS_PER_LAYOUT; ++i)
+					{
+						for (size_t j = 0; j < DescriptorCommon::MAX_DESCRIPTORS_PER_BINDING; ++j)
+						{
+							if (Resources[i][j] != other.Resources[i][j])
+							{
+								return false;
+							}
+						}
+					}
+
+					return true;
+				}
 			}
 		};
 

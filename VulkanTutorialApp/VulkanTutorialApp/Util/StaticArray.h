@@ -12,6 +12,12 @@ namespace Util
 		StaticArray(size_t initialSize = TOTAL_SIZE)
 			: _currentSize(initialSize)
 		{
+			_array = JE_NewAlignedArray<ObjectType>(TOTAL_SIZE, 32);
+		}
+
+		~StaticArray()
+		{
+			JE_DeleteAlignedArray<ObjectType>(_array, TOTAL_SIZE, 32);
 		}
 
 		JE_Inline void Clear()
@@ -90,7 +96,7 @@ namespace Util
 
 	private:
 
-		ObjectType _array[size] = {};
+		ObjectType* _array;
 		size_t _currentSize;
 	};
 }

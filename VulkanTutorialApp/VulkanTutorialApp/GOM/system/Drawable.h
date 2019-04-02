@@ -7,6 +7,7 @@ namespace Rendering
 {
 	class Mesh;
 	class Material;
+	class DescriptorSet;
 }
 
 namespace GOM
@@ -28,6 +29,10 @@ namespace GOM
 			: Component()
 			, PropMesh(nullptr)
 			, PropMaterial(nullptr)
+			, _descriptorSet(nullptr)
+		{
+		}
+		virtual ~Drawable()
 		{
 		}
 
@@ -35,6 +40,8 @@ namespace GOM
 		std::vector<VkDeviceSize> _adjOffsetArray;
 
 		::Rendering::SecondaryCommandBuffer _secondaryCommandBuffer;
+
+		::Rendering::DescriptorSet* _descriptorSet;
 
 		friend class DrawableBehaviour;
 	};
@@ -58,8 +65,10 @@ namespace GOM
 
 		virtual void OnSwapChainResize_Internal(Component* obj) override;
 
+		void AssignPlaceholdersIfNecessary(Drawable* obj);
 		void AdjustBuffersForVertexDeclaration(Drawable* obj);
 		void CreateSecondaryCommandBuffer(Drawable* obj);
+		void CreateDescriptorSet(Drawable* obj);
 		static void RecordFunc(::Rendering::SecondaryCommandBuffer::RecordContext context, VkCommandBuffer commandBuffer);
 	};
 }

@@ -141,6 +141,7 @@
     <ClCompile Include="Core\GlobalIncludes.cpp" />
     <ClCompile Include="Core\ManagerUid.cpp" />
     <ClCompile Include="Core\resource\ResourceManager.cpp" />
+    <ClCompile Include="GOM\GlobalWorldParameters.cpp" />
     <ClCompile Include="GOM\system\Drawable.cpp" />
     <ClCompile Include="GOM\system\System.cpp" />
     <ClCompile Include="GOM\system\Transform.cpp" />
@@ -173,9 +174,11 @@
     <ClCompile Include="Rendering\resource\VertexDeclaration.cpp" />
     <ClCompile Include="Rendering\resource\Shader.cpp" />
     <ClCompile Include="Rendering\renderPass\RenderPass.cpp" />
+    <ClCompile Include="Util\Random.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\ManagerUid.h" />
+    <ClInclude Include="GOM\GlobalWorldParameters.h" />
     <ClInclude Include="GOM\system\Drawable.h" />
     <ClInclude Include="GOM\system\System.h" />
     <ClInclude Include="GOM\system\Transform.h" />
@@ -214,6 +217,7 @@
     <ClInclude Include="Util\GlobalIncludes.h" />
     <ClInclude Include="Util\ObjectPool.h" />
     <ClInclude Include="Util\Property.h" />
+    <ClInclude Include="Util\Random.h" />
     <ClInclude Include="Util\Singleton.h" />
     <ClInclude Include="Util\StaticArray.h" />
   </ItemGroup>

@@ -6,13 +6,23 @@
 
 namespace Rendering
 {
-	class ManagerDescriptor : public Manager<DescriptorSet::Info, DescriptorSet, DescriptorSet*>
+	class ManagerDescriptor : public Manager
+		<
+			DescriptorSet::Info, 
+			DescriptorSet, 
+			DescriptorSet*, 
+			Util::NullType, 
+			std::numeric_limits<uint16_t>::max()
+		>
 	{
 	public:
 		ManagerDescriptor();
 		virtual ~ManagerDescriptor();
 
 		virtual void Cleanup() override;
+
+		// May create new descriptor layouts.
+		DescriptorCommon::LayoutData GetDescriptorLayout(const DescriptorCommon::LayoutInfo* info);
 
 	protected:
 
@@ -22,16 +32,13 @@ namespace Rendering
 			return (*val);
 		}
 
-		// May create new descriptor layouts.
-		DescriptorCommon::LayoutData GetDescriptorLayout(const DescriptorCommon::LayoutInfo* info);
-
 		VkDescriptorPool CreateDescriptorPool();
 		VkDescriptorSetLayout CreateDescriptorSetLayout(const DescriptorCommon::LayoutInfo* info);
 		VkDescriptorSet CreateDescriptorSet(const DescriptorCommon::LayoutData* layoutData);
 
 	protected:
 
-		static const uint32_t MAX_SETS_PER_POOL = 100;
+		static const uint32_t MAX_SETS_PER_POOL = 128;
 		static constexpr const uint32_t _poolDescriptorCountsPerType[] = 
 		{
 			128,

@@ -74,22 +74,46 @@ extern bool IsBitWidthEqualOrLesserThan(uint64_t val, uint8_t bitWidth);
 #define JE_FillZeros(objName) (memset(&(objName), 0, sizeof(objName)))
 
 #if PLATFORM_LINUX
-#define JE_NewAligned(typeName, alignment, ...) (new (aligned_alloc(alignment, sizeof(typeName))) typeName(__VA_ARGS__))
-#define JE_DeleteAligned(object, typeName, alignment)	\
-{	\
-	object->~typeName();	\
-	free((void*)object);	\
-}
+#define JE_AlignedAlloc(size, alignment) aligned_alloc((alignment), (size))
+#define JE_AlignedFree(ptr) free((void*)(object))
 #elif PLATFORM_WINDOWS
-#define JE_NewAligned(typeName, alignment, ...) (new (_aligned_malloc(sizeof(typeName), alignment)) typeName(__VA_ARGS__))
-#define JE_DeleteAligned(object, typeName, alignment)	\
-{	\
-	object->~typeName();	\
-	_aligned_free((void*)object);	\
-}
+#define JE_AlignedAlloc(size, alignment) _aligned_malloc((size), (alignment))
+#define JE_AlignedFree(ptr) _aligned_free((void*)(ptr))
 #else
 #error "Undefined for this platform."
 #endif
+
+#define JE_NewAligned(typeName, alignment, ...) (new (JE_AlignedAlloc(sizeof(typeName), alignment)) typeName(__VA_ARGS__))
+#define JE_DeleteAligned(object, typeName, alignment)	\
+{	\
+	object->~typeName();	\
+	JE_AlignedFree((void*)object);	\
+}
+
+template <typename TypeName> TypeName* JE_NewAlignedArray(size_t objNum, size_t alignment = 32)
+{
+	void* memory = JE_AlignedAlloc(objNum * sizeof(TypeName), alignment);
+	JE_Assert(memory);
+
+	TypeName* objMemory = reinterpret_cast<TypeName*>(memory);
+	TypeName* objCurr = objMemory;
+	for (size_t i = 0; i < objNum; ++i, ++objCurr)
+	{
+		new(objCurr) TypeName();
+	}
+	return objMemory;
+}
+
+template <typename TypeName> void JE_DeleteAlignedArray(TypeName* ptr, size_t objNum, size_t alignment = 32)
+{
+	TypeName* objCurr = ptr;
+	for (size_t i = 0; i < objNum; ++i, ++objCurr)
+	{
+		objCurr->~TypeName();
+	}
+	JE_AlignedFree(ptr);
+}
+
 
 #define JE_VA_ARGS_COUNT(...) std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value
 

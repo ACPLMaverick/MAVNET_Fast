@@ -35,12 +35,15 @@ namespace GOM
 {
 	class Behaviour;
 	class System;
+	class Entity;
 
 	class Component : public Util::NullType
 	{
 	public:
 
 		JE_Inline virtual Behaviour* GetMyBehaviour() = 0;
+		JE_Inline Entity* GetOwner() { return _owner; }
+		JE_Inline const Entity* GetOwner() const { return _owner; }
 
 	public:
 
@@ -53,7 +56,10 @@ namespace GOM
 		Component& operator=(const Component& copy);
 		virtual ~Component();
 
+		Entity* _owner = nullptr;
+
 		friend class Behaviour;
+		friend class Entity;
 	};
 
 	// Here can be passed any data that is crucial to be known right at object construction time.
@@ -90,9 +96,9 @@ namespace GOM
 
 		virtual void OnSwapChainResize_Internal(Component* obj) { }
 
-		typedef std::vector<Component*> ObjectCollection;
+		typedef std::vector<Component*> ComponentCollection;
 
-		ObjectCollection _objectsAll;
+		ComponentCollection _componentsAll;
 		bool _bIsPersistent = false;
 		bool _bActiveFlag = false;
 

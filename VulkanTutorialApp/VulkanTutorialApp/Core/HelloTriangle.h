@@ -18,6 +18,8 @@
 #include "GOM/World.h"
 #include "GOM/system/System.h"
 
+#include "Util/Random.h"
+
 namespace Core
 {
 	class HelloTriangle
@@ -49,8 +51,6 @@ namespace Core
 #else
 		const bool _bEnableValidationLayers = true;
 #endif
-
-		const VkClearValue _clearColor = { 0.2f, 0.2f, 0.2f, 1.0f };
 
 		const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -92,8 +92,6 @@ namespace Core
 		::Rendering::RenderPassCommon::Id GetActiveRenderPass(uint32_t* outSubpass);
 
 		::Rendering::Camera* GetCamera() { return &_camera; }
-		::Rendering::Fog* GetFog() { return &_fog; }
-		::Rendering::LightDirectional* GetLightDirectional() { return &_lightDirectional; }
 
 		ManagerUid* GetManagerUid() { return &_uidMgr; }
 		::Rendering::ManagerSampler* GetManagerSampler() { return &_samplerMgr; }
@@ -104,6 +102,9 @@ namespace Core
 		ResourceManager* GetResourceManager() { return &_resourceManager; }
 
 		::GOM::System* GetSystem() { return &_system; }
+		::GOM::World* GetWorld() { return &_world; }
+
+		::Util::Random* GetRandom() { return &_random; }
 
 
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -157,7 +158,7 @@ namespace Core
 			void CreateCommandPool();
 			void CreateDepthResources();
 			void CreateCommandBuffers();
-			void CreatePushConstantRange();
+			// void CreatePushConstantRange();
 			void CreateSyncObjects();
 
 		void MainLoop();
@@ -244,8 +245,6 @@ namespace Core
 
 		// ++TODO delegate elsewhere.
 		::Rendering::Camera _camera;
-		::Rendering::LightDirectional _lightDirectional;
-		::Rendering::Fog _fog;
 		// --
 
 		VkDeviceMemory _depthImageMemory;
@@ -265,6 +264,7 @@ namespace Core
 
 		// Delegate this to GOM or real core.
 		::GOM::World _world;
+		::Util::Random _random;
 
 		bool _bMinimized;
 	};

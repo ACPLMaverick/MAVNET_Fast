@@ -18,7 +18,7 @@ namespace Rendering
 			}
 		};
 
-		struct SceneGlobal
+		struct SceneLighting
 		{
 			JE_AlignAs(16) glm::vec3 LightColor;
 			JE_AlignAs(16) glm::vec3 InvLightDirectionV;

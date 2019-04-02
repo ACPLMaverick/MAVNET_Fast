@@ -120,6 +120,12 @@
     <ClCompile Include="GOM\World.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GOM\GlobalWorldParameters.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Util\Random.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\HelloTriangle.h">
@@ -239,10 +245,16 @@
     <ClInclude Include="Util\ObjectPool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GOM\World.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GOM\GlobalWorldParameters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Util\StaticArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GOM\World.h">
+    <ClInclude Include="Util\Random.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

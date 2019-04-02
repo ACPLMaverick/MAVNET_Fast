@@ -15,7 +15,6 @@ namespace GOM
 
 	Entity::~Entity()
 	{
-		JE_Assert(!_transform);
 	}
 
 	void Entity::Initialize()

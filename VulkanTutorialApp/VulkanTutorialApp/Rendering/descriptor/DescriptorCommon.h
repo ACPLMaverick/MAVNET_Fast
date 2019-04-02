@@ -25,7 +25,7 @@ namespace Rendering
 
 		extern VkShaderStageFlagBits ShaderStageToVkShaderStageFlag(ShaderStage stage);
 
-		struct LayoutInfo
+		struct LayoutInfo	// 16 bytes
 		{
 			struct Binding
 			{
@@ -87,7 +87,10 @@ namespace Rendering
 
 			JE_Inline bool operator==(const LayoutInfo& other) const
 			{
-				return std::memcmp(this, &other, sizeof(LayoutInfo)) == 0;
+				JE_AssertStatic(sizeof(LayoutInfo) == 2 * sizeof(uint64_t));
+				const uint64_t* bytesThis = reinterpret_cast<const uint64_t*>(this);
+				const uint64_t* bytesOther = reinterpret_cast<const uint64_t*>(&other);
+				return bytesThis[0] == bytesOther[0] && bytesThis[1] == bytesOther[1];
 			}
 		};
 
