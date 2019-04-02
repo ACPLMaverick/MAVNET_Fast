@@ -69,6 +69,13 @@ namespace GOM
 		UpdateUboTransform(transform);
 	}
 
+	void TransformBehaviour::BindComponentWithOwner(Component* objAbstract, Entity* owner)
+	{
+		Transform* transform = ComponentCast(objAbstract);
+		transform->_owner = owner;
+		owner->AddComponent(transform);
+	}
+
 	void TransformBehaviour::CleanupComponent_Internal(Component * objAbstract)
 	{
 		Transform* transform = ComponentCast(objAbstract);

@@ -75,7 +75,7 @@ namespace GOM
 		void CleanupRemainingObjects();
 
 		Component* ConstructComponent(const ComponentConstructionParameters* constructionParam = nullptr);
-		void InitializeComponent(Component* obj);	// Initialize object which should have all fields assigned.
+		void InitializeComponent(Component* obj, Entity* owner);	// Initialize object which should have all fields assigned.
 		void CleanupComponent(Component* obj);
 		Component* CloneComponent(const Component* source);
 
@@ -90,6 +90,7 @@ namespace GOM
 
 		virtual Component* ConstructComponent_Internal(const ComponentConstructionParameters* constructionParam) = 0;
 		virtual void InitializeComponent_Internal(Component* obj) = 0;
+		virtual void BindComponentWithOwner(Component* obj, Entity* owner);
 		virtual void CleanupComponent_Internal(Component* obj) = 0;
 		virtual void CloneComponent_Internal(Component* destination, const Component* source) = 0;
 		JE_System_Behaviour_CheckComponent;

@@ -44,10 +44,11 @@ namespace GOM
 		return ConstructComponent_Internal(constructionParam);
 	}
 
-	void Behaviour::InitializeComponent(Component* obj)
+	void Behaviour::InitializeComponent(Component* obj, Entity* owner)
 	{
 		JE_Assert(obj != nullptr);
 		CheckComponent(obj);
+		BindComponentWithOwner(obj, owner);
 		InitializeComponent_Internal(obj);
 		_componentsAll.push_back(obj);
 	}
@@ -86,6 +87,11 @@ namespace GOM
 		}
 	}
 
+	void Behaviour::BindComponentWithOwner(Component* obj, Entity* owner)
+	{
+		obj->_owner = owner;
+		owner->AddComponent(obj);
+	}
 
 	GOM::System* System::Get()
 	{

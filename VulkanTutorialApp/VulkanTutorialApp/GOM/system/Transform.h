@@ -96,6 +96,7 @@ namespace GOM
 
 		virtual Component * ConstructComponent_Internal(const ComponentConstructionParameters* constructionParam) override;
 		virtual void InitializeComponent_Internal(Component * obj) override;
+		virtual void BindComponentWithOwner(Component* obj, Entity* owner) override;
 		virtual void CleanupComponent_Internal(Component * obj) override;
 		virtual void CloneComponent_Internal(Component * destination, const Component * source) override;
 

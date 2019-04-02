@@ -629,9 +629,7 @@ namespace Core
 				transform->SetRotation(rot);
 				transform->SetScale(scl);
 
-				// TODO: This is ugly. But passing in entity to InitializeComponent also has its drawbacks...
-				entity->AddComponent(transform);
-				GOM::Transform::GetBehaviour()->InitializeComponent(transform);
+				GOM::Transform::GetBehaviour()->InitializeComponent(transform, entity);
 
 				const size_t currMatIndex = JE_GetApp()->GetRandom()->Get64(0, materialNum - 1);
 				const size_t currMeshIndex = JE_GetApp()->GetRandom()->Get64(0, meshNum - 1);
@@ -639,8 +637,7 @@ namespace Core
 				JE_SetPropertyPtr(drawableComponent, PropMaterial, availableMaterials[currMatIndex]);
 				JE_SetPropertyPtr(drawableComponent, PropMesh, availableMeshes[currMeshIndex]);
 
-				entity->AddComponent(drawableComponent);
-				GOM::Drawable::GetBehaviour()->InitializeComponent(drawableComponent);
+				GOM::Drawable::GetBehaviour()->InitializeComponent(drawableComponent, entity);
 
 				baseZ += objSpacing;
 			}
