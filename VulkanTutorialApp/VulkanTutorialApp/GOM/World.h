@@ -26,7 +26,7 @@ namespace GOM
 
 	private:
 
-		typedef std::vector<::GOM::Entity> EntityCollection;
+		typedef std::vector<::GOM::Entity*> EntityCollection;
 
 		EntityCollection _entities;
 		GlobalWorldParameters _globalParams;

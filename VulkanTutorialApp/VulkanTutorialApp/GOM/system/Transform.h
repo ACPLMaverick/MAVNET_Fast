@@ -72,8 +72,6 @@ namespace GOM
 
 		Util::Property<Util::ObjectPool<Data>::Index, Transform> _indexData;
 		Rendering::UniformBuffer* _uboTransform;
-
-		friend class TransformBehaviour;
 	};
 
 	class TransfromConstructionParameters : public ComponentConstructionParameters
@@ -99,6 +97,7 @@ namespace GOM
 		virtual void BindComponentWithOwner(Component* obj, Entity* owner) override;
 		virtual void CleanupComponent_Internal(Component * obj) override;
 		virtual void CloneComponent_Internal(Component * destination, const Component * source) override;
+		JE_System_Behaviour_CheckComponentOverride;
 
 		virtual void OnSwapChainResize_Internal(Component* obj) override;
 

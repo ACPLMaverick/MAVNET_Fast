@@ -7,7 +7,7 @@
 
 #if !defined(NDEBUG)
 #define JE_BEHAVIOUR_CHECK_COMPONENT 1
-#define JE_System_Behaviour_CheckComponent virtual void CheckComponent(const Component* obj) = 0
+#define JE_System_Behaviour_CheckComponent virtual void CheckComponent(const Component* obj) { JE_Assert(obj); }
 #define JE_System_Behaviour_CheckComponentOverride virtual void CheckComponent(const Component* obj) override
 #else
 #define JE_BEHAVIOUR_CHECK_COMPONENT 0
@@ -20,14 +20,14 @@
 		static JE_Inline BehaviourType* GetBehaviour() { return JE_GetSystem()->GetBehaviour<BehaviourType>(); }						\
 		JE_Inline virtual Behaviour* GetMyBehaviour() override																			\
 			{ return reinterpret_cast<Behaviour*>(JE_GetSystem()->GetBehaviour<BehaviourType>()); }										\
-	private:
+	private:																															\
+		friend class BehaviourType;
 
 #define JE_System_Behaviour_Body_Declaration(BehaviourType, ComponentType)																\
 	public:																																\
 		static JE_Inline ComponentType* ComponentCast(Component* obj) { return static_cast<ComponentType*>(obj); }						\
 		static JE_Inline const ComponentType* ComponentCast(const Component* obj) { return static_cast<const ComponentType*>(obj); }	\
-	protected:																															\
-		JE_System_Behaviour_CheckComponentOverride;																						\
+																																		\
 	private:																															\
 		friend class ComponentType;
 

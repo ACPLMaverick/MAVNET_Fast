@@ -6,6 +6,7 @@ namespace GOM
 {
 	class Transform;
 	class World;
+	class Behaviour;
 
 	class Entity
 	{
@@ -61,6 +62,7 @@ namespace GOM
 		template<class ComponentType> ComponentType* GetComponent()
 		{
 			// TODO: Some kind of a simple reflection.
+			JE_TODO();
 			return nullptr;
 		}
 
@@ -86,5 +88,7 @@ namespace GOM
 		Transform* _transform;
 
 		UidEntity _uid;
+
+		friend class Behaviour;
 	};
 }

@@ -41,9 +41,10 @@ namespace GOM
 
 	void World::Cleanup()
 	{
-		for (Entity& entity : _entities)
+		for (Entity* entity : _entities)
 		{
-			entity.Cleanup();
+			entity->Cleanup();
+			delete entity;
 		}
 		_entities.clear();
 
@@ -57,9 +58,9 @@ namespace GOM
 
 	Entity* World::AddEntity()
 	{
-		_entities.emplace_back();
+		_entities.push_back(new Entity());
 
-		Entity* entity = &_entities.back();
+		Entity* entity = _entities.back();
 		entity->Initialize();
 
 		return entity;
@@ -69,10 +70,10 @@ namespace GOM
 	{
 		JE_Assert(entity);
 
-		EntityCollection::iterator it = std::find(_entities.begin(), _entities.end(), *entity);
+		EntityCollection::iterator it = std::find(_entities.begin(), _entities.end(), entity);
 		JE_Assert(it != _entities.end());
 
-		(*it).Cleanup();
+		(*it)->Cleanup();
 
 		_entities.erase(it);
 	}
@@ -80,6 +81,6 @@ namespace GOM
 	bool World::HasEntity(Entity* entity) const
 	{
 		JE_Assert(entity);
-		return std::find(_entities.begin(), _entities.end(), *entity) != _entities.end();
+		return std::find(_entities.begin(), _entities.end(), entity) != _entities.end();
 	}
 }

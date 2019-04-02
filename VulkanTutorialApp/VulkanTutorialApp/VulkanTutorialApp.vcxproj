@@ -143,6 +143,7 @@
     <ClCompile Include="Core\resource\ResourceManager.cpp" />
     <ClCompile Include="GOM\GlobalWorldParameters.cpp" />
     <ClCompile Include="GOM\system\Drawable.cpp" />
+    <ClCompile Include="GOM\system\Rotator.cpp" />
     <ClCompile Include="GOM\system\System.cpp" />
     <ClCompile Include="GOM\system\Transform.cpp" />
     <ClCompile Include="GOM\World.cpp" />
@@ -180,6 +181,7 @@
     <ClInclude Include="Core\ManagerUid.h" />
     <ClInclude Include="GOM\GlobalWorldParameters.h" />
     <ClInclude Include="GOM\system\Drawable.h" />
+    <ClInclude Include="GOM\system\Rotator.h" />
     <ClInclude Include="GOM\system\System.h" />
     <ClInclude Include="GOM\system\Transform.h" />
     <ClInclude Include="GOM\World.h" />

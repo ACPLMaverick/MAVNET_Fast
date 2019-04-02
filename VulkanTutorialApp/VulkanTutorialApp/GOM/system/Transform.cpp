@@ -27,6 +27,7 @@ namespace GOM
 			ProcessTransformData(dynamicDataArray[i]);
 		}
 
+		// TODO have UBOS in array like transform data... Or even have UBO as a part of transform data.
 		if (_bNeedUpdateUbos)
 		{
 			for (Component* component : _componentsAll)
@@ -35,6 +36,17 @@ namespace GOM
 			}
 
 			_bNeedUpdateUbos = false;
+		}
+		else
+		{
+			for (Component* component : _componentsAll)
+			{
+				Transform* transform = ComponentCast(component);
+				if (transform->PropMovability.Get() == Transform::Movability::Dynamic)
+				{
+					UpdateUboTransform(transform);
+				}
+			}
 		}
 	}
 

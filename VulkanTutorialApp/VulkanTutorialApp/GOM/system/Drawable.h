@@ -42,8 +42,6 @@ namespace GOM
 		::Rendering::SecondaryCommandBuffer _secondaryCommandBuffer;
 
 		::Rendering::DescriptorSet* _descriptorSet;
-
-		friend class DrawableBehaviour;
 	};
 
 	class DrawableBehaviour : public Behaviour
@@ -62,6 +60,7 @@ namespace GOM
 		virtual void InitializeComponent_Internal(Component * obj) override;
 		virtual void CleanupComponent_Internal(Component * obj) override;
 		virtual void CloneComponent_Internal(Component* destination, const Component* source) override;
+		JE_System_Behaviour_CheckComponentOverride;
 
 		virtual void OnSwapChainResize_Internal(Component* obj) override;
 

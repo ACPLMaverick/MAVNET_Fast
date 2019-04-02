@@ -8,6 +8,7 @@
 
 #include "GOM/system/Drawable.h"
 #include "GOM/system/Transform.h"
+#include "GOM/system/Rotator.h"
 
 namespace Core
 {
@@ -615,11 +616,12 @@ namespace Core
 			float baseZ = -(float)(objNumZ / 2) * objSpacing;
 			for (size_t j = 0; j < objNumZ; ++j)
 			{
+				GOM::Entity* entity = _world.AddEntity();
+
+
 				const glm::vec3 pos(baseX, 0.0f, baseZ);
 				const glm::vec3 rot(0.0f, 0.0f, 0.0f);
 				const glm::vec3 scl(1.0f, 1.0f, 1.0f);
-
-				GOM::Entity* entity = _world.AddEntity();
 
 				GOM::TransfromConstructionParameters dynamicParam;
 				dynamicParam.InitMovability = GOM::Transform::Movability::Dynamic;
@@ -631,6 +633,7 @@ namespace Core
 
 				GOM::Transform::GetBehaviour()->InitializeComponent(transform, entity);
 
+				
 				const size_t currMatIndex = JE_GetApp()->GetRandom()->Get64(0, materialNum - 1);
 				const size_t currMeshIndex = JE_GetApp()->GetRandom()->Get64(0, meshNum - 1);
 				::GOM::Drawable* drawableComponent = static_cast<::GOM::Drawable*>(GOM::Drawable::GetBehaviour()->ConstructComponent());
@@ -638,6 +641,20 @@ namespace Core
 				JE_SetPropertyPtr(drawableComponent, PropMesh, availableMeshes[currMeshIndex]);
 
 				GOM::Drawable::GetBehaviour()->InitializeComponent(drawableComponent, entity);
+
+
+				const float rotationMin = 0.1f;
+				const float rotationMax = 1.0f;
+				const glm::vec3 rotatorValue
+				(
+					JE_GetApp()->GetRandom()->GetFloat(rotationMin, rotationMax),
+					JE_GetApp()->GetRandom()->GetFloat(rotationMin, rotationMax),
+					JE_GetApp()->GetRandom()->GetFloat(rotationMin, rotationMax)
+				);
+
+				GOM::Rotator* rotator = static_cast<GOM::Rotator*>(GOM::Rotator::GetBehaviour()->ConstructComponent());
+				JE_SetPropertyPtr(rotator, PropRotation, rotatorValue);
+				GOM::Rotator::GetBehaviour()->InitializeComponent(rotator, entity);
 
 				baseZ += objSpacing;
 			}

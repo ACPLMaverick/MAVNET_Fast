@@ -126,6 +126,9 @@
     <ClCompile Include="Util\Random.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GOM\system\Rotator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\HelloTriangle.h">
@@ -255,6 +258,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Util\Random.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GOM\system\Rotator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
