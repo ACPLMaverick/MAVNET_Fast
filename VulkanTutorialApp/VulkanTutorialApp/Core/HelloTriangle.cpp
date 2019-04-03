@@ -576,7 +576,7 @@ namespace Core
 
 		// TODO: Camera should be an entity component, with an ability to render to a specific RenderTarget with a given RenderPass, etc.
 		glm::vec3 pos(-3.0f, 1.5f, -3.0f);
-		const float len = 8.0f;
+		const float len = 9.0f;
 		pos.x *= len;
 		pos.z *= len;
 		glm::vec3 tgt(0.0f, 0.0f, 0.0f);
@@ -1039,6 +1039,7 @@ namespace Core
 			glfwPollEvents();
 			if (!_bMinimized)
 			{
+				UpdateWindowStatusBar();
 				UpdateObjects();
 				DrawFrame();
 			}
@@ -1063,6 +1064,37 @@ namespace Core
 		_world.Update();
 
 		_system.Update();
+	}
+
+	void HelloTriangle::UpdateWindowStatusBar()
+	{
+		static const float UPDATE_PERIOD = 1.0f;
+		static float updateTimer = 0.0f;
+		static float fpsAccumulator = 0.0f;
+		static int fpsNum = 0;
+
+		const float dt = JE_GetApp()->GetGlobalTimer()->GetDt();
+		const float fps = JE_GetApp()->GetGlobalTimer()->GetFPS();
+
+		updateTimer += dt;
+		fpsAccumulator += fps;
+		++fpsNum;
+
+		if (updateTimer >= UPDATE_PERIOD)
+		{
+			const float currFps = fpsAccumulator / (float)fpsNum;
+
+			static const size_t BUF_SIZE = 128;
+			static char buf[BUF_SIZE] = {};
+
+			sprintf_s(buf, BUF_SIZE, "%s | [FPS: %f]", WINDOW_NAME, currFps);
+
+			glfwSetWindowTitle(_pWindow, buf);
+
+			updateTimer = 0.0f;
+			fpsAccumulator = 0.0f;
+			fpsNum = 0.0f;
+		}
 	}
 
 	void HelloTriangle::DrawFrame()
@@ -1153,7 +1185,11 @@ namespace Core
 		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 		renderPassInfo.pClearValues = clearValues.data();
 
+#if JE_TEST_DYNAMIC_CMD_BUFFER
+		vkCmdBeginRenderPass(cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+#else
 		vkCmdBeginRenderPass(cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);	// For executing per-object command buffers.
+#endif
 
 		// TODO: Support push constants.
 		/*

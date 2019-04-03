@@ -166,6 +166,7 @@ namespace Core
 
 		void MainLoop();
 			void UpdateObjects();
+			void UpdateWindowStatusBar();
 			void DrawFrame();
 			void CreateCommandBuffer();
 			void CheckForMinimized();

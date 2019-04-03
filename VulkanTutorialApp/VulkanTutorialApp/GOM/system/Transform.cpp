@@ -18,8 +18,9 @@ namespace GOM
 	void TransformBehaviour::Update()
 	{
 		// Regenerate matrices for dynamic objects.
+		Util::ObjectPool<Transform::Data>& dynamicData = _transformDataPerMovability[(size_t)Transform::Movability::Dynamic];
+		if(!dynamicData.IsEmpty())
 		{
-			Util::ObjectPool<Transform::Data>& dynamicData = _transformDataPerMovability[(size_t)Transform::Movability::Dynamic];
 			const size_t dynamicDataMaxIndex = dynamicData.GetMaxIndex();
 			Transform::Data* dynamicDataArray = dynamicData.GetArray();
 
@@ -30,12 +31,13 @@ namespace GOM
 		}
 
 		// Regenerate camera matrices for static objects.
+		Util::ObjectPool<Transform::Data>& staticData = _transformDataPerMovability[(size_t)Transform::Movability::Static];
+		if(!staticData.IsEmpty())
 		{
-			Util::ObjectPool<Transform::Data>& staticData = _transformDataPerMovability[(size_t)Transform::Movability::Static];
 			const size_t staticDataMaxIndex = staticData.GetMaxIndex();
 			Transform::Data* staticDataArray = staticData.GetArray();
 
-			for (size_t i = 0; i < staticDataMaxIndex; ++i)
+			for (size_t i = 0; i <= staticDataMaxIndex; ++i)
 			{
 				ProcessTransformDataStatic(staticDataArray[i]);
 			}

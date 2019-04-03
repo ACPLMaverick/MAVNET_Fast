@@ -33,6 +33,32 @@ namespace GOM
 		RenderPassCommon::Id currentRenderPass = JE_GetRenderer()->GetActiveRenderPass(&currentSubpass);
 		// Cmd must be in a recording state!
 
+#if JE_TEST_DYNAMIC_CMD_BUFFER
+		VkCommandBuffer commandBuffer = cmd;
+		static const Rendering::Pipeline* globalPipeline = nullptr;
+
+		for (Component* objAbstract : _componentsAll)
+		{
+			Drawable* obj = ComponentCast(objAbstract);
+			JE_Assert(obj);
+
+			const Rendering::Pipeline* currPipeline = obj->PropMaterial.Get()->GetPipeline();
+
+			if (currPipeline != globalPipeline)
+			{
+				globalPipeline = currPipeline;
+				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, currPipeline->GetVkPipeline());
+			}
+
+			VkDescriptorSet descriptorSets[] = { obj->_descriptorSet->GetVkDescriptorSet() };
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->PropMaterial.Get()->GetPipeline()->GetVkPipelineLayout(), 0, 1, descriptorSets, 0, nullptr);
+			vkCmdBindVertexBuffers(commandBuffer, 0, (uint32_t)obj->_adjVertexBufferArray.size(), obj->_adjVertexBufferArray.data(), obj->_adjOffsetArray.data());
+			vkCmdBindIndexBuffer(commandBuffer, obj->PropMesh.Get()->GetIndexBuffer(), 0, JE_IndexTypeVk);
+			vkCmdDrawIndexed(commandBuffer, obj->PropMesh.Get()->GetIndexCount(), 1, 0, 0, 0);
+		}
+
+		globalPipeline = nullptr;
+#else
 		std::vector<VkCommandBuffer> secondaries;
 		for (Component* objAbstract : _componentsAll)
 		{
@@ -47,6 +73,7 @@ namespace GOM
 			JE_Assert(secondaries.size() < std::numeric_limits<uint32_t>::max());
 			vkCmdExecuteCommands(cmd, (uint32_t)secondaries.size(), secondaries.data());
 		}
+#endif
 	}
 
 	Component * DrawableBehaviour::ConstructComponent_Internal(const ComponentConstructionParameters* constructionParam)

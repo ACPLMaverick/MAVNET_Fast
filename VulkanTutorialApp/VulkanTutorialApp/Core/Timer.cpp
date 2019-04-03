@@ -25,6 +25,8 @@ namespace Core
 		const double freq = GetFrequency();
 		_dt = (float)((double)(_currentTicks - _prevTicks) / freq);
 		_elapsed = (float)((double)(_currentTicks - _startTicks) / freq);
+
+		_fps = _dt > std::numeric_limits<float>::epsilon() ? 1.0f / _dt : 0.0f;
 	}
 
 }
