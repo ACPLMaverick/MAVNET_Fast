@@ -623,8 +623,9 @@ namespace Core
 				const glm::vec3 rot(0.0f, 0.0f, 0.0f);
 				const glm::vec3 scl(1.0f, 1.0f, 1.0f);
 
+				const bool bDoesMove = (bool)JE_GetApp()->GetRandom()->Get32(0, 1);
 				GOM::TransfromConstructionParameters dynamicParam;
-				dynamicParam.InitMovability = GOM::Transform::Movability::Dynamic;
+				dynamicParam.InitMovability = bDoesMove ? GOM::Transform::Movability::Dynamic : GOM::Transform::Movability::Static;
 
 				GOM::Transform* transform = static_cast<GOM::Transform*>(GOM::Transform::GetBehaviour()->ConstructComponent(&dynamicParam));
 				transform->SetPosition(pos);
@@ -643,18 +644,21 @@ namespace Core
 				GOM::Drawable::GetBehaviour()->InitializeComponent(drawableComponent, entity);
 
 
-				const float rotationMin = 0.1f;
-				const float rotationMax = 1.0f;
-				const glm::vec3 rotatorValue
-				(
-					JE_GetApp()->GetRandom()->GetFloat(rotationMin, rotationMax),
-					JE_GetApp()->GetRandom()->GetFloat(rotationMin, rotationMax),
-					JE_GetApp()->GetRandom()->GetFloat(rotationMin, rotationMax)
-				);
+				if (bDoesMove)
+				{
+					const float rotationMin = 0.1f;
+					const float rotationMax = 1.0f;
+					const glm::vec3 rotatorValue
+					(
+						JE_GetApp()->GetRandom()->GetFloat(rotationMin, rotationMax),
+						JE_GetApp()->GetRandom()->GetFloat(rotationMin, rotationMax),
+						JE_GetApp()->GetRandom()->GetFloat(rotationMin, rotationMax)
+					);
 
-				GOM::Rotator* rotator = static_cast<GOM::Rotator*>(GOM::Rotator::GetBehaviour()->ConstructComponent());
-				JE_SetPropertyPtr(rotator, PropRotation, rotatorValue);
-				GOM::Rotator::GetBehaviour()->InitializeComponent(rotator, entity);
+					GOM::Rotator* rotator = static_cast<GOM::Rotator*>(GOM::Rotator::GetBehaviour()->ConstructComponent());
+					JE_SetPropertyPtr(rotator, PropRotation, rotatorValue);
+					GOM::Rotator::GetBehaviour()->InitializeComponent(rotator, entity);
+				}
 
 				baseZ += objSpacing;
 			}
@@ -1053,6 +1057,8 @@ namespace Core
 
 	void HelloTriangle::UpdateObjects()
 	{
+		_timer.UpdatePerFrame();
+
 		_camera.Update();
 		_world.Update();
 

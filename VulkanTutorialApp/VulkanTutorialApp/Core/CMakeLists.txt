@@ -8,8 +8,12 @@ target_sources(VulkanTutorialApp
         ManagerUid.cpp
         stb_impl.cpp
         tiny_obj_loader_impl.cpp
+		Timer_LINUX.cpp
+		Timer_WINDOWS.cpp
+		Timer.cpp
 
         GlobalIncludes.h
         HelloTriangle.h
         ManagerUid.h
+		Timer.h
 )

@@ -1,5 +1,6 @@
 #include "Camera.h"
 
+#include "Core/HelloTriangle.h"
 
 namespace Rendering
 {
@@ -58,6 +59,17 @@ namespace Rendering
 
 	void Camera::Update()
 	{
+		// ++test code
+		const float dt = JE_GetApp()->GetGlobalTimer()->GetDt();
+		glm::vec3 offsVec = glm::normalize(_target - _position) * dt;
+		offsVec.y = 0.0f;
+
+		_position += offsVec;
+		_target += offsVec;
+
+		_bUpdateView = true;
+		// --test code
+
 		if (_bUpdateView)
 		{
 			UpdateView();

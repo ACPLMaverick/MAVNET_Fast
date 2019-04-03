@@ -10,7 +10,7 @@ namespace GOM
 		JE_GetSystem()->GetBehaviour<TransformBehaviour>()->OnTransformMovabilityAboutToChange(this, newValue);
 	}
 
-	Transform::Data& Transform::GetData()
+	Transform::Data& Transform::GetData_Internal()
 	{
 		return JE_GetApp()->GetSystem()->GetBehaviour<TransformBehaviour>()->GetDataOfTransform(this);
 	}
@@ -18,36 +18,30 @@ namespace GOM
 	void TransformBehaviour::Update()
 	{
 		// Regenerate matrices for dynamic objects.
-		Util::ObjectPool<Transform::Data>& dynamicData = _transformDataPerMovability[(size_t)Transform::Movability::Dynamic];
-		const size_t dynamicDataMaxIndex = dynamicData.GetMaxIndex();
-		Transform::Data* dynamicDataArray = dynamicData.GetArray();
-
-		for (size_t i = 0; i <= dynamicDataMaxIndex; ++i)
 		{
-			ProcessTransformData(dynamicDataArray[i]);
-		}
+			Util::ObjectPool<Transform::Data>& dynamicData = _transformDataPerMovability[(size_t)Transform::Movability::Dynamic];
+			const size_t dynamicDataMaxIndex = dynamicData.GetMaxIndex();
+			Transform::Data* dynamicDataArray = dynamicData.GetArray();
 
-		// TODO have UBOS in array like transform data... Or even have UBO as a part of transform data.
-		if (_bNeedUpdateUbos)
-		{
-			for (Component* component : _componentsAll)
+			for (size_t i = 0; i <= dynamicDataMaxIndex; ++i)
 			{
-				UpdateUboTransform(ComponentCast(component));
-			}
-
-			_bNeedUpdateUbos = false;
-		}
-		else
-		{
-			for (Component* component : _componentsAll)
-			{
-				Transform* transform = ComponentCast(component);
-				if (transform->PropMovability.Get() == Transform::Movability::Dynamic)
-				{
-					UpdateUboTransform(transform);
-				}
+				ProcessTransformDataDynamic(dynamicDataArray[i]);
 			}
 		}
+
+		// Regenerate camera matrices for static objects.
+		{
+			Util::ObjectPool<Transform::Data>& staticData = _transformDataPerMovability[(size_t)Transform::Movability::Static];
+			const size_t staticDataMaxIndex = staticData.GetMaxIndex();
+			Transform::Data* staticDataArray = staticData.GetArray();
+
+			for (size_t i = 0; i < staticDataMaxIndex; ++i)
+			{
+				ProcessTransformDataStatic(staticDataArray[i]);
+			}
+		}
+
+		// TODO Account for multiple cameras.
 	}
 
 	void TransformBehaviour::Draw()
@@ -74,11 +68,9 @@ namespace GOM
 	{
 		Transform* transform = ComponentCast(objAbstract);
 
-		// Perform a first update of a world matrix. If this is a static object, this will also be the last update.
-		ProcessTransformData(transform->GetData());
-
 		CreateUboTransform(transform);
-		UpdateUboTransform(transform);
+		// Perform a first update of a world matrix. If this is a static object, this will also be the last update.
+		ProcessTransformDataDynamic(transform->GetData_Internal());
 	}
 
 	void TransformBehaviour::BindComponentWithOwner(Component* objAbstract, Entity* owner)
@@ -104,12 +96,11 @@ namespace GOM
 
 		JE_SetPropertyPtr(transformDestination, _indexData, srcDataArray.Copy(srcDataArray, transformSource->_indexData.Get()));
 
-		// Perform a first update of a world matrix. If this is a static object, this will also be the last update.
-		ProcessTransformData(transformDestination->GetData());
-
 		// Must create ubo anew.
 		CreateUboTransform(transformDestination);
-		UpdateUboTransform(transformDestination);
+
+		// Perform a first update of a world matrix. If this is a static object, this will also be the last update.
+		ProcessTransformDataDynamic(transformDestination->GetData_Internal());
 	}
 
 	void TransformBehaviour::OnSwapChainResize_Internal(Component* obj)
@@ -132,7 +123,7 @@ namespace GOM
 		return _transformDataPerMovability[(size_t)transform->PropMovability.Get()].Get(transform->_indexData.Get());
 	}
 
-	JE_Inline void TransformBehaviour::ProcessTransformData(Transform::Data& data)
+	JE_Inline void TransformBehaviour::ProcessTransformDataDynamic(Transform::Data& data)
 	{
 		data.WLocal = glm::translate(glm::mat4(1.0f), data.Position);
 		data.WLocal = glm::rotate(data.WLocal, data.Rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
@@ -143,34 +134,43 @@ namespace GOM
 		// TODO: Hierarchy.
 		data.W = data.WLocal;
 
-		// TODO: THIS HAS TO BE UPDATED FOR BOTH DYNAMIC AND STATIC OBJECTS!!!
+		ProcessTransformDataCommon(data);
+	}
+
+	JE_Inline void TransformBehaviour::ProcessTransformDataStatic(Transform::Data& data)
+	{
+		ProcessTransformDataCommon(data);
+	}
+
+	JE_Inline void TransformBehaviour::ProcessTransformDataCommon(Transform::Data& data)
+	{
 		const glm::mat4& viewProj = *JE_GetRenderer()->GetCamera()->GetViewProj();
 		const glm::mat4& view = *JE_GetRenderer()->GetCamera()->GetView();
 
 		data.WVP = viewProj * data.W;
 		data.WV = view * data.W;
 		data.WVInverseTranspose = glm::transpose(glm::inverse(data.WV));
+
+		data.UboTransform->UpdateWithData(reinterpret_cast<uint8_t*>(&data), sizeof(Rendering::UboCommon::TransformData));
 	}
 
 	JE_Inline void TransformBehaviour::CreateUboTransform(Transform* transform)
 	{
+		Transform::Data& data = GetDataOfTransform(transform);
+
 		Rendering::UniformBuffer::Options options;
 		options.DataSize = sizeof(Rendering::UboCommon::TransformData);
-		transform->_uboTransform = new Rendering::UniformBuffer();
-		transform->_uboTransform->Initialize(&options);
+		data.UboTransform = new Rendering::UniformBuffer();
+		data.UboTransform->Initialize(&options);
 	}
 
 	JE_Inline void TransformBehaviour::CleanupUboTransform(Transform* transform)
 	{
-		transform->_uboTransform->Cleanup();
-		delete transform->_uboTransform;
-		transform->_uboTransform = nullptr;
-	}
-
-	JE_Inline void TransformBehaviour::UpdateUboTransform(Transform* transform)
-	{
 		Transform::Data& data = GetDataOfTransform(transform);
-		transform->_uboTransform->UpdateWithData(reinterpret_cast<uint8_t*>(&data), sizeof(Rendering::UboCommon::TransformData));
+
+		data.UboTransform->Cleanup();
+		delete data.UboTransform;
+		data.UboTransform = nullptr;
 	}
 
 #if JE_BEHAVIOUR_CHECK_COMPONENT

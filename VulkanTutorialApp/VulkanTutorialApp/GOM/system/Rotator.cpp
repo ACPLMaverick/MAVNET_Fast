@@ -2,6 +2,7 @@
 
 #include "GOM/Entity.h"
 #include "Transform.h"
+#include "Core/HelloTriangle.h"
 
 namespace GOM
 {
@@ -27,8 +28,7 @@ namespace GOM
 				continue;
 			}
 
-			// TODO: Add delta time.
-			transform->AddRotation(rotationAdd * 1.0f);
+			transform->AddRotation(rotationAdd * JE_GetApp()->GetGlobalTimer()->GetDt());
 		}
 	}
 

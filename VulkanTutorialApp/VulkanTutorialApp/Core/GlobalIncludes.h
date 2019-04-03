@@ -129,6 +129,12 @@ enum class enumName : uint8_t			\
 	,ENUM_SIZE			\
 };
 
+#define JE_AppClass Core::HelloTriangle
+#define JE_GetApp() JE_AppClass::GetInstance()
+
+/*
+
+// Obsolete stuff.
 
 #define JE_GetSystemClassName(className) System##className
 
@@ -159,5 +165,4 @@ private:														\
 	className();												
 
 #define JE_DefineClientClassBody(className, parentClassName)
-
-#define JE_GetApp() Core::HelloTriangle::GetInstance()
+*/

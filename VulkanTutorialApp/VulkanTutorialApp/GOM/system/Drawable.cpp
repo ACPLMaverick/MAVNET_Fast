@@ -203,7 +203,8 @@ namespace GOM
 			{
 				if (binding.Index == 0)	// Transform goes here.
 				{
-					info.Resources[i][binding.Index] = myTransform->GetUboTransform();
+					const Transform::Data& transformData = myTransform->GetData();
+					info.Resources[i][binding.Index] = transformData.UboTransform;
 				}
 				else
 				{

@@ -141,6 +141,8 @@
     <ClCompile Include="Core\GlobalIncludes.cpp" />
     <ClCompile Include="Core\ManagerUid.cpp" />
     <ClCompile Include="Core\resource\ResourceManager.cpp" />
+    <ClCompile Include="Core\Timer_LINUX.cpp" />
+    <ClCompile Include="Core\Timer_WINDOWS.cpp" />
     <ClCompile Include="GOM\GlobalWorldParameters.cpp" />
     <ClCompile Include="GOM\system\Drawable.cpp" />
     <ClCompile Include="GOM\system\Rotator.cpp" />
@@ -175,6 +177,7 @@
     <ClCompile Include="Rendering\resource\VertexDeclaration.cpp" />
     <ClCompile Include="Rendering\resource\Shader.cpp" />
     <ClCompile Include="Rendering\renderPass\RenderPass.cpp" />
+    <ClCompile Include="Core\Timer.cpp" />
     <ClCompile Include="Util\Random.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -216,6 +219,7 @@
     <ClInclude Include="Rendering\resource\Shader.h" />
     <ClInclude Include="Rendering\renderPass\RenderPass.h" />
     <ClInclude Include="Core\resource\ResourceCache.h" />
+    <ClInclude Include="Core\Timer.h" />
     <ClInclude Include="Util\GlobalIncludes.h" />
     <ClInclude Include="Util\ObjectPool.h" />
     <ClInclude Include="Util\Property.h" />

@@ -31,6 +31,8 @@ namespace GOM
 			glm::vec3 Position = glm::vec3(0.0f);
 			glm::vec3 Rotation = glm::vec3(0.0f);
 			glm::vec3 Scale = glm::vec3(1.0f);
+
+			Rendering::UniformBuffer* UboTransform = nullptr;
 		};
 
 	protected:
@@ -41,19 +43,18 @@ namespace GOM
 
 		Util::Property<Movability, Transform, nullptr, &Transform::OnMovabilityAboutToChange> PropMovability;
 
-		const Data& GetData() const { return GetData(); }
-		glm::vec3& GetPosition() { return GetData().Position; }
-		glm::vec3& GetRotation() { return GetData().Rotation; }
-		glm::vec3& GetScale() { return GetData().Scale; }
-		const Rendering::UniformBuffer* GetUboTransform() const { return _uboTransform; }
+		const Data& GetData() const { return const_cast<Transform*>(this)->GetData_Internal(); }
+		glm::vec3& GetPosition() { return GetData_Internal().Position; }
+		glm::vec3& GetRotation() { return GetData_Internal().Rotation; }
+		glm::vec3& GetScale() { return GetData_Internal().Scale; }
 
-		void SetPosition(const glm::vec3& position) { GetData().Position = position; }
-		void SetRotation(const glm::vec3& rotation) { GetData().Rotation = rotation; }
-		void SetScale(const glm::vec3& scale) { GetData().Scale = scale; }
+		void SetPosition(const glm::vec3& position) { GetData_Internal().Position = position; }
+		void SetRotation(const glm::vec3& rotation) { GetData_Internal().Rotation = rotation; }
+		void SetScale(const glm::vec3& scale) { GetData_Internal().Scale = scale; }
 
-		void AddPosition(const glm::vec3& positionOffset) { GetData().Position += positionOffset; }
-		void AddRotation(const glm::vec3& rotationOffset) { GetData().Rotation += rotationOffset; }
-		void AddScale(const glm::vec3& scaleOffset) { GetData().Scale += scaleOffset; }
+		void AddPosition(const glm::vec3& positionOffset) { GetData_Internal().Position += positionOffset; }
+		void AddRotation(const glm::vec3& rotationOffset) { GetData_Internal().Rotation += rotationOffset; }
+		void AddScale(const glm::vec3& scaleOffset) { GetData_Internal().Scale += scaleOffset; }
 
 	protected:
 
@@ -61,17 +62,15 @@ namespace GOM
 			: Component()
 			, PropMovability(movability)
 			, _indexData(Util::ObjectPool<Data>::BAD_INDEX)
-			, _uboTransform(nullptr)
 		{
 		}
 		virtual ~Transform()
 		{
 		}
 
-		Data& GetData();
+		Data& GetData_Internal();
 
 		Util::Property<Util::ObjectPool<Data>::Index, Transform> _indexData;
-		Rendering::UniformBuffer* _uboTransform;
 	};
 
 	class TransfromConstructionParameters : public ComponentConstructionParameters
@@ -104,11 +103,12 @@ namespace GOM
 		void OnTransformMovabilityAboutToChange(Transform* transform, Transform::Movability newValue);
 		Transform::Data& GetDataOfTransform(Transform* transform);
 
-		JE_Inline void ProcessTransformData(Transform::Data& data);
+		JE_Inline void ProcessTransformDataDynamic(Transform::Data& data);
+		JE_Inline void ProcessTransformDataStatic(Transform::Data& data);
+		JE_Inline void ProcessTransformDataCommon(Transform::Data& data);
 
 		JE_Inline void CreateUboTransform(Transform* transform);
 		JE_Inline void CleanupUboTransform(Transform* transform);
-		JE_Inline void UpdateUboTransform(Transform* transform);
 
 		Util::ObjectPool<Transform::Data> _transformDataPerMovability[(size_t)Transform::Movability::ENUM_SIZE];
 		bool _bNeedUpdateUbos = false;

@@ -2,6 +2,7 @@
 
 #include "Core/ManagerUid.h"
 #include "Core/resource/ResourceManager.h"
+#include "Core/Timer.h"
 
 #include "Rendering/Camera.h"
 #include "Rendering/LightDirectional.h"
@@ -105,6 +106,8 @@ namespace Core
 		::GOM::World* GetWorld() { return &_world; }
 
 		::Util::Random* GetRandom() { return &_random; }
+
+		Timer* GetGlobalTimer() { return &_timer; }
 
 
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -265,6 +268,7 @@ namespace Core
 		// Delegate this to GOM or real core.
 		::GOM::World _world;
 		::Util::Random _random;
+		::Core::Timer _timer;
 
 		bool _bMinimized;
 	};
