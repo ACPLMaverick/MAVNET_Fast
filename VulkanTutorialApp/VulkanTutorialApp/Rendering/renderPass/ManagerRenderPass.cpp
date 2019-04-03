@@ -40,31 +40,36 @@ namespace Rendering
 		{
 		case Rendering::RenderPassCommon::Id::Tutorial:
 		{
-			RenderPass::Attachment colorAttachment = {};
+			RenderPass::AttachmentDesc& colorAttachment = outInfo->ColorAttachments[0];
 			colorAttachment.bClearOnLoad = true;
 			colorAttachment.bStore = true;
 			colorAttachment.bUseStencil = false;
 			colorAttachment.Format = JE_GetRenderer()->GetSwapChainFormat();
 			colorAttachment.MyMultisamplingMode = RenderState::MultisamplingMode::None;
 			colorAttachment.Usage = RenderPass::UsageMode::ColorPresentable;
-			outInfo->ColorAttachments.push_back(colorAttachment);
 
-			RenderPass::Attachment depthAttachment = {};
+			outInfo->NumColorAttachments = 1;
+
+
+			RenderPass::AttachmentDesc& depthAttachment = outInfo->DepthStencilAttachments[0];
 			depthAttachment.bClearOnLoad = true;
 			depthAttachment.bStore = false;
 			depthAttachment.bUseStencil = false;
 			depthAttachment.Format = JE_GetRenderer()->FindDepthFormat();
 			depthAttachment.MyMultisamplingMode = RenderState::MultisamplingMode::None;
 			depthAttachment.Usage = RenderPass::UsageMode::DepthStencil;
-			outInfo->DepthStencilAttachments.push_back(depthAttachment);
 
-			RenderPass::Subpass subpass;
+			outInfo->NumDepthAttachments = 1;
+
+
+			RenderPass::Subpass& subpass = outInfo->Subpasses[0];
 			subpass.BindPoint = Pipeline::Type::Graphics;
-			subpass.ColorAttachmentIndices.push_back(0);
+			subpass.ColorAttachmentIndices[0] = 0;
+			subpass.NumColorAttachmentIndices = 1;
 			subpass.DepthAttachmentIndex = 0;
-			outInfo->Subpasses.push_back(subpass);
+			subpass.MyDependency = RenderPass::Dependency();	// No dependencies.
 
-			// No dependencies.
+			outInfo->NumSubpasses = 1;
 		}
 			break;
 		case Rendering::RenderPassCommon::Id::Custom:

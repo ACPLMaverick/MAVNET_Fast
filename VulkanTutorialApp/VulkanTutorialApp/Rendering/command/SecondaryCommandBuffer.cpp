@@ -67,7 +67,7 @@ namespace Rendering
 				RenderPass* pass = JE_GetRenderer()->GetManagerRenderPass()->TryGet(&key);
 				JE_Assert(pass);
 
-				subpassNum = pass->GetInfo()->Subpasses.size();
+				subpassNum = pass->GetInfo()->NumSubpasses;
 
 				for (size_t i = 0; i < subpassNum; ++i)
 				{
@@ -161,7 +161,7 @@ namespace Rendering
 				RenderPass* pass = JE_GetRenderer()->GetManagerRenderPass()->TryGet(&key);
 				JE_Assert(pass);
 
-				counter += pass->GetInfo()->Subpasses.size();
+				counter += pass->GetInfo()->NumSubpasses;
 			}
 			else
 			{

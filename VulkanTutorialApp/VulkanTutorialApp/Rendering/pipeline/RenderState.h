@@ -165,18 +165,8 @@ namespace Rendering
 
 			bool operator==(const Key& other) const
 			{
-				// TODO: this is wrong :V
 				JE_AssertStatic(sizeof(Key) <= PACKED_STATE_PREFERRED_SIZE_BYTES);
-				const uint32_t arrayNum = PACKED_STATE_PREFERRED_SIZE_BYTES / sizeof(uint64_t);
-				const uint64_t* arrayMy = reinterpret_cast<const uint64_t*>(this);
-				const uint64_t* arrayHim = reinterpret_cast<const uint64_t*>(&other);
-				for (size_t i = 0; i < arrayNum; ++i)
-				{
-					if (arrayMy[i] != arrayHim[i])
-						return false;
-				}
-
-				return true;
+				return memcmp(this, &other, sizeof(Key));
 			}
 		};
 #pragma pack(pop)

@@ -40,7 +40,6 @@ namespace Rendering
 	void Sampler::Reinitialize()
 	{
 		Options tmpOpts = _options;
-		// TODO: Change anything..?
 		Cleanup();
 		Initialize(&tmpOpts);
 	}

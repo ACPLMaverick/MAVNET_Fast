@@ -196,7 +196,7 @@ namespace Rendering
 			{
 				return descriptorSet;
 			}
-			else if (res != VK_ERROR_OUT_OF_DEVICE_MEMORY)
+			else if (res != VK_ERROR_OUT_OF_POOL_MEMORY)
 			{
 				JE_Assert(false);
 			}

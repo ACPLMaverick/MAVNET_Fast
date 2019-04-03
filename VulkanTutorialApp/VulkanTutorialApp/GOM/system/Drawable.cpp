@@ -271,7 +271,7 @@ namespace GOM
 		JE_Assert(obj);
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->PropMaterial.Get()->GetPipeline()->GetVkPipeline());	
-		// TODO: Test whether this approach will be faster, or re-recording every command but with pipeline bound only once.
+		// It seems that it's faster than re-recording cmd buffer every frame although I wonder how to avoid binding pipeline here.
 
 		VkDescriptorSet descriptorSets[] = { obj->_descriptorSet->GetVkDescriptorSet() };
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->PropMaterial.Get()->GetPipeline()->GetVkPipelineLayout(), 0, 1, descriptorSets, 0, nullptr);

@@ -13,7 +13,8 @@ namespace Rendering
 	{
 		JE_Assert(info != nullptr);
 		JE_Assert(_renderPass == VK_NULL_HANDLE);
-		JE_Assert(info->Subpasses.size() > 0);
+		JE_Assert(info->NumSubpasses > 0);
+		JE_Assert(info->NumColorAttachments > 0 || info->NumDepthAttachments > 0);
 
 		_info = *info;
 
@@ -22,7 +23,7 @@ namespace Rendering
 		// Create render pass from info.
 		std::vector<VkAttachmentDescription> attachmentDescs;
 
-		for (size_t i = 0; i < _info.ColorAttachments.size(); ++i)
+		for (uint8_t i = 0; i < _info.NumColorAttachments; ++i)
 		{
 			VkAttachmentDescription desc = {};
 			desc.format = _info.ColorAttachments[i].Format;
@@ -62,9 +63,9 @@ namespace Rendering
 		}
 
 
-		const bool bUseDepth = _info.DepthStencilAttachments.size() > 0;
+		const bool bUseDepth = _info.NumDepthAttachments > 0;
 
-		for (size_t i = 0; i < _info.DepthStencilAttachments.size(); ++i)
+		for (uint8_t i = 0; i < _info.NumDepthAttachments; ++i)
 		{
 			VkAttachmentDescription depthAttachmentDesc = {};
 
@@ -93,15 +94,17 @@ namespace Rendering
 		std::vector<std::vector<VkAttachmentReference>> colorAttachmentRefsForEachSubpass;
 		std::vector<VkAttachmentReference> depthAttachmentRefsForEachSubpass;
 		std::vector<VkSubpassDescription> subpassDescs;
+		std::vector<VkSubpassDependency> subpassDeps;
 
-		for (size_t i = 0; i < _info.Subpasses.size(); ++i)
+		for (uint8_t i = 0; i < _info.NumSubpasses; ++i)
 		{
-			JE_Assert(_info.Subpasses[i].ColorAttachmentIndices.size() <= RenderState::MAX_COLOR_FRAMEBUFFERS_ATTACHED);
+			// TODO !!!!!!!!!! !!!!!!!!!!!!!!! !!!!!!!!!!!!!!
+			JE_Assert(_info.Subpasses[i].NumColorAttachmentIndices <= MAX_ATTACHMENTS);
 
 			colorAttachmentRefsForEachSubpass.push_back(std::vector<VkAttachmentReference>());
 			std::vector<VkAttachmentReference>& colorAttachmentRefs = colorAttachmentRefsForEachSubpass.back();
 
-			for (size_t j = 0; j < _info.Subpasses[i].ColorAttachmentIndices.size(); ++j)
+			for (uint8_t j = 0; j < _info.Subpasses[i].NumColorAttachmentIndices; ++j)
 			{
 				VkAttachmentReference attachmentRef = {};
 				attachmentRef.attachment = _info.Subpasses[i].ColorAttachmentIndices[j];
@@ -125,7 +128,7 @@ namespace Rendering
 			VkAttachmentReference depthAttachmentRef = {};
 			if (bUseDepth)
 			{
-				depthAttachmentRef.attachment = (uint32_t)(_info.ColorAttachments.size() + _info.Subpasses[i].DepthAttachmentIndex); // "next" attachment index after all colors
+				depthAttachmentRef.attachment = (uint32_t)(_info.NumColorAttachments + _info.Subpasses[i].DepthAttachmentIndex); // "next" attachment index after all colors
 				depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 			}
 			depthAttachmentRefsForEachSubpass.push_back(depthAttachmentRef);
@@ -138,40 +141,19 @@ namespace Rendering
 			desc.pDepthStencilAttachment = bUseDepth ? &depthAttachmentRef : nullptr;
 
 			subpassDescs.push_back(desc);
-		}
 
 
-		std::vector<VkSubpassDependency> subpassDeps;
-
-		if (_info.Dependencies.size() == 0)
-		{
 			VkSubpassDependency dep = {};
-			dep.srcSubpass = VK_SUBPASS_EXTERNAL;
-			dep.dstSubpass = 0;
-			dep.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-			dep.srcAccessMask = 0;
-			dep.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-			dep.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-			// TODO: Are these default settings correct?
+
+			dep.srcSubpass = _info.Subpasses[i].MyDependency.SubpassIndexSource;
+			dep.dstSubpass = _info.Subpasses[i].MyDependency.SubpassIndexDest;
+			dep.srcStageMask = _info.Subpasses[i].MyDependency.StageMaskSource;
+			dep.srcAccessMask = _info.Subpasses[i].MyDependency.AccessMaskSource;
+			dep.dstStageMask = _info.Subpasses[i].MyDependency.StageMaskDest;
+			dep.dstAccessMask = _info.Subpasses[i].MyDependency.AccessMaskDest;
+			dep.dependencyFlags = _info.Subpasses[i].MyDependency.Flags;
 
 			subpassDeps.push_back(dep);
-		}
-		else
-		{
-			for (size_t i = 0; i < _info.Dependencies.size(); ++i)
-			{
-				VkSubpassDependency dep = {};
-
-				dep.srcSubpass = _info.Dependencies[i].SubpassIndexSource;
-				dep.dstSubpass = _info.Dependencies[i].SubpassIndexDest;
-				dep.srcStageMask = _info.Dependencies[i].StageMaskSource;
-				dep.srcAccessMask = _info.Dependencies[i].AccessMaskSource;
-				dep.dstStageMask = _info.Dependencies[i].StageMaskDest;
-				dep.dstAccessMask = _info.Dependencies[i].AccessMaskDest;
-				dep.dependencyFlags = _info.Dependencies[i].Flags;
-
-				subpassDeps.push_back(dep);
-			}
 		}
 
 		
@@ -200,6 +182,18 @@ namespace Rendering
 		Info tempInfo = _info;
 		Cleanup();
 		Initialize(&tempInfo);
+	}
+
+	RenderPass::Dependency::Dependency()
+		: SubpassIndexSource(VK_SUBPASS_EXTERNAL)
+		, SubpassIndexDest(0)
+		, StageMaskSource(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)
+		, AccessMaskSource(0)
+		, StageMaskDest(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)
+		, AccessMaskDest(VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
+		, Flags(0)
+	{
+
 	}
 
 }

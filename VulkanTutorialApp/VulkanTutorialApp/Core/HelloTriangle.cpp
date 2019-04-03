@@ -122,7 +122,7 @@ namespace Core
 		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 		appInfo.pEngineName = "JadeEngine";
 		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_0;
+		appInfo.apiVersion = VK_API_VERSION_1_1;
 
 		VkInstanceCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -1093,7 +1093,7 @@ namespace Core
 
 			updateTimer = 0.0f;
 			fpsAccumulator = 0.0f;
-			fpsNum = 0.0f;
+			fpsNum = 0;
 		}
 	}
 
