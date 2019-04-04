@@ -2,6 +2,7 @@ add_subdirectory(buffer)
 
 target_sources(VulkanTutorialApp
     PRIVATE
+		Attachment.cpp
         Material.cpp
         Mesh.cpp
         Resource.cpp
@@ -10,6 +11,7 @@ target_sources(VulkanTutorialApp
         Texture.cpp
         VertexDeclaration.cpp
 
+		Attachment.h
         Material.h
         Mesh.h
         Resource.h

@@ -4,34 +4,16 @@
 
 namespace Rendering
 {
-	void ManagerRenderPass::Initialize()
+	RenderPass * ManagerRenderPass::CreateValue(const RenderPassKey * key, const Util::NullType * initData)
 	{
-		Manager::Initialize();
-
-		// Create all RenderPasses here, for each RenderPass:Id.
-
-		for (uint64_t i = 0; i < static_cast<uint64_t>(RenderPassCommon::Id::ENUM_SIZE); ++i)
-		{
-			if(static_cast<RenderPassCommon::Id>(i) == RenderPassCommon::Id::Custom)
-				continue; // TODO:Implement.
-
-			RenderPass* pass = AllocateValue();
-			RenderPass::Info info;
-
-			FillUpInfoForRenderPassId(static_cast<RenderPassCommon::Id>(i), &info);
-
-			pass->Initialize(&info);
-			_map.emplace(i, pass);
-		}
+		const RenderPass::Info* info = key;
+		JE_Assert(info);
+		RenderPass* pass = AllocateValue();
+		pass->Initialize(info);
+		return pass;
 	}
 
-	RenderPass * ManagerRenderPass::CreateValue(const RenderPassKey * key, const RenderPass::Info * initData)
-	{
-		// TODO: Implement.
-		JE_Assert(false);
-		return nullptr;
-	}
-
+	/*
 	void ManagerRenderPass::FillUpInfoForRenderPassId(RenderPassCommon::Id id, RenderPass::Info * outInfo)
 	{
 		outInfo->PassId = id;
@@ -83,4 +65,5 @@ namespace Rendering
 			break;
 		}
 	}
+	*/
 }

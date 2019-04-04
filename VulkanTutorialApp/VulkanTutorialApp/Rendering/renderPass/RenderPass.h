@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Rendering/pipeline/RenderState.h"
 #include "RenderPassCommon.h"
 #include "Rendering/pipeline/Pipeline.h"
+#include "Rendering/resource/Attachment.h"
 
 namespace Rendering
 {
@@ -10,22 +10,9 @@ namespace Rendering
 	{
 	public:
 
-		JE_EnumBegin(UsageMode)
-			Color
-			, ColorPresentable
-			, Transferable
-			, DepthStencil
-		JE_EnumEnd()
-
-		struct AttachmentDesc
-		{
-			VkFormat Format = {};	// TODO: Change some of these params to RenderTarget ptr.
-			RenderState::MultisamplingMode MyMultisamplingMode = {};
-			UsageMode Usage = {};
-			bool bClearOnLoad = false;
-			bool bStore = false;
-			bool bUseStencil = false;
-		};
+		static const size_t MAX_ATTACHMENTS = 7;
+		static const size_t MAX_SUBPASSES = 15;
+		static const uint8_t INVALID_SUBPASS_IDX = 0x1F;
 
 		// TODO: Make this not vulkan-specific. Somehow.
 		struct Dependency
@@ -34,15 +21,12 @@ namespace Rendering
 			uint32_t StageMaskDest;
 			uint32_t AccessMaskSource;
 			uint32_t AccessMaskDest;
-			uint8_t SubpassIndexSource : 4;
-			uint8_t SubpassIndexDest : 4;
+			uint8_t SubpassIndexSource : 5;
+			uint8_t SubpassIndexDest : 5;
 			uint8_t Flags : 3;
 
 			Dependency();
 		};
-
-		static const size_t MAX_ATTACHMENTS = 7;
-		static const size_t MAX_SUBPASSES = 15;
 
 		struct Subpass
 		{
@@ -55,14 +39,41 @@ namespace Rendering
 
 		struct Info
 		{
-			AttachmentDesc ColorAttachments[MAX_ATTACHMENTS];
-			AttachmentDesc DepthStencilAttachments[MAX_ATTACHMENTS];
+			Attachment::AttachDesc ColorAttachments[MAX_ATTACHMENTS];
+			Attachment::AttachDesc DepthStencilAttachments[MAX_ATTACHMENTS];
 
 			Subpass Subpasses[MAX_SUBPASSES];
-			RenderPassCommon::Id PassId;
 			uint8_t NumColorAttachments : 4;
 			uint8_t NumDepthAttachments : 4;
 			uint8_t NumSubpasses;
+
+			bool operator==(const Info& other) const
+			{
+				if (NumColorAttachments != other.NumColorAttachments)
+				{
+					return false;
+				}
+
+				if (NumDepthAttachments != other.NumDepthAttachments)
+				{
+					return false;
+				}
+
+				if (NumSubpasses != other.NumSubpasses)
+				{
+					return false;
+				}
+
+				if (NumColorAttachments > 0)
+				{
+					if (ColorAttachments[0].Format != other.ColorAttachments[0].Format)
+					{
+						return false;
+					}
+				}
+
+				return std::memcmp(this, &other, sizeof(Info)) == 0;
+			}
 		};
 
 	public:
@@ -82,5 +93,27 @@ namespace Rendering
 		Info _info;
 
 		VkRenderPass _renderPass = VK_NULL_HANDLE;
+	};
+}
+
+namespace std
+{
+	template<> struct hash<::Rendering::RenderPass::Info>
+	{
+		size_t operator()(const ::Rendering::RenderPass::Info& key) const
+		{
+			JE_AssertStatic(sizeof(::Rendering::RenderPass::Info) % sizeof(size_t) == 0);
+			size_t finalRet = 0;
+			const size_t hashNum = sizeof(::Rendering::RenderPass::Info) / sizeof(size_t);
+			const size_t hashes[hashNum] = {};
+
+			const size_t* dataPtr = reinterpret_cast<const size_t*>(&key);
+			for (size_t i = 0; i < hashNum; ++i, ++dataPtr)
+			{
+				finalRet = (finalRet ^ std::hash<size_t>{}(*dataPtr) << i) >> 1;
+			}
+
+			return finalRet;
+		}
 	};
 }

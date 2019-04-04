@@ -3,7 +3,7 @@
 #include "Rendering/resource/Shader.h"
 #include "RenderState.h"
 #include "Rendering/descriptor/DescriptorCommon.h"
-#include "Rendering/renderPass/RenderPassCommon.h"
+#include "Rendering/renderStep/RenderStepCommon.h"
 
 namespace Rendering
 {
@@ -48,8 +48,8 @@ namespace Rendering
 			const Shader* MyShader;
 			const DescriptorCommon::LayoutData* DescriptorLayoutData;
 			const VertexDeclaration* MyVertexDeclaration;
+			RenderStepCommon::Id MyRenderStep;
 			Type MyType;
-			RenderPassCommon::Id MyPass;
 		};
 
 	public:
@@ -76,7 +76,6 @@ namespace Rendering
 		Info _info = {};
 		Key _key = {};
 		RenderState _renderState = {};
-		const RenderPass* _associatedRenderPass;
 
 		VkPipelineLayout _associatedPipelineLayout = VK_NULL_HANDLE;	// TODO: Can there be many pipelines with the same pipeline layout? I think yes.
 		VkPipeline _pipeline = VK_NULL_HANDLE;

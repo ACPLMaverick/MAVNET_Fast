@@ -9,6 +9,8 @@
 #include "Rendering/descriptor/DescriptorSet.h"
 #include "Rendering/descriptor/ManagerDescriptor.h"
 
+#include "Rendering/renderStep/RenderStepCommon.h"
+
 #include "Core/HelloTriangle.h"
 #include "Rendering/Helper.h"
 
@@ -29,9 +31,15 @@ namespace GOM
 		using namespace Rendering;
 
 		VkCommandBuffer cmd = JE_GetRenderer()->GetCmd();
-		uint32_t currentSubpass = 0;
-		RenderPassCommon::Id currentRenderPass = JE_GetRenderer()->GetActiveRenderPass(&currentSubpass);
+		uint32_t activeSubpass = 0;
+		const RenderPass* activeRenderPass = JE_GetRenderer()->GetActiveRenderStep()->GetRenderPass();
 		// Cmd must be in a recording state!
+
+		if (!activeRenderPass)
+		{
+			JE_Assert(false);
+			return;
+		}
 
 #if JE_TEST_DYNAMIC_CMD_BUFFER
 		VkCommandBuffer commandBuffer = cmd;
@@ -65,7 +73,12 @@ namespace GOM
 			Drawable* obj = ComponentCast(objAbstract);
 			JE_Assert(obj);
 
-			secondaries.push_back(obj->_secondaryCommandBuffer.GetVkCommandBuffer(currentRenderPass, currentSubpass));
+			VkCommandBuffer secondaryCmd = obj->_secondaryCommandBuffer.GetVkCommandBuffer(activeRenderPass, activeSubpass);
+			JE_Assert(secondaryCmd);
+			if (secondaryCmd)
+			{
+				secondaries.push_back(secondaryCmd);
+			}
 		}
 
 		if (secondaries.size() > 0)
@@ -202,7 +215,7 @@ namespace GOM
 
 		// Here add all passes that are drawable object can be used in. TODO: Can be retrieved from material.
 		SecondaryCommandBuffer::CompatibleRenderPassData passData;
-		passData.Id = RenderPassCommon::Id::Tutorial;
+		passData.Pass = JE_GetRenderer()->GetCacheRenderStep()->Get(RenderStepCommon::FixedId::Tutorial)->GetRenderPass();
 		info.CompatibleRenderPasses.push_back(passData);
 
 		obj->_secondaryCommandBuffer.Initialize(&info);
@@ -272,6 +285,8 @@ namespace GOM
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->PropMaterial.Get()->GetPipeline()->GetVkPipeline());	
 		// It seems that it's faster than re-recording cmd buffer every frame although I wonder how to avoid binding pipeline here.
+
+		// TODO: Here I can assign different descriptor sets in regard to current render pass and subpass I'm recording for ^^.
 
 		VkDescriptorSet descriptorSets[] = { obj->_descriptorSet->GetVkDescriptorSet() };
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj->PropMaterial.Get()->GetPipeline()->GetVkPipelineLayout(), 0, 1, descriptorSets, 0, nullptr);

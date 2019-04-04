@@ -47,11 +47,16 @@ namespace Rendering
 		JE_Assert(_image == VK_NULL_HANDLE);
 	}
 
+	void Texture::Create(const CreateOptions* createOptions)
+	{
+		JE_Assert(createOptions);
+	}
+
 	void Texture::Load(const std::string& loadPath, const LoadOptions * loadOptions)
 	{
-		JE_Assert(loadOptions != nullptr);
+		JE_Assert(loadOptions);
 
-		if (loadOptions->MemoryBufferInfo != nullptr)	// Load from attached buffer.
+		if (loadOptions->MemoryBufferInfo)	// Load from attached buffer.
 		{
 			_info = *loadOptions->MemoryBufferInfo;
 			if (loadOptions->bGenerateMips && _info.MipCount == 1)
@@ -83,6 +88,11 @@ namespace Rendering
 		_dataGpu = VK_NULL_HANDLE;
 
 		_sampler = nullptr;
+	}
+
+	void Texture::Resize(const ResizeInfo* resizeInfo)
+	{
+		JE_TODO();	// TODO
 	}
 
 	int32_t Texture::GetDesiredChannelsFromFormat(VkFormat format)

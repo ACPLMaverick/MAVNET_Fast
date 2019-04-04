@@ -122,7 +122,6 @@ namespace GOM
 		void Initialize();
 		void Cleanup();
 		void Update();
-		void Draw();
 
 		void OnSwapChainResize();
 

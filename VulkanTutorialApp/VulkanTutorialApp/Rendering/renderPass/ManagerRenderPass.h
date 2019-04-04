@@ -5,24 +5,20 @@
 
 namespace Rendering
 {
-	typedef uint64_t RenderPassKey;
+	typedef RenderPass::Info RenderPassKey;
 
-	class ManagerRenderPass : public Manager<RenderPassKey, RenderPass, RenderPass*, RenderPass::Info>
+	class ManagerRenderPass : public Manager<RenderPassKey, RenderPass, RenderPass*>
 	{
 	public:
 		ManagerRenderPass() : Manager() { }
 		virtual ~ManagerRenderPass() { }
 
-		virtual void Initialize() override;
-
 	protected:
 
-		virtual RenderPass* CreateValue(const RenderPassKey* key, const RenderPass::Info* initData) override;
+		virtual RenderPass* CreateValue(const RenderPassKey* key, const Util::NullType* initData) override;
 		virtual RenderPass* GetValueFromWrapper(RenderPass* const* val) override
 		{
 			return (*val);
 		}
-
-		void FillUpInfoForRenderPassId(RenderPassCommon::Id id, RenderPass::Info* outInfo);
 	};
 }

@@ -166,7 +166,7 @@ namespace Rendering
 			bool operator==(const Key& other) const
 			{
 				JE_AssertStatic(sizeof(Key) <= PACKED_STATE_PREFERRED_SIZE_BYTES);
-				return memcmp(this, &other, sizeof(Key));
+				return std::memcmp(this, &other, sizeof(Key)) == 0;
 			}
 		};
 #pragma pack(pop)

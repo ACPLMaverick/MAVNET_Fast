@@ -157,6 +157,10 @@
     <ClCompile Include="Rendering\descriptor\ManagerDescriptor.cpp" />
     <ClCompile Include="Rendering\Helper.cpp" />
     <ClCompile Include="Rendering\pipeline\Pipeline.cpp" />
+    <ClCompile Include="Rendering\renderStep\RenderStep.cpp" />
+    <ClCompile Include="Rendering\renderStep\CacheRenderStep.cpp" />
+    <ClCompile Include="Rendering\renderStep\RenderStepTutorial.cpp" />
+    <ClCompile Include="Rendering\resource\Attachment.cpp" />
     <ClCompile Include="Rendering\resource\Material.cpp" />
     <ClCompile Include="Rendering\resource\Mesh.cpp" />
     <ClCompile Include="Rendering\Camera.cpp" />
@@ -198,6 +202,11 @@
     <ClInclude Include="Rendering\Helper.h" />
     <ClInclude Include="Rendering\pipeline\Pipeline.h" />
     <ClInclude Include="Rendering\renderPass\RenderPassCommon.h" />
+    <ClInclude Include="Rendering\renderStep\RenderStep.h" />
+    <ClInclude Include="Rendering\renderStep\CacheRenderStep.h" />
+    <ClInclude Include="Rendering\renderStep\RenderStepCommon.h" />
+    <ClInclude Include="Rendering\renderStep\RenderStepTutorial.h" />
+    <ClInclude Include="Rendering\resource\Attachment.h" />
     <ClInclude Include="Rendering\resource\Material.h" />
     <ClInclude Include="Rendering\resource\Mesh.h" />
     <ClInclude Include="Rendering\Camera.h" />

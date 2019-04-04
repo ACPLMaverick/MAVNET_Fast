@@ -122,16 +122,6 @@ namespace GOM
 		}
 	}
 
-	void System::Draw()
-	{
-		// TODO: May make this multithreaded.
-
-		for (Behaviour* behaviour : _activeBehaviours)
-		{
-			behaviour->Draw();
-		}
-	}
-
 	void System::OnSwapChainResize()
 	{
 		for (Behaviour* behaviour : _activeBehaviours)

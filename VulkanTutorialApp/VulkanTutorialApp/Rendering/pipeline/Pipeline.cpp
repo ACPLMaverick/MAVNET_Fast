@@ -2,7 +2,7 @@
 
 #include "Core/HelloTriangle.h"
 #include "ManagerPipeline.h"
-#include "Rendering/renderPass/ManagerRenderPass.h"
+#include "Rendering/renderStep/CacheRenderStep.h"
 
 namespace Rendering
 {
@@ -20,9 +20,6 @@ namespace Rendering
 		);
 
 		_info = *initData;
-
-		RenderPassKey key = static_cast<RenderPassKey>(initData->MyPass);
-		_associatedRenderPass = JE_GetRenderer()->GetManagerRenderPass()->Get(&key);
 
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 		_info.MyShader->CreatePipelineShaderStageInfos(&shaderStages);
@@ -95,8 +92,8 @@ namespace Rendering
 			pipelineInfo.pDynamicState = nullptr;
 
 			pipelineInfo.layout = _associatedPipelineLayout;
-			pipelineInfo.renderPass = _associatedRenderPass->GetVkRenderPass();
-			pipelineInfo.subpass = 0;
+			pipelineInfo.renderPass = JE_GetRenderer()->GetCacheRenderStep()->Get(_info.MyRenderStep)->GetRenderPass()->GetVkRenderPass();
+			pipelineInfo.subpass = 0;	// TODO !!!!!!!!!!!!!!!! !!!!!!!!!!!!!!!
 
 			pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 			pipelineInfo.basePipelineIndex = -1;

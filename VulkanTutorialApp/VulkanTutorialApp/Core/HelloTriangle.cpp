@@ -33,7 +33,7 @@ namespace Core
 		, _commandPoolTransient(VK_NULL_HANDLE)
 		, _currentFrame(0)
 		, _imageIndex(0)
-		, _currentRenderPassKey(0)
+		, _activeRenderStep(nullptr)
 		, _bMinimized(false)
 	{
 		JE_AssertThrow(HelloTriangle::_singletonInstance == nullptr, "HelloTriangle can only have one instance!");
@@ -99,14 +99,13 @@ namespace Core
 		_pipelineMgr.Initialize();
 		_renderPassMgr.Initialize();
 
+		_renderStepCache.Initialize();
+
 		_resourceManager.Initialize();
 
 		CreateFramebuffers(); // TODO ...
 
 		CreateCommandBuffers();
-
-		// TODO...
-		_currentRenderPassKey = (::Rendering::RenderPassKey)::Rendering::RenderPassCommon::Id::Tutorial;
 	}
 
 	void HelloTriangle::CreateInstance()
@@ -942,7 +941,7 @@ namespace Core
 			VkFramebufferCreateInfo framebufferInfo = {};
 			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 
-			framebufferInfo.renderPass = GetManagerRenderPass()->Get(&_currentRenderPassKey)->GetVkRenderPass();
+			framebufferInfo.renderPass = GetActiveRenderStep()->GetRenderPass()->GetVkRenderPass();
 
 			framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 			framebufferInfo.pAttachments = attachments.data();
@@ -1169,44 +1168,19 @@ namespace Core
 
 		JE_AssertThrowVkResult(vkBeginCommandBuffer(cmd, &beginInfo));
 
+		// Perform all fixed render steps.
+		// TODO: Consider behaviour for non-fixed render steps...
 
-		// Fill command buffer with PRE commands.
-		std::array<VkClearValue, 2> clearValues = {};
-		const glm::vec4* clearColor = _world.GetGlobalParameters()->GetClearColor();
-		clearValues[0] = { clearColor->r, clearColor->g, clearColor->b, clearColor->a };
-		clearValues[1] = { 1.0f, 0 };
-
-		VkRenderPassBeginInfo renderPassInfo = {};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = GetManagerRenderPass()->Get(&_currentRenderPassKey)->GetVkRenderPass();
-		renderPassInfo.framebuffer = _swapChainFramebuffers[_imageIndex];
-		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = _swapChainExtent;
-		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-		renderPassInfo.pClearValues = clearValues.data();
-
-#if JE_TEST_DYNAMIC_CMD_BUFFER
-		vkCmdBeginRenderPass(cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-#else
-		vkCmdBeginRenderPass(cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);	// For executing per-object command buffers.
-#endif
-
-		// TODO: Support push constants.
-		/*
-		Rendering::UboCommon::SceneGlobal pco;
-		pco.FogColor = *_fog.GetColor();
-		pco.FogDepthNear = _fog.GetStartDepth();
-		pco.FogDepthFar = _fog.GetEndDepth();
-		pco.LightColor = *_lightDirectional.GetColor();
-		pco.LightDirectionV = *_lightDirectional.GetDirectionV();
-		vkCmdPushConstants(cmd, _pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Rendering::UboCommon::SceneGlobal), &pco);
-		*/
-
-		// Draw 3D objects.
-		_system.Draw();
-
-		vkCmdEndRenderPass(cmd);
-
+		for (size_t i = 0; i < (size_t)Rendering::RenderStepCommon::FixedId::ENUM_SIZE; ++i)
+		{
+			Rendering::RenderStep* step = _renderStepCache.Get((Rendering::RenderStepCommon::FixedId)i);
+			if (step) // TODO Remove this if when all render steps are implemented.
+			{
+				_activeRenderStep = step;
+				step->Perform();
+			}
+		}
+		_activeRenderStep = nullptr;
 
 		JE_AssertThrowVkResult(vkEndCommandBuffer(cmd));
 	}
@@ -1553,6 +1527,8 @@ namespace Core
 
 		_resourceManager.Cleanup();
 
+		_renderStepCache.Cleanup();
+
 		_renderPassMgr.Cleanup();
 		_pipelineMgr.Cleanup();
 		_descriptorMgr.Cleanup();
@@ -1660,15 +1636,5 @@ namespace Core
 		file.close();
 
 		return true;
-	}
-
-	::Rendering::RenderPassCommon::Id HelloTriangle::GetActiveRenderPass(uint32_t * outSubpass)
-	{
-		// TODO...
-		if (outSubpass)
-		{
-			*outSubpass = 0;
-		}
-		return static_cast<::Rendering::RenderPassCommon::Id>(_currentRenderPassKey);
 	}
 }

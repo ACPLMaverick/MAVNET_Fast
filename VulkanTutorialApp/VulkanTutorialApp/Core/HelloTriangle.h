@@ -15,6 +15,8 @@
 #include "Rendering/descriptor/ManagerDescriptor.h"
 #include "Rendering/pipeline/ManagerPipeline.h"
 #include "Rendering/renderPass/ManagerRenderPass.h"
+#include "Rendering/renderStep/CacheRenderStep.h"
+#include "Rendering/renderStep/RenderStep.h"
 
 #include "GOM/World.h"
 #include "GOM/system/System.h"
@@ -90,7 +92,8 @@ namespace Core
 		VkCommandPool GetCommandPoolDynamic() { return _commandPoolDynamic; }
 		VkCommandPool GetCommandPoolStatic() { return _commandPoolStatic; }
 		VkCommandBuffer GetCmd() { return _commandBuffers[_imageIndex]; }
-		::Rendering::RenderPassCommon::Id GetActiveRenderPass(uint32_t* outSubpass);
+		const ::Rendering::RenderStep* GetActiveRenderStep() { JE_Assert(_activeRenderStep);  return _activeRenderStep; }
+		void SetActiveRenderStep(const ::Rendering::RenderStep* renderStep) { _activeRenderStep = renderStep; }
 
 		::Rendering::Camera* GetCamera() { return &_camera; }
 
@@ -99,6 +102,7 @@ namespace Core
 		::Rendering::ManagerDescriptor* GetManagerDescriptor() { return &_descriptorMgr; }
 		::Rendering::ManagerPipeline* GetManagerPipeline() { return &_pipelineMgr; }
 		::Rendering::ManagerRenderPass* GetManagerRenderPass() { return &_renderPassMgr; }
+		::Rendering::CacheRenderStep* GetCacheRenderStep() { return &_renderStepCache; }
 
 		ResourceManager* GetResourceManager() { return &_resourceManager; }
 
@@ -244,9 +248,6 @@ namespace Core
 		uint32_t _currentFrame;
 		uint32_t _imageIndex;
 
-		::Rendering::RenderPassKey _currentRenderPassKey;
-
-
 		// ++TODO delegate elsewhere.
 		::Rendering::Camera _camera;
 		// --
@@ -262,6 +263,8 @@ namespace Core
 		::Rendering::ManagerDescriptor _descriptorMgr;
 		::Rendering::ManagerPipeline _pipelineMgr;
 		::Rendering::ManagerRenderPass _renderPassMgr;
+		::Rendering::CacheRenderStep _renderStepCache;
+		const ::Rendering::RenderStep* _activeRenderStep;
 
 		ResourceManager _resourceManager;
 		::GOM::System _system;

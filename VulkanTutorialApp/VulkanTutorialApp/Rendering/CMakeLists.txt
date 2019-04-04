@@ -2,6 +2,7 @@ add_subdirectory(command)
 add_subdirectory(descriptor)
 add_subdirectory(pipeline)
 add_subdirectory(renderPass)
+add_subdirectory(renderStep)
 add_subdirectory(resource)
 add_subdirectory(sampler)
 

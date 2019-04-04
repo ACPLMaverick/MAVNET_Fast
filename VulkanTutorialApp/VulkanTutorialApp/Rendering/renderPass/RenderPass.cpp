@@ -26,7 +26,7 @@ namespace Rendering
 		for (uint8_t i = 0; i < _info.NumColorAttachments; ++i)
 		{
 			VkAttachmentDescription desc = {};
-			desc.format = _info.ColorAttachments[i].Format;
+			desc.format = (VkFormat)_info.ColorAttachments[i].Format;	// TODO: Proper platform-independent conversion.
 			desc.samples = RenderState::ConvertToVkSampleCount(_info.ColorAttachments[i].MyMultisamplingMode);
 			desc.loadOp = _info.ColorAttachments[i].bClearOnLoad ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;	   // TODO: verify if correct.
 			desc.storeOp = _info.ColorAttachments[i].bStore ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -44,17 +44,17 @@ namespace Rendering
 
 			switch (_info.ColorAttachments[i].Usage)
 			{
-			case UsageMode::Color:
+			case Attachment::UsageMode::Color:
 			default:
 				desc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 				break;
-			case UsageMode::ColorPresentable:
+			case Attachment::UsageMode::ColorPresentable:
 				desc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 				break;
-			case UsageMode::Transferable:
+			case Attachment::UsageMode::Transferable:
 				desc.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 				break;
-			case UsageMode::DepthStencil:
+			case Attachment::UsageMode::DepthStencil:
 				desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 				break;
 			}
@@ -110,13 +110,13 @@ namespace Rendering
 				attachmentRef.attachment = _info.Subpasses[i].ColorAttachmentIndices[j];
 				switch (_info.ColorAttachments[_info.Subpasses[i].ColorAttachmentIndices[j]].Usage)	// TODO: Do this based on real framebuffer's layout.
 				{
-				case UsageMode::Color:
-				case UsageMode::ColorPresentable:
-				case UsageMode::Transferable:
+				case Attachment::UsageMode::Color:
+				case Attachment::UsageMode::ColorPresentable:
+				case Attachment::UsageMode::Transferable:
 				default:
 					attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					break;
-				case UsageMode::DepthStencil:
+				case Attachment::UsageMode::DepthStencil:
 					attachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 					break;
 				}
@@ -145,8 +145,10 @@ namespace Rendering
 
 			VkSubpassDependency dep = {};
 
-			dep.srcSubpass = _info.Subpasses[i].MyDependency.SubpassIndexSource;
-			dep.dstSubpass = _info.Subpasses[i].MyDependency.SubpassIndexDest;
+			uint32_t idxSource = _info.Subpasses[i].MyDependency.SubpassIndexSource;
+			uint32_t idxDest = _info.Subpasses[i].MyDependency.SubpassIndexDest;
+			dep.srcSubpass = idxSource == INVALID_SUBPASS_IDX ? VK_SUBPASS_EXTERNAL : idxSource;
+			dep.dstSubpass = idxDest == INVALID_SUBPASS_IDX ? VK_SUBPASS_EXTERNAL : idxDest;
 			dep.srcStageMask = _info.Subpasses[i].MyDependency.StageMaskSource;
 			dep.srcAccessMask = _info.Subpasses[i].MyDependency.AccessMaskSource;
 			dep.dstStageMask = _info.Subpasses[i].MyDependency.StageMaskDest;
@@ -185,7 +187,7 @@ namespace Rendering
 	}
 
 	RenderPass::Dependency::Dependency()
-		: SubpassIndexSource(VK_SUBPASS_EXTERNAL)
+		: SubpassIndexSource(INVALID_SUBPASS_IDX)
 		, SubpassIndexDest(0)
 		, StageMaskSource(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)
 		, AccessMaskSource(0)

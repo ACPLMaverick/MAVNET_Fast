@@ -95,7 +95,7 @@ namespace Rendering
 		pipelineInfo.DescriptorLayoutData = &_descriptorLayout;
 		pipelineInfo.MyVertexDeclaration = &_vertexDeclaration;
 		pipelineInfo.MyType = Pipeline::Type::Graphics;
-		pipelineInfo.MyPass = RenderPassCommon::Id::Tutorial;
+		pipelineInfo.MyRenderStep = (RenderStepCommon::Id)RenderStepCommon::FixedId::Tutorial;
 
 		Pipeline::CreateKey(&pipelineInfo, &_pipelineKey);
 

@@ -57,14 +57,13 @@ namespace Rendering
 		size_t tmpBufferIndex = 0;
 		for (CompatibleRenderPassData& subpassData : _info.CompatibleRenderPasses)
 		{
-			_commandBuffers.push_back(std::vector<VkCommandBuffer>());
-			std::vector<VkCommandBuffer>& currentArray = _commandBuffers.back();
+			_commandBuffers.insert(std::make_pair(subpassData.Pass, std::vector<VkCommandBuffer>()));
+			std::vector<VkCommandBuffer>& currentArray = _commandBuffers[subpassData.Pass];
 
 			size_t subpassNum = subpassData.SubpassIndices.size();
 			if (subpassNum == 0)
 			{
-				RenderPassKey key = (RenderPassKey)subpassData.Id;
-				RenderPass* pass = JE_GetRenderer()->GetManagerRenderPass()->TryGet(&key);
+				const RenderPass* pass = subpassData.Pass;
 				JE_Assert(pass);
 
 				subpassNum = pass->GetInfo()->NumSubpasses;
@@ -86,15 +85,14 @@ namespace Rendering
 
 	void SecondaryCommandBuffer::RecordVkCommandBuffers()
 	{
-		const size_t bufferArrayNum = _commandBuffers.size();
-		for (size_t i = 0; i < bufferArrayNum; ++i)
+		const size_t compatibleRenderPassesSize = _info.CompatibleRenderPasses.size();
+		for (size_t i = 0; i < compatibleRenderPassesSize; ++i)
 		{
-			std::vector<VkCommandBuffer>& bufferArray = _commandBuffers[i];
-			const size_t bufferNum = bufferArray.size();
-
-			RenderPassKey key = (RenderPassKey)_info.CompatibleRenderPasses[i].Id;
-			RenderPass* pass = JE_GetRenderer()->GetManagerRenderPass()->TryGet(&key);
+			const RenderPass* pass = _info.CompatibleRenderPasses[i].Pass;
 			JE_Assert(pass);
+
+			std::vector<VkCommandBuffer>& bufferArray = _commandBuffers[pass];
+			const size_t bufferNum = bufferArray.size();
 
 			for (size_t j = 0; j < bufferNum; ++j)
 			{
@@ -111,11 +109,10 @@ namespace Rendering
 	{
 		// There has to be enough places in static alloc array, because it would have been enlarged on creation of this buffer.
 
-		const size_t bufferArrayNum = _commandBuffers.size();
 		size_t allocArrayIndex = 0;
-		for (size_t i = 0; i < bufferArrayNum; ++i)
+		for (BufferMap::iterator it = _commandBuffers.begin(); it != _commandBuffers.end(); ++it)
 		{
-			std::vector<VkCommandBuffer>& bufferArray = _commandBuffers[i];
+			std::vector<VkCommandBuffer>& bufferArray = it->second;
 			const size_t bufferNum = bufferArray.size();
 
 			for (size_t j = 0; j < bufferNum; ++j)
@@ -157,8 +154,7 @@ namespace Rendering
 		{
 			if (subpassData.SubpassIndices.empty())
 			{
-				RenderPassKey key = (RenderPassKey)subpassData.Id;
-				RenderPass* pass = JE_GetRenderer()->GetManagerRenderPass()->TryGet(&key);
+				const RenderPass* pass = subpassData.Pass;
 				JE_Assert(pass);
 
 				counter += pass->GetInfo()->NumSubpasses;

@@ -11,8 +11,8 @@ namespace Rendering
 
 		struct Info
 		{
-			VkFormat Format;
 			uint8_t* Data;
+			VkFormat Format;
 			uint32_t SizeBytes;
 			uint16_t Width;
 			uint16_t Height;
@@ -21,8 +21,8 @@ namespace Rendering
 			bool bAllocatedByStbi;
 
 			Info()
-				: Format(VK_FORMAT_UNDEFINED)
-				, Data(nullptr)
+				: Data(nullptr)
+				, Format(VK_FORMAT_UNDEFINED)
 				, SizeBytes(0)
 				, Width(0)
 				, Height(0)
@@ -32,6 +32,20 @@ namespace Rendering
 			{
 
 			}
+		};
+
+		struct ResizeInfo
+		{
+			uint16_t Width;
+			uint16_t Height;
+		};
+
+		struct CreateOptions
+		{
+			Info CreationInfo;
+			Sampler::Options SamplerOptions = Sampler::Options();
+			glm::vec4 ClearValuesNormalized = glm::vec4(0.0f);
+			bool bClearOnCreate = false;
 		};
 
 		struct LoadOptions
@@ -59,8 +73,11 @@ namespace Rendering
 		JE_Inline VkImageView GetImageView() const { return _view; }
 		JE_Inline const Sampler* GetSampler() const { return _sampler; }
 
+		void Create(const CreateOptions* createOptions);
 		void Load(const std::string& textureName, const LoadOptions* loadOptions);
 		void Cleanup();
+
+		virtual void Resize(const ResizeInfo* resizeInfo);
 
 	protected:
 
