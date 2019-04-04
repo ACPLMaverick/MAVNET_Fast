@@ -2,17 +2,13 @@
 
 #include "FTPSync.h"
 
+#include "Error.h"
+
 class MessagePrinter
 {
 public:
 
-	enum class Error : uint8_t
-	{
-		InvalidWorkMode,
-		Unknown
-	};
-
-	static void PrintError(Error error)
+	static void PrintResult(Result error)
 	{
 		PrintLine("ERROR: " + std::string(ErrorMessages[(size_t)error]));
 	}

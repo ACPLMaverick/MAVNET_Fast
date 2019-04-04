@@ -13,3 +13,9 @@
 #include <cassert>
 
 #define FTPS_Assert(val) assert(val)
+
+#ifdef _WIN32
+#define FTPS_PLATFORM_WIN32
+#else
+#define FTPS_PLATFORM_LINUX
+#endif

@@ -9,7 +9,32 @@
 #include "FileProcessorLocal.h"
 #include "FileProcessorRemote.h"
 
-using namespace std;
+#include "Error.h"
+
+Result Process(const CommandParser* parser, FileProcessor* fpSource, FileProcessor* fpDestination)
+{
+	assert(fpSource);
+	assert(fpDestination);
+	
+	Result res = fpSource->Initialize(parser);
+	if (res != Result::OK)
+	{
+		return res;
+	}
+	fpDestination->Initialize(parser);
+	if (res != Result::OK)
+	{
+		fpSource->Cleanup();
+		return res;
+	}
+
+	res = fpDestination->SyncTo(fpSource->GetFileList());
+
+	fpDestination->Cleanup();
+	fpSource->Cleanup();
+
+	return res;
+}
 
 int main(int argc, char* argv[])
 {
@@ -20,7 +45,7 @@ int main(int argc, char* argv[])
 
 	if (parser.GetMode() == WorkMode::Unknown)
 	{
-		MessagePrinter::PrintError(MessagePrinter::Error::InvalidWorkMode);
+		MessagePrinter::PrintResult(Result::InvalidWorkMode);
 		FTPS_Assert(false);
 		return -1;
 	}
@@ -36,13 +61,23 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		MessagePrinter::PrintError(MessagePrinter::Error::Unknown);
+		MessagePrinter::PrintResult(Result::Unknown);
 		FTPS_Assert(false);
 		return -1;
 	}
 
-	delete fpSource;
-	delete fpDestination;
+	Result res = Process(&parser, fpSource, fpDestination);
 
-	return 0;
+	delete fpDestination;
+	delete fpSource;
+
+	if (res != Result::OK)
+	{
+		MessagePrinter::PrintResult(res);
+		return -1;
+	}
+	else
+	{
+		return 0;
+	}
 }
