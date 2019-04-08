@@ -227,7 +227,7 @@ namespace GOM
 		Transform* myTransform = myOwner->GetComponent();
 		Rendering::Material* myMaterial = obj->PropMaterial.Get();
 
-		Rendering::DescriptorSet::Info info;
+		Rendering::DescriptorSet::Info info = {};
 		info.LayInfo = obj->PropMaterial.Get()->GetDescriptorLayout()->Info;
 
 		// TODO: This is a bit hard-coded, but should suffice for now.

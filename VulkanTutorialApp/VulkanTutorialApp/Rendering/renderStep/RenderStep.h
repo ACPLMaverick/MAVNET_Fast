@@ -7,6 +7,7 @@ namespace Rendering
 	class CacheRenderStep;
 	class RenderPass;
 	class Pipeline;
+	class Framebuffer;
 
 	class RenderStep
 	{
@@ -53,6 +54,7 @@ namespace Rendering
 		virtual void EndSubpass_Internal(PerSubpassData& subpassData) = 0;
 		virtual void EndRenderPass_Internal() = 0;
 
+		std::vector<Framebuffer*> _framebuffers;
 		std::vector<PerSubpassData> _subpassesData;
 		RenderStepCommon::FixedId _id;
 		RenderPass* _renderPass;

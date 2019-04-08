@@ -150,6 +150,7 @@
     <ClCompile Include="GOM\system\Transform.cpp" />
     <ClCompile Include="GOM\World.cpp" />
     <ClCompile Include="Rendering\command\SecondaryCommandBuffer.cpp" />
+    <ClCompile Include="Rendering\Framebuffer.cpp" />
     <ClCompile Include="Rendering\renderPass\ManagerRenderPass.cpp" />
     <ClCompile Include="Rendering\pipeline\ManagerPipeline.cpp" />
     <ClCompile Include="Rendering\descriptor\DescriptorCommon.cpp" />
@@ -193,6 +194,7 @@
     <ClInclude Include="GOM\system\Transform.h" />
     <ClInclude Include="GOM\World.h" />
     <ClInclude Include="Rendering\command\SecondaryCommandBuffer.h" />
+    <ClInclude Include="Rendering\Framebuffer.h" />
     <ClInclude Include="Rendering\renderPass\ManagerRenderPass.h" />
     <ClInclude Include="Rendering\Manager.h" />
     <ClInclude Include="Rendering\pipeline\ManagerPipeline.h" />

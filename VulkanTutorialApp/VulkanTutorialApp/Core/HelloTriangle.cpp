@@ -83,8 +83,7 @@ namespace Core
 
 		CreateSyncObjects();	// Only once.
 		CreateSwapChain();
-		RetrieveSwapChainImages();
-		CreateSwapChainImageViews();
+		CreateSwapChainAttachments();
 		//
 
 		CreateDepthResources();
@@ -102,8 +101,6 @@ namespace Core
 		_renderStepCache.Initialize();
 
 		_resourceManager.Initialize();
-
-		CreateFramebuffers(); // TODO ...
 
 		CreateCommandBuffers();
 	}
@@ -546,27 +543,9 @@ namespace Core
 		return finalExtent;
 	}
 
-	void HelloTriangle::RetrieveSwapChainImages()
+	void HelloTriangle::CreateSwapChainAttachments()
 	{
-		// The implementation is allowed to create more images, which is why we need to explicitly query the amount again.
-
-		uint32_t imageCount;
-		JE_AssertThrowVkResult(vkGetSwapchainImagesKHR(_device, _swapChain, &imageCount, nullptr));
-		_swapChainImages.resize(imageCount);
-		JE_AssertThrowVkResult(vkGetSwapchainImagesKHR(_device, _swapChain, &imageCount, _swapChainImages.data()));
-	}
-
-	void HelloTriangle::CreateSwapChainImageViews()
-	{
-		_swapChainImageViews.resize(_swapChainImages.size());
-
-		::Rendering::Texture::Info dummy;
-		dummy.Format = VK_FORMAT_B8G8R8A8_UNORM;
-
-		for (size_t i = 0; i < _swapChainImages.size(); ++i)
-		{
-			_swapChainImageViews[i] = ::Rendering::Texture::UtilCreateImageView(&dummy, _swapChainImages[i], VK_IMAGE_ASPECT_COLOR_BIT);
-		}
+		Rendering::Attachment::CreateAttachmentsFromSwapchain(_swapChainAttachments);
 	}
 
 	void HelloTriangle::InitObjects()
@@ -924,7 +903,6 @@ namespace Core
 
 		shader.Cleanup();
 	}
-	*/
 
 	void HelloTriangle::CreateFramebuffers()
 	{
@@ -952,6 +930,7 @@ namespace Core
 			JE_AssertThrowVkResult(vkCreateFramebuffer(_device, &framebufferInfo, _pAllocator, &_swapChainFramebuffers[i]));
 		}
 	}
+	*/
 
 	void HelloTriangle::CreateCommandPool()
 	{
@@ -990,7 +969,7 @@ namespace Core
 	{
 		// Because one of the drawing commands involves binding the right VkFramebuffer, we'll actually have to record a command buffer for every image in the swap chain once again.
 
-		_commandBuffers.resize(_swapChainFramebuffers.size());
+		_commandBuffers.resize(_swapChainAttachments.size());
 
 		VkCommandBufferAllocateInfo allocInfo = {};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1380,17 +1359,15 @@ namespace Core
 		if(!_bMinimized)
 		{
 			CreateSwapChain();
-			RetrieveSwapChainImages();
-			CreateSwapChainImageViews();
+			CreateSwapChainAttachments();
 			CreateDepthResources();
 			CreateSyncObjects();
 
 			_renderPassMgr.Reinitialize();
 			_pipelineMgr.Reinitialize();
+			// TODO: RenderStep OnSwapChainResize... !!!!!!!!!!!!!!! !!!!!!!!!!!!
 
 			_system.OnSwapChainResize();
-
-			CreateFramebuffers();
 		}
 	}
 
@@ -1469,7 +1446,7 @@ namespace Core
 		imageInfo.extent.depth = 1;
 		imageInfo.mipLevels = static_cast<uint32_t>(texInfo->MipCount);
 		imageInfo.arrayLayers = 1;
-		imageInfo.format = texInfo->Format;
+		imageInfo.format = static_cast<VkFormat>(texInfo->Format);
 		imageInfo.tiling = tiling;
 		imageInfo.initialLayout = initialLayout;
 		imageInfo.usage = usage;
@@ -1598,17 +1575,12 @@ namespace Core
 		vkFreeMemory(_device, _depthImageMemory, _pAllocator);
 		_depthImageMemory = VK_NULL_HANDLE;
 
-		for (auto framebuffer : _swapChainFramebuffers)
+		for (auto& attachment : _swapChainAttachments)
 		{
-			vkDestroyFramebuffer(_device, framebuffer, _pAllocator);
+			attachment->Cleanup();
+			delete attachment;
 		}
-		_swapChainFramebuffers.clear();
-
-		for (auto imageView : _swapChainImageViews)
-		{
-			vkDestroyImageView(_device, imageView, _pAllocator);
-		}
-		_swapChainImageViews.clear();
+		_swapChainAttachments.clear();
 
 		if (!_bMinimized)
 		{

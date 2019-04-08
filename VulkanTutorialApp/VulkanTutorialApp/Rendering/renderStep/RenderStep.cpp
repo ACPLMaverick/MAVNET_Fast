@@ -1,6 +1,7 @@
 #include "RenderStep.h"
 
 #include "Core/HelloTriangle.h"
+#include "Rendering/Framebuffer.h"
 
 namespace Rendering
 {
@@ -35,6 +36,13 @@ namespace Rendering
 	void RenderStep::Cleanup()
 	{
 		Cleanup_Internal();
+
+		for (Framebuffer* framebuffer : _framebuffers)
+		{
+			framebuffer->Cleanup();
+			delete framebuffer;
+		}
+		_framebuffers.clear();
 
 		for (PerSubpassData& subpass : _subpassesData)
 		{

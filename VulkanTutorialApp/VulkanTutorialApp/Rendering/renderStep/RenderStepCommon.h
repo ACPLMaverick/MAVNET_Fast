@@ -17,6 +17,6 @@ namespace Rendering
 			UserInterface
 		JE_EnumEnd()
 
-		typedef uint32_t Id;
+		typedef uint16_t Id;
 	}
 }

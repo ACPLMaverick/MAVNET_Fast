@@ -2,6 +2,7 @@
 
 #include "Rendering/renderPass/RenderPass.h"
 #include "Rendering/renderPass/ManagerRenderPass.h"
+#include "Rendering/Framebuffer.h"
 
 #include "GOM/system/Drawable.h"
 
@@ -50,6 +51,11 @@ namespace Rendering
 			_renderPass = JE_GetRenderer()->GetManagerRenderPass()->Get(&info);
 
 			_subpassesData.push_back({ 0 });
+		}
+
+		// Create framebuffers
+		{
+
 		}
 	}
 

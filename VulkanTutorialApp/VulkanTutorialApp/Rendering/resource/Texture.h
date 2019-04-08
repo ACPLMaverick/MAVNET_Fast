@@ -2,6 +2,7 @@
 
 #include "Resource.h"
 #include "Rendering/sampler/Sampler.h"
+#include "Rendering/pipeline/RenderState.h"
 
 namespace Rendering
 {
@@ -12,12 +13,13 @@ namespace Rendering
 		struct Info
 		{
 			uint8_t* Data;
-			VkFormat Format;
+			uint32_t Format;
 			uint32_t SizeBytes;
 			uint16_t Width;
 			uint16_t Height;
 			uint16_t Channels;
 			uint8_t MipCount;
+			RenderState::MultisamplingMode MyMultisamplingMode;
 			bool bAllocatedByStbi;
 
 			Info()
@@ -28,6 +30,7 @@ namespace Rendering
 				, Height(0)
 				, Channels(0)
 				, MipCount(1)
+				, MyMultisamplingMode(RenderState::MultisamplingMode::None)
 				, bAllocatedByStbi(false)
 			{
 
@@ -45,12 +48,15 @@ namespace Rendering
 			Info CreationInfo;
 			Sampler::Options SamplerOptions = Sampler::Options();
 			glm::vec4 ClearValuesNormalized = glm::vec4(0.0f);
-			bool bClearOnCreate = false;
+			bool bClearOnCreate = true;
+			bool bClearOnLoad = true;
+			bool bReadOnly = true;
+			bool bGenerateMips = true;
+			bool bIsTransferable = false;
 		};
 
 		struct LoadOptions
 		{
-			Info* MemoryBufferInfo = nullptr;
 			VkFormat DesiredFormat = VK_FORMAT_R8G8B8A8_UNORM;
 			Sampler::Options SamplerOptions = Sampler::Options();
 			bool bReadOnly = true;
@@ -73,7 +79,7 @@ namespace Rendering
 		JE_Inline VkImageView GetImageView() const { return _view; }
 		JE_Inline const Sampler* GetSampler() const { return _sampler; }
 
-		void Create(const CreateOptions* createOptions);
+		virtual void Create(const CreateOptions* createOptions);
 		void Load(const std::string& textureName, const LoadOptions* loadOptions);
 		void Cleanup();
 
@@ -84,15 +90,19 @@ namespace Rendering
 		static int32_t GetDesiredChannelsFromFormat(VkFormat format);
 
 		// This may change format if we load a compressed texture.
-		void InitializeCommon(const LoadOptions* loadOptions);
+		void InitializeCommon(Sampler::Options* samplerOptions, bool bGenerateMips, bool bReadOnly);
 		void LoadData(const std::string& loadPath, const LoadOptions* loadOptions);
 		void CalculateMipCount(bool bGenerateMips);
-		void CreateImage(const LoadOptions* loadOptions);
-		void CreateImageView(const LoadOptions* loadOptions);
-		void AssignSampler(const LoadOptions* loadOptions);
+		void CreateImage(VkImageLayout destLayout, VkImageAspectFlagBits imageAspect, bool bGenerateMips);
+		void CreateImageView(VkImageAspectFlagBits imageAspect);
+		void AssignSampler(Sampler::Options* samplerOptions);
 		void CleanupData();
 
-		void GenerateMipmaps();
+		void GenerateMipmaps(VkImageLayout destLayout, VkImageAspectFlagBits imageAspect);
+
+		virtual void ClearWithFixedValue(const glm::vec4& clearValuesNormalized);
+		virtual VkImageAspectFlagBits ObtainImageAspect();
+		virtual VkImageLayout ObtainDestLayout();
 
 	protected:
 

@@ -10,12 +10,14 @@ target_sources(VulkanTutorialApp
     PRIVATE    
         Camera.cpp
         Fog.cpp
+		Framebuffer.cpp
         Helper.cpp
         LightDirectional.cpp
         SystemDrawable.cpp
 
         Camera.h
         Fog.h
+		Framebuffer.h
         Helper.h
         LightDirectional.h
         SystemDrawable.h

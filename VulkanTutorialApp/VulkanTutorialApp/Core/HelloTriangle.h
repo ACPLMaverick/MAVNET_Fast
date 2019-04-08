@@ -9,6 +9,7 @@
 #include "Rendering/Fog.h"
 
 #include "Rendering/resource/Texture.h"
+#include "Rendering/resource/Attachment.h"
 #include "Rendering/resource/Mesh.h"
 #include "Rendering/resource/Material.h"
 #include "Rendering/sampler/ManagerSampler.h"
@@ -129,8 +130,8 @@ namespace Core
 		VkFormat FindDepthFormat();
 		bool HasStencilComponent(VkFormat format);
 
+		VkSwapchainKHR GetSwapChain() { return _swapChain; }
 		VkFormat GetSwapChainFormat() { return _swapChainFormat; }
-
 		VkExtent2D GetSwapChainExtent() { return _swapChainExtent; }
 
 	private:
@@ -155,13 +156,11 @@ namespace Core
 				VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 				VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 				VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-			void RetrieveSwapChainImages();
-			void CreateSwapChainImageViews();
+			void CreateSwapChainAttachments();
 
 			void InitObjects();
 			void RefreshCameraProj(uint32_t newWidth, uint32_t newHeight);
 
-			void CreateFramebuffers();
 			void CreateCommandPool();
 			void CreateDepthResources();
 			void CreateCommandBuffers();
@@ -227,12 +226,9 @@ namespace Core
 		VkSurfaceKHR _surface;
 
 		VkSwapchainKHR _swapChain;
-		std::vector<VkImage> _swapChainImages;
-		std::vector<VkImageView> _swapChainImageViews;
+		std::vector<::Rendering::Attachment*> _swapChainAttachments;
 		VkFormat _swapChainFormat;
 		VkExtent2D _swapChainExtent;
-
-		std::vector<VkFramebuffer> _swapChainFramebuffers;
 
 		VkCommandPool _commandPoolDynamic;
 		VkCommandPool _commandPoolStatic;
