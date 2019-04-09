@@ -1,28 +1,23 @@
-﻿# CMakeList.txt : CMake project for FTPSync, include source and define
-# project specific logic here.
-#
-cmake_minimum_required (VERSION 3.8)
+﻿cmake_minimum_required (VERSION 3.8)
 
-# Add source to this project's executable.
-add_executable (FTPSync "FTPSync.cpp" "FTPSync.h")
 target_sources (FTPSync PRIVATE
 
-	CommandParser.cpp
-	FileList.cpp
-	FileProcessor.cpp
-	FileProcessorLocal.cpp
-	FileProcessorRemote.cpp
-	FileUtil.cpp
-	MessagePrinter.cpp
+	FTPSync/CommandParser.cpp
+	FTPSync/FileList.cpp
+	FTPSync/FileProcessor.cpp
+	FTPSync/FileProcessorLocal.cpp
+	FTPSync/FileProcessorRemote.cpp
+	FTPSync/FileUtil.cpp
+	FTPSync/FTPSync.cpp
+	FTPSync/MessagePrinter.cpp
 
-	CommandParser.h
-	Error.h
-	FileList.h
-	FileProcessor.h
-	FileProcessorLocal.h
-	FileProcessorRemote.h
-	FileUtil.h
-	MessagePrinter.h
+	FTPSync/CommandParser.h
+	FTPSync/Error.h
+	FTPSync/FileList.h
+	FTPSync/FileProcessor.h
+	FTPSync/FileProcessorLocal.h
+	FTPSync/FileProcessorRemote.h
+	FTPSync/FileUtil.h
+	FTPSync/FTPSync.h
+	FTPSync/MessagePrinter.h
 )
-
-# TODO: Add tests and install targets if needed.

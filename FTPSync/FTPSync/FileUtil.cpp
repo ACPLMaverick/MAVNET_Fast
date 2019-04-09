@@ -37,7 +37,7 @@ bool FileUtil::GetFilesInDirectory(const std::string & directory, const std::vec
 	WIN32_FIND_DATA findData;
 	HANDLE hFile = INVALID_HANDLE_VALUE;
 
-	std::string dirAsterisk = directory.back() != '*' ? directory + "\\*" : directory;
+	std::string dirAsterisk = directory.back() != '*' ? directory + DIRECTORY_DELIM + '*' : directory;
 
 	hFile = FindFirstFile(dirAsterisk.c_str(), &findData);
 	if (hFile == INVALID_HANDLE_VALUE)
@@ -84,8 +84,6 @@ bool FileUtil::ChangeCurrentDirectory(const std::string & relativeDirectory)
 	return false;
 }
 
-#else
-#error Not implemented FileUtil.
 #endif
 
 void FileUtil::ProcessFileInDirectory(const std::string& directory, const std::string & fileName, const std::vector<std::string>& filters, FileList & outFileList)
@@ -98,7 +96,7 @@ void FileUtil::ProcessFileInDirectory(const std::string& directory, const std::s
 		return;
 	}
 
-	if (IsDirectoryExist(directory + "\\" + fileName))
+	if (IsDirectoryExist(directory + DIRECTORY_DELIM + fileName))
 	{
 		return;
 	}
