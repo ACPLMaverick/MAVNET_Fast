@@ -95,7 +95,7 @@ namespace Rendering
 		pipelineInfo.DescriptorLayoutData = &_descriptorLayout;
 		pipelineInfo.MyVertexDeclaration = &_vertexDeclaration;
 		pipelineInfo.MyType = Pipeline::Type::Graphics;
-		pipelineInfo.MyRenderStep = (RenderStepCommon::Id)RenderStepCommon::FixedId::Tutorial;
+		pipelineInfo.MyRenderStep = (RenderStepCommon::Id)RenderStepCommon::FixedId::Tutorial;	// TODO: Pipelines should be created for every render step that this material can be drawn in.
 
 		Pipeline::CreateKey(&pipelineInfo, &_pipelineKey);
 

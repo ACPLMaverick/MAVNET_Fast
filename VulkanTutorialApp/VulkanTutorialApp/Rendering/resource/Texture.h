@@ -17,7 +17,7 @@ namespace Rendering
 			uint32_t SizeBytes;
 			uint16_t Width;
 			uint16_t Height;
-			uint16_t Channels;
+			uint16_t Channels;			// TODO: Isn't this redundant to Format?
 			uint8_t MipCount;
 			RenderState::MultisamplingMode MyMultisamplingMode;
 			bool bAllocatedByStbi;
@@ -39,8 +39,9 @@ namespace Rendering
 
 		struct ResizeInfo
 		{
-			uint16_t Width;
-			uint16_t Height;
+			uint16_t Width = 0;
+			uint16_t Height = 0;
+			bool bKeepContents = false;
 		};
 
 		struct CreateOptions
@@ -50,8 +51,9 @@ namespace Rendering
 			glm::vec4 ClearValuesNormalized = glm::vec4(0.0f);
 			bool bClearOnCreate = true;
 			bool bClearOnLoad = true;
-			bool bReadOnly = true;
-			bool bGenerateMips = true;
+			bool bCPUImmutable = true;
+			bool bWriteOnly = false;
+			bool bGenerateMips = false;
 			bool bIsTransferable = false;
 		};
 
@@ -59,14 +61,9 @@ namespace Rendering
 		{
 			VkFormat DesiredFormat = VK_FORMAT_R8G8B8A8_UNORM;
 			Sampler::Options SamplerOptions = Sampler::Options();
-			bool bReadOnly = true;
+			bool bCPUImmutable = true;
 			bool bGenerateMips = true;
 		};
-
-	public:
-
-		// TODO: Decide whether this returns to Renderer interface or all texture-creation-helper functions go here.
-		static VkImageView UtilCreateImageView(const Texture::Info* texInfo, VkImage image, VkImageAspectFlagBits flags);
 
 	public:
 
@@ -88,12 +85,16 @@ namespace Rendering
 	protected:
 
 		static int32_t GetDesiredChannelsFromFormat(VkFormat format);
+		static void CreateImage(const ::Rendering::Texture::Info* texInfo, VkImageTiling tiling, VkImageLayout initialLayout, VkImageUsageFlags usage, VkMemoryPropertyFlags memProperties, VkImage& outImage, VkDeviceMemory& outMemory);
+		static VkImageView CreateImageView(const Texture::Info* texInfo, VkImage image, VkImageAspectFlagBits flags);
+		static void CopyBufferToImage(VkBuffer buffer, VkImage image, const ::Rendering::Texture::Info* texInfo);
+		static void TransitionImageLayout(const ::Rendering::Texture::Info* texInfo, VkImage image, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
 
 		// This may change format if we load a compressed texture.
-		void InitializeCommon(Sampler::Options* samplerOptions, bool bGenerateMips, bool bReadOnly);
+		void InitializeCommon(Sampler::Options* samplerOptions, bool bGenerateMips, bool bCPUImmutable);
 		void LoadData(const std::string& loadPath, const LoadOptions* loadOptions);
 		void CalculateMipCount(bool bGenerateMips);
-		void CreateImage(VkImageLayout destLayout, VkImageAspectFlagBits imageAspect, bool bGenerateMips);
+		void CreateImage(VkImageLayout destLayout, VkImageAspectFlagBits imageAspect, VkImageUsageFlagBits imageUsage, bool bGenerateMips);
 		void CreateImageView(VkImageAspectFlagBits imageAspect);
 		void AssignSampler(Sampler::Options* samplerOptions);
 		void CleanupData();
@@ -103,6 +104,8 @@ namespace Rendering
 		virtual void ClearWithFixedValue(const glm::vec4& clearValuesNormalized);
 		virtual VkImageAspectFlagBits ObtainImageAspect();
 		virtual VkImageLayout ObtainDestLayout();
+		virtual VkImageUsageFlagBits ObtainImageUsage();
+		virtual bool CanDestroyImage();
 
 	protected:
 

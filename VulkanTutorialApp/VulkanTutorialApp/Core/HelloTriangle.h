@@ -94,7 +94,8 @@ namespace Core
 		VkCommandPool GetCommandPoolStatic() { return _commandPoolStatic; }
 		VkCommandBuffer GetCmd() { return _commandBuffers[_imageIndex]; }
 		const ::Rendering::RenderStep* GetActiveRenderStep() { JE_Assert(_activeRenderStep);  return _activeRenderStep; }
-		void SetActiveRenderStep(const ::Rendering::RenderStep* renderStep) { _activeRenderStep = renderStep; }
+		const std::vector<::Rendering::Attachment*>& GetSwapChainAttachments() { return _swapChainAttachments; }
+		uint32_t GetCurrentSwapChainImageIndex() { return _imageIndex; }
 
 		::Rendering::Camera* GetCamera() { return &_camera; }
 
@@ -116,12 +117,9 @@ namespace Core
 
 
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-		void TransitionImageLayout(const ::Rendering::Texture::Info* texInfo, VkImage image, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& outBuffer, VkDeviceMemory& outBufferMemory);
 		void CopyBuffer_CPU_GPU(const void* srcData, VkDeviceMemory dstMemory, size_t copySize);
 		void CopyBuffer_GPU_GPU(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize copySize);
-		void CreateImage(const ::Rendering::Texture::Info* texInfo, VkImageTiling tiling, VkImageLayout initialLayout, VkImageUsageFlags usage, VkMemoryPropertyFlags memProperties, VkImage& outImage, VkDeviceMemory& outMemory);
-		void CopyBufferToImage(VkBuffer buffer, VkImage image, const ::Rendering::Texture::Info* texInfo);
 
 		VkCommandBuffer BeginSingleTimeCommands();
 		void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
@@ -162,7 +160,6 @@ namespace Core
 			void RefreshCameraProj(uint32_t newWidth, uint32_t newHeight);
 
 			void CreateCommandPool();
-			void CreateDepthResources();
 			void CreateCommandBuffers();
 			// void CreatePushConstantRange();
 			void CreateSyncObjects();
@@ -247,11 +244,6 @@ namespace Core
 		// ++TODO delegate elsewhere.
 		::Rendering::Camera _camera;
 		// --
-
-		VkDeviceMemory _depthImageMemory;
-
-		VkImage _depthImage;
-		VkImageView _depthImageView;
 
 		ManagerUid _uidMgr;
 

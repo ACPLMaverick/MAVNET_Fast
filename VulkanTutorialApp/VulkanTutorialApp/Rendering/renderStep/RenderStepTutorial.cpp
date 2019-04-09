@@ -53,10 +53,32 @@ namespace Rendering
 			_subpassesData.push_back({ 0 });
 		}
 
-		// Create framebuffers
+		// Create depth-stencil attachment. TODO: Temporary solution. May want to create some kind of cache for attachment, just like there is one for render steps.
 		{
-
+			_depthStencil = new Attachment();
+			
+			Texture::CreateOptions opts;
+			opts.CreationInfo.Width = JE_GetRenderer()->GetSwapChainExtent().width;
+			opts.CreationInfo.Height = JE_GetRenderer()->GetSwapChainExtent().height;
+			opts.CreationInfo.Format = JE_GetRenderer()->FindDepthFormat();
+			opts.CreationInfo.Channels = 2;
+			opts.bClearOnCreate = false;
+			opts.bClearOnLoad = true;
+			opts.bGenerateMips = false;
+			opts.bIsTransferable = false;
+			opts.bCPUImmutable = true;
+			opts.bWriteOnly = true;
+			
+			_depthStencil->Create(&opts);
 		}
+
+		// Build framebuffers with attachments acquired from the swap chain.
+		RebuildFramebuffers();
+	}
+
+	void RenderStepTutorial::Cleanup_Internal()
+	{
+		JE_CleanupDelete(_depthStencil);
 	}
 
 	void RenderStepTutorial::BeginRenderPass_Internal()
@@ -76,7 +98,7 @@ namespace Rendering
 		VkRenderPassBeginInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = _renderPass->GetVkRenderPass();
-		renderPassInfo.framebuffer = /*_swapChainFramebuffers[_imageIndex]*/ nullptr;	// TODOTODO !!!!!!!!!!!!!!!!!!
+		renderPassInfo.framebuffer = _framebuffers[JE_GetRenderer()->GetCurrentSwapChainImageIndex()]->GetVkFramebuffer();
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = JE_GetRenderer()->GetSwapChainExtent();
 		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
@@ -121,6 +143,59 @@ namespace Rendering
 		// TODO: No vulkan code must be present on this level.
 		VkCommandBuffer cmd = JE_GetRenderer()->GetCmd();
 		vkCmdEndRenderPass(cmd);
+	}
+
+	void RenderStepTutorial::OnSwapChainResize_Internal()
+	{
+		uint32_t newWidth = JE_GetRenderer()->GetSwapChainExtent().width;
+		uint32_t newHeight = JE_GetRenderer()->GetSwapChainExtent().height;
+
+		// Resize depth stencil attachment.
+		{
+			Texture::ResizeInfo resizeInfo;
+			resizeInfo.Width = newWidth;
+			resizeInfo.Height = newHeight;
+			resizeInfo.bKeepContents = true;
+			_depthStencil->Resize(&resizeInfo);
+		}
+
+		// Rebuild framebuffers with newly acquired swap chain attachments.
+		RebuildFramebuffers();
+	}
+
+	void RenderStepTutorial::RebuildFramebuffers()
+	{
+		// Destroy current framebuffers if necessary.
+		if (!_framebuffers.empty())
+		{
+			for (Framebuffer* framebuffer : _framebuffers)
+			{
+				JE_CleanupDelete(framebuffer);
+			}
+			_framebuffers.clear();
+		}
+
+		// Create framebuffers : for each swap chain image create framebuffer with this image and depth stencil attachment.
+
+		const std::vector<Attachment*>& attachments = JE_GetRenderer()->GetSwapChainAttachments();
+		size_t fbNum = attachments.size();
+
+		for (size_t i = 0; i < fbNum; ++i)
+		{
+			Framebuffer* framebufer = new Framebuffer();
+
+			Framebuffer::Info fbInfo;
+			fbInfo.AssociatedRenderStep = _id;
+
+			fbInfo.NumColorAttachments = 1;
+			fbInfo.ColorAttachments[0] = attachments[i];
+
+			fbInfo.NumDepthAttachments = 1;
+			fbInfo.DepthAttachments[0] = _depthStencil;
+
+			framebufer->Initialize(&fbInfo);
+			_framebuffers.push_back(framebufer);
+		}
 	}
 
 }

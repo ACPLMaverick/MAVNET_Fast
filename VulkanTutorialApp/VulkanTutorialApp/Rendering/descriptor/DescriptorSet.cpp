@@ -85,7 +85,7 @@ namespace Rendering
 
 						if (resource->GetType() == ResourceCommon::Type::UniformBuffer)
 						{
-							const UniformBuffer* buffer = reinterpret_cast<const UniformBuffer*>(resource);
+							const UniformBuffer* buffer = static_cast<const UniformBuffer*>(resource);
 
 							VkDescriptorBufferInfo& bufferInfo = bufferInfos[i][j];
 							bufferInfo.buffer = buffer->GetBuffer();
@@ -96,7 +96,7 @@ namespace Rendering
 						}
 						else if (resource->GetType() == ResourceCommon::Type::Texture2D)
 						{
-							const Texture* texture = reinterpret_cast<const Texture*>(resource);
+							const Texture* texture = static_cast<const Texture*>(resource);
 
 							VkDescriptorImageInfo& imageInfo = imageInfos[i][j];
 							// TODO: Support other layouts.

@@ -5,28 +5,6 @@
 
 namespace Rendering
 {
-	VkImageView Texture::UtilCreateImageView(const Texture::Info* texInfo, VkImage image, VkImageAspectFlagBits flags)
-	{
-		VkImageViewCreateInfo viewInfo = {};
-		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.image = image;
-		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		viewInfo.format = static_cast<VkFormat>(texInfo->Format);
-		viewInfo.subresourceRange.aspectMask = flags;
-		viewInfo.subresourceRange.baseMipLevel = 0;
-		viewInfo.subresourceRange.levelCount = static_cast<uint32_t>(texInfo->MipCount);
-		viewInfo.subresourceRange.baseArrayLayer = 0;
-		viewInfo.subresourceRange.layerCount = 1;
-		viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-		VkImageView imageView;
-		JE_AssertThrowVkResult(vkCreateImageView(JE_GetRenderer()->GetDevice(), &viewInfo, JE_GetRenderer()->GetAllocatorPtr(), &imageView));
-		return imageView;
-	}
-
 	Texture::Texture()
 		: Resource()
 		, _dataGpu(VK_NULL_HANDLE)
@@ -57,7 +35,7 @@ namespace Rendering
 			CalculateMipCount(true);
 		}
 
-		InitializeCommon(const_cast<Sampler::Options*>(&createOptions->SamplerOptions), createOptions->bGenerateMips, createOptions->bReadOnly);
+		InitializeCommon(const_cast<Sampler::Options*>(&createOptions->SamplerOptions), createOptions->bGenerateMips, createOptions->bCPUImmutable);
 
 		if (createOptions->bClearOnCreate)
 		{
@@ -72,7 +50,7 @@ namespace Rendering
 		_info.Format = loadOptions->DesiredFormat;
 		LoadData(loadPath, loadOptions);
 
-		InitializeCommon(const_cast<Sampler::Options*>(&loadOptions->SamplerOptions), loadOptions->bGenerateMips, loadOptions->bReadOnly);
+		InitializeCommon(const_cast<Sampler::Options*>(&loadOptions->SamplerOptions), loadOptions->bGenerateMips, loadOptions->bCPUImmutable);
 	}
 
 	void Texture::Cleanup()
@@ -84,17 +62,108 @@ namespace Rendering
 
 		vkDestroyImageView(JE_GetRenderer()->GetDevice(), _view, JE_GetRenderer()->GetAllocatorPtr());
 		_view = VK_NULL_HANDLE;
-		vkDestroyImage(JE_GetRenderer()->GetDevice(), _image, JE_GetRenderer()->GetAllocatorPtr());
+
+		if (CanDestroyImage())
+		{
+			vkDestroyImage(JE_GetRenderer()->GetDevice(), _image, JE_GetRenderer()->GetAllocatorPtr());
+		}
 		_image = VK_NULL_HANDLE;
-		vkFreeMemory(JE_GetRenderer()->GetDevice(), _dataGpu, JE_GetRenderer()->GetAllocatorPtr());
-		_dataGpu = VK_NULL_HANDLE;
+
+		if (_dataGpu)
+		{
+			vkFreeMemory(JE_GetRenderer()->GetDevice(), _dataGpu, JE_GetRenderer()->GetAllocatorPtr());
+			_dataGpu = VK_NULL_HANDLE;
+		}
 
 		_sampler = nullptr;
 	}
 
 	void Texture::Resize(const ResizeInfo* resizeInfo)
 	{
-		JE_TODO();	// TODO
+		JE_Assert(resizeInfo);
+		JE_Assert(CanDestroyImage());
+		JE_Assert(IsReadOnly());		// For now let it be like this...
+
+		if (resizeInfo->Width == _info.Width && resizeInfo->Height == _info.Height)
+		{
+			return;
+		}
+
+		VkImageAspectFlagBits aspect = ObtainImageAspect();
+		VkImageLayout destLayout = ObtainDestLayout();
+		VkImageUsageFlagBits usage = ObtainImageUsage();
+
+		if (resizeInfo->bKeepContents)
+		{
+			TransitionImageLayout(&_info, _image, aspect, destLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+		}
+
+		uint32_t oldWidth = _info.Width;
+		uint32_t oldHeight = _info.Height;
+		_info.Width = resizeInfo->Width;
+		_info.Height = resizeInfo->Height;
+
+		VkDeviceMemory newMemory = VK_NULL_HANDLE;
+		VkImage newImage = VK_NULL_HANDLE;
+
+		// Copy to new image.
+		if(resizeInfo->bKeepContents)
+		{
+			CreateImage(&_info, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, newImage, newMemory);
+
+			VkCommandBuffer cmd = JE_GetRenderer()->BeginSingleTimeCommands();
+
+			JE_Assert(_info.MipCount);
+			for (uint32_t i = 0; i < _info.MipCount; ++i)
+			{
+				int32_t currOldWidth = std::max<int32_t>((int32_t)oldWidth >> i, 1);
+				int32_t currOldHeight = std::max<int32_t>((int32_t)oldHeight >> i, 1);
+
+				int32_t currNewWidth = std::max<int32_t>((int32_t)_info.Width >> i, 1);
+				int32_t currNewHeight = std::max<int32_t>((int32_t)_info.Height >> i, 1);
+
+				VkImageBlit blit = {};
+
+				blit.srcOffsets[0] = { 0, 0, 0 };
+				blit.srcOffsets[1] = { currOldWidth, currOldHeight, 1 };
+				blit.srcSubresource.aspectMask = aspect;
+				blit.srcSubresource.mipLevel = i;
+				blit.srcSubresource.baseArrayLayer = 0;
+				blit.srcSubresource.layerCount = 1;
+
+				blit.dstOffsets[0] = { 0, 0, 0 };
+				blit.dstOffsets[1] = { currNewWidth, currNewHeight, 1 };
+				blit.dstSubresource.aspectMask = aspect;
+				blit.dstSubresource.mipLevel = i;
+				blit.dstSubresource.baseArrayLayer = 0;
+				blit.dstSubresource.layerCount = 1;
+
+				vkCmdBlitImage(cmd, _image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, newImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+			}
+
+			JE_GetRenderer()->EndSingleTimeCommands(cmd);
+
+			// Move to destination layout after blit is finished.
+			TransitionImageLayout(&_info, newImage, aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout);
+		}
+		else
+		{
+			CreateImage(&_info, VK_IMAGE_TILING_OPTIMAL, destLayout, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, newImage, newMemory);
+		}
+
+
+		// Purge the old image and reassign to new.
+		vkDestroyImageView(JE_GetRenderer()->GetDevice(), _view, JE_GetRenderer()->GetAllocatorPtr());
+		if (_dataGpu)
+		{
+			vkFreeMemory(JE_GetRenderer()->GetDevice(), _dataGpu, JE_GetRenderer()->GetAllocatorPtr());
+			_dataGpu = VK_NULL_HANDLE;
+		}
+		vkDestroyImage(JE_GetRenderer()->GetDevice(), _image, JE_GetRenderer()->GetAllocatorPtr());
+
+		_dataGpu = newMemory;
+		_image = newImage;
+		CreateImageView(aspect);
 	}
 
 	int32_t Texture::GetDesiredChannelsFromFormat(VkFormat format)
@@ -103,12 +172,74 @@ namespace Rendering
 		return 4;
 	}
 
-	void Texture::InitializeCommon(Sampler::Options* samplerOptions, bool bGenerateMips, bool bReadOnly)
+	void Texture::CreateImage(const ::Rendering::Texture::Info* texInfo, VkImageTiling tiling, VkImageLayout initialLayout, VkImageUsageFlags usage, VkMemoryPropertyFlags memProperties, VkImage& outImage, VkDeviceMemory& outMemory)
+	{
+		VkImageCreateInfo imageInfo = {};
+		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageInfo.imageType = VK_IMAGE_TYPE_2D;
+		imageInfo.extent.width = static_cast<uint32_t>(texInfo->Width);
+		imageInfo.extent.height = static_cast<uint32_t>(texInfo->Height);
+		imageInfo.extent.depth = 1;
+		imageInfo.mipLevels = static_cast<uint32_t>(texInfo->MipCount);
+		imageInfo.arrayLayers = 1;
+		imageInfo.format = static_cast<VkFormat>(texInfo->Format);
+		imageInfo.tiling = tiling;
+		imageInfo.initialLayout = initialLayout;
+		imageInfo.usage = usage;
+		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+		imageInfo.flags = 0;
+
+		JE_AssertThrowVkResult(vkCreateImage(JE_GetRenderer()->GetDevice(), &imageInfo, JE_GetRenderer()->GetAllocatorPtr(), &outImage));
+		JE_Assert(outImage);
+
+		VkMemoryRequirements memRequirements;
+		vkGetImageMemoryRequirements(JE_GetRenderer()->GetDevice(), outImage, &memRequirements);
+
+		VkMemoryAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		allocInfo.allocationSize = memRequirements.size;
+		allocInfo.memoryTypeIndex = JE_GetRenderer()->FindMemoryType(memRequirements.memoryTypeBits, memProperties);
+
+		JE_AssertThrowVkResult(vkAllocateMemory(JE_GetRenderer()->GetDevice(), &allocInfo, JE_GetRenderer()->GetAllocatorPtr(), &outMemory));
+
+		JE_AssertThrowVkResult(vkBindImageMemory(JE_GetRenderer()->GetDevice(), outImage, outMemory, 0));
+	}
+
+	void Texture::CopyBufferToImage(VkBuffer buffer, VkImage image, const ::Rendering::Texture::Info* texInfo)
+	{
+		VkCommandBuffer commandBuffer = JE_GetRenderer()->BeginSingleTimeCommands();
+
+		VkBufferImageCopy region = {};
+		region.bufferOffset = 0;
+		region.bufferRowLength = 0;
+		region.bufferImageHeight = 0;
+
+		region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		region.imageSubresource.mipLevel = 0;
+		region.imageSubresource.baseArrayLayer = 0;
+		region.imageSubresource.layerCount = 1;
+
+		region.imageOffset = { 0, 0, 0 };
+		region.imageExtent =
+		{
+			static_cast<uint32_t>(texInfo->Width),
+			static_cast<uint32_t>(texInfo->Height),
+			1
+		};
+
+		vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+		JE_GetRenderer()->EndSingleTimeCommands(commandBuffer);
+	}
+
+	void Texture::InitializeCommon(Sampler::Options* samplerOptions, bool bGenerateMips, bool bCPUImmutable)
 	{
 		VkImageAspectFlagBits aspect = ObtainImageAspect();
 		VkImageLayout destLayout = ObtainDestLayout();
+		VkImageUsageFlagBits usage = ObtainImageUsage();
 
-		CreateImage(destLayout, aspect, bGenerateMips);
+		CreateImage(destLayout, aspect, usage, bGenerateMips);
 		CreateImageView(aspect);
 
 		if (bGenerateMips)
@@ -118,7 +249,7 @@ namespace Rendering
 
 		AssignSampler(samplerOptions);
 
-		if (bReadOnly)
+		if (bCPUImmutable)
 		{
 			CleanupData();
 		}
@@ -163,7 +294,7 @@ namespace Rendering
 		}
 	}
 
-	void Texture::CreateImage(VkImageLayout destLayout, VkImageAspectFlagBits imageAspect, bool bGenerateMips)
+	void Texture::CreateImage(VkImageLayout destLayout, VkImageAspectFlagBits imageAspect, VkImageUsageFlagBits imageUsage, bool bGenerateMips)
 	{
 		VkDeviceSize imageSize = _info.Width * _info.Height * _info.Channels;
 
@@ -178,15 +309,15 @@ namespace Rendering
 
 			JE_GetRenderer()->CopyBuffer_CPU_GPU(reinterpret_cast<void*>(_info.Data), stagingBufferMemory, imageSize);
 
-			JE_GetRenderer()->CreateImage(GetInfo(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _image, _dataGpu);
+			CreateImage(GetInfo(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | imageUsage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _image, _dataGpu);
 
-			JE_GetRenderer()->TransitionImageLayout(GetInfo(), _image, imageAspect, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+			TransitionImageLayout(GetInfo(), _image, imageAspect, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-			JE_GetRenderer()->CopyBufferToImage(stagingBuffer, _image, GetInfo());
+			CopyBufferToImage(stagingBuffer, _image, GetInfo());
 
 			if (!bGenerateMips)
 			{
-				JE_GetRenderer()->TransitionImageLayout(GetInfo(), _image, imageAspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout);
+				TransitionImageLayout(GetInfo(), _image, imageAspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, destLayout);
 			}
 
 			vkDestroyBuffer(JE_GetRenderer()->GetDevice(), stagingBuffer, JE_GetRenderer()->GetAllocatorPtr());
@@ -195,12 +326,131 @@ namespace Rendering
 		else
 		{
 			// Create texture already in deep GPU memory.
+			CreateImage(GetInfo(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, imageUsage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _image, _dataGpu);
+			TransitionImageLayout(GetInfo(), _image, imageAspect, VK_IMAGE_LAYOUT_UNDEFINED, destLayout);
 		}
+	}
+
+	VkImageView Texture::CreateImageView(const Texture::Info* texInfo, VkImage image, VkImageAspectFlagBits flags)
+	{
+		VkImageViewCreateInfo viewInfo = {};
+		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		viewInfo.image = image;
+		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		viewInfo.format = static_cast<VkFormat>(texInfo->Format);
+		viewInfo.subresourceRange.aspectMask = flags;
+		viewInfo.subresourceRange.baseMipLevel = 0;
+		viewInfo.subresourceRange.levelCount = static_cast<uint32_t>(texInfo->MipCount);
+		viewInfo.subresourceRange.baseArrayLayer = 0;
+		viewInfo.subresourceRange.layerCount = 1;
+		viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+		VkImageView imageView;
+		JE_AssertThrowVkResult(vkCreateImageView(JE_GetRenderer()->GetDevice(), &viewInfo, JE_GetRenderer()->GetAllocatorPtr(), &imageView));
+		return imageView;
+	}
+
+	void Texture::TransitionImageLayout(const ::Rendering::Texture::Info* texInfo, VkImage image, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout)
+	{
+		VkCommandBuffer commandBuffer = JE_GetRenderer()->BeginSingleTimeCommands();
+
+		VkImageMemoryBarrier barrier = {};
+		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier.oldLayout = oldLayout;
+		barrier.newLayout = newLayout;
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.image = image;
+		barrier.subresourceRange.aspectMask = aspectFlags;
+		barrier.subresourceRange.baseMipLevel = 0;
+		barrier.subresourceRange.levelCount = static_cast<uint32_t>(texInfo->MipCount);
+		barrier.subresourceRange.baseArrayLayer = 0;
+		barrier.subresourceRange.layerCount = 1;
+
+		VkPipelineStageFlags sourceStage, destinationStage;
+		if (
+			oldLayout == VK_IMAGE_LAYOUT_UNDEFINED
+			&& newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+			)
+		{
+			barrier.srcAccessMask = 0;
+			barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
+		else if (
+			oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+			&& newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+			)
+		{
+			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		}
+		else if (
+			oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+			&& newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+			)
+		{
+			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		}
+		else if (
+			oldLayout == VK_IMAGE_LAYOUT_UNDEFINED
+			&& newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+			)
+		{
+			barrier.srcAccessMask = 0;
+			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		}
+		else if (
+			oldLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+			&& newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+			)
+		{
+			barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+			barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
+		else
+		{
+			JE_AssertThrow(false, "Unsupported layout transition!");
+		}
+
+		vkCmdPipelineBarrier
+		(
+			commandBuffer,
+			sourceStage,
+			destinationStage,
+			0,
+			0,
+			nullptr,
+			0,
+			nullptr,
+			1,
+			&barrier
+		);
+
+		JE_GetRenderer()->EndSingleTimeCommands(commandBuffer);
 	}
 
 	void Texture::CreateImageView(VkImageAspectFlagBits imageAspect)
 	{
-		_view = UtilCreateImageView(GetInfo(), _image, imageAspect);
+		_view = CreateImageView(GetInfo(), _image, imageAspect);
 	}
 
 	void Texture::AssignSampler(Sampler::Options* samplerOptions)
@@ -360,6 +610,16 @@ namespace Rendering
 	VkImageLayout Texture::ObtainDestLayout()
 	{
 		return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	}
+
+	VkImageUsageFlagBits Texture::ObtainImageUsage()
+	{
+		return VK_IMAGE_USAGE_SAMPLED_BIT;
+	}
+
+	bool Texture::CanDestroyImage()
+	{
+		return true;
 	}
 
 }

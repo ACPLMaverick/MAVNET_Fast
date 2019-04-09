@@ -24,7 +24,7 @@ namespace Rendering
 		opt.bClearOnLoad = true;
 		opt.bGenerateMips = false;
 		opt.bIsTransferable = false;
-		opt.bReadOnly = true;
+		opt.bCPUImmutable = true;
 		opt.SamplerOptions = Sampler::Options();
 		opt.CreationInfo.Width = swapChainExtent.width;
 		opt.CreationInfo.Height = swapChainExtent.height;
@@ -51,7 +51,7 @@ namespace Rendering
 
 	void Attachment::Resize(const ResizeInfo* resizeInfo)
 	{
-		JE_TODO(); // TODO.
+		Texture::Resize(resizeInfo);
 	}
 
 	void Attachment::ClearWithFixedValue(const glm::vec4& clearValuesNormalized)
@@ -76,6 +76,8 @@ namespace Rendering
 
 	VkImageAspectFlagBits Attachment::ObtainImageAspect()
 	{
+		JE_Assert(_attachDesc.Usage != UsageMode::Transferable); // TODO Not implemented.
+
 		switch (_attachDesc.Usage)
 		{
 		case UsageMode::DepthStencil:
@@ -96,9 +98,37 @@ namespace Rendering
 		}
 	}
 
+	VkImageUsageFlagBits Attachment::ObtainImageUsage()
+	{
+		VkImageUsageFlagBits baseUsage = Texture::ObtainImageUsage();
+
+		if (_attachDesc.bWriteOnly)
+		{
+			baseUsage = (VkImageUsageFlagBits)((uint32_t)baseUsage & ~((uint32_t)VK_IMAGE_USAGE_SAMPLED_BIT));
+		}
+
+		switch (_attachDesc.Usage)
+		{
+		case UsageMode::DepthStencil:
+			baseUsage = (VkImageUsageFlagBits)((uint32_t)baseUsage | (uint32_t)VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+			break;
+		default:
+			baseUsage = (VkImageUsageFlagBits)((uint32_t)baseUsage | (uint32_t)VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+			break;
+		}
+
+		return baseUsage;
+	}
+
+	bool Attachment::CanDestroyImage()
+	{
+		return !IsSwapChainImage();
+	}
+
 	void Attachment::CreateFromSwapChainImage(const CreateOptions* createOptions, VkImage swapChainImage)
 	{
 		BuildAttachDesc(createOptions);
+		_attachDesc.Usage = UsageMode::ColorPresentable;
 		_info = createOptions->CreationInfo;
 		_image = swapChainImage;
 		CreateImageView(ObtainImageAspect());
@@ -151,6 +181,7 @@ namespace Rendering
 		}
 
 		_attachDesc.bClearOnLoad = createOptions->bClearOnLoad;
+		_attachDesc.bWriteOnly = createOptions->bWriteOnly;
 		_attachDesc.bStore = true;
 		_attachDesc.bUseStencil = bUsesStencil;
 	}

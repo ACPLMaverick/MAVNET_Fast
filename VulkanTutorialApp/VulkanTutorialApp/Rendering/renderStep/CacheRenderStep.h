@@ -12,11 +12,11 @@ namespace Rendering
 
 		void Initialize();
 		void Cleanup();
+		void OnSwapChainResize();
 
 		JE_Inline RenderStep* Get(RenderStepCommon::FixedId id) const 
 		{ 
 			RenderStep* step = _renderStepsFixed[(size_t)id];
-			JE_Assert(step);
 			return step; 
 		}
 
@@ -30,9 +30,10 @@ namespace Rendering
 		template <class StepType> void InitFixedRenderStep(RenderStepCommon::FixedId id)
 		{
 			StepType* step = new StepType();
-			step->_id = id;
-			step->Initialize();
 			_renderStepsFixed[(size_t)RenderStepCommon::FixedId::Tutorial] = step;
+
+			step->_id = (RenderStepCommon::Id)id;
+			step->Initialize();
 		}
 
 		RenderStep * _renderStepsFixed[(size_t)RenderStepCommon::FixedId::ENUM_SIZE] = {};

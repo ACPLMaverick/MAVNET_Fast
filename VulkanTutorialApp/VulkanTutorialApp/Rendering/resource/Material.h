@@ -23,7 +23,7 @@ namespace Rendering
 		JE_Inline const VertexDeclaration* GetVertexDeclaration() const { return &_vertexDeclaration; }
 		JE_Inline const DescriptorCommon::LayoutData* GetDescriptorLayout() const { return &_descriptorLayout; }
 		JE_Inline const Pipeline* GetPipeline() const { return _pipeline; }
-		JE_Inline const Texture* GetTexture(size_t index) { return _textures[index]; }
+		JE_Inline const Texture* GetTexture(size_t index) { JE_Assert(index < _textures.size()); return _textures[index]; }
 
 	protected:
 

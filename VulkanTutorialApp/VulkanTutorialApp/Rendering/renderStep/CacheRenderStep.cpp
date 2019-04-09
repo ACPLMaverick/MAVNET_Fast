@@ -16,9 +16,23 @@ namespace Rendering
 	{
 		for (size_t i = 0; i < (size_t)RenderStepCommon::FixedId::ENUM_SIZE; ++i)
 		{
-			_renderStepsFixed[i]->Cleanup();
-			delete _renderStepsFixed[i];
-			_renderStepsFixed[i] = nullptr;
+			if (_renderStepsFixed[i])
+			{
+				_renderStepsFixed[i]->Cleanup();
+				delete _renderStepsFixed[i];
+				_renderStepsFixed[i] = nullptr;
+			}
+		}
+	}
+
+	void CacheRenderStep::OnSwapChainResize()
+	{
+		for (size_t i = 0; i < (size_t)RenderStepCommon::FixedId::ENUM_SIZE; ++i)
+		{
+			if (_renderStepsFixed[i])
+			{
+				_renderStepsFixed[i]->OnSwapChainResize();
+			}
 		}
 	}
 

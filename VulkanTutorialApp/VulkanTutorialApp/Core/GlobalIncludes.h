@@ -115,6 +115,7 @@ template <typename TypeName> void JE_DeleteAlignedArray(TypeName* ptr, size_t ob
 	JE_AlignedFree(ptr);
 }
 
+#define JE_CleanupDelete(ptr) { JE_Assert(ptr);	(ptr)->Cleanup(); delete (ptr); (ptr) = nullptr; }
 
 #define JE_VA_ARGS_COUNT(...) std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value
 

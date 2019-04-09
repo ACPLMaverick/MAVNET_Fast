@@ -244,7 +244,7 @@ namespace GOM
 				if (binding.Index == 0)	// Transform goes here.
 				{
 					const Transform::Data& transformData = myTransform->GetData();
-					info.Resources[i][binding.Index] = transformData.UboTransform;
+					info.Resources[i][binding.Index] = static_cast<const Rendering::Resource*>(transformData.UboTransform);
 				}
 				else
 				{
@@ -261,7 +261,7 @@ namespace GOM
 				{
 					for (size_t j = 0; j < binding.Count; ++j)
 					{
-						info.Resources[i][j] = myMaterial->GetTexture(j);
+						info.Resources[i][j] = static_cast<const Rendering::Resource*>(myMaterial->GetTexture(j));
 					}
 				}
 				else

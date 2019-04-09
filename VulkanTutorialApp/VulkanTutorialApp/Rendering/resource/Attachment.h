@@ -23,6 +23,7 @@ namespace Rendering
 			bool bClearOnLoad : 1;
 			bool bStore : 1;
 			bool bUseStencil : 1;	// Is deduced from Format.
+			bool bWriteOnly : 1;
 		};
 
 	public:
@@ -41,6 +42,8 @@ namespace Rendering
 		virtual void ClearWithFixedValue(const glm::vec4& clearValuesNormalized) override;
 		virtual VkImageAspectFlagBits ObtainImageAspect() override;
 		virtual VkImageLayout ObtainDestLayout() override;
+		virtual VkImageUsageFlagBits ObtainImageUsage() override;
+		virtual bool CanDestroyImage() override;
 
 		void CreateFromSwapChainImage(const CreateOptions* createOptions, VkImage swapChainImage);
 		void BuildAttachDesc(const CreateOptions* createOptions);

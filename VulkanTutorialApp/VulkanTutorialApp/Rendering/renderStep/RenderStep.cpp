@@ -7,8 +7,6 @@ namespace Rendering
 {
 	void RenderStep::Perform()
 	{
-		JE_GetRenderer()->SetActiveRenderStep(this);
-
 		BeginRenderPass();
 		
 		for (PerSubpassData& subpass : _subpassesData)
@@ -22,8 +20,11 @@ namespace Rendering
 		_currentSubpassDataIndex = 0;
 
 		EndRenderPass();
+	}
 
-		JE_GetRenderer()->SetActiveRenderStep(nullptr);
+	void RenderStep::OnSwapChainResize()
+	{
+		OnSwapChainResize_Internal();
 	}
 
 	void RenderStep::Initialize()
