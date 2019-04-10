@@ -16,4 +16,10 @@ public:
 	static void ProcessFileInDirectory(const std::string& directory, const std::string& fileName, const std::vector<std::string>& filters, FileList& outFileList);
 	static void SplitString(const std::string& inString, char delim, std::vector<std::string>& outParts);
 	static void StripString(const std::string& inString, char delim, std::string& outString);
+
+#ifdef FTPS_PLATFORM_WIN32
+	static const char DIRECTORY_DELIM = '\\';
+#elif FTPS_PLATFORM_LINUX
+	static const char DIRECTORY_DELIM = '/';
+#endif
 };
