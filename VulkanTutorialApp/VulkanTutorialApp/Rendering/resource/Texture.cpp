@@ -25,6 +25,12 @@ namespace Rendering
 		JE_Assert(_image == VK_NULL_HANDLE);
 	}
 
+	JE_Inline bool Texture::CanKeepContentOnResize() const
+	{
+		// Not supported for depth/stencil format for now...
+		return _info.bTransferable && !((uint32_t)ObtainImageUsage() & (uint32_t)VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+	}
+
 	void Texture::Create(const CreateOptions* createOptions)
 	{
 		JE_Assert(createOptions);
@@ -83,6 +89,12 @@ namespace Rendering
 		JE_Assert(resizeInfo);
 		JE_Assert(CanDestroyImage());
 		JE_Assert(IsReadOnly());		// For now let it be like this...
+		if (resizeInfo->bKeepContents)
+		{
+			JE_Assert(CanKeepContentOnResize());
+		}
+
+		const bool bCanKeepContents = resizeInfo->bKeepContents && CanKeepContentOnResize();
 
 		if (resizeInfo->Width == _info.Width && resizeInfo->Height == _info.Height)
 		{
@@ -93,7 +105,7 @@ namespace Rendering
 		VkImageLayout destLayout = ObtainDestLayout();
 		VkImageUsageFlagBits usage = ObtainImageUsage();
 
-		if (resizeInfo->bKeepContents)
+		if (bCanKeepContents)
 		{
 			TransitionImageLayout(&_info, _image, aspect, destLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 		}
@@ -107,9 +119,10 @@ namespace Rendering
 		VkImage newImage = VK_NULL_HANDLE;
 
 		// Copy to new image.
-		if(resizeInfo->bKeepContents)
+		if(bCanKeepContents)
 		{
-			CreateImage(&_info, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, newImage, newMemory);
+			CreateImage(&_info, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, newImage, newMemory);
+			TransitionImageLayout(&_info, newImage, aspect, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 			VkCommandBuffer cmd = JE_GetRenderer()->BeginSingleTimeCommands();
 
@@ -138,7 +151,9 @@ namespace Rendering
 				blit.dstSubresource.baseArrayLayer = 0;
 				blit.dstSubresource.layerCount = 1;
 
-				vkCmdBlitImage(cmd, _image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, newImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+				VkFilter blitFilter = ((uint32_t)usage & (uint32_t)VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) ? VK_FILTER_NEAREST : VK_FILTER_LINEAR;
+
+				vkCmdBlitImage(cmd, _image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, newImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, blitFilter);
 			}
 
 			JE_GetRenderer()->EndSingleTimeCommands(cmd);
@@ -148,7 +163,8 @@ namespace Rendering
 		}
 		else
 		{
-			CreateImage(&_info, VK_IMAGE_TILING_OPTIMAL, destLayout, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, newImage, newMemory);
+			CreateImage(&_info, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_LAYOUT_UNDEFINED, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, newImage, newMemory);
+			TransitionImageLayout(&_info, newImage, aspect, VK_IMAGE_LAYOUT_UNDEFINED, destLayout);
 		}
 
 
@@ -405,6 +421,17 @@ namespace Rendering
 			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		}
 		else if (
+			oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+			&& newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+			)
+		{
+			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		}
+		else if (
 			oldLayout == VK_IMAGE_LAYOUT_UNDEFINED
 			&& newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 			)
@@ -602,22 +629,22 @@ namespace Rendering
 		JE_GetRenderer()->EndSingleTimeCommands(cmd);
 	}
 
-	VkImageAspectFlagBits Texture::ObtainImageAspect()
+	VkImageAspectFlagBits Texture::ObtainImageAspect() const
 	{
 		return VK_IMAGE_ASPECT_COLOR_BIT;
 	}
 
-	VkImageLayout Texture::ObtainDestLayout()
+	VkImageLayout Texture::ObtainDestLayout() const
 	{
 		return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	}
 
-	VkImageUsageFlagBits Texture::ObtainImageUsage()
+	VkImageUsageFlagBits Texture::ObtainImageUsage() const
 	{
 		return VK_IMAGE_USAGE_SAMPLED_BIT;
 	}
 
-	bool Texture::CanDestroyImage()
+	bool Texture::CanDestroyImage() const
 	{
 		return true;
 	}

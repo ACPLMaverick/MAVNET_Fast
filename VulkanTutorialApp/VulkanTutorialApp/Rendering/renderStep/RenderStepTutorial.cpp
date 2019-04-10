@@ -62,10 +62,10 @@ namespace Rendering
 			opts.CreationInfo.Height = JE_GetRenderer()->GetSwapChainExtent().height;
 			opts.CreationInfo.Format = JE_GetRenderer()->FindDepthFormat();
 			opts.CreationInfo.Channels = 2;
+			opts.CreationInfo.bTransferable = false;
 			opts.bClearOnCreate = false;
 			opts.bClearOnLoad = true;
 			opts.bGenerateMips = false;
-			opts.bIsTransferable = false;
 			opts.bCPUImmutable = true;
 			opts.bWriteOnly = true;
 			
@@ -155,7 +155,7 @@ namespace Rendering
 			Texture::ResizeInfo resizeInfo;
 			resizeInfo.Width = newWidth;
 			resizeInfo.Height = newHeight;
-			resizeInfo.bKeepContents = true;
+			resizeInfo.bKeepContents = false;
 			_depthStencil->Resize(&resizeInfo);
 		}
 

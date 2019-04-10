@@ -23,7 +23,6 @@ namespace Rendering
 		opt.bClearOnCreate = false;
 		opt.bClearOnLoad = true;
 		opt.bGenerateMips = false;
-		opt.bIsTransferable = false;
 		opt.bCPUImmutable = true;
 		opt.SamplerOptions = Sampler::Options();
 		opt.CreationInfo.Width = swapChainExtent.width;
@@ -34,6 +33,7 @@ namespace Rendering
 		opt.CreationInfo.Format = swapChainFormat;
 		opt.CreationInfo.MipCount = 1;
 		opt.CreationInfo.MyMultisamplingMode = RenderState::MultisamplingMode::None;
+		opt.CreationInfo.bTransferable = false;
 		
 		for (uint32_t i = 0; i < imageCount; ++i)
 		{
@@ -74,10 +74,8 @@ namespace Rendering
 		}
 	}
 
-	VkImageAspectFlagBits Attachment::ObtainImageAspect()
+	VkImageAspectFlagBits Attachment::ObtainImageAspect() const
 	{
-		JE_Assert(_attachDesc.Usage != UsageMode::Transferable); // TODO Not implemented.
-
 		switch (_attachDesc.Usage)
 		{
 		case UsageMode::DepthStencil:
@@ -87,7 +85,7 @@ namespace Rendering
 		}
 	}
 
-	VkImageLayout Attachment::ObtainDestLayout()
+	VkImageLayout Attachment::ObtainDestLayout() const
 	{
 		switch (_attachDesc.Usage)
 		{
@@ -98,7 +96,7 @@ namespace Rendering
 		}
 	}
 
-	VkImageUsageFlagBits Attachment::ObtainImageUsage()
+	VkImageUsageFlagBits Attachment::ObtainImageUsage() const
 	{
 		VkImageUsageFlagBits baseUsage = Texture::ObtainImageUsage();
 
@@ -117,10 +115,15 @@ namespace Rendering
 			break;
 		}
 
+		if (_info.bTransferable)
+		{
+			baseUsage = (VkImageUsageFlagBits)((uint32_t)baseUsage | (uint32_t)VK_IMAGE_USAGE_TRANSFER_SRC_BIT | (uint32_t)VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+		}
+
 		return baseUsage;
 	}
 
-	bool Attachment::CanDestroyImage()
+	bool Attachment::CanDestroyImage() const
 	{
 		return !IsSwapChainImage();
 	}
@@ -167,11 +170,7 @@ namespace Rendering
 		_attachDesc.Format = static_cast<uint32_t>(vkFormat);
 		_attachDesc.MyMultisamplingMode = _info.MyMultisamplingMode;
 
-		if (createOptions->bIsTransferable)
-		{
-			_attachDesc.Usage = UsageMode::Transferable;
-		}
-		else if (bIsDepth || bUsesStencil)
+		if (bIsDepth || bUsesStencil)
 		{
 			_attachDesc.Usage = UsageMode::DepthStencil;
 		}

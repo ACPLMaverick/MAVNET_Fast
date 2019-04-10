@@ -11,7 +11,6 @@ namespace Rendering
 		JE_EnumBegin(UsageMode)
 			Color
 			, ColorPresentable
-			, Transferable
 			, DepthStencil
 		JE_EnumEnd()
 
@@ -40,10 +39,10 @@ namespace Rendering
 	protected:
 
 		virtual void ClearWithFixedValue(const glm::vec4& clearValuesNormalized) override;
-		virtual VkImageAspectFlagBits ObtainImageAspect() override;
-		virtual VkImageLayout ObtainDestLayout() override;
-		virtual VkImageUsageFlagBits ObtainImageUsage() override;
-		virtual bool CanDestroyImage() override;
+		virtual VkImageAspectFlagBits ObtainImageAspect() const override;
+		virtual VkImageLayout ObtainDestLayout() const override;
+		virtual VkImageUsageFlagBits ObtainImageUsage() const override;
+		virtual bool CanDestroyImage() const override;
 
 		void CreateFromSwapChainImage(const CreateOptions* createOptions, VkImage swapChainImage);
 		void BuildAttachDesc(const CreateOptions* createOptions);

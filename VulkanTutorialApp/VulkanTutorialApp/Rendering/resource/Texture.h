@@ -20,6 +20,7 @@ namespace Rendering
 			uint16_t Channels;			// TODO: Isn't this redundant to Format?
 			uint8_t MipCount;
 			RenderState::MultisamplingMode MyMultisamplingMode;
+			bool bTransferable;
 			bool bAllocatedByStbi;
 
 			Info()
@@ -31,6 +32,7 @@ namespace Rendering
 				, Channels(0)
 				, MipCount(1)
 				, MyMultisamplingMode(RenderState::MultisamplingMode::None)
+				, bTransferable(false)
 				, bAllocatedByStbi(false)
 			{
 
@@ -54,7 +56,6 @@ namespace Rendering
 			bool bCPUImmutable = true;
 			bool bWriteOnly = false;
 			bool bGenerateMips = false;
-			bool bIsTransferable = false;
 		};
 
 		struct LoadOptions
@@ -75,6 +76,7 @@ namespace Rendering
 		JE_Inline VkImage GetImage() const { return _image; }
 		JE_Inline VkImageView GetImageView() const { return _view; }
 		JE_Inline const Sampler* GetSampler() const { return _sampler; }
+		JE_Inline bool CanKeepContentOnResize() const;
 
 		virtual void Create(const CreateOptions* createOptions);
 		void Load(const std::string& textureName, const LoadOptions* loadOptions);
@@ -102,10 +104,10 @@ namespace Rendering
 		void GenerateMipmaps(VkImageLayout destLayout, VkImageAspectFlagBits imageAspect);
 
 		virtual void ClearWithFixedValue(const glm::vec4& clearValuesNormalized);
-		virtual VkImageAspectFlagBits ObtainImageAspect();
-		virtual VkImageLayout ObtainDestLayout();
-		virtual VkImageUsageFlagBits ObtainImageUsage();
-		virtual bool CanDestroyImage();
+		virtual VkImageAspectFlagBits ObtainImageAspect() const;
+		virtual VkImageLayout ObtainDestLayout() const;
+		virtual VkImageUsageFlagBits ObtainImageUsage() const;
+		virtual bool CanDestroyImage() const;
 
 	protected:
 

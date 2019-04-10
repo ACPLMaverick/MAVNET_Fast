@@ -51,9 +51,6 @@ namespace Rendering
 			case Attachment::UsageMode::ColorPresentable:
 				desc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 				break;
-			case Attachment::UsageMode::Transferable:
-				desc.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-				break;
 			case Attachment::UsageMode::DepthStencil:
 				desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 				break;
@@ -112,7 +109,6 @@ namespace Rendering
 				{
 				case Attachment::UsageMode::Color:
 				case Attachment::UsageMode::ColorPresentable:
-				case Attachment::UsageMode::Transferable:
 				default:
 					attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					break;
