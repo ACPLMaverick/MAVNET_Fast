@@ -2,12 +2,39 @@
 
 #include "FileList.h"
 
-#include <sstream>
-#include <stack>
-
 #ifdef FTPS_PLATFORM_WIN32
 
 #include <Windows.h>
+
+bool FileUtil::PushDirectory()
+{
+	static const size_t BUF_SIZE(128);
+	static char buf[BUF_SIZE] = {};
+
+	GetCurrentDirectory(BUF_SIZE, buf);
+
+	m_directoryStack.push(std::string(buf));
+
+	return true;
+}
+
+bool FileUtil::PopDirectory()
+{
+	if (m_directoryStack.empty())
+	{
+		return false;
+	}
+
+	std::string topDir = m_directoryStack.top();
+	m_directoryStack.pop();
+
+	return ChangeDirectory(topDir);
+}
+
+bool FileUtil::ChangeDirectory(const std::string & relativeDirectory)
+{
+	return SetCurrentDirectory(relativeDirectory.c_str());
+}
 
 bool FileUtil::RemoveFile(const std::string & path)
 {
@@ -57,12 +84,32 @@ bool FileUtil::GetFilesInDirectory(const std::string & directory, const std::vec
 	return true;
 }
 
-bool FileUtil::ChangeCurrentDirectory(const std::string & relativeDirectory)
+#elif FTPS_PLATFORM_LINUX
+
+#error Implement FileUtil for Linux!
+
+bool FileUtil::PushDirectory()
 {
-	return SetCurrentDirectory(relativeDirectory.c_str());
+	return false;
 }
 
-#elif FTPS_PLATFORM_LINUX
+bool FileUtil::PopDirectory()
+{
+	if (m_directoryStack.empty())
+	{
+		return false;
+	}
+
+	std::string topDir = m_directoryStack.top();
+	m_directoryStack.pop();
+
+	return ChangeDirectory(topDir);
+}
+
+bool FileUtil::ChangeDirectory(const std::string & relativeDirectory)
+{
+	return false;
+}
 
 bool FileUtil::RemoveFile(const std::string & path)
 {
@@ -75,11 +122,6 @@ bool FileUtil::IsDirectoryExist(const std::string & path)
 }
 
 bool FileUtil::GetFilesInDirectory(const std::string & directory, const std::vector<std::string>& filters, bool bRecursive, FileList & outFileList)
-{
-	return false;
-}
-
-bool FileUtil::ChangeCurrentDirectory(const std::string & relativeDirectory)
 {
 	return false;
 }
@@ -110,36 +152,10 @@ void FileUtil::ProcessFileInDirectory(const std::string& directory, const std::s
 			{
 				File& listFile = outFileList.Append();
 				listFile.Name = fileName;
-				listFile.Status = FileStatus::OK;
+				listFile.Status = FileStatus::Unknown;
 
 				return;
 			}
 		}
-	}
-}
-
-void FileUtil::SplitString(const std::string & inString, char delim, std::vector<std::string>& outParts)
-{
-	std::stringstream ss;
-	ss << inString;
-
-	std::string temp;
-
-	while (std::getline(ss, temp, delim))
-	{
-		outParts.push_back(temp);
-	}
-}
-
-void FileUtil::StripString(const std::string & inString, char delim, std::string & outString)
-{
-	std::vector<std::string> parts;
-	FileUtil::SplitString(inString, delim, parts);
-
-	outString.clear();
-
-	for (const std::string& part : parts)
-	{
-		outString += part;
 	}
 }

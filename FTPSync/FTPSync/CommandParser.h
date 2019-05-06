@@ -9,6 +9,12 @@ enum class WorkMode : uint8_t
 	Push
 };
 
+struct Hostname
+{
+	std::string IpAddress;
+	uint16_t Port;
+};
+
 class CommandParser
 {
 public:
@@ -16,7 +22,7 @@ public:
 	~CommandParser();
 
 	inline WorkMode GetMode() { return m_workMode.Value; }
-	inline const std::string& GetIpAddress() const { return m_ipAddress.Value; }
+	inline const Hostname& GetHostname() const { return m_ipAddress.Value; }
 	inline const std::string& GetLogin() const { return m_login.Value; }
 	inline const std::string& GetPassword() const { return m_password.Value; }
 	inline const std::string& GetLocalPath() const { return m_localPath.Value; }
@@ -43,7 +49,7 @@ private:
 	static void ToLower(std::string& arg);
 
 	FlagValuePair<WorkMode> m_workMode;
-	FlagValuePair<std::string> m_ipAddress;
+	FlagValuePair<Hostname> m_ipAddress;
 	FlagValuePair<std::string> m_login;
 	FlagValuePair<std::string> m_password;
 	FlagValuePair<std::string> m_localPath;

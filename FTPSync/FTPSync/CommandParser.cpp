@@ -2,7 +2,7 @@
 
 CommandParser::CommandParser(int argc, char * argv[])
 	: m_workMode("-m", WorkMode::Unknown)
-	, m_ipAddress("-a", "127.0.0.1 2221")
+	, m_ipAddress("-a", { "127.0.0.1", 2221 })
 	, m_login("-u", "defaultLogin")
 	, m_password("-p", "defaultPassword")
 	, m_localPath("-d", "defaultLocalPath")
@@ -79,20 +79,20 @@ void CommandParser::DecodeCommands(int argc, char * argv[])
 		else if (arg.compare(m_ipAddress.Flag) == 0)
 		{
 			// Expecting ip addr and port here.
-			static const std::string DEFAULT_PORT = "2221";
+			static const uint16_t DEFAULT_PORT = 2221;
 
 			funcGetNextArg(argv, i, arg);
-			m_ipAddress.Value = arg + " ";
+			m_ipAddress.Value.IpAddress = arg;
 
 			std::string nextArg = funcPeekNextArg(argc, argv, i);
 			if (!IsFlag(nextArg) && !nextArg.empty())
 			{
 				funcGetNextArg(argv, i, arg);
-				m_ipAddress.Value += arg;
+				m_ipAddress.Value.Port = std::stoi(arg);
 			}
 			else
 			{
-				m_ipAddress.Value += DEFAULT_PORT;
+				m_ipAddress.Value.Port = DEFAULT_PORT;
 			}
 		}
 		else if (arg.compare(m_login.Flag) == 0)

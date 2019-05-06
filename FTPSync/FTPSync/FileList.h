@@ -4,6 +4,7 @@
 
 enum class FileStatus : uint8_t
 {
+	Unknown,
 	OK,
 	ToAdd,
 	ToRemove

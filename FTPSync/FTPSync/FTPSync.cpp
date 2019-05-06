@@ -4,24 +4,26 @@
 #include "FTPSync.h"
 
 #include "CommandParser.h"
+#include "FTPConnection.h"
 #include "MessagePrinter.h"
+#include "FileUtil.h"
 
 #include "FileProcessorLocal.h"
 #include "FileProcessorRemote.h"
 
 #include "Error.h"
 
-Result Process(const CommandParser* parser, FileProcessor* fpSource, FileProcessor* fpDestination)
+Result Process(const FileProcessor::InitObjects& initObjects, FileProcessor* fpSource, FileProcessor* fpDestination)
 {
 	assert(fpSource);
 	assert(fpDestination);
 	
-	Result res = fpSource->Initialize(parser);
+	Result res = fpSource->Initialize(initObjects);
 	if (res != Result::OK)
 	{
 		return res;
 	}
-	fpDestination->Initialize(parser);
+	fpDestination->Initialize(initObjects);
 	if (res != Result::OK)
 	{
 		fpSource->Cleanup();
@@ -39,6 +41,8 @@ Result Process(const CommandParser* parser, FileProcessor* fpSource, FileProcess
 int main(int argc, char* argv[])
 {
 	CommandParser parser(argc, argv);
+	FTPConnection connection(&parser);
+	FileUtil fileUtil;
 
 	FileProcessor* fpSource(nullptr);
 	FileProcessor* fpDestination(nullptr);
@@ -66,7 +70,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	Result res = Process(&parser, fpSource, fpDestination);
+	Result res = Process({ &parser, &connection, &fileUtil }, fpSource, fpDestination);
 
 	delete fpDestination;
 	delete fpSource;

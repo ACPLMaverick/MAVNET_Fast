@@ -117,7 +117,7 @@ namespace nsFTP
       int RemoveDirectory(const tstring& strDirectory) const;
       int MakeDirectory(const tstring& strDirectory) const;
 
-      int PrintWorkingDirectory() const;
+      int GetWorkingDirectory(tstring& outDirectory) const;	// mw
       int ChangeToParentDirectory() const;
       int ChangeWorkingDirectory(const tstring& strDirectory) const;
 

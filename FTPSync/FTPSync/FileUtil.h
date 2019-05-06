@@ -1,22 +1,25 @@
 #pragma once
 
-#include "FTPSync.h"
+#include "FileInterface.h"
 
-class FileList;
-
-class FileUtil
+class FileUtil : public FileInterface
 {
 public:
 
-	static bool RemoveFile(const std::string& path);
-	static bool IsDirectoryExist(const std::string& path);
-	static bool GetFilesInDirectory(const std::string& directory, const std::vector<std::string>& filters, FileList& outFileList);
-	static bool ChangeCurrentDirectory(const std::string& relativeDirectory);
+	virtual bool PushDirectory() override;
+	virtual bool PopDirectory() override;
+	virtual bool ChangeDirectory(const std::string& relativeDirectory) override;
 
-	static void ProcessFileInDirectory(const std::string& directory, const std::string& fileName, const std::vector<std::string>& filters, FileList& outFileList);
-	static void SplitString(const std::string& inString, char delim, std::vector<std::string>& outParts);
-	static void StripString(const std::string& inString, char delim, std::string& outString);
+	virtual bool RemoveFile(const std::string& path) override;
+	virtual bool IsDirectoryExist(const std::string& path) override;
+	virtual bool GetFilesInDirectory(const std::string& directory, const std::vector<std::string>& filters, FileList& outFileList) override;
 
+
+private:
+
+	void ProcessFileInDirectory(const std::string& directory, const std::string& fileName, const std::vector<std::string>& filters, FileList& outFileList);
+
+public:
 #ifdef FTPS_PLATFORM_WIN32
 	static const char DIRECTORY_DELIM = '\\';
 #elif FTPS_PLATFORM_LINUX

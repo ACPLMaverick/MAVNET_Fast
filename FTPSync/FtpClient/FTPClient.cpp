@@ -1464,12 +1464,24 @@ int CFTPClient::Abort() const
 /// Executes the FTP command PWD (PRINT WORKING DIRECTORY)
 /// This command causes the name of the current working directory
 /// to be returned in the reply.
-int CFTPClient::PrintWorkingDirectory() const
+int CFTPClient::GetWorkingDirectory(tstring& outDirectory) const	// mw
 {
    CReply Reply;
    if( !SendCommand(CCommand::PWD(), CArg(), Reply) )
       return FTP_ERROR;
-   return SimpleErrorCheck(Reply);
+
+   int errorCheck = SimpleErrorCheck(Reply);
+
+   if (errorCheck == FTP_OK)
+   {
+	   outDirectory = Reply.Value();
+   }
+   else
+   {
+	   outDirectory = "";
+   }
+
+   return errorCheck;
 }
 
 /// Executes the FTP command SYST (SYSTEM)

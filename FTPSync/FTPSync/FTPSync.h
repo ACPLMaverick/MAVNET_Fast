@@ -6,9 +6,11 @@
 #include <iostream>
 #include <stdint.h>
 #include <fstream>
+#include <sstream>
 #include <cstring>
 #include <string>
 #include <vector>
+#include <stack>
 #include <locale>
 #include <cassert>
 

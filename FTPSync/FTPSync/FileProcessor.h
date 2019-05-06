@@ -5,12 +5,38 @@
 #include "Error.h"
 
 class CommandParser;
+class FileInterface;
+class FTPConnection;
+class FileUtil;
 
 class FileProcessor
 {
 public:
 
-	Result Initialize(const CommandParser* parser);
+	struct InitObjects
+	{
+		const CommandParser* m_parser = nullptr;
+		FTPConnection* m_ftpConnection = nullptr;
+		FileUtil* m_fileUtil = nullptr;
+
+		inline bool Check()
+		{
+			const bool check = (m_parser != nullptr && m_ftpConnection != nullptr && m_fileUtil != nullptr);
+			FTPS_Assert(check);
+			return check;
+		}
+
+		inline void Clear()
+		{
+			m_parser = nullptr;
+			m_ftpConnection = nullptr;
+			m_fileUtil = nullptr;
+		}
+	};
+
+public:
+
+	Result Initialize(const InitObjects& objects);
 	Result Cleanup();
 
 	Result SyncTo(const FileList& other);
@@ -19,8 +45,7 @@ public:
 
 protected:
 
-	virtual Result Initialize_Internal() = 0;
-	virtual Result Cleanup_Internal() = 0;
+	virtual FileInterface* GetLocalFileInterface() = 0;
 	virtual Result PerformSync() = 0;
 
 	void StripFilters();
@@ -28,5 +53,5 @@ protected:
 
 	FileList m_fileList;
 	std::vector<std::string> m_strippedFilters;
-	const CommandParser* m_parser = nullptr;
+	InitObjects m_objects;
 };
