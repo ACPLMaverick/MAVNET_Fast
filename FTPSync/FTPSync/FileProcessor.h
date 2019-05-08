@@ -3,6 +3,7 @@
 #include "FTPSync.h"
 #include "FileList.h"
 #include "Error.h"
+#include "AppState.h"
 
 class CommandParser;
 class FileInterface;
@@ -45,11 +46,16 @@ public:
 
 protected:
 
+	virtual void GetPathFromParser(const CommandParser* parser, std::string& outPath) = 0;
 	virtual FileInterface* GetLocalFileInterface() = 0;
-	virtual Result PerformSync() = 0;
+	virtual AppState GetThisAppState() = 0;
+	virtual AppState GetSyncAppState() = 0;
+	virtual bool PerformFileAdd(const File& file) = 0;
+	virtual bool PerformFileRemove(const File& file) = 0;
 
 	void StripFilters();
-	void PerformDiff(const FileList& other);
+	bool PerformDiff(const FileList& other);
+	Result PerformSync();
 
 	FileList m_fileList;
 	std::vector<std::string> m_strippedFilters;

@@ -12,6 +12,7 @@ target_sources (FTPSync PRIVATE
 	FTPSync/FTPSync.cpp
 	FTPSync/MessagePrinter.cpp
 
+	FTPSync/AppState.h
 	FTPSync/CommandParser.h
 	FTPSync/Error.h
 	FTPSync/FileList.h

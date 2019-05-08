@@ -27,11 +27,11 @@ class FileList
 {
 public:
 
-	size_t GetFileNum() const { return m_files.size(); }
-	bool IsEmpty() const { return m_files.empty(); }
+	inline size_t GetFileNum() const { return m_files.size(); }
+	inline bool IsEmpty() const { return m_files.empty(); }
 
-	File& operator[](size_t index) { return m_files[index]; }
-	const File& operator[](size_t index) const { return m_files[index]; }
+	inline File& operator[](size_t index) { return m_files[index]; }
+	inline const File& operator[](size_t index) const { return m_files[index]; }
 
 	File& Append() { m_files.emplace_back(File()); return m_files.back(); }
 	void Remove(const File& file)

@@ -61,11 +61,11 @@ void CommandParser::DecodeCommands(int argc, char * argv[])
 		{
 			funcGetNextArgLowercase(argv, i, arg);
 
-			if (arg.compare("pull"))
+			if (arg.compare("pull") == 0)
 			{
 				m_workMode.Value = WorkMode::Pull;
 			}
-			else if (arg.compare("push"))
+			else if (arg.compare("push") == 0)
 			{
 				m_workMode.Value = WorkMode::Push;
 			}

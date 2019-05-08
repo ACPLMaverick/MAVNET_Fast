@@ -23,7 +23,7 @@ Result Process(const FileProcessor::InitObjects& initObjects, FileProcessor* fpS
 	{
 		return res;
 	}
-	fpDestination->Initialize(initObjects);
+	res = fpDestination->Initialize(initObjects);
 	if (res != Result::OK)
 	{
 		fpSource->Cleanup();
@@ -41,7 +41,10 @@ Result Process(const FileProcessor::InitObjects& initObjects, FileProcessor* fpS
 int main(int argc, char* argv[])
 {
 	CommandParser parser(argc, argv);
+	
+	MessagePrinter::PrintAppState(AppState::Connecting);
 	FTPConnection connection(&parser);
+	
 	FileUtil fileUtil;
 
 	FileProcessor* fpSource(nullptr);
@@ -75,9 +78,10 @@ int main(int argc, char* argv[])
 	delete fpDestination;
 	delete fpSource;
 
+	MessagePrinter::PrintResult(res);
+
 	if (res != Result::OK)
 	{
-		MessagePrinter::PrintResult(res);
 		return -1;
 	}
 	else
