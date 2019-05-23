@@ -38,6 +38,7 @@
 !.dll
 !.lib
 .vs
+.vscode
 *.ilk
 *.pdb
 *.vcxproj.user
@@ -53,5 +54,8 @@ JadeEngine/Debug/
 JadeEngine/Release/
 JadeEngine/JadeEngine/Debug/
 JadeEngine/JadeEngine/Release/
+
 SimpleRenderer/SimpleRenderer/x64/
 SimpleRenderer/x64/
+
+FTPSync/build/

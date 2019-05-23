@@ -84,13 +84,26 @@ bool FileUtil::GetFilesInDirectory(const std::string & directory, const std::vec
 	return true;
 }
 
-#elif FTPS_PLATFORM_LINUX
+#elif defined(FTPS_PLATFORM_LINUX)
 
-#error Implement FileUtil for Linux!
+#include <unistd.h>
+#include <dirent.h>
 
 bool FileUtil::PushDirectory()
 {
-	return false;
+	static const size_t BUF_SIZE(128);
+	static char buf[BUF_SIZE] = {};
+
+	char* retPtr = getcwd(buf, BUF_SIZE);
+
+	bool bIsGood = retPtr == buf;
+
+	if(bIsGood)
+	{
+		m_directoryStack.push(std::string(buf));
+	}
+
+	return bIsGood;
 }
 
 bool FileUtil::PopDirectory()
@@ -108,22 +121,67 @@ bool FileUtil::PopDirectory()
 
 bool FileUtil::ChangeDirectory(const std::string & relativeDirectory)
 {
-	return false;
+	bool ret = false;
+	try
+	{
+		ret = chdir(relativeDirectory.c_str()) == 0;
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << "FileUtil::ChangeDirectory error: "<< e.what() << '\n';
+		return false;
+	}
+	
+	return ret;
 }
 
 bool FileUtil::RemoveFile(const std::string & path)
 {
-	return false;
+	bool ret = false;
+	try
+	{
+		ret = unlink(path.c_str()) == 0;
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << "FileUtil::RemoveFile error: " << e.what() << '\n';
+		return false;
+	}
+	
+	return ret;
 }
 
 bool FileUtil::IsDirectoryExist(const std::string & path)
 {
-	return false;
+	DIR* dir = opendir(path.c_str());
+	if(dir)
+	{
+		closedir(dir);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
-bool FileUtil::GetFilesInDirectory(const std::string & directory, const std::vector<std::string>& filters, bool bRecursive, FileList & outFileList)
+bool FileUtil::GetFilesInDirectory(const std::string & directory, const std::vector<std::string>& filters, FileList & outFileList)
 {
-	return false;
+	dirent** fileListTemp;
+	int numEntries = scandir(directory.c_str(), &fileListTemp, NULL, alphasort);
+	if(numEntries < 0)
+	{
+		return false;
+	}
+
+	for(int i = 0; i < numEntries; ++i)
+	{
+		ProcessFileInDirectory(directory, std::string(fileListTemp[i]->d_name), filters, outFileList);
+		free(fileListTemp[i]);
+	}
+	free(fileListTemp);
+
+	return numEntries > 0;
 }
 
 #endif

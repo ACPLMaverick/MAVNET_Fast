@@ -29,6 +29,7 @@
 #else
    #include <errno.h>  // needed for errno
    #include <string.h> // needed for strerror
+   #include <algorithm>
    #define Sleep sleep
    typedef char* LPTSTR;
    typedef const char* LPCTSTR;
@@ -234,17 +235,17 @@ public:
 
    bool Attach(T p)
    {
-      if (find(p)!=base_type::end())
+      if (std::set<T>::find(p)!=base_type::end())
          return false;
-      insert(p);
+      std::set<T>::insert(p);
       p->Attach(static_cast<T2>(this));
       return true;
    }
    bool Detach(T p)
    {
-      if (find(p)==base_type::end())
+      if (std::set<T>::find(p)==base_type::end())
          return false;
-      erase(p);
+      std::set<T>::erase(p);
       p->Detach(static_cast<T2>(this));
       return true;
    }

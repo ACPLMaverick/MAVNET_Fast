@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FtpSync.h"
+#include "FTPSync.h"
 
 class FileList;
 

@@ -5,15 +5,22 @@ cmake_minimum_required (VERSION 3.8)
 
 project (FTPSync VERSION 1.0.0)
 
+if(WIN32)
 set(UnifiedOutputPath "E:\\MinecraftServer")
+
+link_libraries(
+	Ws2_32.lib
+)
+
+endif(WIN32)
+
+if(UNIX)
+set(UnifiedOutputPath "/media/maverick/GAM/MinecraftServer")
+endif(UNIX)
 # "${PROJECT_SOURCE_DIR}/bin"
 
 include_directories(
 	./
-)
-
-link_libraries(
-	Ws2_32.lib
 )
 
 # Include sub-projects.

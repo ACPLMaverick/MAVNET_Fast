@@ -8,7 +8,6 @@
 // CBlockingSocketException, CBlockingSocket, CHttpBlockingSocket
 
 //#include "stdafx.h"
-#include <algorithm>
 #include <assert.h>
 #include <stdio.h>
 #include "BlockingSocket.h"

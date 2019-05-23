@@ -13,6 +13,7 @@
 #include <stack>
 #include <locale>
 #include <cassert>
+#include <algorithm>
 
 #define FTPS_Assert(val) assert(val)
 

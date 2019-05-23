@@ -22,7 +22,7 @@ private:
 public:
 #ifdef FTPS_PLATFORM_WIN32
 	static const char DIRECTORY_DELIM = '\\';
-#elif FTPS_PLATFORM_LINUX
+#elif defined(FTPS_PLATFORM_LINUX)
 	static const char DIRECTORY_DELIM = '/';
 #endif
 };
