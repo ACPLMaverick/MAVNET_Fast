@@ -6,11 +6,11 @@ cmake_minimum_required (VERSION 3.8)
 project (AC VERSION 1.0.0)
 set(EXE_NAME ac)
 
-# AVR Toolchain definitions.
-# set(CPU_F 8000000UL) # Setting this in defs.h
+# AVR Toolchain definitions. These are valid for ATMega8.
+set(F_CPU 8000000UL)
 set(MCU m8)
 set(MCU_FOR_COMPILER atmega8)
-# set(BAUD 9600) 
+set(BAUD 9600) 
 set(PROGRAMMER usbasp)
 
 # TODO Fuse setup can go here. For now it's not necessary.
@@ -49,10 +49,10 @@ add_compile_options(
 )
 
 # Custom compiler definitions. Defining this in defs.h
-#add_definitions(
-#	-DCPU_F=${CPU_F}
-#	-DBAUD=${BAUD}
-#)
+add_definitions(
+	-DF_CPU=${F_CPU}
+	-DBAUD=${BAUD}
+)
 
 # Include sub-projects.
 add_executable (${EXE_NAME} "")
