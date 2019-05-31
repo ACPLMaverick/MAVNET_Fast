@@ -1,3 +1,4 @@
+#pragma once
 // Global definition file that should be included in every .c file.
 
 // Some helpers
@@ -8,5 +9,8 @@
 
 // Headers
 #include <avr/io.h>
-#include <util/delay.h>
+#include <avr/interrupt.h>
+
+#include <stdint.h>
+#include <string.h>
 // //////////////

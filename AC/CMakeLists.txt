@@ -75,6 +75,9 @@ set(FIN_EXE_NAME ${UNIFIED_OUTPUT_PATH}/${EXE_NAME})
 # Strip binary for upload. (TODO Only in Debug?)
 add_custom_target(target_strip ALL avr-strip ${FIN_EXE_NAME}.elf DEPENDS ${EXE_NAME})
 
+# Print size...
+add_custom_target(target_print_size ALL avr-size -C --mcu=${MCU_FOR_COMPILER} ${FIN_EXE_NAME}.elf DEPENDS target_strip)
+
 # Transform binary into hex file and strip eeprom part.
 add_custom_target(target_hex ALL avr-objcopy -R .eeprom -O ihex ${FIN_EXE_NAME}.elf ${FIN_EXE_NAME}.hex DEPENDS target_strip)
 # Transform binary into eep file - EEPROM static variables. TODO Disabled as not necessary. I have no idea what exactly these parameters do atm.

@@ -1,13 +1,29 @@
 #include "defs.h"
 
+#include "blinker.h"
+#include "timer.h"
+
+void Init(void)
+{
+    sei();
+    
+    Timer_Init();
+    Blinker_Init();
+}
+
+void Tick(void)
+{
+    Blinker_Toggle();
+    Timer_StaticDelayForMs(1000);
+}
+
 int main(void)
 {
-    DDRB = 0xFF;    // Makes PORTB as Output.
+    Init();
     while(true)
     {
-        PORTB ^= 0xFF;
-        _delay_ms(1000);
+        Tick();
     }
 
-    return 0;   // Should never get here.
+    return 0;
 }
