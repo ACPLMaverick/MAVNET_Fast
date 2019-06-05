@@ -94,18 +94,7 @@ ISR(TIMER0_OVF_vect)
 
 ISR(TIMER1_OVF_vect)
 {
-    // ++test code
-    if(g_callbacks[1].m_tickOverflowsToGo > 0)
-    {
-        --g_callbacks[1].m_tickOverflowsToGo;
-    }
-    else
-    {
-        g_callbacks[1].m_func(NULL);
-        g_callbacks[1].m_tickOverflowsToGo = g_callbacks[1].m_baseTickOverflowsToGo;
-    }
-    // --test code
-    //ProcessISROverflow(TimerType_k16);
+    ProcessISROverflow(TimerType_k16);
 }
 
 ISR(TIMER2_OVF_vect)
@@ -126,17 +115,15 @@ ISR(TIMER2_COMP_vect)
 
 void ProcessISROverflow(TimerType timerType)
 {
-    // test code
     TimerCallback* callbackData = &g_callbacks[(uint8_t)timerType];
     if(callbackData->m_tickOverflowsToGo > 0)
     {
         --callbackData->m_tickOverflowsToGo;
     }
-    else /*if(callbackData->m_tickRemainder == 0)*/
+    else if(callbackData->m_tickRemainder == 0)
     {
         PerformCall(timerType);
     }
-    /*
     else
     {
         // Schedule for compare ISR.
@@ -155,7 +142,6 @@ void ProcessISROverflow(TimerType timerType)
             BitEnable(TIMSK, OCIE2);
         }
     }
-    */
     
 }
 
@@ -326,16 +312,13 @@ void Timer_Init(void)
 
 bool Timer_ScheduleCallback(uint16_t time, TimerUnits units, const TimerCallbackInfo* callbackInfo)
 {
-    // const uint32_t ticks = GetTickCount(time, units);
+    const uint32_t ticks = GetTickCount(time, units);
 
     // ++test code
-    // g_callbacks[(uint8_t)TimerType_k16].m_baseTickOverflowsToGo = ticks / g_timerOverflowValues[(uint8_t)TimerType_k16];
-    // g_callbacks[(uint8_t)TimerType_k16].m_tickOverflowsToGo = g_callbacks[(uint8_t)TimerType_k16].m_baseTickOverflowsToGo;
-    // g_callbacks[(uint8_t)TimerType_k16].m_tickRemainder = ticks % g_timerOverflowValues[(uint8_t)TimerType_k16];
-    // g_callbacks[(uint8_t)TimerType_k16].m_persistent = true;
-
-    g_callbacks[(uint8_t)TimerType_k16].m_baseTickOverflowsToGo = 122;
+    g_callbacks[(uint8_t)TimerType_k16].m_baseTickOverflowsToGo = ticks / g_timerOverflowValues[(uint8_t)TimerType_k16];
     g_callbacks[(uint8_t)TimerType_k16].m_tickOverflowsToGo = g_callbacks[(uint8_t)TimerType_k16].m_baseTickOverflowsToGo;
+    g_callbacks[(uint8_t)TimerType_k16].m_tickRemainder = ticks % g_timerOverflowValues[(uint8_t)TimerType_k16];
+    g_callbacks[(uint8_t)TimerType_k16].m_persistent = true;
 
     g_callbacks[(uint8_t)TimerType_k16].m_func = callbackInfo->m_func;
     InitTimer1();

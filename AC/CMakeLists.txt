@@ -7,7 +7,7 @@ project (AC VERSION 1.0.0)
 set(EXE_NAME ac)
 
 # AVR Toolchain definitions. These are valid for ATMega8.
-set(F_CPU 8000000UL)
+set(F_CPU 8000000ULL)
 set(MCU m8)
 set(MCU_FOR_COMPILER atmega8)
 set(BAUD 9600) 
