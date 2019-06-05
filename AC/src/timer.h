@@ -17,8 +17,6 @@ typedef enum TimerUnits
 
 typedef struct TimerCallbackInfo
 {
-    uint16_t m_time;
-    TimerUnits m_units;
     CallbackFunc m_func;
     void* m_param;
     bool m_persistent;
@@ -27,7 +25,13 @@ typedef struct TimerCallbackInfo
 
 void Timer_Init(void);
 
-bool Timer_ScheduleCallback(const TimerCallbackInfo* callbackInfo);
+// TODO Timer_SetMarker
+// TODO Timer_GetDurationTicks
+// TODO Timer_GetDurationMs
+// TODO Timer_GetDurationUs
+
+bool Timer_ScheduleCallback(uint16_t time, TimerUnits units, const TimerCallbackInfo* callbackInfo);
+bool Timer_ScheduleCallbackTicks(uint32_t ticks, const TimerCallbackInfo* callbackInfo);
 bool Timer_RemoveCalback(CallbackFunc func);
 
 #define Timer_StaticDelayForMs(value) _delay_ms(value)
