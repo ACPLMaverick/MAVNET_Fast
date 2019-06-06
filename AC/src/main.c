@@ -2,6 +2,8 @@
 
 #include "blinker.h"
 #include "timer.h"
+#include "uart.h"
+
 
 void Blink(void* param)
 {
@@ -14,18 +16,19 @@ void Init(void)
     
     Timer_Init();
     Blinker_Init();
+    Uart_Init();
 
     TimerCallbackInfo info;
     info.m_func = Blink;
     info.m_param = NULL;
     info.m_persistent = true;
     Timer_ScheduleCallback(1000, TimerUnits_kMiliseconds, &info);
+
+    Uart_Print("Dupa!\n");
 }
 
 void Tick(void)
 {
-    // Blinker_Toggle();
-    // Timer_StaticDelayForMs(1000);
 }
 
 int main(void)

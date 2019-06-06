@@ -1,5 +1,7 @@
 #include "timer.h"
 
+#include "blinker.h"
+
 #define MAX_TICKS_8B 0
 #define MAX_TICKS_8B_PRESCALER_8 0
 #define MAX_TICKS_8B_PRESCALER_64 0
@@ -69,8 +71,8 @@ static const InitTimerFunc g_initTimerFuncs[(uint8_t)TimerType_kNum] =
 typedef void (*ClearTimerFunc)(void);
 static const ClearTimerFunc g_clearTimerFuncs[(uint8_t)TimerType_kNum] = 
 {
-    InitTimer2,
-    InitTimer1
+    ClearTimer2,
+    ClearTimer1
 };
 
 static const uint32_t g_timerOverflowValues[(uint8_t)TimerType_kNum] = 
@@ -81,8 +83,8 @@ static const uint32_t g_timerOverflowValues[(uint8_t)TimerType_kNum] =
 
 static const uint32_t g_timerTickMaxValues[(uint8_t)TimerType_kNum] = 
 {
-    UINT8_MAX * UINT16_MAX,
-    UINT16_MAX * UINT16_MAX
+    (uint32_t)UINT8_MAX * (uint32_t)UINT16_MAX,
+    (uint32_t)UINT16_MAX * (uint32_t)UINT16_MAX
 };
 
 
@@ -157,6 +159,8 @@ void ProcessISRCompare(TimerType timerType)
     else if(timerType == TimerType_k8)
     {
         // Timer2.
+        BitDisable(TCCR2, WGM21);
+        BitDisable(TIMSK, OCIE2);
     }
 
     // Compare is always the last ISR in timeline.
@@ -168,16 +172,19 @@ void PerformCall(TimerType timerType)
     TimerCallback* callbackData = &g_callbacks[(uint8_t)timerType];
     if(!callbackData->m_persistent)
     {
+        CallbackFunc func = callbackData->m_func;
+        void* param = callbackData->m_param;
+
         ClearData(timerType);
         ClearTimer(timerType);
+
+        func(param);
     }
     else
     {
         callbackData->m_tickOverflowsToGo = callbackData->m_baseTickOverflowsToGo;
+        callbackData->m_func(callbackData->m_param);
     }
-    
-
-    callbackData->m_func(callbackData->m_param);
 }
 
 uint32_t GetTickCountFromMs(uint16_t delay)
@@ -197,7 +204,7 @@ uint32_t GetTickCount(uint16_t time, TimerUnits units)
 
 void InitTimer0(void)
 {
-    BitEnable(TCCR0, CS10);
+    BitEnable(TCCR0, CS00);
     TCNT0 = 0;
     BitEnable(TIMSK, TOIE0);
 }
@@ -211,7 +218,7 @@ void InitTimer1(void)
 
 void InitTimer2(void)
 {
-    BitEnable(TCCR2, CS10);
+    BitEnable(TCCR2, CS20);
     TCNT2 = 0;
     BitEnable(TIMSK, TOIE2);
 }
@@ -315,18 +322,21 @@ bool Timer_ScheduleCallback(uint16_t time, TimerUnits units, const TimerCallback
     const uint32_t ticks = GetTickCount(time, units);
 
     // ++test code
-    g_callbacks[(uint8_t)TimerType_k16].m_baseTickOverflowsToGo = ticks / g_timerOverflowValues[(uint8_t)TimerType_k16];
-    g_callbacks[(uint8_t)TimerType_k16].m_tickOverflowsToGo = g_callbacks[(uint8_t)TimerType_k16].m_baseTickOverflowsToGo;
-    g_callbacks[(uint8_t)TimerType_k16].m_tickRemainder = ticks % g_timerOverflowValues[(uint8_t)TimerType_k16];
-    g_callbacks[(uint8_t)TimerType_k16].m_persistent = true;
+    /*
+    static const TimerType tt = TimerType_k8;
+    g_callbacks[(uint8_t)tt].m_baseTickOverflowsToGo = ticks / g_timerOverflowValues[(uint8_t)tt];
+    g_callbacks[(uint8_t)tt].m_tickOverflowsToGo = g_callbacks[(uint8_t)tt].m_baseTickOverflowsToGo;
+    g_callbacks[(uint8_t)tt].m_tickRemainder = ticks % g_timerOverflowValues[(uint8_t)tt];
+    g_callbacks[(uint8_t)tt].m_persistent = true;
 
-    g_callbacks[(uint8_t)TimerType_k16].m_func = callbackInfo->m_func;
-    InitTimer1();
+    g_callbacks[(uint8_t)tt].m_func = callbackInfo->m_func;
+    InitTimer2();
 
     return true;
+    */
     // --test code
 
-    //return Timer_ScheduleCallbackTicks(ticks, callbackInfo);
+    return Timer_ScheduleCallbackTicks(ticks, callbackInfo);
 }
 
 bool Timer_ScheduleCallbackTicks(uint32_t ticks, const TimerCallbackInfo* callbackInfo)

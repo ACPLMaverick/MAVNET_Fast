@@ -27,7 +27,7 @@ set(CMAKE_EXE_LINKER_FLAGS -mmcu=${MCU_FOR_COMPILER})
 add_compile_options(
 	-mmcu=${MCU_FOR_COMPILER}
 	-std=gnu99
-	-O1	# TODO Make this kit-specific.
+	-Os	# TODO Make this kit-specific.
 	-Wall	# Enable warnings
 	#-Wno-main
 	-Wundef
