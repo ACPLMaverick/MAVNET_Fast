@@ -7,13 +7,17 @@ project (AC VERSION 1.0.0)
 set(EXE_NAME ac)
 
 # AVR Toolchain definitions. These are valid for ATMega8.
-set(F_CPU 8000000ULL)
+set(F_CPU 12000000ULL)
 set(MCU m8)
 set(MCU_FOR_COMPILER atmega8)
-set(BAUD 9600) 
+set(MCU_FOR_HEADER __AVR_ATmega8A__)
+set(BAUD 57600) 
 set(PROGRAMMER usbasp)
 
-# TODO Fuse setup can go here. For now it's not necessary.
+# Fuse setup.
+# Fuses OK (E:FF, H:D9, L:EF)
+set(FUSE_L 0xEF)
+set(FUSE_H 0xD9)
 
 # Compiler definitions.
 set(CMAKE_SYSTEM_NAME Generic)
@@ -48,7 +52,7 @@ add_compile_options(
     -fno-tree-scev-cprop
 )
 
-# Custom compiler definitions. Defining this in defs.h
+# Custom compiler definitions.
 add_definitions(
 	-DF_CPU=${F_CPU}
 	-DBAUD=${BAUD}
@@ -57,6 +61,18 @@ add_definitions(
 # Include sub-projects.
 add_executable (${EXE_NAME} "")
 add_subdirectory (src)
+
+# Include paths.
+IF (WIN32)
+ELSE()
+target_include_directories(${EXE_NAME} PUBLIC
+	${workspaceRoot}
+	/usr/lib/avr/include
+)
+target_compile_definitions(${EXE_NAME} PUBLIC
+	${MCU_FOR_HEADER}
+)
+ENDIF()
 
 # Set output path.
 set(UNIFIED_OUTPUT_PATH bin)
@@ -83,11 +99,11 @@ add_custom_target(target_hex ALL avr-objcopy -R .eeprom -O ihex ${FIN_EXE_NAME}.
 # Transform binary into eep file - EEPROM static variables. TODO Disabled as not necessary. I have no idea what exactly these parameters do atm.
 # add_custom_target(target_eep ALL avr-objcopy -j .eeprom --set-section-flags=.eeprom="alloc, load" --change-section-lma .eeprom=0 -O ihex ${FIN_EXE_NAME}.elf ${FIN_EXE_NAME}.eep DEPENDS target_strip)
 
+# Burn fuses.
+add_custom_target(target_fuses avrdude ALL -c ${PROGRAMMER} -p ${MCU} -U lfuse:w:${FUSE_L}:m -U hfuse:w:${FUSE_H}:m DEPENDS target_hex)
+
 # Upload the program with avrdude.
-add_custom_target(target_upload_hex ALL avrdude -c ${PROGRAMMER} -p ${MCU} -U flash:w:${FIN_EXE_NAME}.hex DEPENDS target_hex)
+add_custom_target(target_upload_hex ALL avrdude -c ${PROGRAMMER} -p ${MCU} -U flash:w:${FIN_EXE_NAME}.hex DEPENDS target_fuses)
 
 # Upload the eeprom with avrdude. TODO Disabled as not necessary.
 # add_custom_target(target_upload_eep ALL avrdude -c ${PROGRAMMER} -p ${MCU}  -U eeprom:w:${FIN_EXE_NAME}.eep DEPENDS target_eep)
-
-# TODO This may be used to burn fuses in the future.
-# add_custom_target(target_fuses avrdude ALL -c ${PROGRAMMER} -p ${MCU} -U lfuse:w:${FUSE_L}:m -U hfuse:w:${FUSE_H}:m)

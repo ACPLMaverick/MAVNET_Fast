@@ -133,7 +133,7 @@ void ProcessISROverflow(TimerType timerType)
         {
             // Timer1.
             BitEnable(TCCR1B, WGM12);       // Enable CTC, TOP in OCR1A
-            Uint16Write(OCR1AL, OCR1AH, callbackData->m_tickRemainder); // Store value.
+            RegWrite16(OCR1AL, OCR1AH, callbackData->m_tickRemainder); // Store value.
             BitEnable(TIMSK, OCIE1A);       // Enable interrupt on CTC value.
         }
         else if(timerType == TimerType_k8)

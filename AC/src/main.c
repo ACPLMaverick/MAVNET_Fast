@@ -18,6 +18,7 @@ void Init(void)
     Blinker_Init();
     Uart_Init();
 
+    /*
     TimerCallbackInfo info;
     info.m_func = Blink;
     info.m_param = NULL;
@@ -25,10 +26,18 @@ void Init(void)
     Timer_ScheduleCallback(1000, TimerUnits_kMiliseconds, &info);
 
     Uart_Print("Dupa!\n");
+    */
 }
 
 void Tick(void)
 {
+    static uint16_t ctr = 0;
+
+    Uart_Printf("Dupa! %d\n", ctr);
+    Blinker_Toggle();
+    Timer_StaticDelayForMs(1000);
+
+    ++ctr;
 }
 
 int main(void)
