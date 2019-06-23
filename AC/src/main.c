@@ -33,7 +33,7 @@ void Tick(void)
 {
     static uint16_t ctr = 0;
 
-    Uart_Printf("Dupa! %d\n", ctr);
+    Uart_Printf("Dupa! %d \n", ctr);
     Blinker_Toggle();
     Timer_StaticDelayForMs(1000);
 
@@ -46,6 +46,7 @@ int main(void)
     while(true)
     {
         Tick();
+        Timer_StaticDelayForUs(1);
     }
 
     return 0;

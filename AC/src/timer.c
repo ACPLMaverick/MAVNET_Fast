@@ -189,12 +189,12 @@ void PerformCall(TimerType timerType)
 
 uint32_t GetTickCountFromMs(uint16_t delay)
 {
-    return ((delay * F_CPU) / 1000ULL) - 1;
+    return TickCountFromMs(delay);
 }
 
 uint32_t GetTickCountFromUs(uint16_t delay)
 {
-    return ((delay * F_CPU) / 1000000ULL) - 1;
+    return TickCountFromUs(delay);
 }
 
 uint32_t GetTickCount(uint16_t time, TimerUnits units)

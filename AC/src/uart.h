@@ -3,8 +3,10 @@
 #include "defs.h"
 
 void Uart_Init(void);
-void Uart_SendNow(uint8_t byte);
-void Uart_SendData(uint8_t* buffer, uint16_t size);
+void Uart_TransmitNow(uint8_t byte);
+void Uart_TransmitData(uint8_t* buffer, uint8_t size);
 void Uart_Printf(const char* format, ...);
+bool Uart_ReceiveData(uint8_t* buffer, uint8_t bufferSize, uint8_t* outBytesRead);
 
-#define Uart_Print(text) Uart_SendData((uint8_t*)(text), strlen(text))
+// According to the internets, strlen should be optimized out to the literal for hard-coded strings.
+#define Uart_Print(text) Uart_TransmitData((uint8_t*)(text), strlen(text))

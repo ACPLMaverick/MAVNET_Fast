@@ -4,6 +4,9 @@
 
 #include <util/delay.h>
 
+#define TickCountFromMs(time) (((time) * F_CPU) / 1000ULL) - 1
+#define TickCountFromUs(time) (((time) * F_CPU) / 1000000ULL) - 1
+
 typedef void (*CallbackFunc)(void*);
 
 typedef enum TimerUnits
@@ -33,6 +36,9 @@ void Timer_Init(void);
 bool Timer_ScheduleCallback(uint16_t time, TimerUnits units, const TimerCallbackInfo* callbackInfo);
 bool Timer_ScheduleCallbackTicks(uint32_t ticks, const TimerCallbackInfo* callbackInfo);
 bool Timer_RemoveCalback(CallbackFunc func);
+
+// TODO Timer_WhileMs
+// TODO Timer_WhileUs
 
 #define Timer_StaticDelayForMs(value) _delay_ms(value)
 #define Timer_StaticDelayForUs(value) _delay_us(value)

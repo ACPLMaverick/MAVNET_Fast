@@ -13,7 +13,7 @@
 
 #define RegWrite(register, value) ((register) |= (value))
 #define RegClear(register) RegWrite(register, 0)
-#define RegWriteClear(register, value) ((register) = (value))
+#define RegOverwrite(register, value) ((register) = (value))
 #define RegRead(register) (register)
 #define RegReadRange(register, bitFrom, bitTo) ((RegRead(register)) & ((0xFF << bitFrom) & (0xFF >> (8 - (bitTo)))))
 
