@@ -3,6 +3,7 @@
 #include "blinker.h"
 #include "timer.h"
 #include "uart.h"
+#include "display.h"
 
 
 void Blink(void* param)
@@ -17,8 +18,11 @@ void Init(void)
     Timer_Init();
     Blinker_Init();
     Uart_Init();
+    Disp_Init();
 
     Timer_ScheduleCallbackMs_2(1000, Blink, NULL, TIMER_CALL_NUM_PERSISTENT);
+
+    Disp_Print("Hello world!", Disp_Row_kUpper, Disp_Alignment_kLeft);
 }
 
 void Tick(void)
