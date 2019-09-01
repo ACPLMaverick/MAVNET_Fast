@@ -19,7 +19,7 @@ static uint8_t g_receiveBuffer[UART_RECEIVE_BUFFER_SIZE];
 static uint8_t g_receiveBufferIndex = 0;
 
 #if UART_ASYNC_TRANSMIT
-#define WaitForCurrentTransmit() while(g_transmitCurrentBuffer) Timer_StaticDelayForUs(1)
+#define WaitForCurrentTransmit() while(g_transmitCurrentBuffer) Timer_SleepUs(1)
 
 uint8_t* g_transmitCurrentBuffer = NULL;
 uint8_t g_transmitCurrentSize = 0;

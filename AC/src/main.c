@@ -18,15 +18,7 @@ void Init(void)
     Blinker_Init();
     Uart_Init();
 
-    /*
-    TimerCallbackInfo info;
-    info.m_func = Blink;
-    info.m_param = NULL;
-    info.m_persistent = true;
-    Timer_ScheduleCallback(1000, TimerUnits_kMiliseconds, &info);
-
-    Uart_Print("Dupa!\n");
-    */
+    Timer_ScheduleCallbackMs_2(1000, Blink, NULL, TIMER_CALL_NUM_PERSISTENT);
 }
 
 void Tick(void)
@@ -35,7 +27,7 @@ void Tick(void)
 
     Uart_Printf("Dupa! %d \n", ctr);
     Blinker_Toggle();
-    Timer_StaticDelayForMs(1000);
+    Timer_SleepMs(1000);
 
     ++ctr;
 }
@@ -45,8 +37,7 @@ int main(void)
     Init();
     while(true)
     {
-        Tick();
-        Timer_StaticDelayForUs(1);
+        //Tick();
     }
 
     return 0;
