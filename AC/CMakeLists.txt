@@ -2,6 +2,7 @@
 # and include sub-projects here.
 #
 cmake_minimum_required (VERSION 3.8)
+cmake_policy(SET CMP0076 NEW)
 
 project (AC VERSION 1.0.0)
 set(EXE_NAME ac)
