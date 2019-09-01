@@ -9,14 +9,8 @@
 
 // ////////////////////////
 
-#define UART_ASYNC_TRANSMIT 1
 
-#define UART_PRINTF_BUFFER_SIZE UINT8_MAX
 static char g_printfBuffer[UART_PRINTF_BUFFER_SIZE];
-
-#define UART_RECEIVE_BUFFER_SIZE UINT8_MAX
-static uint8_t g_receiveBuffer[UART_RECEIVE_BUFFER_SIZE];
-static uint8_t g_receiveBufferIndex = 0;
 
 #if UART_ASYNC_TRANSMIT
 #define WaitForCurrentTransmit() while(g_transmitCurrentBuffer) Timer_SleepUs(1)
@@ -32,14 +26,8 @@ bool g_bNeedTransmitCR = false;
 #if UART_ASYNC_TRANSMIT
 void TransmitCurrentByte(void);
 #endif
-void ReceiveByte(void);
 
 // ////////////////////////
-
-ISR(USART_RXC_vect)
-{
-    ReceiveByte();
-}
 
 ISR(USART_TXC_vect)
 {
@@ -80,21 +68,6 @@ void TransmitCurrentByte(void)
 
 #endif
 
-void ReceiveByte(void)
-{
-    // TODO: Synchronize with Receive func.
-    g_receiveBuffer[g_receiveBufferIndex] = RegRead(UDR);
-
-    if(g_receiveBufferIndex == UART_RECEIVE_BUFFER_SIZE - 1)
-    {
-        g_receiveBufferIndex = 0;
-    }
-    else
-    {
-        ++g_receiveBufferIndex;
-    }  
-}
-
 // ////////////////////////
 
 void Uart_Init(void)
@@ -105,7 +78,10 @@ void Uart_Init(void)
     RegWrite(UCSRB, (1<<TXEN) | (1<<RXEN));                     // Enable receiver and transmitter.
     RegWrite(UCSRC, (1<<URSEL) | (1<<UCSZ0) | (1<<UCSZ1));      // 8bit data format, all other settings go as default.
 
+#if UART_USE_RECEIVE
     BitEnable(UCSRB, RXCIE);
+#endif
+
 #if UART_ASYNC_TRANSMIT
     BitEnable(UCSRB, TXCIE);
 #endif
@@ -168,6 +144,35 @@ void Uart_Printf(const char* format, ...)
     va_end(args);
 }
 
+#if UART_USE_RECEIVE
+
+static uint8_t g_receiveBuffer[UART_RECEIVE_BUFFER_SIZE];
+static uint8_t g_receiveBufferIndex = 0;
+
+void ReceiveByte(void);
+
+// ////////////////////////
+
+ISR(USART_RXC_vect)
+{
+    ReceiveByte();
+}
+
+void ReceiveByte(void)
+{
+    // TODO: Synchronize with Receive func.
+    g_receiveBuffer[g_receiveBufferIndex] = RegRead(UDR);
+
+    if(g_receiveBufferIndex == UART_RECEIVE_BUFFER_SIZE - 1)
+    {
+        g_receiveBufferIndex = 0;
+    }
+    else
+    {
+        ++g_receiveBufferIndex;
+    }  
+}
+
 bool Uart_ReceiveData(uint8_t* buffer, uint8_t bufferSize, uint8_t* outBytesRead)
 {
     // TODO: Synchronize with ISR.
@@ -183,3 +188,5 @@ bool Uart_ReceiveData(uint8_t* buffer, uint8_t bufferSize, uint8_t* outBytesRead
     
     return true;
 }
+
+#endif

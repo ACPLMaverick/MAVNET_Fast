@@ -6,6 +6,7 @@ target_sources(ac PRIVATE
     defs.h
     timer.h
     uart.h
+    uart_config.h
 
     blinker.c
     main.c

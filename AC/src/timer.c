@@ -56,11 +56,12 @@ static inline void ClearData(TimerType timerType);
 
 
 static TimerCallback g_callbacks[(uint8_t)TimerType_kNum];
+static uint32_t g_durationOverflows;
 
 
 ISR(TIMER0_OVF_vect)
 {
-    // TODO Markers
+    ++g_durationOverflows;
 }
 
 ISR(TIMER1_OVF_vect)
@@ -234,89 +235,57 @@ void Timer_Init(void)
 {
     // TODO Check if this is correct in C.
     memset(g_callbacks, 0, sizeof(g_callbacks));
+    g_durationOverflows = 0;
 }
 
-/*
-bool Timer_ScheduleCallbackTicks(uint32_t ticks, const TimerCallbackInfo* callbackInfo)
-{
-    if(!callbackInfo || !callbackInfo->m_func)
-    {
-        return false;
-    }
-
-    if(ticks == 0)
-    {
-        callbackInfo->m_func(callbackInfo->m_param);
-        return true;
-    }
-
-    TimerType timerType;
-    uint16_t tickOverflowsToGo;
-    uint16_t tickRemainder;
-    if(!PickTimer(ticks, &timerType, &tickOverflowsToGo, &tickRemainder))
-    {
-        return false;
-    }
-
-    InitTimerAndData(tickOverflowsToGo, tickRemainder, timerType, callbackInfo);
-
-    return true;
-}
-
-bool Timer_RemoveCalback(Timer_CallbackFunc func)
-{
-    for(uint8_t i = 0; i < (uint8_t)TimerType_kNum; ++i)
-    {
-        if(func == g_callbacks[i].m_func)
-        {
-            cli();
-            memset(&g_callbacks[i], 0, sizeof(g_callbacks[i]));
-            sei();
-
-            ClearTimer((TimerType)i);
-
-            return true;
-        }
-    }
-
-    return false;
-}
-*/
-
-void Timer_ScheduleCallbackExt_1(uint16_t tickOverflows, uint16_t tickRemainder, Timer_CallbackFunc func, Timer_CallbackParam param, uint8_t callNum)
+void Timer_ScheduleCallback_1_Ext(uint16_t tickOverflows, uint16_t tickRemainder, Timer_CallbackFunc func, Timer_CallbackParam param, uint8_t callNum)
 {
     HoldInterruptsTimer2();
     InitData(tickOverflows, tickRemainder, TimerType_k16_1, func, param, callNum);
-    ResumeInterruptsTimer2();
-
     InitTimer1();
+    ResumeInterruptsTimer2();
 }
 
 void Timer_RemoveCallback_1(void)
 {
     HoldInterruptsTimer1();
     ClearData(TimerType_k16_1);
-    ResumeInterruptsTimer1();
-
     ClearTimer1();
+    ResumeInterruptsTimer1();
 }
 
-void Timer_ScheduleCallbackExt_2(uint16_t tickOverflows, uint16_t tickRemainder, Timer_CallbackFunc func, Timer_CallbackParam param, uint8_t callNum)
+void Timer_ScheduleCallback_2_Ext(uint16_t tickOverflows, uint16_t tickRemainder, Timer_CallbackFunc func, Timer_CallbackParam param, uint8_t callNum)
 {
     HoldInterruptsTimer2();
     InitData(tickOverflows, tickRemainder, TimerType_k8_2, func, param, callNum);
-    ResumeInterruptsTimer2();
-
     InitTimer2();
+    ResumeInterruptsTimer2();
 }
 
 void Timer_RemoveCallback_2(void)
 {
     HoldInterruptsTimer2();
     ClearData(TimerType_k8_2);
-    ResumeInterruptsTimer2();
-
     ClearTimer2();
+    ResumeInterruptsTimer2();
+}
+
+void Timer_SetDurationMarker(void)
+{
+    HoldInterruptsTimer0();
+    g_durationOverflows = 0;
+    InitTimer0();
+    ResumeInterruptsTimer0();
+}
+
+uint32_t Timer_GetDurationTicks(void)
+{
+    HoldInterruptsTimer0();
+    const uint8_t remainder = TCNT0;
+    ClearTimer0();
+    ResumeInterruptsTimer0();
+
+    return g_durationOverflows * UINT8_MAX + remainder;
 }
 
 void Timer_SleepVarMs(uint16_t delay)
