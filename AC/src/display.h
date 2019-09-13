@@ -19,8 +19,13 @@ typedef enum Disp_Alignment
 } Disp_Alignment;
 
 void Disp_Init(void);
-void Disp_PrintEx(const char* text, uint8_t textLength, Disp_Row row, Disp_Alignment alignment);
-#define Disp_Print(text, row, alignment) Disp_PrintEx((text), (uint8_t)strlen(text), (row), (alignment))
+void Disp_Tick(void);
+
+void Disp_Clear(void);
+void Disp_ClearRow(Disp_Row row);
+
+void Disp_PrintEx(Disp_Row row, Disp_Alignment alignment, const char* text, uint8_t charNum);
+#define Disp_Print(row, alignment, text) Disp_PrintEx(row, alignment, text, strlen(text))
 void Disp_Printf(Disp_Row row, Disp_Alignment alignment, const char* format, ...);
 
 // TODO Print custom form

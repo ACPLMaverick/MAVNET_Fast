@@ -13,24 +13,32 @@ void Blink(void* param)
 
 void Init(void)
 {
+    // ++lib
     sei();
     
     Timer_Init();
     Blinker_Init();
     Uart_Init();
     Disp_Init();
+    // --lib
+
+    Disp_Print(Disp_Row_kUpper, Disp_Alignment_kCenter, "Janusz");
 
     Timer_ScheduleCallbackMs_2(1000, Blink, NULL, TIMER_CALL_NUM_PERSISTENT);
-
-    Disp_Print("Hello world!", Disp_Row_kUpper, Disp_Alignment_kLeft);
 }
 
 void Tick(void)
 {
+    // ++lib
+    Disp_Tick();
+    // --lib
+
     static uint16_t ctr = 0;
 
-    Uart_Printf("Dupa! %d \n", ctr);
-    Blinker_Toggle();
+    Disp_Alignment alignment = (Disp_Alignment)(ctr % 3);
+    Disp_ClearRow(Disp_Row_kLower);
+    Disp_Printf(Disp_Row_kLower, alignment, "Hello: %d", ctr);
+
     Timer_SleepMs(1000);
 
     ++ctr;
@@ -38,11 +46,13 @@ void Tick(void)
 
 int main(void)
 {
+    // ++lib
     Init();
     while(true)
     {
-        //Tick();
+        Tick();
     }
+    // --lib
 
     return 0;
 }

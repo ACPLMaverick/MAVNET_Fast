@@ -12,6 +12,7 @@
 #define BitRead(register, offset) ((register >> (offset)) & 1U)
 
 #define RegWrite(register, value) ((register) |= (value))
+#define RegWriteHalfByte(register, firstBit, value) ((register) = ((register) & 0xff & ~(0x0f << (firstBit))) | (((value) & 0x0f) << (firstBit)))
 #define RegClear(register) RegWrite(register, 0)
 #define RegOverwrite(register, value) ((register) = (value))
 #define RegRead(register) (register)

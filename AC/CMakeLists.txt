@@ -12,7 +12,7 @@ set(F_CPU 12000000ULL)
 set(MCU m8)
 set(MCU_FOR_COMPILER atmega8)
 set(MCU_FOR_HEADER __AVR_ATmega8A__)
-set(BAUD 57600) 
+set(BAUD 9600) 
 set(PROGRAMMER usbasp)
 
 # Fuse setup.
