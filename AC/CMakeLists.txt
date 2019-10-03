@@ -15,6 +15,12 @@ set(MCU_FOR_HEADER __AVR_ATmega8A__)
 set(BAUD 9600) 
 set(PROGRAMMER usbasp)
 
+# Output definitions
+set(OUTPUT_ENABLED true)
+set(OUTPUT_APP cat)
+set(OUTPUT_DEVICE /dev/ttyUSB0)
+set(OUTPUT_TERMINAL /dev/pts/2)
+
 # Fuse setup.
 # Fuses OK (E:FF, H:D9, L:EF)
 set(FUSE_L 0xEF)
@@ -108,3 +114,8 @@ add_custom_target(target_upload_hex ALL avrdude -c ${PROGRAMMER} -p ${MCU} -U fl
 
 # Upload the eeprom with avrdude. TODO Disabled as not necessary.
 # add_custom_target(target_upload_eep ALL avrdude -c ${PROGRAMMER} -p ${MCU}  -U eeprom:w:${FIN_EXE_NAME}.eep DEPENDS target_eep)
+
+IF(${OUTPUT_ENABLED})
+message("\n\n ====================================== \n Output from UART:\n")
+add_custom_target(target_output ALL ${OUTPUT_APP} ${OUTPUT_DEVICE} >> ${OUTPUT_TERMINAL} DEPENDS target_upload_hex)
+ENDIF()

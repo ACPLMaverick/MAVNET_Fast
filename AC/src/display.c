@@ -54,19 +54,73 @@
 #if DISP_MODE_4BIT
 #define DISP_MODE_8BIT 0
 #define DISP_CURRENT_MODE_FLAG DISP_4BITMODE
+#define DISP_PIN_BF (DISP_PIN_D0 + 3)
 #else
 #define DISP_MODE_8BIT 1
 #define DISP_CURRENT_MODE_FLAG DISP_8BITMODE
+#define DISP_PIN_BF (DISP_PIN_D0 + 7)
 #endif
 
 // End display config params
 
 
+// Structs
+
+typedef enum CmdType
+{
+    CmdType_kCommand = 0,
+    CmdType_kDataBuffer
+} CmdType;
+
+typedef enum CmdState
+{
+    CmdState_kInvalid = 0,
+#if DISP_MODE_4BIT
+    CmdState_kFirstNibble,
+    CmdState_kSecondNibble
+#else
+    CmdState_kValid
+#endif
+
+} CmdState;
+
+typedef struct Cmd
+{
+    uint16_t m_value    : 16;
+    CmdState m_state    : 4;
+    CmdType m_type      : 4;
+
+} Cmd;
+
+typedef struct CmdBuffer
+{
+#define CMD_BUFFER_SIZE 32
+    Cmd m_commands[CMD_BUFFER_SIZE];
+    Cmd* m_ptrPerform;
+    Cmd* m_ptrInsert;
+    bool m_bNeedsWait;
+
+} CmdBuffer;
+
+typedef struct DisplayState
+{
+    uint8_t m_displayFlag   : 8;
+    uint8_t m_cursorPos     : 8;
+    bool m_dataRegister     : 4;
+    bool m_read             : 4;
+
+} DisplayState;
+
+// End structs
+
+
 // Globals
 
 char g_displayBuffer[DISP_COL_COUNT + 1][DISP_ROW_COUNT];
-uint8_t g_displayState;
-uint8_t g_cursorPos;
+char g_printfBuffer[DISP_COL_COUNT + 1];
+char g_spaceBuffer[DISP_COL_COUNT + 1];
+CmdBuffer g_cmdBuffer;
+DisplayState g_displayState;
 
 // End globals
 
@@ -76,58 +130,80 @@ static inline void SetDataRegister(void);
 static inline void SetWrite(void);
 static inline void SetRead(void);
 static inline void SendCommand(uint8_t command);
-static inline void SendData(uint8_t data);
+static inline void SendText(const char* text);
 #if DISP_MODE_4BIT
 static inline void WriteHalfByte(uint8_t nibble);
 #elif DISP_MODE_8BIT
 static inline void WriteByte(uint8_t byte);
 #endif
+static inline bool TryBusyFlag(void);
+static inline void CmdBuffer_Init(CmdBuffer* buffer);
+static inline void CmdBuffer_Insert(CmdBuffer* buffer, uint16_t value, CmdType type);
+static inline void CmdBuffer_Proceed(CmdBuffer* buffer, Cmd** ptr);
+static inline void CmdBuffer_Flush(CmdBuffer* buffer);
+#define CmdBuffer_ProceedPerform(buffer) CmdBuffer_Proceed(buffer, &buffer->m_ptrPerform)
+#define CmdBuffer_ProceedInsert(buffer) CmdBuffer_Proceed(buffer, &buffer->m_ptrInsert)
+static inline void CmdBuffer_Perform(CmdBuffer* buffer);
 
 static inline void ConfigurePins(void);
 static inline void MysteriousInit(void);
-static inline void SetCursor(Disp_Row row, Disp_Alignment alignment, uint8_t textLength);
+static void CalculateTextPosition(Disp_Row row, Disp_Alignment alignment, uint8_t textLength, uint8_t* outPosX, uint8_t* outPosY);
+static inline uint8_t CalculateCursorPosition(const uint8_t posX, const uint8_t posY);
+static inline void SetCursor(const uint8_t posX, const uint8_t posY);
+static void Print_Internal(const uint8_t textPosX, const uint8_t textPosY, const char* text, uint8_t charNum);
 
 
 static inline void SetInstructionRegister(void)
 {
-    BitDisable(DISP_PORT_CONTROL, DISP_PIN_RS);
+    if(g_displayState.m_dataRegister)
+    {
+        BitDisable(DISP_PORT_CONTROL, DISP_PIN_RS);
+        g_displayState.m_dataRegister = false;
+        Disp_DebugPrintf("[DISP] Setting Instruction Register.\n");
+    }
 }
 
 static inline void SetDataRegister(void)
 {
-    BitEnable(DISP_PORT_CONTROL, DISP_PIN_RS);
+    if(!g_displayState.m_dataRegister)
+    {
+        BitEnable(DISP_PORT_CONTROL, DISP_PIN_RS);
+        g_displayState.m_dataRegister = true;
+        Disp_DebugPrintf("[DISP] Setting Data Register.\n");
+    }
 }
 
 static inline void SetWrite(void)
 {
-    BitDisable(DISP_PORT_CONTROL, DISP_PIN_RW);
+    if(g_displayState.m_read)
+    {
+        BitEnable(DISP_REG_DATA, DISP_PIN_BF);  // Update busy flag pinout as write.
+        BitDisable(DISP_PORT_CONTROL, DISP_PIN_RW);
+        g_displayState.m_read = false;
+        Disp_DebugPrintf("[DISP] Setting Write.\n");
+    }
 }
 
 static inline void SetRead(void)
 {
-    BitEnable(DISP_PORT_CONTROL, DISP_PIN_RW);
+    if(!g_displayState.m_read)
+    {
+        BitDisable(DISP_REG_DATA, DISP_PIN_BF);  // Update busy flag pinout as read.
+        BitEnable(DISP_PORT_CONTROL, DISP_PIN_RW);
+        g_displayState.m_read = true;
+        Disp_DebugPrintf("[DISP] Setting Read.\n");
+    }
 }
 
 static inline void SendCommand(uint8_t command)
 {
-    SetInstructionRegister();
-    SetWrite();
-
-    Disp_DebugPrintf("Sending Display Command: %d \n", command);
-
-    WriteHalfByte(command >> 4);
-    WriteHalfByte(command);
+    Disp_DebugPrintf("[DISP] Sending Command: [0x%x]\n", command);
+    CmdBuffer_Insert(&g_cmdBuffer, (uint16_t)command, CmdType_kCommand);
 }
 
-static inline void SendData(uint8_t data)
+static inline void SendText(const char* text)
 {
-    SetDataRegister();
-    SetWrite();
-
-    Disp_DebugPrintf("Sending Display Data: %c \n", data);
-
-    WriteHalfByte(data >> 4);
-    WriteHalfByte(data);
+    CmdBuffer_Insert(&g_cmdBuffer, (uint16_t)text, CmdType_kDataBuffer);
 }
 
 #if DISP_MODE_4BIT
@@ -139,8 +215,6 @@ static inline void WriteHalfByte(uint8_t nibble)
     BitDisable(DISP_PORT_CONTROL, DISP_PIN_E);
     BitEnable(DISP_PORT_CONTROL, DISP_PIN_E);
     BitDisable(DISP_PORT_CONTROL, DISP_PIN_E);
-
-    Timer_SleepMs(0.3);
 }
 #elif DISP_MODE_8BIT
 static inline void WriteByte(uint8_t byte)
@@ -148,6 +222,159 @@ static inline void WriteByte(uint8_t byte)
 #error "TODO"
 }
 #endif
+
+static inline bool TryBusyFlag(void)
+{
+    /*
+    const uint8_t val = BitRead(DISP_REG_DATA, DISP_PIN_BF);
+    Disp_DebugPrintf("[DISP] TryBusyFlag [%d]\n", val);
+    return val == 0;
+    */
+   Timer_SleepMs(3);
+   return true;
+}
+
+static inline void CmdBuffer_Init(CmdBuffer* buffer)
+{
+    memset(buffer->m_commands, 0, CMD_BUFFER_SIZE * sizeof(buffer->m_commands[0]));
+    buffer->m_ptrPerform = buffer->m_commands;
+    buffer->m_ptrInsert = buffer->m_commands;
+}
+
+static inline void CmdBuffer_Insert(CmdBuffer* buffer, uint16_t value, CmdType type)
+{
+    if(buffer->m_ptrPerform->m_state != CmdState_kInvalid
+        && buffer->m_ptrInsert == buffer->m_ptrPerform)
+    {
+        Disp_DebugPrintf("[DISP] [WARN] Command overflow with command: 0x%x %d. Skipping.\n", value, type);
+        return;
+    }
+
+    buffer->m_ptrInsert->m_value = value;
+    buffer->m_ptrInsert->m_type = type;
+    buffer->m_ptrInsert->m_state = CmdState_kFirstNibble;
+
+    CmdBuffer_ProceedInsert(buffer);
+}
+
+static inline void CmdBuffer_Proceed(CmdBuffer* buffer, Cmd** ptr)
+{
+    ++(*ptr);
+    if(*ptr >= (buffer->m_commands + CMD_BUFFER_SIZE))
+    {
+        *ptr = buffer->m_commands;
+    }
+}
+
+static inline void CmdBuffer_Perform(CmdBuffer* buffer)
+{
+    Disp_DebugPrintf("[DISP] CmdBuffer_Perform: Begin.\n");
+
+    if(buffer->m_bNeedsWait)
+    {
+        SetRead();
+        SetInstructionRegister();
+        if(!TryBusyFlag())
+        {
+            return;
+        }
+    }
+
+    // Get next command
+    Cmd* cmd = buffer->m_ptrPerform;
+    if(cmd->m_state == CmdState_kInvalid)   // Pointer points to invalid command - no commands to process.
+    {
+        return;
+    }
+
+    SetWrite(); // After waiting for busy flag.
+
+#if DISP_MODE_4BIT
+
+    switch (cmd->m_type)
+    {
+    case CmdType_kCommand:
+    {
+        Disp_DebugPrintf("[DISP] CmdBuffer_Perform: Performing command.\n");
+
+        SetInstructionRegister();
+
+        uint8_t value = (uint8_t)cmd->m_value;
+        if(cmd->m_state == CmdState_kFirstNibble)
+        {
+            // Send first nibble.
+            WriteHalfByte(value >> 4);
+
+            // Update state to second nibble.
+            cmd->m_state = CmdState_kSecondNibble;
+        }
+        else if(cmd->m_state == CmdState_kSecondNibble)
+        {
+            // Send second nibble.
+            WriteHalfByte(value);
+            Disp_DebugPrintf("[DISP] Sending Display Command: [0x%x]\n", value);
+
+            // Clear state.
+            cmd->m_state = CmdState_kInvalid;
+
+            // Update pointer to point to the next command.
+            buffer->m_bNeedsWait = true;
+            CmdBuffer_ProceedPerform(buffer);
+        }
+    }
+        break;
+    
+    case CmdType_kDataBuffer:
+    {
+        Disp_DebugPrintf("[DISP] CmdBuffer_Perform: Performing data.\n");
+
+        SetDataRegister();
+
+        char letter = *((char*)cmd->m_value);
+        if(letter == 0)
+        {
+            // We have finished writing this string. Clear state and update pointer to the next cmd.
+            cmd->m_state = CmdState_kInvalid;
+            buffer->m_bNeedsWait = true;
+            CmdBuffer_ProceedPerform(buffer);
+        }
+        else if(cmd->m_state == CmdState_kFirstNibble)
+        {
+            // Send first nibble.
+            WriteHalfByte(letter >> 4);
+
+            // Update state to second nibble.
+            cmd->m_state = CmdState_kSecondNibble;
+        }
+        else if(cmd->m_state == CmdState_kSecondNibble)
+        {
+            // Send second nibble.
+            WriteHalfByte(letter);
+            Disp_DebugPrintf("[DISP] Sending Display Char: %c\n", letter);
+
+            // Increment pointer to string.
+            ++cmd->m_value;
+            buffer->m_bNeedsWait = true;
+        }
+    }
+        break;
+    
+    default:
+        break;
+    }
+
+#else
+#error "TODO"
+#endif
+}
+
+static inline void CmdBuffer_Flush(CmdBuffer* buffer)
+{
+    while(buffer->m_ptrPerform->m_state != CmdState_kInvalid)
+    {
+        CmdBuffer_Perform(buffer);
+    }
+}
 
 static inline void ConfigurePins(void)
 {
@@ -178,85 +405,132 @@ static inline void ConfigurePins(void)
 
 static inline void MysteriousInit(void)
 {
-    _delay_ms(4.1);
+    Timer_SleepMs(4.1);
 
     WriteHalfByte(0x03); // Switch to 4 bit mode
-    _delay_ms(4.1);
+    Timer_SleepMs(4.1);
 
     WriteHalfByte(0x03); // 2nd time
-    _delay_ms(4.1);
+    Timer_SleepMs(4.1);
 
     WriteHalfByte(0x03); // 3rd time
-    _delay_ms(4.1);
+    Timer_SleepMs(4.1);
 
     // Ext lib says "Set 8-bit mode (?)" But I don't fuckin' know what it is, all I know is that it totally doesn't work without that...
     WriteHalfByte(0x02);
+    Timer_SleepMs(4.1);
 }
 
-static inline void SetCursor(Disp_Row row, Disp_Alignment alignment, uint8_t textLength)
+static void CalculateTextPosition(Disp_Row row, Disp_Alignment alignment, uint8_t textLength, uint8_t* outPosX, uint8_t* outPosY)
 {
-    static uint8_t rowOffsets[] = {0x00, 0x40};
-
-    uint8_t cursorPos = (rowOffsets[(uint8_t)row]);
+    *outPosY = (uint8_t)row;
+    *outPosX = 0;
 
     switch (alignment)
     {
     case Disp_Alignment_kCenter:
-        {
-            const uint8_t halfDiff = (DISP_COL_COUNT - textLength) / 2;
-            cursorPos += halfDiff;
-        }
+            *outPosX += (DISP_COL_COUNT - textLength) / 2;
         break;
 
     case Disp_Alignment_kRight:
-        {
-            const uint8_t diff = (DISP_COL_COUNT - textLength);
-            cursorPos += diff;
-        }
+            *outPosX += (DISP_COL_COUNT - textLength);
         break;
     
     default:
         break;
     }
+}
 
-    g_cursorPos = cursorPos;
+static inline uint8_t CalculateCursorPosition(const uint8_t posX, const uint8_t posY)
+{
+    static const uint8_t rowOffsets[] = {0x00, 0x40};
+    return (rowOffsets[(uint8_t)posY]) + posX;
+}
+
+static inline void SetCursor(const uint8_t posX, const uint8_t posY)
+{
+    const uint8_t cursorPos = CalculateCursorPosition(posX, posY);
+    g_displayState.m_cursorPos = cursorPos;
     SendCommand(DISP_SETDDRAMADDR | cursorPos);
 }
 
+static void Print_Internal(const uint8_t textPosX, const uint8_t textPosY, const char* text, uint8_t charNum)
+{
+    SetCursor(textPosX, textPosY);
+    SendText(text);
+}
+
+
 void Disp_Init(void)
 {
+    memset(g_printfBuffer, 0, sizeof(g_printfBuffer));
+    memset(g_spaceBuffer, ' ', sizeof(g_spaceBuffer));
+    g_spaceBuffer[DISP_COL_COUNT] = 0;
+    memset(&g_displayState, 0, sizeof(DisplayState));
+
     ConfigurePins();
 
     MysteriousInit();
 
+    CmdBuffer_Init(&g_cmdBuffer);
+
     // Init default settings.
 
     SendCommand(DISP_FUNCTIONSET | DISP_CURRENT_MODE_FLAG | DISP_2LINE | DISP_5x8DOTS);
-    g_displayState = DISP_CURSOROFF | DISP_BLINKOFF | DISP_DISPLAYON;
-    SendCommand(DISP_DISPLAYCONTROL | g_displayState);
+    g_displayState.m_displayFlag = DISP_CURSOROFF | DISP_BLINKOFF;
+    SendCommand(DISP_DISPLAYCONTROL | g_displayState.m_displayFlag);
 
     Disp_Clear();
 }
 
 void Disp_Tick(void)
 {
-
+    CmdBuffer_Perform(&g_cmdBuffer);
 }
 
 void Disp_Clear(void)
 {
-    g_cursorPos = 0;
+    CmdBuffer_Flush(&g_cmdBuffer);
+
+    memset(g_displayBuffer, 0, DISP_COL_COUNT * DISP_ROW_COUNT * sizeof(g_displayBuffer[0]));
+    CmdBuffer_Init(&g_cmdBuffer);
+
+    g_displayState.m_cursorPos = 0;
     SendCommand(DISP_CLEARDISPLAY);
-    Timer_SleepMs(2);
 }
 
 void Disp_ClearRow(Disp_Row row)
 {
-    SetCursor(row, Disp_Alignment_kLeft, DISP_COL_COUNT);
-    for(uint8_t i = 0; i < DISP_COL_COUNT; ++i)
+    SetCursor(0, (uint8_t)row);
+    SendText(g_spaceBuffer);
+}
+
+void Disp_On(void)
+{
+    g_displayState.m_displayFlag |= DISP_DISPLAYON;
+    SendCommand(DISP_DISPLAYCONTROL | g_displayState.m_displayFlag);
+}
+
+void Disp_Off(void)
+{
+    g_displayState.m_displayFlag &= ~DISP_DISPLAYON;
+    SendCommand(DISP_DISPLAYCONTROL | g_displayState.m_displayFlag);
+}
+
+void Disp_PrintCopyEx(Disp_Row row, Disp_Alignment alignment, const char* text, uint8_t charNum)
+{
+    if(charNum > DISP_COL_COUNT)
     {
-        SendData((uint8_t)' ');
+        charNum = DISP_COL_COUNT;
     }
+
+    uint8_t textPosX, textPosY;
+    CalculateTextPosition(row, alignment, charNum, &textPosX, &textPosY);
+
+    char* textDst = &g_displayBuffer[textPosY][textPosX];
+    strncpy(textDst, text, charNum);
+
+    Print_Internal(textPosX, textPosY, textDst, charNum);
 }
 
 void Disp_PrintEx(Disp_Row row, Disp_Alignment alignment, const char* text, uint8_t charNum)
@@ -266,12 +540,10 @@ void Disp_PrintEx(Disp_Row row, Disp_Alignment alignment, const char* text, uint
         charNum = DISP_COL_COUNT;
     }
 
-    SetCursor(row, alignment, charNum);
+    uint8_t textPosX, textPosY;
+    CalculateTextPosition(row, alignment, charNum, &textPosX, &textPosY);
 
-    for(uint8_t i = 0; i < charNum; ++i)
-    {
-        SendData((uint8_t)text[i]);
-    }
+    Print_Internal(textPosX, textPosY, text, charNum);
 }
 
 void Disp_Printf(Disp_Row row, Disp_Alignment alignment, const char* format, ...)
@@ -279,14 +551,19 @@ void Disp_Printf(Disp_Row row, Disp_Alignment alignment, const char* format, ...
     va_list args;
     va_start(args, format);
 
-    char* textDst = g_displayBuffer[(uint8_t)row];
+    char* textDst = g_printfBuffer;
     int charNum = vsnprintf(textDst, DISP_COL_COUNT, format, args);
-    if(charNum > DISP_COL_COUNT)
+
+    if(charNum <= 0)
     {
-        charNum = DISP_COL_COUNT;
+        if(charNum < 0)
+        {
+            Disp_DebugPrintf("[DISP] Error printing: %s \n", format);
+        }
+        return;
     }
 
     va_end(args);
 
-    Disp_PrintEx(row, alignment, textDst, charNum);
+    Disp_PrintCopyEx(row, alignment, textDst, charNum);
 }
