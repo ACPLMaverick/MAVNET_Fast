@@ -98,7 +98,6 @@ typedef struct CmdBuffer
     Cmd m_commands[CMD_BUFFER_SIZE];
     Cmd* m_ptrPerform;
     Cmd* m_ptrInsert;
-    bool m_bNeedsWait;
 
 } CmdBuffer;
 
@@ -197,7 +196,6 @@ static inline void SetRead(void)
 
 static inline void SendCommand(uint8_t command)
 {
-    Disp_DebugPrintf("[DISP] Sending Command: [0x%x]\n", command);
     CmdBuffer_Insert(&g_cmdBuffer, (uint16_t)command, CmdType_kCommand);
 }
 
@@ -268,21 +266,16 @@ static inline void CmdBuffer_Proceed(CmdBuffer* buffer, Cmd** ptr)
 
 static inline void CmdBuffer_Perform(CmdBuffer* buffer)
 {
-    Disp_DebugPrintf("[DISP] CmdBuffer_Perform: Begin.\n");
-
-    if(buffer->m_bNeedsWait)
-    {
-        SetRead();
-        SetInstructionRegister();
-        if(!TryBusyFlag())
-        {
-            return;
-        }
-    }
-
     // Get next command
     Cmd* cmd = buffer->m_ptrPerform;
     if(cmd->m_state == CmdState_kInvalid)   // Pointer points to invalid command - no commands to process.
+    {
+        return;
+    }
+
+    SetRead();
+    SetInstructionRegister();
+    if(!TryBusyFlag())
     {
         return;
     }
@@ -318,7 +311,6 @@ static inline void CmdBuffer_Perform(CmdBuffer* buffer)
             cmd->m_state = CmdState_kInvalid;
 
             // Update pointer to point to the next command.
-            buffer->m_bNeedsWait = true;
             CmdBuffer_ProceedPerform(buffer);
         }
     }
@@ -335,7 +327,6 @@ static inline void CmdBuffer_Perform(CmdBuffer* buffer)
         {
             // We have finished writing this string. Clear state and update pointer to the next cmd.
             cmd->m_state = CmdState_kInvalid;
-            buffer->m_bNeedsWait = true;
             CmdBuffer_ProceedPerform(buffer);
         }
         else if(cmd->m_state == CmdState_kFirstNibble)
@@ -352,9 +343,11 @@ static inline void CmdBuffer_Perform(CmdBuffer* buffer)
             WriteHalfByte(letter);
             Disp_DebugPrintf("[DISP] Sending Display Char: %c\n", letter);
 
+            // Update state to first nibble.
+            cmd->m_state = CmdState_kFirstNibble;
+
             // Increment pointer to string.
             ++cmd->m_value;
-            buffer->m_bNeedsWait = true;
         }
     }
         break;
