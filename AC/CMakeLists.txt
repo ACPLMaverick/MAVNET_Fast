@@ -19,7 +19,7 @@ set(PROGRAMMER usbasp)
 set(OUTPUT_ENABLED true)
 set(OUTPUT_APP cat)
 set(OUTPUT_DEVICE /dev/ttyUSB0)
-set(OUTPUT_TERMINAL /dev/pts/2)
+set(OUTPUT_TERMINAL /dev/pts/1)
 
 # Fuse setup.
 # Fuses OK (E:FF, H:D9, L:EF)
@@ -116,6 +116,6 @@ add_custom_target(target_upload_hex ALL avrdude -c ${PROGRAMMER} -p ${MCU} -U fl
 # add_custom_target(target_upload_eep ALL avrdude -c ${PROGRAMMER} -p ${MCU}  -U eeprom:w:${FIN_EXE_NAME}.eep DEPENDS target_eep)
 
 IF(${OUTPUT_ENABLED})
-message("\n\n ====================================== \n Output from UART:\n")
+# message("\n\n ====================================== \n Output from UART:\n")
 add_custom_target(target_output ALL ${OUTPUT_APP} ${OUTPUT_DEVICE} >> ${OUTPUT_TERMINAL} DEPENDS target_upload_hex)
 ENDIF()

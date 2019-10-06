@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#define DISP_DEBUG 0
+#define DISP_DEBUG 1
 
 #if DISP_DEBUG
 #include "uart.h"
@@ -75,12 +75,7 @@ typedef enum CmdType
 typedef enum CmdState
 {
     CmdState_kInvalid = 0,
-#if DISP_MODE_4BIT
-    CmdState_kFirstNibble,
-    CmdState_kSecondNibble
-#else
-    CmdState_kValid
-#endif
+    CmdState_kPending
 
 } CmdState;
 
@@ -132,9 +127,10 @@ static inline void SendCommand(uint8_t command);
 static inline void SendText(const char* text);
 #if DISP_MODE_4BIT
 static inline void WriteHalfByte(uint8_t nibble);
-#elif DISP_MODE_8BIT
-static inline void WriteByte(uint8_t byte);
 #endif
+static inline void WriteByte(uint8_t byte);
+static inline void BeginTransfer(void);
+static inline void EndTransfer(void);
 static inline bool TryBusyFlag(void);
 static inline void CmdBuffer_Init(CmdBuffer* buffer);
 static inline void CmdBuffer_Insert(CmdBuffer* buffer, uint16_t value, CmdType type);
@@ -207,29 +203,60 @@ static inline void SendText(const char* text)
 #if DISP_MODE_4BIT
 static inline void WriteHalfByte(uint8_t nibble)
 {
+    BeginTransfer();
     RegWriteHalfByte(DISP_PORT_DATA, DISP_PIN_D0, nibble);
-
-    // Clear any previous state, set 1, and then clear.
-    BitDisable(DISP_PORT_CONTROL, DISP_PIN_E);
-    BitEnable(DISP_PORT_CONTROL, DISP_PIN_E);
-    BitDisable(DISP_PORT_CONTROL, DISP_PIN_E);
-}
-#elif DISP_MODE_8BIT
-static inline void WriteByte(uint8_t byte)
-{
-#error "TODO"
+    EndTransfer();
 }
 #endif
 
+static inline void WriteByte(uint8_t byte)
+{
+#if DISP_MODE_4BIT
+    WriteHalfByte(byte >> 4);
+    WriteHalfByte(byte);
+#else
+    RegWrite(DISP_PORT_DATA, DISP_PIN_D0, byte);
+#endif
+}
+
+static inline void BeginTransfer(void)
+{
+    BitDisable(DISP_PORT_CONTROL, DISP_PIN_E);
+    BitEnable(DISP_PORT_CONTROL, DISP_PIN_E);
+}
+
+static inline void EndTransfer(void)
+{
+    BitDisable(DISP_PORT_CONTROL, DISP_PIN_E);
+}
+
+#define TRY_BUSY_FLAG_FAKE 1
+
 static inline bool TryBusyFlag(void)
 {
-    /*
-    const uint8_t val = BitRead(DISP_REG_DATA, DISP_PIN_BF);
+#if TRY_BUSY_FLAG_FAKE
+    
+    Timer_SleepMs(1);
+    return true;
+
+#else
+
+    SetRead();
+    SetInstructionRegister();
+
+    BeginTransfer();
+
+    const bool val = BitRead(DISP_PORT_DATA, DISP_PIN_BF);
     Disp_DebugPrintf("[DISP] TryBusyFlag [%d]\n", val);
-    return val == 0;
-    */
-   Timer_SleepMs(3);
-   return true;
+
+    EndTransfer();
+
+    BeginTransfer();   // Second nibble - we don't need it, but for safety we fake reading whole byte.
+    EndTransfer();
+
+    return !val;
+
+#endif
 }
 
 static inline void CmdBuffer_Init(CmdBuffer* buffer)
@@ -250,7 +277,7 @@ static inline void CmdBuffer_Insert(CmdBuffer* buffer, uint16_t value, CmdType t
 
     buffer->m_ptrInsert->m_value = value;
     buffer->m_ptrInsert->m_type = type;
-    buffer->m_ptrInsert->m_state = CmdState_kFirstNibble;
+    buffer->m_ptrInsert->m_state = CmdState_kPending;
 
     CmdBuffer_ProceedInsert(buffer);
 }
@@ -273,8 +300,6 @@ static inline void CmdBuffer_Perform(CmdBuffer* buffer)
         return;
     }
 
-    SetRead();
-    SetInstructionRegister();
     if(!TryBusyFlag())
     {
         return;
@@ -282,29 +307,16 @@ static inline void CmdBuffer_Perform(CmdBuffer* buffer)
 
     SetWrite(); // After waiting for busy flag.
 
-#if DISP_MODE_4BIT
-
     switch (cmd->m_type)
     {
     case CmdType_kCommand:
     {
-        Disp_DebugPrintf("[DISP] CmdBuffer_Perform: Performing command.\n");
-
         SetInstructionRegister();
 
         uint8_t value = (uint8_t)cmd->m_value;
-        if(cmd->m_state == CmdState_kFirstNibble)
+        if(cmd->m_state == CmdState_kPending)
         {
-            // Send first nibble.
-            WriteHalfByte(value >> 4);
-
-            // Update state to second nibble.
-            cmd->m_state = CmdState_kSecondNibble;
-        }
-        else if(cmd->m_state == CmdState_kSecondNibble)
-        {
-            // Send second nibble.
-            WriteHalfByte(value);
+            WriteByte(value);
             Disp_DebugPrintf("[DISP] Sending Display Command: [0x%x]\n", value);
 
             // Clear state.
@@ -318,8 +330,6 @@ static inline void CmdBuffer_Perform(CmdBuffer* buffer)
     
     case CmdType_kDataBuffer:
     {
-        Disp_DebugPrintf("[DISP] CmdBuffer_Perform: Performing data.\n");
-
         SetDataRegister();
 
         char letter = *((char*)cmd->m_value);
@@ -329,22 +339,13 @@ static inline void CmdBuffer_Perform(CmdBuffer* buffer)
             cmd->m_state = CmdState_kInvalid;
             CmdBuffer_ProceedPerform(buffer);
         }
-        else if(cmd->m_state == CmdState_kFirstNibble)
+        else if(cmd->m_state == CmdState_kPending)
         {
-            // Send first nibble.
-            WriteHalfByte(letter >> 4);
-
-            // Update state to second nibble.
-            cmd->m_state = CmdState_kSecondNibble;
-        }
-        else if(cmd->m_state == CmdState_kSecondNibble)
-        {
-            // Send second nibble.
-            WriteHalfByte(letter);
+            WriteByte(letter);
             Disp_DebugPrintf("[DISP] Sending Display Char: %c\n", letter);
 
             // Update state to first nibble.
-            cmd->m_state = CmdState_kFirstNibble;
+            cmd->m_state = CmdState_kPending;
 
             // Increment pointer to string.
             ++cmd->m_value;
@@ -355,10 +356,6 @@ static inline void CmdBuffer_Perform(CmdBuffer* buffer)
     default:
         break;
     }
-
-#else
-#error "TODO"
-#endif
 }
 
 static inline void CmdBuffer_Flush(CmdBuffer* buffer)
