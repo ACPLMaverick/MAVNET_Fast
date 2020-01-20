@@ -23,7 +23,7 @@ void Init(void)
     // --lib
 
     Disp_On();
-    Disp_Print(Disp_Row_kUpper, Disp_Alignment_kCenter, "Janusz");
+    Disp_Print(Disp_Row_kUpper, Disp_Alignment_kCenter, "S.T.A.L.K.E.R.");
 
     Timer_ScheduleCallbackMs_2(1000, Blink, NULL, TIMER_CALL_NUM_PERSISTENT);
 }

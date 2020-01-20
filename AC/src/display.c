@@ -1,9 +1,10 @@
 #include "display.h"
+#include "display_config.h"
 #include "timer.h"
 
 #include <stdio.h>
 
-#define DISP_DEBUG 1
+#define DISP_DEBUG 0
 
 #if DISP_DEBUG
 #include "uart.h"
@@ -12,6 +13,8 @@
 #define Disp_DebugPrintf(...)
 #endif
 
+#define DISP_PORT_BF    (DISP_PORT_D0 + 3)
+#define DISP_PIN_BF     (DISP_PIN_D0 + 3)
 
 // Display config params
 
@@ -50,16 +53,6 @@
 #define DISP_1LINE    0x00
 #define DISP_5x10DOTS 0x04
 #define DISP_5x8DOTS  0x00
-
-#if DISP_MODE_4BIT
-#define DISP_MODE_8BIT 0
-#define DISP_CURRENT_MODE_FLAG DISP_4BITMODE
-#define DISP_PIN_BF (DISP_PIN_D0 + 3)
-#else
-#define DISP_MODE_8BIT 1
-#define DISP_CURRENT_MODE_FLAG DISP_8BITMODE
-#define DISP_PIN_BF (DISP_PIN_D0 + 7)
-#endif
 
 // End display config params
 
@@ -125,9 +118,7 @@ static inline void SetWrite(void);
 static inline void SetRead(void);
 static inline void SendCommand(uint8_t command);
 static inline void SendText(const char* text);
-#if DISP_MODE_4BIT
 static inline void WriteHalfByte(uint8_t nibble);
-#endif
 static inline void WriteByte(uint8_t byte);
 static inline void BeginTransfer(void);
 static inline void EndTransfer(void);
@@ -152,7 +143,7 @@ static inline void SetInstructionRegister(void)
 {
     if(g_displayState.m_dataRegister)
     {
-        BitDisable(DISP_PORT_CONTROL, DISP_PIN_RS);
+        BitDisable(DISP_PORT_CONTROL, DISP_PORT_RS);
         g_displayState.m_dataRegister = false;
         Disp_DebugPrintf("[DISP] Setting Instruction Register.\n");
     }
@@ -162,7 +153,7 @@ static inline void SetDataRegister(void)
 {
     if(!g_displayState.m_dataRegister)
     {
-        BitEnable(DISP_PORT_CONTROL, DISP_PIN_RS);
+        BitEnable(DISP_PORT_CONTROL, DISP_PORT_RS);
         g_displayState.m_dataRegister = true;
         Disp_DebugPrintf("[DISP] Setting Data Register.\n");
     }
@@ -172,8 +163,8 @@ static inline void SetWrite(void)
 {
     if(g_displayState.m_read)
     {
-        BitEnable(DISP_REG_DATA, DISP_PIN_BF);  // Update busy flag pinout as write.
-        BitDisable(DISP_PORT_CONTROL, DISP_PIN_RW);
+        BitEnable(DISP_DDR_DATA, DISP_PORT_BF);  // Update busy flag pinout as write.
+        BitDisable(DISP_PORT_CONTROL, DISP_PORT_RW);
         g_displayState.m_read = false;
         Disp_DebugPrintf("[DISP] Setting Write.\n");
     }
@@ -183,8 +174,9 @@ static inline void SetRead(void)
 {
     if(!g_displayState.m_read)
     {
-        BitDisable(DISP_REG_DATA, DISP_PIN_BF);  // Update busy flag pinout as read.
-        BitEnable(DISP_PORT_CONTROL, DISP_PIN_RW);
+        BitDisable(DISP_DDR_DATA, DISP_PORT_BF);  // Update busy flag pinout as read.
+        BitEnable(DISP_PORT_DATA, DISP_PORT_BF);  // Enable pull-up read mode.
+        BitEnable(DISP_PORT_CONTROL, DISP_PORT_RW);
         g_displayState.m_read = true;
         Disp_DebugPrintf("[DISP] Setting Read.\n");
     }
@@ -200,53 +192,38 @@ static inline void SendText(const char* text)
     CmdBuffer_Insert(&g_cmdBuffer, (uint16_t)text, CmdType_kDataBuffer);
 }
 
-#if DISP_MODE_4BIT
 static inline void WriteHalfByte(uint8_t nibble)
 {
     BeginTransfer();
-    RegWriteHalfByte(DISP_PORT_DATA, DISP_PIN_D0, nibble);
+    RegWriteHalfByte(DISP_PORT_DATA, DISP_PORT_D0, nibble);
     EndTransfer();
 }
-#endif
 
 static inline void WriteByte(uint8_t byte)
 {
-#if DISP_MODE_4BIT
     WriteHalfByte(byte >> 4);
     WriteHalfByte(byte);
-#else
-    RegWrite(DISP_PORT_DATA, DISP_PIN_D0, byte);
-#endif
 }
 
 static inline void BeginTransfer(void)
 {
-    BitDisable(DISP_PORT_CONTROL, DISP_PIN_E);
-    BitEnable(DISP_PORT_CONTROL, DISP_PIN_E);
+    BitDisable(DISP_PORT_CONTROL, DISP_PORT_E);
+    BitEnable(DISP_PORT_CONTROL, DISP_PORT_E);
 }
 
 static inline void EndTransfer(void)
 {
-    BitDisable(DISP_PORT_CONTROL, DISP_PIN_E);
+    BitDisable(DISP_PORT_CONTROL, DISP_PORT_E);
 }
-
-#define TRY_BUSY_FLAG_FAKE 1
 
 static inline bool TryBusyFlag(void)
 {
-#if TRY_BUSY_FLAG_FAKE
-    
-    Timer_SleepMs(1);
-    return true;
-
-#else
-
     SetRead();
     SetInstructionRegister();
 
     BeginTransfer();
 
-    const bool val = BitRead(DISP_PORT_DATA, DISP_PIN_BF);
+    const bool val = BitRead(DISP_PIN_DATA, DISP_PIN_BF);
     Disp_DebugPrintf("[DISP] TryBusyFlag [%d]\n", val);
 
     EndTransfer();
@@ -255,8 +232,6 @@ static inline bool TryBusyFlag(void)
     EndTransfer();
 
     return !val;
-
-#endif
 }
 
 static inline void CmdBuffer_Init(CmdBuffer* buffer)
@@ -369,28 +344,22 @@ static inline void CmdBuffer_Flush(CmdBuffer* buffer)
 static inline void ConfigurePins(void)
 {
     // Control goes all as output.
-    BitEnable(DISP_REG_CONTROL, DISP_PIN_RS);
-    BitEnable(DISP_REG_CONTROL, DISP_PIN_RW);
-    BitEnable(DISP_REG_CONTROL, DISP_PIN_E);
+    BitEnable(DISP_DDR_CONTROL, DISP_PORT_RS);
+    BitEnable(DISP_DDR_CONTROL, DISP_PORT_RW);
+    BitEnable(DISP_DDR_CONTROL, DISP_PORT_E);
 
     // Same with data.
-    BitEnable(DISP_REG_DATA, DISP_PIN_D0);
-    BitEnable(DISP_REG_DATA, DISP_PIN_D0 + 1);
-    BitEnable(DISP_REG_DATA, DISP_PIN_D0 + 2);
-    BitEnable(DISP_REG_DATA, DISP_PIN_D0 + 3);
-#if DISP_MODE_8BIT
-    BitEnable(DISP_REG_DATA, DISP_PIN_D0 + 4);
-    BitEnable(DISP_REG_DATA, DISP_PIN_D0 + 5);
-    BitEnable(DISP_REG_DATA, DISP_PIN_D0 + 6);
-    BitEnable(DISP_REG_DATA, DISP_PIN_D0 + 7);
-#endif
+    BitEnable(DISP_DDR_DATA, DISP_PORT_D0);
+    BitEnable(DISP_DDR_DATA, DISP_PORT_D0 + 1);
+    BitEnable(DISP_DDR_DATA, DISP_PORT_D0 + 2);
+    BitEnable(DISP_DDR_DATA, DISP_PORT_D0 + 3);
 
     // Wait 15 ms for DISP to initialize, as stated in doc.
     Timer_SleepMs(15);
 
-    BitDisable(DISP_PORT_CONTROL, DISP_PIN_RS);
-    BitDisable(DISP_PORT_CONTROL, DISP_PIN_RW);
-    BitDisable(DISP_PORT_CONTROL, DISP_PIN_E);
+    BitDisable(DISP_PORT_CONTROL, DISP_PORT_RS);
+    BitDisable(DISP_PORT_CONTROL, DISP_PORT_RW);
+    BitDisable(DISP_PORT_CONTROL, DISP_PORT_E);
 }
 
 static inline void MysteriousInit(void)
@@ -466,7 +435,7 @@ void Disp_Init(void)
 
     // Init default settings.
 
-    SendCommand(DISP_FUNCTIONSET | DISP_CURRENT_MODE_FLAG | DISP_2LINE | DISP_5x8DOTS);
+    SendCommand(DISP_FUNCTIONSET | DISP_4BITMODE | DISP_2LINE | DISP_5x8DOTS);
     g_displayState.m_displayFlag = DISP_CURSOROFF | DISP_BLINKOFF;
     SendCommand(DISP_DISPLAYCONTROL | g_displayState.m_displayFlag);
 

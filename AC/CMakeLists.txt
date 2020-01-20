@@ -16,7 +16,7 @@ set(BAUD 9600)
 set(PROGRAMMER usbasp)
 
 # Output definitions
-set(OUTPUT_ENABLED true)
+set(OUTPUT_ENABLED false)
 set(OUTPUT_APP cat)
 set(OUTPUT_DEVICE /dev/ttyUSB0)
 set(OUTPUT_TERMINAL /dev/pts/1)

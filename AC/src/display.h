@@ -1,7 +1,6 @@
 #pragma once
 
 #include "defs.h"
-#include "display_config.h"
 
 typedef enum Disp_Row
 {

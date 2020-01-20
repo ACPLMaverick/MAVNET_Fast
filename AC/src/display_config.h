@@ -2,14 +2,14 @@
 
 #include "defs.h"
 
-#define DISP_PIN_RS PORTD2
-#define DISP_PIN_RW PORTD3
-#define DISP_PIN_E  PORTD4
-#define DISP_PIN_D0 PORTB0
+#define DISP_PORT_RS PORTD2
+#define DISP_PORT_RW PORTD3
+#define DISP_PORT_E  PORTD4
+#define DISP_PORT_D0 PORTB0
+#define DISP_PIN_D0  PINB0
 
-#define DISP_REG_DATA       DDRB
-#define DISP_REG_CONTROL    DDRD
+#define DISP_DDR_DATA       DDRB
+#define DISP_DDR_CONTROL    DDRD
 #define DISP_PORT_DATA      PORTB
+#define DISP_PIN_DATA       PINB
 #define DISP_PORT_CONTROL   PORTD
-
-#define DISP_MODE_4BIT    1
