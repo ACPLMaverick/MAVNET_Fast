@@ -9,6 +9,13 @@
 void Blink(void* param)
 {
     Blinker_Toggle();
+
+    static uint16_t ctr = 0;
+    Disp_Alignment alignment = (Disp_Alignment)(ctr % 3);
+    Disp_ClearRow(Disp_Row_kLower);
+    Disp_Printf(Disp_Row_kLower, alignment, "Hello: %d", ctr);
+
+    ++ctr;
 }
 
 void Init(void)
@@ -22,7 +29,8 @@ void Init(void)
     Disp_Init();
     // --lib
 
-    Disp_Print(Disp_Row_kUpper, Disp_Alignment_kCenter, "Janusz");
+    Disp_On();
+    Disp_Print(Disp_Row_kUpper, Disp_Alignment_kCenter, "S.T.A.L.K.E.R.");
 
     Timer_ScheduleCallbackMs_2(1000, Blink, NULL, TIMER_CALL_NUM_PERSISTENT);
 }
@@ -32,16 +40,6 @@ void Tick(void)
     // ++lib
     Disp_Tick();
     // --lib
-
-    static uint16_t ctr = 0;
-
-    Disp_Alignment alignment = (Disp_Alignment)(ctr % 3);
-    Disp_ClearRow(Disp_Row_kLower);
-    Disp_Printf(Disp_Row_kLower, alignment, "Hello: %d", ctr);
-
-    Timer_SleepMs(1000);
-
-    ++ctr;
 }
 
 int main(void)

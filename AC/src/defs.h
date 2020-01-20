@@ -32,6 +32,8 @@
 }  
 // //////////////
 
+#define __debugbreak() while(1) /*spin*/;
+
 // Headers
 #include <avr/io.h>
 #include <avr/interrupt.h>
