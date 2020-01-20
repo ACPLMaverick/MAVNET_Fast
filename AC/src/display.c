@@ -132,7 +132,7 @@ static inline void CmdBuffer_Perform(CmdBuffer* buffer);
 
 static inline void ConfigurePins(void);
 static inline void MysteriousInit(void);
-static void CalculateTextPosition(Disp_Row row, Disp_Alignment alignment, uint8_t textLength, uint8_t* outPosX, uint8_t* outPosY);
+static void CalculateTextPosition(Disp_Row row, Disp_Alignment alignment, uint8_t* textLength, uint8_t* outPosX, uint8_t* outPosY);
 static inline uint8_t CalculateCursorPosition(const uint8_t posX, const uint8_t posY);
 static inline void SetCursor(const uint8_t posX, const uint8_t posY);
 static void Print_Internal(const uint8_t textPosX, const uint8_t textPosY, const char* text, uint8_t charNum);
@@ -379,23 +379,37 @@ static inline void MysteriousInit(void)
     Timer_SleepMs(4.1);
 }
 
-static void CalculateTextPosition(Disp_Row row, Disp_Alignment alignment, uint8_t textLength, uint8_t* outPosX, uint8_t* outPosY)
+static void CalculateTextPosition(Disp_Row row, Disp_Alignment alignment, uint8_t* refTextLength, uint8_t* outPosX, uint8_t* outPosY)
 {
     *outPosY = (uint8_t)row;
     *outPosX = 0;
 
-    switch (alignment)
+    if(*refTextLength >= DISP_COL_COUNT)
     {
-    case Disp_Alignment_kCenter:
-            *outPosX += (DISP_COL_COUNT - textLength) / 2;
-        break;
+        *refTextLength = DISP_COL_COUNT;
+        // Let's always adjust to the left if text exceeds display.
+    }
+    else
+    {
+        switch (alignment)
+        {
+        case Disp_Alignment_kCenter:
+            {
+                const uint8_t offset = (DISP_COL_COUNT - *refTextLength) / 2;
+                *outPosX += offset;
+            }
+            break;
 
-    case Disp_Alignment_kRight:
-            *outPosX += (DISP_COL_COUNT - textLength);
-        break;
-    
-    default:
-        break;
+        case Disp_Alignment_kRight:
+            {
+                const uint8_t offset = (DISP_COL_COUNT - *refTextLength);
+                *outPosX += offset;
+            }
+            break;
+        
+        default:
+            break;
+        }
     }
 }
 
@@ -458,7 +472,7 @@ void Disp_Clear(void)
 void Disp_ClearRow(Disp_Row row)
 {
     CmdBuffer_Flush(&g_cmdBuffer);
-    
+
     SetCursor(0, (uint8_t)row);
 
     char* rowText = &g_displayBuffer[0][(uint8_t)row];
@@ -481,13 +495,8 @@ void Disp_Off(void)
 
 void Disp_PrintCopyEx(Disp_Row row, Disp_Alignment alignment, const char* text, uint8_t charNum)
 {
-    if(charNum > DISP_COL_COUNT)
-    {
-        charNum = DISP_COL_COUNT;
-    }
-
     uint8_t textPosX, textPosY;
-    CalculateTextPosition(row, alignment, charNum, &textPosX, &textPosY);
+    CalculateTextPosition(row, alignment, &charNum, &textPosX, &textPosY);
 
     char* textDst = &g_displayBuffer[textPosY][textPosX];
     strncpy(textDst, text, charNum);
@@ -497,13 +506,8 @@ void Disp_PrintCopyEx(Disp_Row row, Disp_Alignment alignment, const char* text, 
 
 void Disp_PrintEx(Disp_Row row, Disp_Alignment alignment, const char* text, uint8_t charNum)
 {
-    if(charNum > DISP_COL_COUNT)
-    {
-        charNum = DISP_COL_COUNT;
-    }
-
     uint8_t textPosX, textPosY;
-    CalculateTextPosition(row, alignment, charNum, &textPosX, &textPosY);
+    CalculateTextPosition(row, alignment, &charNum, &textPosX, &textPosY);
 
     Print_Internal(textPosX, textPosY, text, charNum);
 }
