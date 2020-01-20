@@ -105,7 +105,6 @@ typedef struct DisplayState
 
 char g_displayBuffer[DISP_COL_COUNT + 1][DISP_ROW_COUNT];
 char g_printfBuffer[DISP_COL_COUNT + 1];
-char g_spaceBuffer[DISP_COL_COUNT + 1];
 CmdBuffer g_cmdBuffer;
 DisplayState g_displayState;
 
@@ -423,8 +422,6 @@ static void Print_Internal(const uint8_t textPosX, const uint8_t textPosY, const
 void Disp_Init(void)
 {
     memset(g_printfBuffer, 0, sizeof(g_printfBuffer));
-    memset(g_spaceBuffer, ' ', sizeof(g_spaceBuffer));
-    g_spaceBuffer[DISP_COL_COUNT] = 0;
     memset(&g_displayState, 0, sizeof(DisplayState));
 
     ConfigurePins();
@@ -460,8 +457,14 @@ void Disp_Clear(void)
 
 void Disp_ClearRow(Disp_Row row)
 {
+    CmdBuffer_Flush(&g_cmdBuffer);
+    
     SetCursor(0, (uint8_t)row);
-    SendText(g_spaceBuffer);
+
+    char* rowText = &g_displayBuffer[0][(uint8_t)row];
+    memset(rowText, ' ', DISP_COL_COUNT);
+    rowText[DISP_COL_COUNT] = 0;
+    SendText(rowText);
 }
 
 void Disp_On(void)

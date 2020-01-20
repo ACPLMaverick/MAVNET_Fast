@@ -9,6 +9,13 @@
 void Blink(void* param)
 {
     Blinker_Toggle();
+
+    static uint16_t ctr = 0;
+    Disp_Alignment alignment = (Disp_Alignment)(ctr % 3);
+    Disp_ClearRow(Disp_Row_kLower);
+    Disp_Printf(Disp_Row_kLower, alignment, "Hello: %d", ctr);
+
+    ++ctr;
 }
 
 void Init(void)
@@ -33,17 +40,6 @@ void Tick(void)
     // ++lib
     Disp_Tick();
     // --lib
-
-    /*
-    static uint16_t ctr = 0;
-    Disp_Alignment alignment = (Disp_Alignment)(ctr % 3);
-    Disp_ClearRow(Disp_Row_kLower);
-    Disp_Printf(Disp_Row_kLower, alignment, "Hello: %d", ctr);
-    
-    Timer_SleepMs(1000);
-
-    ++ctr;
-    */
 }
 
 int main(void)
