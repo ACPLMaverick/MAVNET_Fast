@@ -2,9 +2,10 @@ General thingies:
 + Blinker API.
 + UART API.
 + Display API.
-- Check out timers and make sure they work correctly.
-- Make a performance measurement API using the last available timer.
++ Check out timers and make sure they work correctly.
++ Make a performance measurement API using the last available timer.
 - Create LIB out of existing components.
+- Extract command buffer out of Display API.
 - Make an interface to easily register timed functions, to prevent main thread from being sleeped.
 - Thermometer API.
 - Button API.

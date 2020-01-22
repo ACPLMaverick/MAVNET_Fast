@@ -8,7 +8,7 @@
 
 void Blink(void* param)
 {
-    Blinker_Toggle();
+    Blinker_Toggle_0();
 
     static uint16_t ctr = 0;
     Disp_Alignment alignment = (Disp_Alignment)(ctr % 3);

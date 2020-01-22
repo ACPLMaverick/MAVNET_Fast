@@ -1,5 +1,5 @@
 #pragma once
 
-#define BLINKER_REG     DDRC
-#define BLINKER_PORT    PORTC
-#define BLINKER_PIN     PORTC0
+#define BLINKER_DDR         DDRC
+#define BLINKER_PORT        PORTC
+#define BLINKER_NUM_PINS    2
