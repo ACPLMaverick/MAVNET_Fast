@@ -6,7 +6,7 @@ General thingies:
 + Make a performance measurement API using the last available timer.
 - Create LIB out of existing components.
 - Extract command buffer out of Display API.
-- Make an interface to easily register timed functions, to prevent main thread from being sleeped.
+- PWM API.
 - Thermometer API.
 - Button API.
 - Analog knob API.

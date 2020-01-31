@@ -8,20 +8,20 @@
 
 #if DISP_DEBUG
 #include "uart.h"
-#define Disp_DebugPrintf Uart_Printf
+#define Disp_DebugPrintf Lib_Uart_Printf
 #else
 #define Disp_DebugPrintf(...)
 #endif
 
-#define DISP_PORT_BF    (DISP_PORT_D0 + 3)
-#define DISP_PIN_BF     (DISP_PIN_D0 + 3)
+#define DISP_PORT_BF    (LIB_DISP_PORT_D0 + 3)
+#define DISP_PIN_BF     (LIB_DISP_PIN_D0 + 3)
 
 // Display config params
 
 #define DISP_COL_COUNT 16
-#define DISP_ROW_COUNT 2
+#define Lib_Disp_Row_COUNT 2
 
-#define DISP_CLEARDISPLAY   0x01
+#define Lib_Disp_ClearDISPLAY   0x01
 #define DISP_RETURNHOME     0x02
 #define DISP_ENTRYMODESET   0x04
 #define DISP_DISPLAYCONTROL 0x08
@@ -103,7 +103,7 @@ typedef struct DisplayState
 
 // Globals
 
-char g_displayBuffer[DISP_COL_COUNT + 1][DISP_ROW_COUNT];
+char g_displayBuffer[DISP_COL_COUNT + 1][Lib_Disp_Row_COUNT];
 char g_printfBuffer[DISP_COL_COUNT + 1];
 CmdBuffer g_cmdBuffer;
 DisplayState g_displayState;
@@ -132,7 +132,7 @@ static inline void CmdBuffer_Perform(CmdBuffer* buffer);
 
 static inline void ConfigurePins(void);
 static inline void MysteriousInit(void);
-static void CalculateTextPosition(Disp_Row row, Disp_Alignment alignment, uint8_t* textLength, uint8_t* outPosX, uint8_t* outPosY);
+static void CalculateTextPosition(Lib_Disp_Row row, Lib_Disp_Alignment alignment, uint8_t* textLength, uint8_t* outPosX, uint8_t* outPosY);
 static inline uint8_t CalculateCursorPosition(const uint8_t posX, const uint8_t posY);
 static inline void SetCursor(const uint8_t posX, const uint8_t posY);
 static void Print_Internal(const uint8_t textPosX, const uint8_t textPosY, const char* text, uint8_t charNum);
@@ -142,7 +142,7 @@ static inline void SetInstructionRegister(void)
 {
     if(g_displayState.m_dataRegister)
     {
-        BitDisable(DISP_PORT_CONTROL, DISP_PORT_RS);
+        Lib_BitDisable(LIB_DISP_PORT_CONTROL, LIB_DISP_PORT_RS);
         g_displayState.m_dataRegister = false;
         Disp_DebugPrintf("[DISP] Setting Instruction Register.\n");
     }
@@ -152,7 +152,7 @@ static inline void SetDataRegister(void)
 {
     if(!g_displayState.m_dataRegister)
     {
-        BitEnable(DISP_PORT_CONTROL, DISP_PORT_RS);
+        Lib_BitEnable(LIB_DISP_PORT_CONTROL, LIB_DISP_PORT_RS);
         g_displayState.m_dataRegister = true;
         Disp_DebugPrintf("[DISP] Setting Data Register.\n");
     }
@@ -162,8 +162,8 @@ static inline void SetWrite(void)
 {
     if(g_displayState.m_read)
     {
-        BitEnable(DISP_DDR_DATA, DISP_PORT_BF);  // Update busy flag pinout as write.
-        BitDisable(DISP_PORT_CONTROL, DISP_PORT_RW);
+        Lib_BitEnable(LIB_DISP_DDR_DATA, DISP_PORT_BF);  // Update busy flag pinout as write.
+        Lib_BitDisable(LIB_DISP_PORT_CONTROL, LIB_DISP_PORT_RW);
         g_displayState.m_read = false;
         Disp_DebugPrintf("[DISP] Setting Write.\n");
     }
@@ -173,9 +173,9 @@ static inline void SetRead(void)
 {
     if(!g_displayState.m_read)
     {
-        BitDisable(DISP_DDR_DATA, DISP_PORT_BF);  // Update busy flag pinout as read.
-        BitEnable(DISP_PORT_DATA, DISP_PORT_BF);  // Enable pull-up read mode.
-        BitEnable(DISP_PORT_CONTROL, DISP_PORT_RW);
+        Lib_BitDisable(LIB_DISP_DDR_DATA, DISP_PORT_BF);  // Update busy flag pinout as read.
+        Lib_BitEnable(LIB_DISP_PORT_DATA, DISP_PORT_BF);  // Enable pull-up read mode.
+        Lib_BitEnable(LIB_DISP_PORT_CONTROL, LIB_DISP_PORT_RW);
         g_displayState.m_read = true;
         Disp_DebugPrintf("[DISP] Setting Read.\n");
     }
@@ -194,7 +194,7 @@ static inline void SendText(const char* text)
 static inline void WriteHalfByte(uint8_t nibble)
 {
     BeginTransfer();
-    RegWriteHalfByte(DISP_PORT_DATA, DISP_PORT_D0, nibble);
+    Lib_RegWriteHalfByte(LIB_DISP_PORT_DATA, LIB_DISP_PORT_D0, nibble);
     EndTransfer();
 }
 
@@ -206,13 +206,13 @@ static inline void WriteByte(uint8_t byte)
 
 static inline void BeginTransfer(void)
 {
-    BitDisable(DISP_PORT_CONTROL, DISP_PORT_E);
-    BitEnable(DISP_PORT_CONTROL, DISP_PORT_E);
+    Lib_BitDisable(LIB_DISP_PORT_CONTROL, LIB_DISP_PORT_E);
+    Lib_BitEnable(LIB_DISP_PORT_CONTROL, LIB_DISP_PORT_E);
 }
 
 static inline void EndTransfer(void)
 {
-    BitDisable(DISP_PORT_CONTROL, DISP_PORT_E);
+    Lib_BitDisable(LIB_DISP_PORT_CONTROL, LIB_DISP_PORT_E);
 }
 
 static inline bool TryBusyFlag(void)
@@ -222,7 +222,7 @@ static inline bool TryBusyFlag(void)
 
     BeginTransfer();
 
-    const bool val = BitRead(DISP_PIN_DATA, DISP_PIN_BF);
+    const bool val = Lib_BitRead(LIB_DISP_PIN_DATA, DISP_PIN_BF);
     Disp_DebugPrintf("[DISP] TryBusyFlag [%d]\n", val);
 
     EndTransfer();
@@ -343,43 +343,43 @@ static inline void CmdBuffer_Flush(CmdBuffer* buffer)
 static inline void ConfigurePins(void)
 {
     // Control goes all as output.
-    BitEnable(DISP_DDR_CONTROL, DISP_PORT_RS);
-    BitEnable(DISP_DDR_CONTROL, DISP_PORT_RW);
-    BitEnable(DISP_DDR_CONTROL, DISP_PORT_E);
+    Lib_BitEnable(LIB_DISP_DDR_CONTROL, LIB_DISP_PORT_RS);
+    Lib_BitEnable(LIB_DISP_DDR_CONTROL, LIB_DISP_PORT_RW);
+    Lib_BitEnable(LIB_DISP_DDR_CONTROL, LIB_DISP_PORT_E);
 
     // Same with data.
-    BitEnable(DISP_DDR_DATA, DISP_PORT_D0);
-    BitEnable(DISP_DDR_DATA, DISP_PORT_D0 + 1);
-    BitEnable(DISP_DDR_DATA, DISP_PORT_D0 + 2);
-    BitEnable(DISP_DDR_DATA, DISP_PORT_D0 + 3);
+    Lib_BitEnable(LIB_DISP_DDR_DATA, LIB_DISP_PORT_D0);
+    Lib_BitEnable(LIB_DISP_DDR_DATA, LIB_DISP_PORT_D0 + 1);
+    Lib_BitEnable(LIB_DISP_DDR_DATA, LIB_DISP_PORT_D0 + 2);
+    Lib_BitEnable(LIB_DISP_DDR_DATA, LIB_DISP_PORT_D0 + 3);
 
     // Wait 15 ms for DISP to initialize, as stated in doc.
-    Timer_SleepMs(15);
+    Lib_Timer_SleepMs(15);
 
-    BitDisable(DISP_PORT_CONTROL, DISP_PORT_RS);
-    BitDisable(DISP_PORT_CONTROL, DISP_PORT_RW);
-    BitDisable(DISP_PORT_CONTROL, DISP_PORT_E);
+    Lib_BitDisable(LIB_DISP_PORT_CONTROL, LIB_DISP_PORT_RS);
+    Lib_BitDisable(LIB_DISP_PORT_CONTROL, LIB_DISP_PORT_RW);
+    Lib_BitDisable(LIB_DISP_PORT_CONTROL, LIB_DISP_PORT_E);
 }
 
 static inline void MysteriousInit(void)
 {
-    Timer_SleepMs(4.1);
+    Lib_Timer_SleepMs(4.1);
 
     WriteHalfByte(0x03); // Switch to 4 bit mode
-    Timer_SleepMs(4.1);
+    Lib_Timer_SleepMs(4.1);
 
     WriteHalfByte(0x03); // 2nd time
-    Timer_SleepMs(4.1);
+    Lib_Timer_SleepMs(4.1);
 
     WriteHalfByte(0x03); // 3rd time
-    Timer_SleepMs(4.1);
+    Lib_Timer_SleepMs(4.1);
 
     // Ext lib says "Set 8-bit mode (?)" But I don't fuckin' know what it is, all I know is that it totally doesn't work without that...
     WriteHalfByte(0x02);
-    Timer_SleepMs(4.1);
+    Lib_Timer_SleepMs(4.1);
 }
 
-static void CalculateTextPosition(Disp_Row row, Disp_Alignment alignment, uint8_t* refTextLength, uint8_t* outPosX, uint8_t* outPosY)
+static void CalculateTextPosition(Lib_Disp_Row row, Lib_Disp_Alignment alignment, uint8_t* refTextLength, uint8_t* outPosX, uint8_t* outPosY)
 {
     *outPosY = (uint8_t)row;
     *outPosX = 0;
@@ -393,14 +393,14 @@ static void CalculateTextPosition(Disp_Row row, Disp_Alignment alignment, uint8_
     {
         switch (alignment)
         {
-        case Disp_Alignment_kCenter:
+        case Lib_Disp_Alignment_kCenter:
             {
                 const uint8_t offset = (DISP_COL_COUNT - *refTextLength) / 2;
                 *outPosX += offset;
             }
             break;
 
-        case Disp_Alignment_kRight:
+        case Lib_Disp_Alignment_kRight:
             {
                 const uint8_t offset = (DISP_COL_COUNT - *refTextLength);
                 *outPosX += offset;
@@ -433,7 +433,7 @@ static void Print_Internal(const uint8_t textPosX, const uint8_t textPosY, const
 }
 
 
-void Disp_Init(void)
+void Lib_Disp_Init(void)
 {
     memset(g_printfBuffer, 0, sizeof(g_printfBuffer));
     memset(&g_displayState, 0, sizeof(DisplayState));
@@ -450,26 +450,26 @@ void Disp_Init(void)
     g_displayState.m_displayFlag = DISP_CURSOROFF | DISP_BLINKOFF;
     SendCommand(DISP_DISPLAYCONTROL | g_displayState.m_displayFlag);
 
-    Disp_Clear();
+    Lib_Disp_Clear();
 }
 
-void Disp_Tick(void)
+void Lib_Disp_Tick(void)
 {
     CmdBuffer_Perform(&g_cmdBuffer);
 }
 
-void Disp_Clear(void)
+void Lib_Disp_Clear(void)
 {
     CmdBuffer_Flush(&g_cmdBuffer);
 
-    memset(g_displayBuffer, 0, DISP_COL_COUNT * DISP_ROW_COUNT * sizeof(g_displayBuffer[0]));
+    memset(g_displayBuffer, 0, DISP_COL_COUNT * Lib_Disp_Row_COUNT * sizeof(g_displayBuffer[0]));
     CmdBuffer_Init(&g_cmdBuffer);
 
     g_displayState.m_cursorPos = 0;
-    SendCommand(DISP_CLEARDISPLAY);
+    SendCommand(Lib_Disp_ClearDISPLAY);
 }
 
-void Disp_ClearRow(Disp_Row row)
+void Lib_Disp_ClearRow(Lib_Disp_Row row)
 {
     CmdBuffer_Flush(&g_cmdBuffer);
 
@@ -481,19 +481,19 @@ void Disp_ClearRow(Disp_Row row)
     SendText(rowText);
 }
 
-void Disp_On(void)
+void Lib_Disp_On(void)
 {
     g_displayState.m_displayFlag |= DISP_DISPLAYON;
     SendCommand(DISP_DISPLAYCONTROL | g_displayState.m_displayFlag);
 }
 
-void Disp_Off(void)
+void Lib_Disp_Off(void)
 {
     g_displayState.m_displayFlag &= ~DISP_DISPLAYON;
     SendCommand(DISP_DISPLAYCONTROL | g_displayState.m_displayFlag);
 }
 
-void Disp_PrintCopyEx(Disp_Row row, Disp_Alignment alignment, const char* text, uint8_t charNum)
+void Lib_Disp_PrintCopyEx(Lib_Disp_Row row, Lib_Disp_Alignment alignment, const char* text, uint8_t charNum)
 {
     uint8_t textPosX, textPosY;
     CalculateTextPosition(row, alignment, &charNum, &textPosX, &textPosY);
@@ -504,7 +504,7 @@ void Disp_PrintCopyEx(Disp_Row row, Disp_Alignment alignment, const char* text, 
     Print_Internal(textPosX, textPosY, textDst, charNum);
 }
 
-void Disp_PrintEx(Disp_Row row, Disp_Alignment alignment, const char* text, uint8_t charNum)
+void Lib_Disp_PrintEx(Lib_Disp_Row row, Lib_Disp_Alignment alignment, const char* text, uint8_t charNum)
 {
     uint8_t textPosX, textPosY;
     CalculateTextPosition(row, alignment, &charNum, &textPosX, &textPosY);
@@ -512,7 +512,7 @@ void Disp_PrintEx(Disp_Row row, Disp_Alignment alignment, const char* text, uint
     Print_Internal(textPosX, textPosY, text, charNum);
 }
 
-void Disp_Printf(Disp_Row row, Disp_Alignment alignment, const char* format, ...)
+void Lib_Disp_Printf(Lib_Disp_Row row, Lib_Disp_Alignment alignment, const char* format, ...)
 {
     va_list args;
     va_start(args, format);
@@ -531,5 +531,5 @@ void Disp_Printf(Disp_Row row, Disp_Alignment alignment, const char* format, ...
 
     va_end(args);
 
-    Disp_PrintCopyEx(row, alignment, textDst, charNum);
+    Lib_Disp_PrintCopyEx(row, alignment, textDst, charNum);
 }

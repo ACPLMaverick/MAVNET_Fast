@@ -10,10 +10,10 @@
 // ////////////////////////
 
 
-static char g_printfBuffer[UART_PRINTF_BUFFER_SIZE];
+static char g_printfBuffer[LIB_Lib_Uart_Printf_BUFFER_SIZE];
 
-#if UART_ASYNC_TRANSMIT
-#define WaitForCurrentTransmit() while(g_transmitCurrentBuffer) Timer_SleepUs(1)
+#if LIB_UART_ASYNC_TRANSMIT
+#define WaitForCurrentTransmit() while(g_transmitCurrentBuffer) Lib_Timer_SleepUs(1)
 
 uint8_t* g_transmitCurrentBuffer = NULL;
 uint8_t g_transmitCurrentSize = 0;
@@ -23,7 +23,7 @@ bool g_bNeedTransmitCR = false;
 
 // ////////////////////////
 
-#if UART_ASYNC_TRANSMIT
+#if LIB_UART_ASYNC_TRANSMIT
 void TransmitCurrentByte(void);
 #endif
 
@@ -34,7 +34,7 @@ ISR(USART_TXC_vect)
     TransmitCurrentByte();
 }
 
-#if UART_ASYNC_TRANSMIT
+#if LIB_UART_ASYNC_TRANSMIT
 
 void TransmitCurrentByte(void)
 {
@@ -46,7 +46,7 @@ void TransmitCurrentByte(void)
     if(g_bNeedTransmitCR)
     {
         g_bNeedTransmitCR = false;
-        RegOverwrite(UDR, '\r');
+        Lib_RegWrite(UDR, '\r');
         return; // Can safely return here because we'll have a new interrupt when this write is finished.
     }
 
@@ -63,45 +63,45 @@ void TransmitCurrentByte(void)
     ++g_transmitCurrentIndex;
     g_bNeedTransmitCR = byte == '\n';
 
-    RegOverwrite(UDR, byte);
+    Lib_RegWrite(UDR, byte);
 }
 
 #endif
 
 // ////////////////////////
 
-void Uart_Init(void)
+void Lib_Uart_Init(void)
 {
     g_printfBuffer[0] = 0;
 
-    RegWrite16(UBRRL, UBRRH, UART_BAUDRATE);                    // Set baud rate.
-    RegWrite(UCSRB, (1<<TXEN) | (1<<RXEN));                     // Enable receiver and transmitter.
-    RegWrite(UCSRC, (1<<URSEL) | (1<<UCSZ0) | (1<<UCSZ1));      // 8bit data format, all other settings go as default.
+    Lib_RegWrite16(UBRRL, UBRRH, UART_BAUDRATE);                    // Set baud rate.
+    Lib_RegMerge(UCSRB, (1<<TXEN) | (1<<RXEN));                     // Enable receiver and transmitter.
+    Lib_RegMerge(UCSRC, (1<<URSEL) | (1<<UCSZ0) | (1<<UCSZ1));      // 8bit data format, all other settings go as default.
 
-#if UART_USE_RECEIVE
-    BitEnable(UCSRB, RXCIE);
+#if LIB_UART_USE_RECEIVE
+    Lib_BitEnable(UCSRB, RXCIE);
 #endif
 
-#if UART_ASYNC_TRANSMIT
-    BitEnable(UCSRB, TXCIE);
+#if LIB_UART_ASYNC_TRANSMIT
+    Lib_BitEnable(UCSRB, TXCIE);
 #endif
 }
 
-void Uart_TransmitNow(uint8_t byte)
+void Lib_Uart_TransmitNow(uint8_t byte)
 {
-    BitWait(UCSRA, UDRE, 0);            // Wait while register is free.
-    RegOverwrite(UDR, byte);
+    Lib_BitWait(UCSRA, UDRE, 0);            // Wait while register is free.
+    Lib_RegWrite(UDR, byte);
 
     // Support for endline char carriage return.
     if(byte == '\n')
     {
-        Uart_TransmitNow('\r');
+        Lib_Uart_TransmitNow('\r');
     }
 }
 
-void Uart_TransmitData(uint8_t* buffer, uint8_t size)
+void Lib_Uart_TransmitData(uint8_t* buffer, uint8_t size)
 {
-#if UART_ASYNC_TRANSMIT
+#if LIB_UART_ASYNC_TRANSMIT
 
     if(!buffer || size == 0)
     {
@@ -122,31 +122,31 @@ void Uart_TransmitData(uint8_t* buffer, uint8_t size)
 
     for(uint8_t i = 0; i < size; ++i)
     {
-        Uart_TransmitNow(buffer[i]);
+        Lib_Uart_TransmitNow(buffer[i]);
     }
 
 #endif
 }
 
-void Uart_Printf(const char* format, ...)
+void Lib_Uart_Printf(const char* format, ...)
 {
     va_list args;
     va_start(args, format);
 
     WaitForCurrentTransmit();
 
-    vsnprintf(g_printfBuffer, UART_PRINTF_BUFFER_SIZE, format, args);
+    vsnprintf(g_printfBuffer, LIB_Lib_Uart_Printf_BUFFER_SIZE, format, args);
 
-    const uint8_t printBufferLength = strnlen(g_printfBuffer, UART_PRINTF_BUFFER_SIZE - 1);
+    const uint8_t printBufferLength = strnlen(g_printfBuffer, LIB_Lib_Uart_Printf_BUFFER_SIZE - 1);
 
-    Uart_TransmitData((uint8_t*)g_printfBuffer, printBufferLength);
+    Lib_Uart_TransmitData((uint8_t*)g_printfBuffer, printBufferLength);
 
     va_end(args);
 }
 
-#if UART_USE_RECEIVE
+#if LIB_UART_USE_RECEIVE
 
-static uint8_t g_receiveBuffer[UART_RECEIVE_BUFFER_SIZE];
+static uint8_t g_receiveBuffer[LIB_UART_RECEIVE_BUFFER_SIZE];
 static uint8_t g_receiveBufferIndex = 0;
 
 void ReceiveByte(void);
@@ -161,9 +161,9 @@ ISR(USART_RXC_vect)
 void ReceiveByte(void)
 {
     // TODO: Synchronize with Receive func.
-    g_receiveBuffer[g_receiveBufferIndex] = RegRead(UDR);
+    g_receiveBuffer[g_receiveBufferIndex] = Lib_RegRead(UDR);
 
-    if(g_receiveBufferIndex == UART_RECEIVE_BUFFER_SIZE - 1)
+    if(g_receiveBufferIndex == LIB_UART_RECEIVE_BUFFER_SIZE - 1)
     {
         g_receiveBufferIndex = 0;
     }
@@ -173,7 +173,7 @@ void ReceiveByte(void)
     }  
 }
 
-bool Uart_ReceiveData(uint8_t* buffer, uint8_t bufferSize, uint8_t* outBytesRead)
+bool Lib_Uart_ReceiveData(uint8_t* buffer, uint8_t bufferSize, uint8_t* outBytesRead)
 {
     // TODO: Synchronize with ISR.
     if(g_receiveBufferIndex == 0)

@@ -2,18 +2,5 @@ cmake_minimum_required (VERSION 3.8)
 cmake_policy(SET CMP0076 NEW)
 
 target_sources(ac PRIVATE
-    blinker.h
-    blinker_config.h
-    defs.h
-    display.h
-    display_config.h
-    timer.h
-    uart.h
-    uart_config.h
-
-    blinker.c
-    display.c
     main.c
-    timer.c
-    uart.c
 )

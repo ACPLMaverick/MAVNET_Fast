@@ -1,7 +1,0 @@
-#pragma once
-
-#define UART_ASYNC_TRANSMIT 1
-#define UART_USE_RECEIVE 1
-
-#define UART_PRINTF_BUFFER_SIZE 64
-#define UART_RECEIVE_BUFFER_SIZE 64

@@ -33,7 +33,7 @@ typedef struct TimerCallback
     uint16_t m_baseTickOverflowsToGo;
     uint16_t m_tickOverflowsToGo;
     uint16_t m_tickRemainder;
-    Timer_CallbackFunc m_func;
+    Lib_Timer_CallbackFunc m_func;
     void* m_param;
     uint8_t m_callNum;
 
@@ -50,7 +50,7 @@ inline void InitTimer2(void);
 inline void ClearTimer0(void);
 inline void ClearTimer1(void);
 inline void ClearTimer2(void);
-static inline void InitData(uint16_t tickOverflowsToGo, uint16_t tickRemainder, TimerType timerType, Timer_CallbackFunc func, Timer_CallbackParam param, uint8_t callNum);
+static inline void InitData(uint16_t tickOverflowsToGo, uint16_t tickRemainder, TimerType timerType, Lib_Timer_CallbackFunc func, Lib_Timer_CallbackParam param, uint8_t callNum);
 static inline void ClearData(TimerType timerType);
 
 
@@ -102,16 +102,16 @@ void ProcessISROverflow(TimerType timerType)
         if(timerType == TimerType_k16_1)
         {
             // Timer1.
-            BitEnable(TCCR1B, WGM12);       // Enable CTC, TOP in OCR1A
-            RegWrite16(OCR1AL, OCR1AH, callbackData->m_tickRemainder); // Store value.
-            BitEnable(TIMSK, OCIE1A);       // Enable interrupt on CTC value.
+            Lib_BitEnable(TCCR1B, WGM12);       // Enable CTC, TOP in OCR1A
+            Lib_RegWrite16(OCR1AL, OCR1AH, callbackData->m_tickRemainder); // Store value.
+            Lib_BitEnable(TIMSK, OCIE1A);       // Enable interrupt on CTC value.
         }
         else if(timerType == TimerType_k8_2)
         {
             // Timer2.
-            BitEnable(TCCR2, WGM21);
+            Lib_BitEnable(TCCR2, WGM21);
             OCR2 = (uint8_t)callbackData->m_tickRemainder;
-            BitEnable(TIMSK, OCIE2);
+            Lib_BitEnable(TIMSK, OCIE2);
         }
     }
     
@@ -123,14 +123,14 @@ void ProcessISRCompare(TimerType timerType)
     if(timerType == TimerType_k16_1)
     {
         // Timer1.
-        BitDisable(TCCR1B, WGM12);
-        BitDisable(TIMSK, OCIE1A);
+        Lib_BitDisable(TCCR1B, WGM12);
+        Lib_BitDisable(TIMSK, OCIE1A);
     }
     else if(timerType == TimerType_k8_2)
     {
         // Timer2.
-        BitDisable(TCCR2, WGM21);
-        BitDisable(TIMSK, OCIE2);
+        Lib_BitDisable(TCCR2, WGM21);
+        Lib_BitDisable(TIMSK, OCIE2);
     }
 
     // Compare is always the last ISR in timeline.
@@ -140,9 +140,9 @@ void ProcessISRCompare(TimerType timerType)
 void PerformCall(TimerType timerType)
 {
     TimerCallback* callbackData = &g_callbacks[(uint8_t)timerType];
-    if(callbackData->m_callNum == TIMER_CALL_NUM_PERSISTENT + 1)    // One last call.
+    if(callbackData->m_callNum == LIB_TIMER_CALL_NUM_PERSISTENT + 1)    // One last call.
     {
-        Timer_CallbackFunc func = callbackData->m_func;
+        Lib_Timer_CallbackFunc func = callbackData->m_func;
         void* param = callbackData->m_param;
 
         ClearData(timerType);
@@ -163,7 +163,7 @@ void PerformCall(TimerType timerType)
         callbackData->m_tickOverflowsToGo = callbackData->m_baseTickOverflowsToGo;
         callbackData->m_func(callbackData->m_param);
 
-        if(callbackData->m_callNum != TIMER_CALL_NUM_PERSISTENT)
+        if(callbackData->m_callNum != LIB_TIMER_CALL_NUM_PERSISTENT)
         {
             --callbackData->m_callNum;
         }
@@ -172,47 +172,47 @@ void PerformCall(TimerType timerType)
 
 inline void InitTimer0(void)
 {
-    BitEnable(TCCR0, CS00);
+    Lib_BitEnable(TCCR0, CS00);
     TCNT0 = 0;
-    BitEnable(TIMSK, TOIE0);
+    Lib_BitEnable(TIMSK, TOIE0);
 }
 
 inline void InitTimer1(void)
 {
-    BitEnable(TCCR1B, CS10);    // Enable this timer with no prescaler.
+    Lib_BitEnable(TCCR1B, CS10);    // Enable this timer with no prescaler.
     TCNT1 = 0;                  // Set counter to 0.
-    BitEnable(TIMSK, TOIE1);    // Enable overflow interrupt.
+    Lib_BitEnable(TIMSK, TOIE1);    // Enable overflow interrupt.
 }
 
 inline void InitTimer2(void)
 {
-    BitEnable(TCCR2, CS20);
+    Lib_BitEnable(TCCR2, CS20);
     TCNT2 = 0;
-    BitEnable(TIMSK, TOIE2);
+    Lib_BitEnable(TIMSK, TOIE2);
 }
 
 inline void ClearTimer0(void)
 {
     TCCR0 = 0;  // Clear this register, i.e. disable the timer.
     TCNT0 = 0;
-    BitDisable(TIMSK, TOIE0);
+    Lib_BitDisable(TIMSK, TOIE0);
 }
 
 inline void ClearTimer1(void)
 {
     TCCR1B = 0;
     TCNT1 = 0;
-    BitDisable(TIMSK, TOIE1);
+    Lib_BitDisable(TIMSK, TOIE1);
 }
 
 inline void ClearTimer2(void)
 {
     TCCR2 = 0;
     TCNT2 = 0;
-    BitDisable(TIMSK, TOIE2);
+    Lib_BitDisable(TIMSK, TOIE2);
 }
 
-static inline void InitData(uint16_t tickOverflowsToGo, uint16_t tickRemainder, TimerType timerType, Timer_CallbackFunc func, Timer_CallbackParam param, uint8_t callNum)
+static inline void InitData(uint16_t tickOverflowsToGo, uint16_t tickRemainder, TimerType timerType, Lib_Timer_CallbackFunc func, Lib_Timer_CallbackParam param, uint8_t callNum)
 {
     g_callbacks[(uint8_t)timerType].m_baseTickOverflowsToGo = tickOverflowsToGo;
     g_callbacks[(uint8_t)timerType].m_tickOverflowsToGo = tickOverflowsToGo;
@@ -231,14 +231,14 @@ static inline void ClearData(TimerType timerType)
 // //////////////////////////////////
 
 
-void Timer_Init(void)
+void Lib_Timer_Init(void)
 {
     // TODO Check if this is correct in C.
     memset(g_callbacks, 0, sizeof(g_callbacks));
     g_durationOverflows = 0;
 }
 
-void Timer_ScheduleCallback_1_Ext(uint16_t tickOverflows, uint16_t tickRemainder, Timer_CallbackFunc func, Timer_CallbackParam param, uint8_t callNum)
+void Lib_Timer_ScheduleCallback_1_Ext(uint16_t tickOverflows, uint16_t tickRemainder, Lib_Timer_CallbackFunc func, Lib_Timer_CallbackParam param, uint8_t callNum)
 {
     HoldInterruptsTimer2();
     InitData(tickOverflows, tickRemainder, TimerType_k16_1, func, param, callNum);
@@ -246,7 +246,7 @@ void Timer_ScheduleCallback_1_Ext(uint16_t tickOverflows, uint16_t tickRemainder
     ResumeInterruptsTimer2();
 }
 
-void Timer_RemoveCallback_1(void)
+void Lib_Timer_RemoveCallback_1(void)
 {
     HoldInterruptsTimer1();
     ClearData(TimerType_k16_1);
@@ -254,7 +254,7 @@ void Timer_RemoveCallback_1(void)
     ResumeInterruptsTimer1();
 }
 
-void Timer_ScheduleCallback_2_Ext(uint16_t tickOverflows, uint16_t tickRemainder, Timer_CallbackFunc func, Timer_CallbackParam param, uint8_t callNum)
+void Lib_Timer_ScheduleCallback_2_Ext(uint16_t tickOverflows, uint16_t tickRemainder, Lib_Timer_CallbackFunc func, Lib_Timer_CallbackParam param, uint8_t callNum)
 {
     HoldInterruptsTimer2();
     InitData(tickOverflows, tickRemainder, TimerType_k8_2, func, param, callNum);
@@ -262,7 +262,7 @@ void Timer_ScheduleCallback_2_Ext(uint16_t tickOverflows, uint16_t tickRemainder
     ResumeInterruptsTimer2();
 }
 
-void Timer_RemoveCallback_2(void)
+void Lib_Timer_RemoveCallback_2(void)
 {
     HoldInterruptsTimer2();
     ClearData(TimerType_k8_2);
@@ -270,7 +270,7 @@ void Timer_RemoveCallback_2(void)
     ResumeInterruptsTimer2();
 }
 
-void Timer_SetDurationMarker(void)
+void Lib_Timer_SetDurationMarker(void)
 {
     HoldInterruptsTimer0();
     g_durationOverflows = 0;
@@ -278,7 +278,7 @@ void Timer_SetDurationMarker(void)
     ResumeInterruptsTimer0();
 }
 
-uint32_t Timer_GetDurationTicks(void)
+uint32_t Lib_Timer_GetDurationTicks(void)
 {
     HoldInterruptsTimer0();
     const uint8_t remainder = TCNT0;
@@ -288,7 +288,7 @@ uint32_t Timer_GetDurationTicks(void)
     return g_durationOverflows * UINT8_MAX + remainder;
 }
 
-void Timer_SleepVarMs(uint16_t delay)
+void Lib_Timer_SleepVarMs(uint16_t delay)
 {
     for(uint16_t i = 0; i < delay; ++i)
     {
@@ -296,7 +296,7 @@ void Timer_SleepVarMs(uint16_t delay)
     }
 }
 
-void Timer_SleepVarUs(uint16_t delay)
+void Lib_Timer_SleepVarUs(uint16_t delay)
 {
     for(uint16_t i = 0; i < delay; ++i)
     {

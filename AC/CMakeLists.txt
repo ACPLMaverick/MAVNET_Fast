@@ -7,6 +7,18 @@ cmake_policy(SET CMP0076 NEW)
 project (AC VERSION 1.0.0)
 set(EXE_NAME ac)
 
+# Particular library elements usage definition.
+set(LIB_USE_BLINKER 1)
+set(LIB_USE_UART 1)
+set(LIB_USE_TIMER 1)
+set(LIB_USE_DISPLAY 1)
+
+# Lib config directory.
+set (LIB_CONFIG_PATH config_avrlib)
+
+# Lib output path definition.
+set(LIB_OUTPUT_PATH bin)
+
 # AVR Toolchain definitions. These are valid for ATMega8.
 set(F_CPU 12000000ULL)
 set(MCU m8)
@@ -26,60 +38,36 @@ set(OUTPUT_TERMINAL /dev/pts/1)
 set(FUSE_L 0xEF)
 set(FUSE_H 0xD9)
 
-# Compiler definitions.
-set(CMAKE_SYSTEM_NAME Generic)
-set(CMAKE_C_COMPILER avr-gcc)
-set(CMAKE_ASM_COMPILER avr-gcc)
+# All necessary compiler definitions and compile options are added by lib.
 
-# Linker options defined.
-set(CMAKE_EXE_LINKER_FLAGS -mmcu=${MCU_FOR_COMPILER})
-
-# Compile options defined.
-add_compile_options(
-	-mmcu=${MCU_FOR_COMPILER}
-	-std=gnu99
-	-Os	# TODO Make this kit-specific.
-	-Wall	# Enable warnings
-	#-Wno-main
-	-Wundef
-	-pedantic
-	-Wstrict-prototypes
-	-Werror
-	-Wfatal-errors
-	-Wl,--relax,--gc-sections
-	-g	# Debugger format setting
-	-gdwarf-2
-	-funsigned-char # a few optimizations
-    -funsigned-bitfields
-    -fpack-struct
-    -fshort-enums
-    -ffunction-sections
-    -fdata-sections
-    -fno-split-wide-types
-    -fno-tree-scev-cprop
-)
-
-# Custom compiler definitions.
-add_definitions(
-	-DF_CPU=${F_CPU}
-	-DBAUD=${BAUD}
-)
+# Build avrlib with given parameters.
+include(../avrlib/CMakeLists.txt)
 
 # Include sub-projects.
 add_executable (${EXE_NAME} "")
-add_subdirectory (src)
 
 # Include paths.
+target_include_directories(${EXE_NAME} PUBLIC
+	../avrlib/include
+	config_avrlib
+)
+
+target_link_libraries(${EXE_NAME} PUBLIC
+	${CMAKE_SOURCE_DIR}/build/bin/libavr.a
+)
+
+add_subdirectory (src)
+
 IF (WIN32)
 ELSE()
 target_include_directories(${EXE_NAME} PUBLIC
-	${workspaceRoot}
 	/usr/lib/avr/include
 )
+ENDIF()
+
 target_compile_definitions(${EXE_NAME} PUBLIC
 	${MCU_FOR_HEADER}
 )
-ENDIF()
 
 # Set output path.
 set(UNIFIED_OUTPUT_PATH bin)
@@ -107,7 +95,7 @@ add_custom_target(target_hex ALL avr-objcopy -R .eeprom -O ihex ${FIN_EXE_NAME}.
 # add_custom_target(target_eep ALL avr-objcopy -j .eeprom --set-section-flags=.eeprom="alloc, load" --change-section-lma .eeprom=0 -O ihex ${FIN_EXE_NAME}.elf ${FIN_EXE_NAME}.eep DEPENDS target_strip)
 
 # Burn fuses.
-add_custom_target(target_fuses avrdude ALL -c ${PROGRAMMER} -p ${MCU} -U lfuse:w:${FUSE_L}:m -U hfuse:w:${FUSE_H}:m DEPENDS target_hex)
+add_custom_target(target_fuses ALL avrdude -c ${PROGRAMMER} -p ${MCU} -U lfuse:w:${FUSE_L}:m -U hfuse:w:${FUSE_H}:m DEPENDS target_hex)
 
 # Upload the program with avrdude.
 add_custom_target(target_upload_hex ALL avrdude -c ${PROGRAMMER} -p ${MCU} -U flash:w:${FIN_EXE_NAME}.hex DEPENDS target_fuses)
