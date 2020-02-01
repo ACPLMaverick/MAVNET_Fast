@@ -35,10 +35,16 @@
 # My own shit
 !Libraries/
 
+# vscode manually set up
+FTPSync/.vscode
+VulkanTutorialApp/VulkanTutorialApp/.vscode
+AC/.vscode/settings.json
+avrlib/.vscode/settings.json
+
 !.dll
 !.lib
 .vs
-.vscode
+
 *.ilk
 *.pdb
 *.vcxproj.user
@@ -46,7 +52,6 @@
 VulkanTutorialApp/VulkanTutorialApp/x64/
 VulkanTutorialApp/x64/
 VulkanTutorialApp/VulkanTutorialApp/build/
-VulkanTutorialApp/VulkanTutorialApp/.vscode/
 
 JadeEngine/JadeEngine/x64/
 JadeEngine/x64/

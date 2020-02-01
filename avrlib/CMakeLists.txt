@@ -109,7 +109,8 @@ endif()
 if (WIN32)
 else()
 target_include_directories(${LIB_NAME} PUBLIC
-	/usr/lib/avr/include
+	/usr/lib/avr/include/*
+	/usr/include/linux/*
 	${WDIR}/include
 	${LIB_CONFIG_PATH}
 )

@@ -1,0 +1,12 @@
+{
+    "configurations": [
+        {
+            "name": "AVR-GCC",
+            "compileCommands": "build/compile_commands.json",
+            "cStandard": "c99",
+            "intelliSenseMode": "gcc-x86",
+            "configurationProvider": "vector-of-bool.cmake-tools"
+        }
+    ],
+    "version": 4
+}
