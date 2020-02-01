@@ -1,5 +1,7 @@
 #pragma once
 
+#if LIB_USE_UART
+
 #include "defs.h"
 #include "uart_config.h"
 
@@ -14,3 +16,5 @@ bool Lib_Uart_ReceiveData(uint8_t* buffer, uint8_t bufferSize, uint8_t* outBytes
 
 // According to the internets, strlen should be optimized out to the literal for hard-coded strings.
 #define Lib_Uart_Print(text) Lib_Uart_TransmitData((uint8_t*)(text), strlen(text))
+
+#endif

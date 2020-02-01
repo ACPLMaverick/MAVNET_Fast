@@ -1,5 +1,7 @@
 #pragma once
 
+#if LIB_USE_BLINKER
+
 #include "defs.h"
 #include "blinker_config.h"
 
@@ -39,6 +41,8 @@ Lib_Blinker_CreateFuncs(6)
 #endif
 #if LIB_BLINKER_NUM_PINS > 7
 Lib_Blinker_CreateFuncs(7)
+#endif
+
 #endif
 
 #endif

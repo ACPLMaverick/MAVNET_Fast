@@ -1,5 +1,7 @@
 #pragma once
 
+#if LIB_USE_TIMER
+
 #include "defs.h"
 
 #include <util/delay.h>
@@ -45,3 +47,5 @@ inline uint32_t Timer_GetDurationUs(void) { return Lib_Timer_UsFromTickCount(Lib
 #define Lib_Timer_SleepUs(value) _delay_us(value)
 void Lib_Timer_SleepVarMs(uint16_t delay);
 void Lib_Timer_SleepVarUs(uint16_t delay);
+
+#endif

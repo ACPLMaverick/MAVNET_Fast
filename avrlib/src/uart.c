@@ -1,5 +1,7 @@
 #include "uart.h"
 
+#if LIB_USE_UART
+
 // ////////////////////////
 
 #include "timer.h"
@@ -188,5 +190,7 @@ bool Lib_Uart_ReceiveData(uint8_t* buffer, uint8_t bufferSize, uint8_t* outBytes
     
     return true;
 }
+
+#endif
 
 #endif

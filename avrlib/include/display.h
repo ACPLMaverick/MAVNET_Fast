@@ -1,5 +1,7 @@
 #pragma once
 
+#if LIB_USE_DISPLAY
+
 #include "defs.h"
 
 typedef enum Lib_Disp_Row
@@ -34,3 +36,5 @@ void Lib_Disp_Printf(Lib_Disp_Row row, Lib_Disp_Alignment alignment, const char*
 
 // TODO Print custom form
 // TODO Scroll display L-R
+
+#endif

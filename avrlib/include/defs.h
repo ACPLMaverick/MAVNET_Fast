@@ -5,6 +5,9 @@
 #define bool unsigned char
 #define true 1
 #define false 0
+#ifndef NULL
+#define NULL 0
+#endif
 
 #define Lib_BitEnable(register, offset) (register) |= (1U << (offset))
 #define Lib_BitDisable(register, offset) (register) &= ~(1U << (offset))

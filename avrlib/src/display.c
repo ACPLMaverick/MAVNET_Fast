@@ -1,4 +1,7 @@
 #include "display.h"
+
+#if LIB_USE_DISPLAY
+
 #include "display_config.h"
 #include "timer.h"
 
@@ -533,3 +536,5 @@ void Lib_Disp_Printf(Lib_Disp_Row row, Lib_Disp_Alignment alignment, const char*
 
     Lib_Disp_PrintCopyEx(row, alignment, textDst, charNum);
 }
+
+#endif

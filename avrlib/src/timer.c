@@ -1,5 +1,7 @@
 #include "timer.h"
 
+#if LIB_USE_TIMER
+
 #include "blinker.h"
 
 #define MAX_TICKS_8B 0
@@ -303,3 +305,5 @@ void Lib_Timer_SleepVarUs(uint16_t delay)
         _delay_us(1);
     }
 }
+
+#endif
