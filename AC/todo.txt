@@ -5,7 +5,8 @@ General thingies:
 + Check out timers and make sure they work correctly.
 + Make a performance measurement API using the last available timer.
 + Create LIB out of existing components.
-- Extract command buffer out of Display API.
++ Extract command buffer out of Display API.
+- Make UART async if possible.
 - PWM API.
 - Thermometer API.
 - Button API.

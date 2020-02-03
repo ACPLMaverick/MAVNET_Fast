@@ -4,6 +4,7 @@
 
 #include "display_config.h"
 #include "timer.h"
+#include "cmd_buffer.h"
 
 #include <stdio.h>
 
@@ -59,38 +60,7 @@
 
 // End display config params
 
-
 // Structs
-
-typedef enum CmdType
-{
-    CmdType_kCommand = 0,
-    CmdType_kDataBuffer
-} CmdType;
-
-typedef enum CmdState
-{
-    CmdState_kInvalid = 0,
-    CmdState_kPending
-
-} CmdState;
-
-typedef struct Cmd
-{
-    uint16_t m_value    : 16;
-    CmdState m_state    : 4;
-    CmdType m_type      : 4;
-
-} Cmd;
-
-typedef struct CmdBuffer
-{
-#define CMD_BUFFER_SIZE 32
-    Cmd m_commands[CMD_BUFFER_SIZE];
-    Cmd* m_ptrPerform;
-    Cmd* m_ptrInsert;
-
-} CmdBuffer;
 
 typedef struct DisplayState
 {
@@ -108,7 +78,7 @@ typedef struct DisplayState
 
 char g_displayBuffer[DISP_COL_COUNT + 1][Lib_Disp_Row_COUNT];
 char g_printfBuffer[DISP_COL_COUNT + 1];
-CmdBuffer g_cmdBuffer;
+Lib_CmdBuffer g_Lib_CmdBuffer;
 DisplayState g_displayState;
 
 // End globals
@@ -125,13 +95,7 @@ static inline void WriteByte(uint8_t byte);
 static inline void BeginTransfer(void);
 static inline void EndTransfer(void);
 static inline bool TryBusyFlag(void);
-static inline void CmdBuffer_Init(CmdBuffer* buffer);
-static inline void CmdBuffer_Insert(CmdBuffer* buffer, uint16_t value, CmdType type);
-static inline void CmdBuffer_Proceed(CmdBuffer* buffer, Cmd** ptr);
-static inline void CmdBuffer_Flush(CmdBuffer* buffer);
-#define CmdBuffer_ProceedPerform(buffer) CmdBuffer_Proceed(buffer, &buffer->m_ptrPerform)
-#define CmdBuffer_ProceedInsert(buffer) CmdBuffer_Proceed(buffer, &buffer->m_ptrInsert)
-static inline void CmdBuffer_Perform(CmdBuffer* buffer);
+static bool CmdBufferProceed(Lib_Cmd* cmd);
 
 static inline void ConfigurePins(void);
 static inline void MysteriousInit(void);
@@ -186,12 +150,12 @@ static inline void SetRead(void)
 
 static inline void SendCommand(uint8_t command)
 {
-    CmdBuffer_Insert(&g_cmdBuffer, (uint16_t)command, CmdType_kCommand);
+    Lib_CmdBuffer_Insert(&g_Lib_CmdBuffer, (uint16_t)command, Lib_CmdType_kCommand);
 }
 
 static inline void SendText(const char* text)
 {
-    CmdBuffer_Insert(&g_cmdBuffer, (uint16_t)text, CmdType_kDataBuffer);
+    Lib_CmdBuffer_Insert(&g_Lib_CmdBuffer, (uint16_t)text, Lib_CmdType_kDataBuffer);
 }
 
 static inline void WriteHalfByte(uint8_t nibble)
@@ -236,76 +200,41 @@ static inline bool TryBusyFlag(void)
     return !val;
 }
 
-static inline void CmdBuffer_Init(CmdBuffer* buffer)
+static bool CmdBufferProceed(Lib_Cmd* cmd)
 {
-    memset(buffer->m_commands, 0, CMD_BUFFER_SIZE * sizeof(buffer->m_commands[0]));
-    buffer->m_ptrPerform = buffer->m_commands;
-    buffer->m_ptrInsert = buffer->m_commands;
-}
-
-static inline void CmdBuffer_Insert(CmdBuffer* buffer, uint16_t value, CmdType type)
-{
-    if(buffer->m_ptrPerform->m_state != CmdState_kInvalid
-        && buffer->m_ptrInsert == buffer->m_ptrPerform)
+    if(cmd->m_state == Lib_CmdState_kInvalid)   // Pointer points to invalid command - no commands to process.
     {
-        Disp_DebugPrintf("[DISP] [WARN] Command overflow with command: 0x%x %d. Skipping.\n", value, type);
-        return;
-    }
-
-    buffer->m_ptrInsert->m_value = value;
-    buffer->m_ptrInsert->m_type = type;
-    buffer->m_ptrInsert->m_state = CmdState_kPending;
-
-    CmdBuffer_ProceedInsert(buffer);
-}
-
-static inline void CmdBuffer_Proceed(CmdBuffer* buffer, Cmd** ptr)
-{
-    ++(*ptr);
-    if(*ptr >= (buffer->m_commands + CMD_BUFFER_SIZE))
-    {
-        *ptr = buffer->m_commands;
-    }
-}
-
-static inline void CmdBuffer_Perform(CmdBuffer* buffer)
-{
-    // Get next command
-    Cmd* cmd = buffer->m_ptrPerform;
-    if(cmd->m_state == CmdState_kInvalid)   // Pointer points to invalid command - no commands to process.
-    {
-        return;
+        return false;
     }
 
     if(!TryBusyFlag())
     {
-        return;
+        return false;
     }
 
     SetWrite(); // After waiting for busy flag.
 
     switch (cmd->m_type)
     {
-    case CmdType_kCommand:
+    case Lib_CmdType_kCommand:
     {
         SetInstructionRegister();
 
         uint8_t value = (uint8_t)cmd->m_value;
-        if(cmd->m_state == CmdState_kPending)
+        if(cmd->m_state == Lib_CmdState_kPending)
         {
             WriteByte(value);
             Disp_DebugPrintf("[DISP] Sending Display Command: [0x%x]\n", value);
 
             // Clear state.
-            cmd->m_state = CmdState_kInvalid;
+            cmd->m_state = Lib_CmdState_kInvalid;
 
-            // Update pointer to point to the next command.
-            CmdBuffer_ProceedPerform(buffer);
+            return true;
         }
     }
         break;
     
-    case CmdType_kDataBuffer:
+    case Lib_CmdType_kDataBuffer:
     {
         SetDataRegister();
 
@@ -313,16 +242,16 @@ static inline void CmdBuffer_Perform(CmdBuffer* buffer)
         if(letter == 0)
         {
             // We have finished writing this string. Clear state and update pointer to the next cmd.
-            cmd->m_state = CmdState_kInvalid;
-            CmdBuffer_ProceedPerform(buffer);
+            cmd->m_state = Lib_CmdState_kInvalid;
+            return true;
         }
-        else if(cmd->m_state == CmdState_kPending)
+        else if(cmd->m_state == Lib_CmdState_kPending)
         {
             WriteByte(letter);
             Disp_DebugPrintf("[DISP] Sending Display Char: %c\n", letter);
 
             // Update state to first nibble.
-            cmd->m_state = CmdState_kPending;
+            cmd->m_state = Lib_CmdState_kPending;
 
             // Increment pointer to string.
             ++cmd->m_value;
@@ -333,14 +262,8 @@ static inline void CmdBuffer_Perform(CmdBuffer* buffer)
     default:
         break;
     }
-}
 
-static inline void CmdBuffer_Flush(CmdBuffer* buffer)
-{
-    while(buffer->m_ptrPerform->m_state != CmdState_kInvalid)
-    {
-        CmdBuffer_Perform(buffer);
-    }
+    return false;
 }
 
 static inline void ConfigurePins(void)
@@ -445,7 +368,7 @@ void Lib_Disp_Init(void)
 
     MysteriousInit();
 
-    CmdBuffer_Init(&g_cmdBuffer);
+    Lib_CmdBuffer_Init(&g_Lib_CmdBuffer, CmdBufferProceed);
 
     // Init default settings.
 
@@ -458,15 +381,15 @@ void Lib_Disp_Init(void)
 
 void Lib_Disp_Tick(void)
 {
-    CmdBuffer_Perform(&g_cmdBuffer);
+    Lib_CmdBuffer_Perform(&g_Lib_CmdBuffer);
 }
 
 void Lib_Disp_Clear(void)
 {
-    CmdBuffer_Flush(&g_cmdBuffer);
+    Lib_CmdBuffer_Flush(&g_Lib_CmdBuffer);
 
     memset(g_displayBuffer, 0, DISP_COL_COUNT * Lib_Disp_Row_COUNT * sizeof(g_displayBuffer[0]));
-    CmdBuffer_Init(&g_cmdBuffer);
+    Lib_CmdBuffer_Init(&g_Lib_CmdBuffer, CmdBufferProceed);
 
     g_displayState.m_cursorPos = 0;
     SendCommand(Lib_Disp_ClearDISPLAY);
@@ -474,7 +397,7 @@ void Lib_Disp_Clear(void)
 
 void Lib_Disp_ClearRow(Lib_Disp_Row row)
 {
-    CmdBuffer_Flush(&g_cmdBuffer);
+    Lib_CmdBuffer_Flush(&g_Lib_CmdBuffer);
 
     SetCursor(0, (uint8_t)row);
 

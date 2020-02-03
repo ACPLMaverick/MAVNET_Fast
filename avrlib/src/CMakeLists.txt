@@ -21,3 +21,7 @@ target_sources(avr PUBLIC
     uart.c
 )
 endif()
+
+target_sources(avr PUBLIC
+    cmd_buffer.c
+)
