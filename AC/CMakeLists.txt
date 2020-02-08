@@ -12,6 +12,7 @@ set(LIB_USE_BLINKER 1)
 set(LIB_USE_UART 1)
 set(LIB_USE_TIMER 1)
 set(LIB_USE_DISPLAY 1)
+set(LIB_USE_PWM 1)
 
 # Lib config directory.
 set (LIB_CONFIG_PATH config_avrlib)
@@ -45,6 +46,7 @@ include(../avrlib/CMakeLists.txt)
 
 # Include sub-projects.
 add_executable (${EXE_NAME} "")
+add_dependencies(${EXE_NAME} ${LIB_NAME})
 
 # Include paths.
 target_include_directories(${EXE_NAME} PUBLIC

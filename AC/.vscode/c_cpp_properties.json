@@ -3,7 +3,10 @@
         {
             "name": "AVR-GCC",
             "compileCommands": "build/compile_commands.json",
-            "cStandard": "c99"
+            "cStandard": "c99",
+            "compilerArgs": [
+                "/usr/lib/avr/include"
+            ]
         }
     ],
     "version": 4

@@ -12,6 +12,9 @@
 #if LIB_USE_DISPLAY
 #include "display.h"
 #endif
+#if LIB_USE_PWM
+#include "pwm.h"
+#endif
 
 
 inline void Lib_Init(void)
@@ -29,6 +32,9 @@ inline void Lib_Init(void)
 #endif
 #if LIB_USE_DISPLAY
     Lib_Disp_Init();
+#endif
+#if LIB_USE_PWM
+    Lib_Pwm_Init();
 #endif
 }
 

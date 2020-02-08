@@ -14,24 +14,25 @@
 #define Lib_BitToggle(register, offset) (register) ^= (1U << (offset))
 #define Lib_BitRead(register, offset) ((register >> (offset)) & 1U)
 
+#define Lib_BitWait(register, offset, waitValue) while (((register) & (1U << (offset))) == (waitValue))
+
 #define Lib_RegWrite(register, value) ((register) = (value))
 #define Lib_RegWriteHalfByte(register, firstBit, value) ((register) = ((register) & 0xff & ~(0x0f << (firstBit))) | (((value) & 0x0f) << (firstBit)))
-#define Lib_RegClear(register) Lib_RegWrite(register, 0)
+#define Lib_RegClear(register, value) ((register) &= (~(value)))
+#define Lib_RegClearWhole(register) Lib_RegWrite(register, 0)
 #define Lib_RegMerge(register, value) ((register) |= (value))
 #define Lib_RegRead(register) (register)
 #define Lib_RegReadRange(register, bitFrom, bitTo) ((Lib_RegRead(register)) & ((0xFF << bitFrom) & (0xFF >> (8 - (bitTo)))))
 
-#define Lib_BitWait(register, offset, waitValue) while (((register) & (1U << (offset))) == (waitValue))
-
 #define Lib_RegWrite16(registerL, registerH, value)     \
 {                                                       \
     (registerL) = (uint8_t)(value);                     \
-    (registerH) = (uint8_t)((value) >> 8);              \
+    (registerH) |= (uint8_t)((value) >> 8);             \
 }   
 #define Lib_RegRead16(value, registerL, registerH)      \
 {                                                       \
     (value) = (registerL);                              \
-    (value) = (uint16_t)(registerH) << 8;               \
+    (value) |= (uint16_t)(registerH) << 8;              \
 }  
 // //////////////
 

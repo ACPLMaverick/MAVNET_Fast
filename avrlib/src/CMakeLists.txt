@@ -21,6 +21,11 @@ target_sources(avr PUBLIC
     uart.c
 )
 endif()
+if(${LIB_USE_PWM})
+target_sources(avr PUBLIC
+    pwm.c
+)
+endif()
 
 target_sources(avr PUBLIC
     cmd_buffer.c
