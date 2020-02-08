@@ -3,6 +3,7 @@
 #if LIB_USE_TIMER
 
 #include "defs.h"
+#include "timer_config.h"
 
 #include <util/delay.h>
 
@@ -26,17 +27,21 @@ typedef void* Lib_Timer_CallbackParam;
 
 void Lib_Timer_Init(void);
 
+#if LIB_TIMER_USE_TIMER_1
 void Lib_Timer_ScheduleCallback_1_Ext(uint16_t tickOverflows, uint16_t tickRemainder, Lib_Timer_CallbackFunc func, Lib_Timer_CallbackParam param, uint8_t callNum);
 void Lib_Timer_RemoveCallback_1(void);
 #define Lib_Timer_ScheduleCallback_1(ticks, func, param, callNum) Lib_Timer_ScheduleCallback_1_Ext(Lib_Timer_OverflowNumFromTicks_16(ticks), Lib_Timer_RemainderFromTicks_16(ticks), func, param, callNum)
 #define Lib_Timer_ScheduleCallbackMs_1(ms, func, param, callNum) Lib_Timer_ScheduleCallback_1(Lib_Timer_TickCountFromMs(ms), func, param, callNum)
 #define Lib_Timer_ScheduleCallbackUs_1(us, func, param, callNum) Lib_Timer_ScheduleCallback_1(Lib_Timer_TickCountFromUs(us), func, param, callNum)
+#endif
 
+#if LIB_TIMER_USE_TIMER_2
 void Lib_Timer_ScheduleCallback_2_Ext(uint16_t tickOverflows, uint16_t tickRemainder, Lib_Timer_CallbackFunc func, Lib_Timer_CallbackParam param, uint8_t callNum);
 void Lib_Timer_RemoveCallback_2(void);
 #define Lib_Timer_ScheduleCallback_2(ticks, func, param, callNum) Lib_Timer_ScheduleCallback_2_Ext(Lib_Timer_OverflowNumFromTicks_8(ticks), Lib_Timer_RemainderFromTicks_8(ticks), func, param, callNum)
 #define Lib_Timer_ScheduleCallbackMs_2(ms, func, param, callNum) Lib_Timer_ScheduleCallback_2(Lib_Timer_TickCountFromMs(ms), func, param, callNum)
 #define Lib_Timer_ScheduleCallbackUs_2(us, func, param, callNum) Lib_Timer_ScheduleCallback_2(Lib_Timer_TickCountFromUs(us), func, param, callNum)
+#endif
 
 void Lib_Timer_SetDurationMarker(void);
 uint32_t Lib_Timer_GetDurationTicks(void);

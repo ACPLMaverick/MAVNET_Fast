@@ -240,6 +240,7 @@ void Lib_Timer_Init(void)
     g_durationOverflows = 0;
 }
 
+#if LIB_TIMER_USE_TIMER_1
 void Lib_Timer_ScheduleCallback_1_Ext(uint16_t tickOverflows, uint16_t tickRemainder, Lib_Timer_CallbackFunc func, Lib_Timer_CallbackParam param, uint8_t callNum)
 {
     HoldInterruptsTimer2();
@@ -255,7 +256,9 @@ void Lib_Timer_RemoveCallback_1(void)
     ClearTimer1();
     ResumeInterruptsTimer1();
 }
+#endif
 
+#if LIB_TIMER_USE_TIMER_2
 void Lib_Timer_ScheduleCallback_2_Ext(uint16_t tickOverflows, uint16_t tickRemainder, Lib_Timer_CallbackFunc func, Lib_Timer_CallbackParam param, uint8_t callNum)
 {
     HoldInterruptsTimer2();
@@ -271,6 +274,7 @@ void Lib_Timer_RemoveCallback_2(void)
     ClearTimer2();
     ResumeInterruptsTimer2();
 }
+#endif
 
 void Lib_Timer_SetDurationMarker(void)
 {
