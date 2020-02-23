@@ -1,0 +1,26 @@
+General thingies:
++ Blinker API.
++ UART API.
++ Display API.
++ Check out timers and make sure they work correctly.
++ Make a performance measurement API using the last available timer.
++ Create LIB out of existing components.
++ Extract command buffer out of Display API.
++ Make UART async if possible.
+- PWM API.
+- Thermometer API.
+- Button API.
+- Analog knob API.
+
+Application:
+Stage 1:
+- Reading current temperature and displaying it.
+- Displaying and setting the desired temperature.
+- Turn ON/OFF AC pin based on the temperature difference.
+- Think about how to connect AC pin to the real switch.
+- Think about how to mount the system in place.
+
+Stage 2:
+- Button overrides for hot/cold knob and fan speed knob.
+- Think about how to control knobs. Will any kind of engine be needed?
+- Regulate output for hot/cold and fan speed knobs automatically.

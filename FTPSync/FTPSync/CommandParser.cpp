@@ -40,7 +40,7 @@ void CommandParser::DecodeCommands(int argc, char * argv[])
 		ToLower(to);
 	};
 
-	auto funcPeekNextArg = [](int argc, char* argv[], const int index) -> char*
+	auto funcPeekNextArg = [](int argc, char* argv[], const int index) -> const char*
 	{
 		if (index + 1 >= argc)
 		{

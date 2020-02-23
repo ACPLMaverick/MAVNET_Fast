@@ -25,6 +25,7 @@
    #include <arpa/inet.h>   // needed for inet_ntoa and inet_addr
    #include <netdb.h>       // needed for gethostbyname and gethostbyaddr
    #include <errno.h>
+   #include <unistd.h>
 #endif
 
 namespace nsSocket

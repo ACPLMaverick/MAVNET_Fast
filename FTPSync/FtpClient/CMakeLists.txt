@@ -1,9 +1,13 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
+if(UNIX)
+target_compile_options(FTPSync PRIVATE -Wno-deprecated-declarations)
+endif(UNIX)
+
 target_sources (FTPSync PRIVATE
 
 	FtpClient/BlockingSocket.cpp
-	FTPClient/FTPClient.cpp
+	FtpClient/FTPClient.cpp
 	FtpClient/FTPDataTypes.cpp
 	FtpClient/FTPFileStatus.cpp
 	FtpClient/FTPListParse.cpp

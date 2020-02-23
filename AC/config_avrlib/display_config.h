@@ -1,0 +1,15 @@
+#pragma once
+
+#include "defs.h"
+
+#define LIB_DISP_PORT_RS PORTD2
+#define LIB_DISP_PORT_RW PORTD3
+#define LIB_DISP_PORT_E  PORTD4
+#define LIB_DISP_PORT_D0 PORTC2
+#define LIB_DISP_PIN_D0  PINC2
+
+#define LIB_DISP_DDR_DATA       DDRC
+#define LIB_DISP_DDR_CONTROL    DDRD
+#define LIB_DISP_PORT_DATA      PORTC
+#define LIB_DISP_PIN_DATA       PINC
+#define LIB_DISP_PORT_CONTROL   PORTD

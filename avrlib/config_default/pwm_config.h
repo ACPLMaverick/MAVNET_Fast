@@ -1,0 +1,17 @@
+#pragma once
+
+#define LIB_PWM_USE_TIMER_1 0
+#define LIB_PWM_USE_TIMER_2 1
+
+#if LIB_PWM_USE_TIMER_1
+#define LIB_PWM_OUTPUT_1_DDR DDRB
+#define LIB_PWM_OUTPUT_1A_BIT 1
+#define LIB_PWM_OUTPUT_1B_BIT 2
+
+#define LIB_PWM_TIMER_1_8BIT_MODE 1
+#endif
+
+#if LIB_PWM_USE_TIMER_2
+#define LIB_PWM_OUTPUT_2_DDR DDRB
+#define LIB_PWM_OUTPUT_2_BIT 3
+#endif

@@ -1,0 +1,17 @@
+{
+    "configurations": [
+        {
+            "name": "AVR-GCC",
+            "compileCommands": "build/compile_commands.json",
+            "cStandard": "c99",
+            "intelliSenseMode": "gcc-x86",
+            "configurationProvider": "vector-of-bool.cmake-tools",
+            "compilerArgs": [
+                "/usr/lib/avr/include",
+                "/usr/include/linux"
+            ],
+            "compilerPath": "/usr/bin/avr-gcc"
+        }
+    ],
+    "version": 4
+}

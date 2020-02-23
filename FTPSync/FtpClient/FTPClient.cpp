@@ -50,7 +50,6 @@
 //#include "stdafx.h"
 #include "FTPClient.h"
 #include <limits>
-#include <algorithm>
 #include <iterator>
 #include <assert.h>
 #include <stdio.h>
