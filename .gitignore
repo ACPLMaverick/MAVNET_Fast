@@ -42,6 +42,10 @@
 *.pdb
 *.vcxproj.user
 *.spv
+
+LivingRoomTool/x64
+LivingRoomTool/LivingRoomTool/x64
+
 VulkanTutorialApp/VulkanTutorialApp/x64/
 VulkanTutorialApp/x64/
 VulkanTutorialApp/VulkanTutorialApp/build/

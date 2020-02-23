@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>LivingRoomToolClass</class>
+ <widget class="QMainWindow" name="LivingRoomToolClass">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1024</width>
+    <height>640</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>LivingRoomTool</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <widget class="QTabWidget" name="tabWidget">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>1024</width>
+      <height>640</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="currentIndex">
+     <number>1</number>
+    </property>
+    <widget class="QWidget" name="Tab_MonitorControl">
+     <attribute name="title">
+      <string>Monitor Control</string>
+     </attribute>
+     <widget class="QPushButton" name="BtnOfficeMode">
+      <property name="geometry">
+       <rect>
+        <x>312</x>
+        <y>50</y>
+        <width>400</width>
+        <height>128</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>32</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Office</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="BtnLivingRoomMode">
+      <property name="geometry">
+       <rect>
+        <x>312</x>
+        <y>220</y>
+        <width>400</width>
+        <height>128</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>32</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Living Room</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="BtnAllMode">
+      <property name="geometry">
+       <rect>
+        <x>312</x>
+        <y>390</y>
+        <width>400</width>
+        <height>128</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>32</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>All Monitors On</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="Tab_GamepadInstrumentation">
+     <attribute name="title">
+      <string>Gamepad Instrumentation</string>
+     </attribute>
+     <widget class="QPushButton" name="BtnTest">
+      <property name="geometry">
+       <rect>
+        <x>312</x>
+        <y>140</y>
+        <width>400</width>
+        <height>128</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>32</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Toggle Test</string>
+      </property>
+      <property name="default">
+       <bool>false</bool>
+      </property>
+      <property name="flat">
+       <bool>false</bool>
+      </property>
+     </widget>
+     <widget class="QTextBrowser" name="textBrowser">
+      <property name="geometry">
+       <rect>
+        <x>312</x>
+        <y>320</y>
+        <width>400</width>
+        <height>192</height>
+       </rect>
+      </property>
+      <property name="textInteractionFlags">
+       <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse|Qt::TextBrowserInteraction|Qt::TextEditable|Qt::TextEditorInteraction|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources>
+  <include location="LivingRoomTool.qrc"/>
+ </resources>
+ <connections/>
+</ui>
