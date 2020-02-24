@@ -1,4 +1,5 @@
 <RCC>
-    <qresource prefix="LivingRoomTool">
-    </qresource>
+  <qresource prefix="LivingRoomTool">
+    <file>Resources/gamepad_xb1.png</file>
+  </qresource>
 </RCC>

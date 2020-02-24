@@ -13,7 +13,15 @@ public:
 	LivingRoomTool(QWidget *parent = Q_NULLPTR);
 
 private:
-	void BtnTest_ToggleTest();
+
+	void InitVisibilities();
+	void FillDeviceList();
+	void OnDeviceSelectedShowAndFillPresetList();
+	void OnDeviceDeselectedHidePresetList();
+	void OnPresetSelectedShowAndFillGamepad();
+	void OnPresetDeselectedHideGamepad();
+
+	void SetQLayoutElementsFrozen(QLayout* layout, bool frozen);
 
 	Ui::LivingRoomToolClass ui;
 	InputProcessor m_inputProcessor;

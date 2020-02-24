@@ -4,12 +4,19 @@
 
 InputProcessor::InputProcessor()
 	: BaseProcessor()
+	, m_gamepadProcessor()
 	, m_qTimer(nullptr)
+{
+}
+
+InputProcessor::~InputProcessor()
 {
 }
 
 void InputProcessor::Init_Internal()
 {
+	m_gamepadProcessor.Init();
+
 	m_qTimerConnection = connect(&m_qTimer, &QTimer::timeout, this, &InputProcessor::Tick);
 	m_qTimer.start(k_tickIntervalMs);
 }
@@ -18,18 +25,20 @@ void InputProcessor::Cleanup_Internal()
 {
 	m_qTimer.stop();
 	disconnect(m_qTimerConnection);
+
+	m_gamepadProcessor.Cleanup();
 }
 
 void InputProcessor::Tick()
 {
-	Test_EmitInput();
 }
 
+/*
 void InputProcessor::Test_EmitInput()
 {
 	static bool bIsUp = false;
 
-#if 0
+#if 1
 	INPUT testInput[4] = {};
 
 	const WORD key = static_cast<WORD>(MapVirtualKey(VK_UP, MAPVK_VK_TO_VSC));
@@ -55,5 +64,6 @@ void InputProcessor::Test_EmitInput()
 
 	bIsUp = !bIsUp;
 }
+*/
 
-const int32_t InputProcessor::k_tickIntervalMs = 1000;
+const int32_t InputProcessor::k_tickIntervalMs = 8;
