@@ -12,8 +12,7 @@ public:
 	InputProcessor();
 	~InputProcessor();
 
-	InputProcessor(const InputProcessor&) = delete;
-	InputProcessor& operator=(const InputProcessor&) = delete;
+	LRT_DisallowCopy(InputProcessor);
 
 	GamepadProcessor& GetGamepadProcessor() { return m_gamepadProcessor; }
 

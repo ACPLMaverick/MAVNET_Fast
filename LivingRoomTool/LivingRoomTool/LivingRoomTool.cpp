@@ -6,8 +6,11 @@ LivingRoomTool::LivingRoomTool(QWidget *parent)
 	ui.setupUi(this);
 
 	InitVisibilities();
+	InitConnections();
+
 	m_inputProcessor.Init();
-	FillDeviceList();
+
+	OnRefreshDevicesClicked();
 }
 
 void LivingRoomTool::InitVisibilities()
@@ -16,23 +19,42 @@ void LivingRoomTool::InitVisibilities()
 	SetQLayoutElementsFrozen(ui.VertLayout_EditPreset, true);
 }
 
-void LivingRoomTool::FillDeviceList()
+void LivingRoomTool::InitConnections()
 {
+	// Device list
+	connect(ui.List_Devices, &QListWidget::itemSelectionChanged, this, &LivingRoomTool::OnDeviceSelectionChanged);
+	connect(ui.Btn_RefreshDevices, &QPushButton::clicked, this, &LivingRoomTool::OnRefreshDevicesClicked);
+	connect(ui.Btn_IdentifyDevice, &QPushButton::clicked, this, &LivingRoomTool::OnIdentifyDeviceClicked);
+
+	// Preset list
+	connect(ui.List_Presets, &QListWidget::itemSelectionChanged, this, &LivingRoomTool::OnPresetSelectionChanged);
 }
 
-void LivingRoomTool::OnDeviceSelectedShowAndFillPresetList()
+void LivingRoomTool::OnRefreshDevicesClicked()
 {
+	m_inputProcessor.GetGamepadProcessor().FindGamepads();
+
+	std::vector<std::wstring> deviceNames;
+	m_inputProcessor.GetGamepadProcessor().GetDeviceNames(deviceNames);
+
+	ui.List_Devices->clear();
+	for (const std::wstring& name : deviceNames)
+	{
+		ui.List_Devices->addItem(QString::fromStdWString(name));
+	}
 }
 
-void LivingRoomTool::OnDeviceDeselectedHidePresetList()
+void LivingRoomTool::OnIdentifyDeviceClicked()
 {
+	m_inputProcessor.GetGamepadProcessor().IdentifyDeviceByVibrating(ui.List_Devices->currentIndex().row());
 }
 
-void LivingRoomTool::OnPresetSelectedShowAndFillGamepad()
+void LivingRoomTool::OnDeviceSelectionChanged()
 {
+	m_inputProcessor.GetGamepadProcessor().SelectDevice(static_cast<uint32_t>(ui.List_Devices->currentIndex().row()));
 }
 
-void LivingRoomTool::OnPresetDeselectedHideGamepad()
+void LivingRoomTool::OnPresetSelectionChanged()
 {
 }
 

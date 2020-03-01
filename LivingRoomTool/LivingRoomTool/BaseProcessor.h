@@ -12,6 +12,8 @@ public:
 
 	BaseProcessor();
 
+	LRT_DisallowCopy(BaseProcessor);
+
 	void Init();
 	void Cleanup();
 	bool IsInit() const { return m_bIsInit; }

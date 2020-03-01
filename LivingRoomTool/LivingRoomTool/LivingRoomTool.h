@@ -15,11 +15,13 @@ public:
 private:
 
 	void InitVisibilities();
-	void FillDeviceList();
-	void OnDeviceSelectedShowAndFillPresetList();
-	void OnDeviceDeselectedHidePresetList();
-	void OnPresetSelectedShowAndFillGamepad();
-	void OnPresetDeselectedHideGamepad();
+	void InitConnections();
+
+	void OnRefreshDevicesClicked();
+	void OnIdentifyDeviceClicked();
+
+	void OnDeviceSelectionChanged();
+	void OnPresetSelectionChanged();
 
 	void SetQLayoutElementsFrozen(QLayout* layout, bool frozen);
 
