@@ -15,6 +15,7 @@ public:
 private:
 
 	void InitVisibilities();
+	void InitTweakNames();
 	void InitConnections();
 
 	void OnRefreshDevicesClicked();

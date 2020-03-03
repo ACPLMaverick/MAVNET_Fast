@@ -7,6 +7,7 @@ LivingRoomTool::LivingRoomTool(QWidget *parent)
 
 	InitVisibilities();
 	InitConnections();
+	InitTweakNames();
 
 	m_inputProcessor.Init();
 
@@ -17,6 +18,19 @@ void LivingRoomTool::InitVisibilities()
 {
 	SetQLayoutElementsFrozen(ui.VertLayout_Presets, true);
 	SetQLayoutElementsFrozen(ui.VertLayout_EditPreset, true);
+	SetQLayoutElementsFrozen(ui.VertLayout_Tweaks, true);
+}
+
+void LivingRoomTool::InitTweakNames()
+{
+	ui.Tweak_Deadzone_LX->SetName(L"LX Deadzone");
+	ui.Tweak_Deadzone_LY->SetName(L"LY Deadzone");
+	ui.Tweak_Deadzone_RX->SetName(L"RX Deadzone");
+	ui.Tweak_Deadzone_RY->SetName(L"RY Deadzone");
+	ui.Tweak_Deadzone_TL->SetName(L"TL Deadzone");
+	ui.Tweak_Deadzone_TR->SetName(L"TR Deadzone");
+	ui.Tweak_MouseSpeed_X->SetName(L"Mouse Speed X");
+	ui.Tweak_MouseSpeed_Y->SetName(L"Mouse Speed Y");
 }
 
 void LivingRoomTool::InitConnections()
@@ -32,7 +46,7 @@ void LivingRoomTool::InitConnections()
 
 void LivingRoomTool::OnRefreshDevicesClicked()
 {
-	m_inputProcessor.GetGamepadProcessor().FindGamepads();
+	m_inputProcessor.GetGamepadProcessor().RescanGamepads();
 
 	std::vector<std::wstring> deviceNames;
 	m_inputProcessor.GetGamepadProcessor().GetDeviceNames(deviceNames);
@@ -51,7 +65,6 @@ void LivingRoomTool::OnIdentifyDeviceClicked()
 
 void LivingRoomTool::OnDeviceSelectionChanged()
 {
-	m_inputProcessor.GetGamepadProcessor().SelectDevice(static_cast<uint32_t>(ui.List_Devices->currentIndex().row()));
 }
 
 void LivingRoomTool::OnPresetSelectionChanged()

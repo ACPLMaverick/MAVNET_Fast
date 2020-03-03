@@ -62,7 +62,7 @@
         <number>10</number>
        </property>
        <item>
-        <layout class="QVBoxLayout" name="VertLayout_DevPres" stretch="30,0,70">
+        <layout class="QVBoxLayout" name="VertLayout_DevPres" stretch="0,0,0,0,0">
          <property name="spacing">
           <number>10</number>
          </property>
@@ -181,7 +181,7 @@
               </font>
              </property>
              <property name="text">
-              <string>Save presets to file</string>
+              <string>Save</string>
              </property>
             </widget>
            </item>
@@ -193,7 +193,105 @@
               </font>
              </property>
              <property name="text">
-              <string>Restore presets from file</string>
+              <string>Restore</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="Line" name="line_4">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="VertLayout_Tweaks" stretch="0,0,0,0">
+           <item>
+            <widget class="QLabel" name="Lbl_Tweaks">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>12</pointsize>
+               <kerning>true</kerning>
+              </font>
+             </property>
+             <property name="text">
+              <string>Tweaks</string>
+             </property>
+             <property name="textFormat">
+              <enum>Qt::RichText</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="VertLayout_TweaksInner">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <property name="sizeConstraint">
+              <enum>QLayout::SetDefaultConstraint</enum>
+             </property>
+             <item>
+              <widget class="QTweakSlider" name="Tweak_Deadzone_LX" native="true"/>
+             </item>
+             <item>
+              <widget class="QTweakSlider" name="Tweak_Deadzone_LY" native="true"/>
+             </item>
+             <item>
+              <widget class="QTweakSlider" name="Tweak_Deadzone_RX" native="true"/>
+             </item>
+             <item>
+              <widget class="QTweakSlider" name="Tweak_Deadzone_RY" native="true"/>
+             </item>
+             <item>
+              <widget class="QTweakSlider" name="Tweak_Deadzone_TL" native="true"/>
+             </item>
+             <item>
+              <widget class="QTweakSlider" name="Tweak_Deadzone_TR" native="true"/>
+             </item>
+             <item>
+              <widget class="QTweakSlider" name="Tweak_MouseSpeed_X" native="true">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QTweakSlider" name="Tweak_MouseSpeed_Y" native="true"/>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QPushButton" name="Btn_SaveTweaks">
+             <property name="font">
+              <font>
+               <pointsize>12</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Save</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="Btn_RestoreTweaks">
+             <property name="font">
+              <font>
+               <pointsize>12</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Restore</string>
              </property>
             </widget>
            </item>
@@ -591,6 +689,14 @@
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>QTweakSlider</class>
+   <extends>QWidget</extends>
+   <header>QTweakSlider.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="LivingRoomTool.qrc"/>
  </resources>

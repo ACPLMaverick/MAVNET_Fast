@@ -86,10 +86,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BaseProcessor.cpp" />
+    <ClCompile Include="GamepadDevice.cpp" />
     <ClCompile Include="GamepadProcessor.cpp" />
+    <ClCompile Include="GamepadState.cpp" />
     <ClCompile Include="InputProcessor.cpp" />
     <ClCompile Include="LivingRoomTool.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="QTweakSlider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="LivingRoomTool.h" />
@@ -104,9 +107,12 @@
     <ResourceCompile Include="LivingRoomTool.rc" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="QTweakSlider.h" />
     <QtMoc Include="BaseProcessor.h" />
     <ClInclude Include="Common.h" />
+    <ClInclude Include="GamepadDevice.h" />
     <ClInclude Include="GamepadProcessor.h" />
+    <ClInclude Include="GamepadState.h" />
     <ClInclude Include="InputProcessor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
