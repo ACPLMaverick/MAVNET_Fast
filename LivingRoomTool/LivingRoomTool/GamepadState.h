@@ -2,29 +2,34 @@
 
 #include "Common.h"
 
+enum class GamepadButtons : uint16_t
+{
+	kNone	= 0,
+	kLT		= 1 << 0,
+	kLB		= 1 << 1,
+	kLThumb	= 1 << 2,
+	kLLeft	= 1 << 3,
+	kLUp	= 1 << 4,
+	kLRight	= 1 << 5,
+	kLDown	= 1 << 6,
+	kView	= 1 << 7,
+	kMenu	= 1 << 8,
+	kRT		= 1 << 9,
+	kRB		= 1 << 10,
+	kRThumb	= 1 << 11,
+	kRLeft	= 1 << 12,
+	kRUp	= 1 << 13,
+	kRRight	= 1 << 14,
+	kRDown	= 1 << 15
+};
+
+GamepadButtons operator&(GamepadButtons a, GamepadButtons b);
+GamepadButtons& operator|=(GamepadButtons& buttons, GamepadButtons val);
+GamepadButtons operator|(GamepadButtons buttons, GamepadButtons val);
+
 class GamepadState
 {
 public:
-	enum Buttons
-	{
-		Button_None = 0,
-		Button_LT = 1 << 0,
-		Button_LB = 1 << 1,
-		Button_LThumb = 1 << 2,
-		Button_LLeft = 1 << 3,
-		Button_LUp = 1 << 4,
-		Button_LRight = 1 << 5,
-		Button_LDown = 1 << 6,
-		Button_View = 1 << 7,
-		Button_Menu = 1 << 8,
-		Button_RT = 1 << 9,
-		Button_RB = 1 << 10,
-		Button_RThumb = 1 << 11,
-		Button_RLeft = 1 << 12,
-		Button_RUp = 1 << 13,
-		Button_RRight = 1 << 14,
-		Button_RDown = 1 << 15
-	};
 
 	struct Thumb
 	{
@@ -44,9 +49,9 @@ public:
 	GamepadState(const GamepadState&) = default;
 	GamepadState& operator=(const GamepadState&) = default;
 
-	bool AreButtonsHeld(Buttons buttons) const;
-	bool AreButtonsPressed(Buttons buttons) const;
-	bool AreButtonsReleased(Buttons buttons) const;
+	bool AreButtonsHeld(GamepadButtons buttons) const;
+	bool AreButtonsPressed(GamepadButtons buttons) const;
+	bool AreButtonsReleased(GamepadButtons buttons) const;
 
 	const Thumb& GetLeftThumb() const { return m_leftThumb; }
 	const Thumb& GetRightThumb() const { return m_rightThumb; }
@@ -55,12 +60,14 @@ public:
 
 private:
 
-	Buttons m_currentButtons;
-	Buttons m_prevButtons;
+	GamepadButtons m_currentButtons;
+	GamepadButtons m_prevButtons;
 
 	Thumb m_leftThumb;
 	Thumb m_rightThumb;
 	Trigger m_leftTrigger;
 	Trigger m_rightTrigger;
+
+	friend class GamepadDevice;
 };
 

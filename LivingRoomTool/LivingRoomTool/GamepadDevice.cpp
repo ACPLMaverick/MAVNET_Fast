@@ -4,6 +4,8 @@
 #include <oleauto.h>
 #include <wbemidl.h>
 
+#include <algorithm>
+
 GamepadDevice::GamepadDevice(
 	IDirectInput8* a_dinput,
 	LPCDIDEVICEINSTANCE a_device,
@@ -23,28 +25,47 @@ GamepadDevice::GamepadDevice(
 	m_name = std::wstring(a_device->tszInstanceName);
 
 	m_xInputIndex = IsDInputDeviceAnXInputDevice(a_device->guidProduct) ? possibleXInputIndex : k_invalidXInputIndex;
+
+	// DirectInput device init.
+	if (IsXInputDevice() == false)
+	{
+		InitDirectInput();
+	}
 }
 
 GamepadDevice::~GamepadDevice()
 {
+	if (m_handle != nullptr)
+	{
+		if (IsXInputDevice() == false)
+		{
+			CleanupDirectInput();
+		}
+
+		CleanupMembers();
+	}
 }
 
-GamepadDevice::GamepadDevice(const GamepadDevice && a_moved)
+GamepadDevice::GamepadDevice(GamepadDevice && a_moved)
 	: m_handle(a_moved.m_handle)
 	, m_GUID(a_moved.m_GUID)
 	, m_name(a_moved.m_name)
 	, m_xInputIndex(a_moved.m_xInputIndex)
 	, m_state(a_moved.m_state)
 {
+	a_moved.CleanupMembers();
 }
 
-GamepadDevice& GamepadDevice::operator=(const GamepadDevice && a_moved)
+GamepadDevice& GamepadDevice::operator=(GamepadDevice && a_moved)
 {
 	m_handle = a_moved.m_handle;
 	m_GUID = a_moved.m_GUID;
 	m_name = a_moved.m_name;
 	m_xInputIndex = a_moved.m_xInputIndex;
 	m_state = a_moved.m_state;
+
+	a_moved.CleanupMembers();
+
 	return *this;
 }
 
@@ -62,17 +83,272 @@ void GamepadDevice::PollState()
 
 void GamepadDevice::IdentifyByVibrating() const
 {
-	// TODO Vibrate for a few milliseconds.
+	if (IsXInputDevice())
+	{
+		VibrateXInput();
+	}
+	else
+	{
+		VibrateDirectInput();
+	}
+}
+
+void GamepadDevice::CleanupMembers()
+{
+	m_handle = nullptr;
+	m_GUID = L"";
+	m_name = L"";
+	m_xInputIndex = k_invalidXInputIndex;
+}
+
+inline void GamepadDevice::InitDirectInput()
+{
+	// Set cooperative level.
+	HWND activeWindow = GetActiveWindow();
+	LRT_Assert(activeWindow != 0);
+	LRT_CheckHR(m_handle->SetCooperativeLevel(activeWindow, DISCL_BACKGROUND));
+
+	// Set data format.
+	LRT_CheckHR(m_handle->SetDataFormat(&c_dfDIJoystick));
+
+	// Use EnumObjects callback to configure device axis.
+	LRT_CheckHR(m_handle->EnumObjects(&GamepadDevice::ConfigureDinputDeviceAxis, m_handle, DIDFT_AXIS));
+
+	// Acquire this controller.
+	LRT_CheckHR(m_handle->Acquire());
+}
+
+inline void GamepadDevice::CleanupDirectInput()
+{
+	m_handle->Unacquire();
+	m_handle->Release();
 }
 
 inline void GamepadDevice::PollStateDirectInput()
 {
-	// TODO
+	HRESULT hr = m_handle->Poll();
+	if (FAILED(hr))
+	{
+		// DirectInput lost the device, try to re-acquire it.
+		hr = m_handle->Acquire();
+		while (hr == DIERR_INPUTLOST)
+		{
+			hr = m_handle->Acquire();
+		}
+
+		// Return if a fatal error is encountered.
+		if ((hr == DIERR_INVALIDPARAM) || (hr == DIERR_NOTINITIALIZED))
+		{
+			LRT_Fail();
+			return;
+		}
+
+		// If another application has control of this device, we have to wait for our turn.
+		if (hr == DIERR_OTHERAPPHASPRIO)
+		{
+			return;
+		}
+	}
+
+	DIJOYSTATE diState{};
+	LRT_CheckHR(m_handle->GetDeviceState(sizeof(DIJOYSTATE), &diState));
+
+	// For now I will proceed with interpreting these values for DualShock 4.
+
+#define GET_FLT(_a_) static_cast<float>(_a_) / static_cast<float>(k_directInputAxisRange)
+#define GET_FLT_CLAMP01(_a_) max(min(GET_FLT(_a_), 1.0f), 0.0f)
+#define GET_FLT_CLAMP11(_a_) max(min(GET_FLT(_a_), 1.0f), -1.0f)
+
+	m_state.m_leftThumb.AxisX = GET_FLT_CLAMP11(diState.lX);
+	m_state.m_leftThumb.AxisY = GET_FLT_CLAMP11(diState.lY);
+	m_state.m_rightThumb.AxisX = GET_FLT_CLAMP11(diState.lZ);
+	m_state.m_rightThumb.AxisY = GET_FLT_CLAMP11(diState.lRz);
+	m_state.m_leftTrigger.Axis = GET_FLT_CLAMP01(diState.lRx);
+	m_state.m_rightTrigger.Axis = GET_FLT_CLAMP01(diState.lRy);
+
+#undef GET_FLT_CLAMP11
+#undef GET_FLT_CLAMP01
+#undef GET_FLT
+
+	m_state.m_prevButtons = m_state.m_currentButtons;
+	m_state.m_currentButtons = GamepadButtons::kNone;
+
+	//  D-Pad
+	switch (diState.rgdwPOV[0])
+	{
+	case 0:
+		m_state.m_currentButtons |= GamepadButtons::kLUp;
+		break;
+	case 4500:
+		m_state.m_currentButtons |= GamepadButtons::kLUp | GamepadButtons::kLRight;
+		break;
+	case 9000:
+		m_state.m_currentButtons |= GamepadButtons::kLRight;
+		break;
+	case 13500:
+		m_state.m_currentButtons |= GamepadButtons::kLRight | GamepadButtons::kLDown;
+		break;
+	case 18000:
+		m_state.m_currentButtons |= GamepadButtons::kLDown;
+		break;
+	case 22500:
+		m_state.m_currentButtons |= GamepadButtons::kLDown | GamepadButtons::kLLeft;
+		break;
+	case 27000:
+		m_state.m_currentButtons |= GamepadButtons::kLDown;
+		break;
+	case 31500:
+		m_state.m_currentButtons |= GamepadButtons::kLLeft | GamepadButtons::kLUp;
+		break;
+	default:
+		break;
+	}
+
+	// Buttons
+	if (diState.rgbButtons[4] != 0)	// L1
+	{
+		m_state.m_currentButtons |= GamepadButtons::kLB;
+	}
+	if (diState.rgbButtons[5] != 0)	// R1
+	{
+		m_state.m_currentButtons |= GamepadButtons::kRB;
+	}
+	if (diState.rgbButtons[8] != 0)	// Share
+	{
+		m_state.m_currentButtons |= GamepadButtons::kView;
+	}
+	if (diState.rgbButtons[9] != 0)	// Options
+	{
+		m_state.m_currentButtons |= GamepadButtons::kMenu;
+	}
+	if (diState.rgbButtons[13] != 0)	// Center
+	{
+		// Not supported.
+	}
+	if (diState.rgbButtons[12] != 0)	// PS Button
+	{
+		// Not supported.
+	}
+	if (diState.rgbButtons[10] != 0)	// L3
+	{
+		m_state.m_currentButtons |= GamepadButtons::kLThumb;
+	}
+	if (diState.rgbButtons[11] != 0)	// R3
+	{
+		m_state.m_currentButtons |= GamepadButtons::kRThumb;
+	}
+	if (diState.rgbButtons[0] != 0)	// Square
+	{
+		m_state.m_currentButtons |= GamepadButtons::kRLeft;
+	}
+	if (diState.rgbButtons[3] != 0)	// Triangle
+	{
+		m_state.m_currentButtons |= GamepadButtons::kRUp;
+	}
+	if (diState.rgbButtons[2] != 0)	// Circle
+	{
+		m_state.m_currentButtons |= GamepadButtons::kRRight;
+	}
+	if (diState.rgbButtons[1] != 0)	// Cross
+	{
+		m_state.m_currentButtons |= GamepadButtons::kRDown;
+	}
+
+	//PrintGamepadState(m_state);
 }
 
 inline void GamepadDevice::PollStateXInput()
 {
 	// TODO
+}
+
+inline void GamepadDevice::VibrateDirectInput() const
+{
+	// TODO
+}
+
+inline void GamepadDevice::VibrateXInput() const
+{
+	// TODO
+}
+
+void GamepadDevice::PrintDinputState(const DIJOYSTATE & a_diState)
+{
+	wchar_t buffer[4096];
+	swprintf_s(buffer, 4096,
+		L"=========================================\n"
+		L"DirectInput state:\n"
+		L"lX : [%d], lY : [%d], lZ : [%d]\n"
+		L"lRx : [%d], lRy : [%d], lRz : [%d]\n"
+		L"rglSlider[0] : [%d], rglSlider[1] : [%d]\n"
+		L"rgdwPOV[0] : [%d], rgdwPOV[1] : [%d], rgdwPOV[2] : [%d], rgdwPOV[3] : [%d]\n"
+		L"rgbButtons[0] : [%d]\n"
+		L"rgbButtons[1] : [%d]\n"
+		L"rgbButtons[2] : [%d]\n"
+		L"rgbButtons[3] : [%d]\n"
+		L"rgbButtons[4] : [%d]\n"
+		L"rgbButtons[5] : [%d]\n"
+		L"rgbButtons[6] : [%d]\n"
+		L"rgbButtons[7] : [%d]\n"
+		L"rgbButtons[8] : [%d]\n"
+		L"rgbButtons[9] : [%d]\n"
+		L"rgbButtons[10] : [%d]\n"
+		L"rgbButtons[11] : [%d]\n"
+		L"rgbButtons[12] : [%d]\n"
+		L"rgbButtons[13] : [%d]\n"
+		L"rgbButtons[14] : [%d]\n"
+		L"rgbButtons[15] : [%d]\n"
+		L"rgbButtons[16] : [%d]\n"
+		L"rgbButtons[17] : [%d]\n"
+		L"rgbButtons[18] : [%d]\n"
+		L"rgbButtons[19] : [%d]\n"
+		L"rgbButtons[20] : [%d]\n"
+		L"rgbButtons[21] : [%d]\n"
+		L"rgbButtons[22] : [%d]\n"
+		L"rgbButtons[23] : [%d]\n"
+		L"rgbButtons[24] : [%d]\n"
+		L"rgbButtons[25] : [%d]\n"
+		L"rgbButtons[26] : [%d]\n"
+		L"rgbButtons[27] : [%d]\n"
+		L"rgbButtons[28] : [%d]\n"
+		L"rgbButtons[29] : [%d]\n"
+		L"rgbButtons[30] : [%d]\n"
+		L"rgbButtons[31] : [%d]\n"
+		L"=========================================\n",
+		a_diState.lX, a_diState.lY, a_diState.lZ,
+		a_diState.lRx, a_diState.lRy, a_diState.lRz, a_diState.rglSlider[0], a_diState.rglSlider[1],
+		a_diState.rgdwPOV[0], a_diState.rgdwPOV[1], a_diState.rgdwPOV[2], a_diState.rgdwPOV[3],
+		a_diState.rgbButtons[0], a_diState.rgbButtons[1], a_diState.rgbButtons[2],
+		a_diState.rgbButtons[3], a_diState.rgbButtons[4], a_diState.rgbButtons[5],
+		a_diState.rgbButtons[6], a_diState.rgbButtons[7], a_diState.rgbButtons[8],
+		a_diState.rgbButtons[9], a_diState.rgbButtons[10], a_diState.rgbButtons[11],
+		a_diState.rgbButtons[12], a_diState.rgbButtons[13], a_diState.rgbButtons[14],
+		a_diState.rgbButtons[15], a_diState.rgbButtons[16], a_diState.rgbButtons[17],
+		a_diState.rgbButtons[18], a_diState.rgbButtons[19], a_diState.rgbButtons[20],
+		a_diState.rgbButtons[21], a_diState.rgbButtons[22], a_diState.rgbButtons[23],
+		a_diState.rgbButtons[24], a_diState.rgbButtons[25], a_diState.rgbButtons[26],
+		a_diState.rgbButtons[27], a_diState.rgbButtons[28], a_diState.rgbButtons[29],
+		a_diState.rgbButtons[30], a_diState.rgbButtons[31]);
+	OutputDebugString(buffer);
+}
+
+void GamepadDevice::PrintGamepadState(const GamepadState & state)
+{
+	wchar_t buffer[4096];
+	swprintf_s(buffer, 4096,
+		L"=========================================\n"
+		L"GamepadState:\n"
+		L"LX [%f] LY [%f] RX [%f] RY [%f] LT [%f] RT [%f]\n"
+		L"CurrentButtons [%16x]\n"
+		L"PrevButtons    [%16x]\n"
+		L"=========================================\n",
+		state.m_leftThumb.AxisX, state.m_leftThumb.AxisY,
+		state.m_rightThumb.AxisX, state.m_rightThumb.AxisY,
+		state.m_leftTrigger.Axis, state.m_rightTrigger.Axis,
+		state.m_currentButtons, state.m_prevButtons
+	);
+
+	OutputDebugString(buffer);
 }
 
 // Got this from here : https://docs.microsoft.com/en-us/windows/win32/xinput/xinput-and-directinput
@@ -196,4 +472,56 @@ LCleanup:
 		CoUninitialize();
 
 	return bIsXinputDevice;
+}
+
+BOOL GamepadDevice::ConfigureDinputDeviceAxis(LPCDIDEVICEOBJECTINSTANCEW a_instance, LPVOID a_param)
+{
+	// Set axis value range.
+	LPDIRECTINPUTDEVICE8 gameController = (LPDIRECTINPUTDEVICE8)a_param;
+	gameController->Unacquire();
+
+	// Structure to hold game controller range properties.
+	DIPROPRANGE gameControllerRange;
+
+	// Set the range.
+	gameControllerRange.lMin = -k_directInputAxisRange;
+	gameControllerRange.lMax = k_directInputAxisRange;
+
+	// Set the size of the structure.
+	gameControllerRange.diph.dwSize = sizeof(DIPROPRANGE);
+	gameControllerRange.diph.dwHeaderSize = sizeof(DIPROPHEADER);
+
+	// Set the object that we want to change.
+	gameControllerRange.diph.dwHow = DIPH_BYID;
+	gameControllerRange.diph.dwObj = a_instance->dwType;
+
+	if (FAILED(gameController->SetProperty(DIPROP_RANGE, &gameControllerRange.diph))) 
+	{
+		LRT_Fail();
+		return DIENUM_STOP;
+	}
+
+
+	// Structure to hold game controller axis dead zone.
+	DIPROPDWORD gameControllerDeadZone;
+
+	// Set the dead zone to 0. Deadzone will be resolved programmaticaly.
+	gameControllerDeadZone.dwData = 0;
+
+	// Set the size of the structure.
+	gameControllerDeadZone.diph.dwSize = sizeof(DIPROPDWORD);
+	gameControllerDeadZone.diph.dwHeaderSize = sizeof(DIPROPHEADER);
+
+	// Set the object that we want to change.
+	gameControllerDeadZone.diph.dwHow = DIPH_BYID;
+	gameControllerDeadZone.diph.dwObj = a_instance->dwType;
+
+	// Now set the dead zone for the axis.
+	if (FAILED(gameController->SetProperty(DIPROP_DEADZONE, &gameControllerDeadZone.diph)))
+	{
+		LRT_Fail();
+		return DIENUM_STOP;
+	}
+
+	return DIENUM_CONTINUE;
 }

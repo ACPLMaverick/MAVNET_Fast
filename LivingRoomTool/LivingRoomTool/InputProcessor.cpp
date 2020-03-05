@@ -31,6 +31,8 @@ void InputProcessor::Cleanup_Internal()
 
 void InputProcessor::Tick()
 {
+	// Poll all states on every tick.
+	m_gamepadProcessor.PollInputStates();
 }
 
 /*

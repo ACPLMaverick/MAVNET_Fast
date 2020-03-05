@@ -223,7 +223,7 @@
               </font>
              </property>
              <property name="text">
-              <string>Tweaks</string>
+              <string>Gamepad options</string>
              </property>
              <property name="textFormat">
               <enum>Qt::RichText</enum>
@@ -239,16 +239,35 @@
               <enum>QLayout::SetDefaultConstraint</enum>
              </property>
              <item>
-              <widget class="QTweakSlider" name="Tweak_Deadzone_LX" native="true"/>
+              <layout class="QHBoxLayout" name="Tweak_Enables">
+               <item>
+                <widget class="QRadioButton" name="Tweak_Enables_RB_Disabled">
+                 <property name="text">
+                  <string>Disabled</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="Tweak_Enables_RB_Auto">
+                 <property name="text">
+                  <string>Automatic</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="Tweak_Enables_RB_Enabled">
+                 <property name="text">
+                  <string>Enabled</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </item>
              <item>
-              <widget class="QTweakSlider" name="Tweak_Deadzone_LY" native="true"/>
+              <widget class="QTweakSlider" name="Tweak_Deadzone_L" native="true"/>
              </item>
              <item>
-              <widget class="QTweakSlider" name="Tweak_Deadzone_RX" native="true"/>
-             </item>
-             <item>
-              <widget class="QTweakSlider" name="Tweak_Deadzone_RY" native="true"/>
+              <widget class="QTweakSlider" name="Tweak_Deadzone_R" native="true"/>
              </item>
              <item>
               <widget class="QTweakSlider" name="Tweak_Deadzone_TL" native="true"/>

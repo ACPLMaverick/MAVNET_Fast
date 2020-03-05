@@ -23,12 +23,10 @@ void LivingRoomTool::InitVisibilities()
 
 void LivingRoomTool::InitTweakNames()
 {
-	ui.Tweak_Deadzone_LX->SetName(L"LX Deadzone");
-	ui.Tweak_Deadzone_LY->SetName(L"LY Deadzone");
-	ui.Tweak_Deadzone_RX->SetName(L"RX Deadzone");
-	ui.Tweak_Deadzone_RY->SetName(L"RY Deadzone");
-	ui.Tweak_Deadzone_TL->SetName(L"TL Deadzone");
-	ui.Tweak_Deadzone_TR->SetName(L"TR Deadzone");
+	ui.Tweak_Deadzone_L->SetName(L"L Deadzone");
+	ui.Tweak_Deadzone_R->SetName(L"R Deadzone");
+	ui.Tweak_Deadzone_TL->SetName(L"LT Deadzone");
+	ui.Tweak_Deadzone_TR->SetName(L"RT Deadzone");
 	ui.Tweak_MouseSpeed_X->SetName(L"Mouse Speed X");
 	ui.Tweak_MouseSpeed_Y->SetName(L"Mouse Speed Y");
 }

@@ -25,7 +25,7 @@ protected:
 	virtual void Init_Internal() override;
 	virtual void Cleanup_Internal() override;
 
-	static BOOL StaticDinputEnumerateGamepads(LPCDIDEVICEINSTANCE lpddi, LPVOID pvRef);
+	static BOOL CALLBACK StaticDinputEnumerateGamepads(LPCDIDEVICEINSTANCE lpddi, LPVOID pvRef);
 	BOOL DinputEnumerateGamepads(LPCDIDEVICEINSTANCE device);
 
 
