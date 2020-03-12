@@ -241,23 +241,30 @@
              <item>
               <layout class="QHBoxLayout" name="Tweak_Enables">
                <item>
-                <widget class="QRadioButton" name="Tweak_Enables_RB_Disabled">
+                <widget class="QRadioButton" name="Tweak_Enables_RB_Off">
                  <property name="text">
-                  <string>Disabled</string>
+                  <string>Off</string>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QRadioButton" name="Tweak_Enables_RB_Auto">
+                <widget class="QRadioButton" name="Tweak_Enables_RB_Desktop">
                  <property name="text">
-                  <string>Automatic</string>
+                  <string>Desktop Only</string>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QRadioButton" name="Tweak_Enables_RB_Enabled">
+                <widget class="QRadioButton" name="Tweak_Enables_RB_Game">
                  <property name="text">
-                  <string>Enabled</string>
+                  <string>Game Only</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="Tweak_Enables_RB_On">
+                 <property name="text">
+                  <string>On</string>
                  </property>
                 </widget>
                </item>

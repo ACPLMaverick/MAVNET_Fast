@@ -11,6 +11,7 @@ GamepadDevice::GamepadDevice(
 	LPCDIDEVICEINSTANCE a_device,
 	uint32_t possibleXInputIndex)
 	: m_state()
+	, m_config()
 {
 	LRT_CheckHR(a_dinput->CreateDevice(a_device->guidInstance, &m_handle, nullptr));
 	LRT_Assert(m_handle != nullptr);
@@ -31,6 +32,8 @@ GamepadDevice::GamepadDevice(
 	{
 		InitDirectInput();
 	}
+
+	m_config = GamepadConfig(m_GUID);
 }
 
 GamepadDevice::~GamepadDevice()
@@ -79,6 +82,8 @@ void GamepadDevice::PollState()
 	{
 		PollStateDirectInput();
 	}
+
+	ApplyDeadzones();
 }
 
 void GamepadDevice::IdentifyByVibrating() const
@@ -160,9 +165,9 @@ inline void GamepadDevice::PollStateDirectInput()
 #define GET_FLT_CLAMP11(_a_) max(min(GET_FLT(_a_), 1.0f), -1.0f)
 
 	m_state.m_leftThumb.AxisX = GET_FLT_CLAMP11(diState.lX);
-	m_state.m_leftThumb.AxisY = GET_FLT_CLAMP11(diState.lY);
+	m_state.m_leftThumb.AxisY = -GET_FLT_CLAMP11(diState.lY);
 	m_state.m_rightThumb.AxisX = GET_FLT_CLAMP11(diState.lZ);
-	m_state.m_rightThumb.AxisY = GET_FLT_CLAMP11(diState.lRz);
+	m_state.m_rightThumb.AxisY = -GET_FLT_CLAMP11(diState.lRz);
 	m_state.m_leftTrigger.Axis = GET_FLT_CLAMP01(diState.lRx);
 	m_state.m_rightTrigger.Axis = GET_FLT_CLAMP01(diState.lRy);
 
@@ -205,6 +210,16 @@ inline void GamepadDevice::PollStateDirectInput()
 	}
 
 	// Buttons
+	if (m_state.m_leftTrigger.Axis >= GamepadState::k_analogToDigitalThreshold)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kLT;
+	}
+	if (m_state.m_rightTrigger.Axis >= GamepadState::k_analogToDigitalThreshold)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kRT;
+	}
+
+
 	if (diState.rgbButtons[4] != 0)	// L1
 	{
 		m_state.m_currentButtons |= GamepadButtons::kLB;
@@ -253,13 +268,109 @@ inline void GamepadDevice::PollStateDirectInput()
 	{
 		m_state.m_currentButtons |= GamepadButtons::kRDown;
 	}
-
-	//PrintGamepadState(m_state);
 }
 
 inline void GamepadDevice::PollStateXInput()
 {
-	// TODO
+	XINPUT_STATE xiState{};
+	XInputGetState(m_xInputIndex, &xiState);
+	
+	auto funcGetAxis = [](SHORT a_inAxis) -> float
+	{
+		if (a_inAxis >= 0)
+		{
+			return static_cast<float>(a_inAxis) / static_cast<float>(SHRT_MAX);
+		}
+		else
+		{
+			return -static_cast<float>(a_inAxis) / static_cast<float>(SHRT_MIN);
+		}
+	};
+
+	auto funcGetTrigger = [](BYTE a_inTrigger) -> float
+	{
+		return static_cast<float>(a_inTrigger) / static_cast<float>(UINT8_MAX);
+	};
+
+	m_state.m_leftThumb.AxisX = funcGetAxis(xiState.Gamepad.sThumbLX);
+	m_state.m_leftThumb.AxisY = funcGetAxis(xiState.Gamepad.sThumbLY);
+	m_state.m_rightThumb.AxisX = funcGetAxis(xiState.Gamepad.sThumbRX);
+	m_state.m_rightThumb.AxisY = funcGetAxis(xiState.Gamepad.sThumbRY);
+	m_state.m_leftTrigger.Axis = funcGetTrigger(xiState.Gamepad.bLeftTrigger);
+	m_state.m_rightTrigger.Axis = funcGetTrigger(xiState.Gamepad.bRightTrigger);
+
+	m_state.m_prevButtons = m_state.m_currentButtons;
+	m_state.m_currentButtons = GamepadButtons::kNone;
+
+	if (m_state.m_leftTrigger.Axis >= GamepadState::k_analogToDigitalThreshold)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kLT;
+	}
+	if (m_state.m_rightTrigger.Axis >= GamepadState::k_analogToDigitalThreshold)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kRT;
+	}
+
+	if (xiState.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kLUp;
+	}
+	if (xiState.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kLDown;
+	}
+	if (xiState.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kLLeft;
+	}
+	if (xiState.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kLRight;
+	}
+	if (xiState.Gamepad.wButtons & XINPUT_GAMEPAD_START)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kMenu;
+	}
+	if (xiState.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kView;
+	}
+	if (xiState.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kLThumb;
+	}
+	if (xiState.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kRThumb;
+	}
+	if (xiState.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kLB;
+	}
+	if (xiState.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kRB;
+	}
+	if (xiState.Gamepad.wButtons & XINPUT_GAMEPAD_A)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kRDown;
+	}
+	if (xiState.Gamepad.wButtons & XINPUT_GAMEPAD_B)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kRRight;
+	}
+	if (xiState.Gamepad.wButtons & XINPUT_GAMEPAD_X)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kRLeft;
+	}
+	if (xiState.Gamepad.wButtons & XINPUT_GAMEPAD_Y)
+	{
+		m_state.m_currentButtons |= GamepadButtons::kRUp;
+	}
+}
+
+inline void GamepadDevice::ApplyDeadzones()
+{
 }
 
 inline void GamepadDevice::VibrateDirectInput() const
@@ -525,3 +636,9 @@ BOOL GamepadDevice::ConfigureDinputDeviceAxis(LPCDIDEVICEOBJECTINSTANCEW a_insta
 
 	return DIENUM_CONTINUE;
 }
+
+const uint32_t GamepadDevice::k_invalidXInputIndex = static_cast<uint32_t>(-1); 
+const uint32_t GamepadDevice::k_invalidDeviceIndex = static_cast<uint32_t>(-1);
+const int16_t GamepadDevice::k_directInputAxisRange = INT16_MAX;
+const float GamepadDevice::k_identifyVibrationPower = 0.67f;
+const int32_t GamepadDevice::k_identifyVibrationTimeMs = 500;

@@ -68,6 +68,8 @@ private:
 	Trigger m_leftTrigger;
 	Trigger m_rightTrigger;
 
+	static const float k_analogToDigitalThreshold;
+
 	friend class GamepadDevice;
 };
 

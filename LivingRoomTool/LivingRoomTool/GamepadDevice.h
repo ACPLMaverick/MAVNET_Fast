@@ -3,6 +3,7 @@
 #include "Common.h"
 
 #include "GamepadState.h"
+#include "GamepadConfig.h"
 
 #include <Windows.h>
 #include <Xinput.h>
@@ -49,6 +50,8 @@ private:
 	inline void PollStateDirectInput();
 	inline void PollStateXInput();
 
+	inline void ApplyDeadzones();
+
 	inline void VibrateDirectInput() const;
 	inline void VibrateXInput() const;
 
@@ -63,11 +66,12 @@ private:
 	uint32_t m_xInputIndex;
 
 	GamepadState m_state;
+	GamepadConfig m_config;
 
-	// TODO Config 
-
-	static const uint32_t k_invalidXInputIndex = static_cast<uint32_t>(-1);
-	static const uint32_t k_invalidDeviceIndex = static_cast<uint32_t>(-1);
-	static const int16_t k_directInputAxisRange = INT16_MAX;
+	static const uint32_t k_invalidXInputIndex;
+	static const uint32_t k_invalidDeviceIndex;
+	static const int16_t k_directInputAxisRange;
+	static const float k_identifyVibrationPower;
+	static const int32_t k_identifyVibrationTimeMs;
 };
 
