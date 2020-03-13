@@ -56,6 +56,5 @@ void QTweakSlider::OnSpinBoxValueChanged()
 
 void QTweakSlider::OnSliderValueChanged()
 {
-	// This should only be called when *user* causes value change.
 	SpinBox_Value->setValue(Slider_Value->value());
 }

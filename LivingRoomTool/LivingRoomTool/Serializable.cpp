@@ -8,6 +8,11 @@
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/stringbuffer.h>
 
+PropertyBase::PropertyBase(const char * a_name)
+	: m_name(a_name)
+{
+}
+
 PropertyBase::PropertyBase(const char* a_name, PropertyDatabase & a_database, PropertyOffset a_offset)
 	: m_name(a_name)
 {
@@ -15,6 +20,7 @@ PropertyBase::PropertyBase(const char* a_name, PropertyDatabase & a_database, Pr
 }
 
 #define LRT_SpecializePropertyFuncsCast(_type_, _rjType_, _castType_)		\
+template<> Property<_type_>::~Property<_type_>() {}							\
 template<>																	\
 void Property<_type_>::Serialize(rapidjson::Document& a_doc, rapidjson::Value& a_root)\
 {																			\
@@ -23,9 +29,9 @@ void Property<_type_>::Serialize(rapidjson::Document& a_doc, rapidjson::Value& a
 }																			\
 																			\
 template<>																	\
-void Property<_type_>::Deserialize(rapidjson::Document& a_doc)				\
+void Property<_type_>::Deserialize(rapidjson::Value& a_value)				\
 {																			\
-	m_value = static_cast<_type_>(a_doc[m_name.c_str()].Get##_rjType_());	\
+	m_value = static_cast<_type_>(a_value[m_name.c_str()].Get##_rjType_());	\
 }																			\
 template<>																	\
 void Property<std::vector<_type_>>::Serialize(rapidjson::Document& a_doc, rapidjson::Value& a_root)	\
@@ -41,9 +47,9 @@ void Property<std::vector<_type_>>::Serialize(rapidjson::Document& a_doc, rapidj
 }																			\
 																			\
 template<>																	\
-void Property<std::vector<_type_>>::Deserialize(rapidjson::Document& a_doc)	\
+void Property<std::vector<_type_>>::Deserialize(rapidjson::Value& a_value)	\
 {																			\
-	rapidjson::Value& arrayOfValues = a_doc[m_name.c_str()];				\
+	rapidjson::Value& arrayOfValues = a_value[m_name.c_str()];				\
 	LRT_Assert(arrayOfValues.IsArray());									\
 	for(auto it = arrayOfValues.Begin(); it != arrayOfValues.End(); ++it)	\
 	{																		\
@@ -54,6 +60,98 @@ void Property<std::vector<_type_>>::Deserialize(rapidjson::Document& a_doc)	\
 
 LRT_SpecializePropertyFuncs(float, Float)
 LRT_SpecializePropertyFuncsCast(GamepadConfig::InstrumentationMode, Uint, unsigned int)
+
+template<> Property<Serializable*>::~Property<Serializable*>()
+{
+	if (m_value != nullptr)
+	{
+		delete m_value;
+		m_value = nullptr;
+	}
+}
+
+template<> void Property<Serializable*>::Serialize(rapidjson::Document& a_doc, rapidjson::Value& a_root)
+{
+	rapidjson::Value value(rapidjson::kObjectType);
+	if (m_value != nullptr)
+	{
+		m_value->Serialize(a_doc, value);
+	}
+	else
+	{
+		value.SetNull();
+	}
+	auto nameRef = rapidjson::StringRef(m_name.c_str(), m_name.size());
+	a_root.AddMember(nameRef, value, a_doc.GetAllocator());
+}
+
+template<> void Property<Serializable*>::Deserialize(rapidjson::Value& a_value)
+{
+	if (m_value != nullptr)
+	{
+		rapidjson::Value& value = a_value[m_name.c_str()];
+		m_value->Deserialize(value);
+	}
+}
+
+template<> void Property<std::vector<Serializable*>>::Serialize(rapidjson::Document& a_doc, rapidjson::Value& a_root)
+{
+	rapidjson::Value arrayOfValues(rapidjson::kArrayType);
+	for(Serializable* obj : m_value)
+	{
+		rapidjson::Value value(rapidjson::kObjectType);
+		if (obj != nullptr)
+		{
+			obj->Deserialize(value);
+		}
+		else
+		{
+			value.SetNull();
+		}
+		arrayOfValues.PushBack(value, a_doc.GetAllocator());
+	}
+	auto nameRef = rapidjson::StringRef(m_name.c_str(), m_name.size());
+	a_root.AddMember(nameRef, arrayOfValues, a_doc.GetAllocator());
+}
+
+template<> void Property<std::vector<Serializable*>>::Deserialize(rapidjson::Value& a_value)
+{
+	rapidjson::Value& arrayOfValues = a_value[m_name.c_str()];
+	LRT_Assert(arrayOfValues.IsArray());
+	LRT_Assert(arrayOfValues.Size() == m_value.size()); // Value objects must be created.
+	size_t i = 0;
+	for (auto it = arrayOfValues.Begin(); it != arrayOfValues.End(); ++it, ++i)
+	{
+		m_value[i]->Deserialize(*it);
+	}
+}
+
+Serializable::Serializable(const char* a_name)
+	: PropertyBase(a_name)
+{
+}
+
+Serializable::~Serializable()
+{
+}
+
+void Serializable::Serialize(rapidjson::Document & a_doc, rapidjson::Value & a_root)
+{
+	for (PropertyOffset propOffset : m_propertyDatabase)
+	{
+		PropertyBase* prop = GetPropertyFromOffset(propOffset);
+		prop->Serialize(a_doc, a_root);
+	}
+}
+
+void Serializable::Deserialize(rapidjson::Value& a_value)
+{
+	for (PropertyOffset propOffset : m_propertyDatabase)
+	{
+		PropertyBase* prop = GetPropertyFromOffset(propOffset);
+		prop->Deserialize(a_value);
+	}
+}
 
 bool Serializable::LoadFromFile()
 {
@@ -71,11 +169,7 @@ bool Serializable::LoadFromFile()
 		return false;
 	}
 
-	for (PropertyOffset propOffset : m_propertyDatabase)
-	{
-		PropertyBase* prop = GetPropertyFromOffset(propOffset);
-		prop->Deserialize(document);
-	}
+	Deserialize(document);
 
 	return true;
 }
@@ -83,13 +177,9 @@ bool Serializable::LoadFromFile()
 bool Serializable::SaveToFile()
 {
 	rapidjson::Document document;	// New empty document.
-	rapidjson::Value& value = document.SetObject();
+	rapidjson::Value& value = document.SetObject();	// Root object.
 
-	for (PropertyOffset propOffset : m_propertyDatabase)
-	{
-		PropertyBase* prop = GetPropertyFromOffset(propOffset);
-		prop->Serialize(document, value);
-	}
+	Serialize(document, value);
 
 	typedef rapidjson::GenericStringBuffer<rapidjson::UTF8<>, rapidjson::MemoryPoolAllocator<>> StringBuffer;
 	rapidjson::StringBuffer buf;

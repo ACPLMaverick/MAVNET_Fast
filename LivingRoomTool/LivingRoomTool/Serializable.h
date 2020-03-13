@@ -13,10 +13,11 @@ class PropertyBase
 {
 public:
 
+	PropertyBase(const char* name);
 	PropertyBase(const char* name, PropertyDatabase& database, PropertyOffset offset);
 
 	virtual void Serialize(rapidjson::Document& doc, rapidjson::Value& root) = 0;
-	virtual void Deserialize(rapidjson::Document& doc) = 0;
+	virtual void Deserialize(rapidjson::Value& root) = 0;
 
 	const std::string& GetName() const { return m_name; }
 
@@ -34,9 +35,10 @@ public:
 		, m_value(a_defaultVal)
 	{
 	}
+	~Property();
 
 	void Serialize(rapidjson::Document& doc, rapidjson::Value& root) override;
-	void Deserialize(rapidjson::Document& doc) override;
+	void Deserialize(rapidjson::Value& root) override;
 
 	Property& operator=(const InnerType& inner)
 	{
@@ -54,10 +56,16 @@ protected:
 	InnerType m_value;
 };
 
-
-class Serializable
+class Serializable : public PropertyBase
 {
 public:
+
+	Serializable(const char* name);
+	~Serializable();
+
+	// Inherited via PropertyBase
+	void Serialize(rapidjson::Document & doc, rapidjson::Value & root) override final;
+	void Deserialize(rapidjson::Value& root) override final;
 
 	bool LoadFromFile();
 	bool SaveToFile();

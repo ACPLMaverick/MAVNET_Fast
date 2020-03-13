@@ -1,13 +1,15 @@
 #include "GamepadConfig.h"
 
 GamepadConfig::GamepadConfig()
-	:m_GUID(L"")
+	: Serializable("GamepadConfig")
+	, m_GUID(L"")
 {
 	CreateDefaultConfig();
 }
 
 GamepadConfig::GamepadConfig(const std::wstring & a_deviceGUID)
-	: m_GUID(a_deviceGUID)
+	: Serializable("GamepadConfig")
+	, m_GUID(a_deviceGUID)
 {
 	if (LoadFromFile() == false)
 	{
