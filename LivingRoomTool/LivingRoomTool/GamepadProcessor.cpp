@@ -39,6 +39,12 @@ void GamepadProcessor::PollInputStates()
 	}
 }
 
+GamepadDevice & GamepadProcessor::GetGamepadDevice(size_t a_index)
+{
+	LRT_CheckDeviceIndex(a_index, m_devices[0]);
+	return m_devices[a_index];
+}
+
 const GamepadDevice & GamepadProcessor::GetGamepadDevice(size_t a_index) const
 {
 	LRT_CheckDeviceIndex(a_index, m_devices[0]);

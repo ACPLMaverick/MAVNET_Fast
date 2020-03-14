@@ -55,6 +55,7 @@ GamepadDevice::GamepadDevice(GamepadDevice && a_moved)
 	, m_name(a_moved.m_name)
 	, m_xInputIndex(a_moved.m_xInputIndex)
 	, m_state(a_moved.m_state)
+	, m_config(a_moved.m_config)
 {
 	a_moved.CleanupMembers();
 }
@@ -66,6 +67,7 @@ GamepadDevice& GamepadDevice::operator=(GamepadDevice && a_moved)
 	m_name = a_moved.m_name;
 	m_xInputIndex = a_moved.m_xInputIndex;
 	m_state = a_moved.m_state;
+	m_config = a_moved.m_config;
 
 	a_moved.CleanupMembers();
 

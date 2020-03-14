@@ -1,7 +1,7 @@
 #include "QTweakSlider.h"
 
-QTweakSlider::QTweakSlider(QWidget* parent /*= Q_NULLPTR*/)
-	: QWidget(parent)
+QTweakSlider::QTweakSlider(QWidget* a_parent /*= Q_NULLPTR*/)
+	: QWidget(a_parent)
 	, Hor_Layout(new QHBoxLayout(this))
 	, Lbl_Name(new QLabel("Tweak Name", this))
 	, SpinBox_Value(new QSpinBox(this))
@@ -29,9 +29,10 @@ QTweakSlider::QTweakSlider(QWidget* parent /*= Q_NULLPTR*/)
 	connect(Slider_Value, &QSlider::valueChanged, this, &QTweakSlider::OnSliderValueChanged);
 }
 
-void QTweakSlider::SetValue(float value)
+void QTweakSlider::SetValue(float a_value)
 {
-	SpinBox_Value->setValue(static_cast<int>(value * 100.0f));
+	a_value = fmaxf(fminf(a_value, 1.0f), 0.0f);
+	SpinBox_Value->setValue(static_cast<int>(a_value * 100.0f));
 }
 
 float QTweakSlider::GetValue() const
@@ -39,9 +40,9 @@ float QTweakSlider::GetValue() const
 	return static_cast<float>(SpinBox_Value->value()) / 100.0f;
 }
 
-void QTweakSlider::SetName(const wchar_t * name)
+void QTweakSlider::SetName(const wchar_t * a_name)
 {
-	Lbl_Name->setText(QString::fromWCharArray(name));
+	Lbl_Name->setText(QString::fromWCharArray(a_name));
 }
 
 QString QTweakSlider::GetName() const
@@ -56,5 +57,10 @@ void QTweakSlider::OnSpinBoxValueChanged()
 
 void QTweakSlider::OnSliderValueChanged()
 {
-	SpinBox_Value->setValue(Slider_Value->value());
+	const int val = Slider_Value->value();
+	SpinBox_Value->setValue(val);
+
+	// I emit valueChanged signal only on this slot, cause both get always called anyway.
+	const float fval = static_cast<float>(val) / 100.0f;
+	emit valueChanged(fval);
 }

@@ -207,7 +207,7 @@
           </widget>
          </item>
          <item>
-          <layout class="QVBoxLayout" name="VertLayout_Tweaks" stretch="0,0,0,0">
+          <layout class="QVBoxLayout" name="VertLayout_Tweaks" stretch="0,0,0,0,0">
            <item>
             <widget class="QLabel" name="Lbl_Tweaks">
              <property name="sizePolicy">
@@ -223,7 +223,7 @@
               </font>
              </property>
              <property name="text">
-              <string>Gamepad options</string>
+              <string>Gamepad configuration</string>
              </property>
              <property name="textFormat">
               <enum>Qt::RichText</enum>
@@ -245,12 +245,21 @@
                  <property name="text">
                   <string>Off</string>
                  </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                 <property name="autoExclusive">
+                  <bool>true</bool>
+                 </property>
                 </widget>
                </item>
                <item>
                 <widget class="QRadioButton" name="Tweak_Enables_RB_Desktop">
                  <property name="text">
                   <string>Desktop Only</string>
+                 </property>
+                 <property name="autoExclusive">
+                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
@@ -259,12 +268,18 @@
                  <property name="text">
                   <string>Game Only</string>
                  </property>
+                 <property name="autoExclusive">
+                  <bool>true</bool>
+                 </property>
                 </widget>
                </item>
                <item>
                 <widget class="QRadioButton" name="Tweak_Enables_RB_On">
                  <property name="text">
                   <string>On</string>
+                 </property>
+                 <property name="autoExclusive">
+                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
@@ -318,6 +333,18 @@
              </property>
              <property name="text">
               <string>Restore</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="Btn_DefaultTweaks">
+             <property name="font">
+              <font>
+               <pointsize>12</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Set defaults</string>
              </property>
             </widget>
            </item>

@@ -14,17 +14,20 @@ public:
 		kDesktop,
 		// Gamepad is instrumented with its selected InputPreset only in game. In desktop, it uses simplified desktop mode preset.
 		kGame,
-		kOn	
+		kOn,
+
+		ENUM_SIZE
 	};
 
 	GamepadConfig();
 	GamepadConfig(const std::wstring& deviceGUID);
 	~GamepadConfig();
 
+	void RestoreDefaults();
+
 private:
 
 	const FilePath GetFilePath_Internal() override;
-	void CreateDefaultConfig();
 
 	std::wstring m_GUID;
 

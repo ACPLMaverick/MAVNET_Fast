@@ -46,7 +46,12 @@ public:
 		return *this;
 	}
 
-	operator InnerType() const
+	operator InnerType&()
+	{
+		return m_value;
+	}
+
+	operator const InnerType&() const
 	{
 		return m_value;
 	}
@@ -124,7 +129,8 @@ protected:
 protected:																\
 	Property<_type_> m_##_name_{_defVal_, #_name_, m_propertyDatabase, offsetof(_outerType_, m_##_name_)};						\
 public:																	\
-	const _type_& Get_##_name_() const { return m_##_name_; }
+	const _type_& Get_##_name_() const { return m_##_name_; }			\
+	void Set_##_name_(const _type_& value) { m_##_name_ = value; }
 
 private:
 

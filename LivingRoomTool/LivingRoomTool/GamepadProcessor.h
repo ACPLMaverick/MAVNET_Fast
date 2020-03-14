@@ -14,6 +14,7 @@ public:
 
 	void RescanGamepads();
 	void PollInputStates();
+	GamepadDevice& GetGamepadDevice(size_t index);
 	const GamepadDevice& GetGamepadDevice(size_t index) const;
 	size_t GetDevicesNum() const;
 	void GetDeviceNames(std::vector<std::wstring>& outLabels) const;

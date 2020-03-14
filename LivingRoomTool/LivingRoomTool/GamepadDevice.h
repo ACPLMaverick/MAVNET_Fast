@@ -34,6 +34,8 @@ public:
 
 	void PollState();
 	const GamepadState& GetState() const { return m_state; }
+	GamepadConfig& GetConfig() { return m_config; }
+	const GamepadConfig& GetConfig() const { return m_config; }
 
 	void IdentifyByVibrating() const;
 
