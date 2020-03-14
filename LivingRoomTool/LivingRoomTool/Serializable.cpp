@@ -5,6 +5,8 @@
 #include <Windows.h>
 #include <ShlObj_core.h>
 
+#include <magic_enum/magic_enum.hpp>
+
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/stringbuffer.h>
 
@@ -19,19 +21,19 @@ PropertyBase::PropertyBase(const char* a_name, PropertyDatabase & a_database, Pr
 	a_database.push_back(a_offset);
 }
 
-#define LRT_SpecializePropertyFuncsCast(_type_, _rjType_, _castType_)		\
+#define LRT_SpecializePropertyFuncsConvert(_type_, _rjType_, _convertTo_, _convertFrom_)\
 template<> Property<_type_>::~Property<_type_>() {}							\
 template<>																	\
 void Property<_type_>::Serialize(rapidjson::Document& a_doc, rapidjson::Value& a_root)\
 {																			\
 	auto nameRef = rapidjson::StringRef(m_name.c_str(), m_name.size());		\
-	a_root.AddMember(nameRef, static_cast<_castType_>(m_value), a_doc.GetAllocator());\
+	a_root.AddMember(nameRef, _convertTo_(m_value), a_doc.GetAllocator());	\
 }																			\
 																			\
 template<>																	\
 void Property<_type_>::Deserialize(rapidjson::Value& a_value)				\
 {																			\
-	m_value = static_cast<_type_>(a_value[m_name.c_str()].Get##_rjType_());	\
+	m_value = _convertFrom_(a_value[m_name.c_str()].Get##_rjType_());		\
 }																			\
 template<>																	\
 void Property<std::vector<_type_>>::Serialize(rapidjson::Document& a_doc, rapidjson::Value& a_root)	\
@@ -39,7 +41,7 @@ void Property<std::vector<_type_>>::Serialize(rapidjson::Document& a_doc, rapidj
 	rapidjson::Value arrayOfValues(rapidjson::kArrayType);					\
 	for(_type_& obj : m_value)												\
 	{																		\
-		rapidjson::Value value(static_cast<_castType_>(obj));				\
+		rapidjson::Value value(_convertTo_(obj));							\
 		arrayOfValues.PushBack(value, a_doc.GetAllocator());				\
 	}																		\
 	auto nameRef = rapidjson::StringRef(m_name.c_str(), m_name.size());		\
@@ -53,13 +55,76 @@ void Property<std::vector<_type_>>::Deserialize(rapidjson::Value& a_value)	\
 	LRT_Assert(arrayOfValues.IsArray());									\
 	for(auto it = arrayOfValues.Begin(); it != arrayOfValues.End(); ++it)	\
 	{																		\
-		m_value.push_back(static_cast<_type_>(it->Get##_rjType_()));		\
+		m_value.push_back(_convertFrom_(it->Get##_rjType_()));				\
 	}																		\
 }
-#define LRT_SpecializePropertyFuncs(_type_, _rjType_) LRT_SpecializePropertyFuncsCast(_type_, _rjType_, _type_)
+#define LRT_SpecializePropertyFuncsCast(_type_, _rjType_, _castType_)	\
+	LRT_SpecializePropertyFuncsConvert(_type_, _rjType_, static_cast<_castType_>, static_cast<_type_>)
+#define LRT_SpecializePropertyFuncs(_type_, _rjType_)	\
+	LRT_SpecializePropertyFuncsCast(_type_, _rjType_, _type_)
+
+#define LRT_SpecializePropertyFuncsEnum(_type_)	\
+template<> Property<_type_>::~Property<_type_>() {}							\
+template<>																	\
+void Property<_type_>::Serialize(rapidjson::Document& a_doc, rapidjson::Value& a_root)\
+{																			\
+	auto nameRef = rapidjson::StringRef(m_name.c_str(), m_name.size());		\
+	auto valueRef = rapidjson::StringRef(magic_enum::enum_name(m_value).data());	\
+	a_root.AddMember(nameRef, valueRef, a_doc.GetAllocator());				\
+}																			\
+																			\
+template<>																	\
+void Property<_type_>::Deserialize(rapidjson::Value& a_value)				\
+{																			\
+	auto optional = magic_enum::enum_cast<_type_>(a_value[m_name.c_str()].GetString());\
+	if(optional.has_value())												\
+	{																		\
+		m_value = optional.value();											\
+	}																		\
+	else																	\
+	{																		\
+		LRT_Fail();															\
+		m_value = static_cast<_type_>(0);									\
+	}																		\
+}																			\
+template<>																	\
+void Property<std::vector<_type_>>::Serialize(rapidjson::Document& a_doc, rapidjson::Value& a_root)	\
+{																			\
+	rapidjson::Value arrayOfValues(rapidjson::kArrayType);					\
+	for(_type_& obj : m_value)												\
+	{																		\
+		auto valueRef = rapidjson::StringRef(magic_enum::enum_name(obj).data());	\
+		rapidjson::Value value(valueRef);									\
+		arrayOfValues.PushBack(value, a_doc.GetAllocator());				\
+	}																		\
+	auto nameRef = rapidjson::StringRef(m_name.c_str(), m_name.size());		\
+	a_root.AddMember(nameRef, arrayOfValues, a_doc.GetAllocator());			\
+}																			\
+																			\
+template<>																	\
+void Property<std::vector<_type_>>::Deserialize(rapidjson::Value& a_value)	\
+{																			\
+	rapidjson::Value& arrayOfValues = a_value[m_name.c_str()];				\
+	LRT_Assert(arrayOfValues.IsArray());									\
+	for(auto it = arrayOfValues.Begin(); it != arrayOfValues.End(); ++it)	\
+	{																		\
+		_type_ tempVal;														\
+		auto optional = magic_enum::enum_cast<_type_>(it->GetString());		\
+		if(optional.has_value())											\
+		{																	\
+			tempVal = optional.value();										\
+		}																	\
+		else																\
+		{																	\
+			LRT_Fail();														\
+			tempVal = static_cast<_type_>(0);								\
+		}																	\
+		m_value.push_back(tempVal);											\
+	}																		\
+}
 
 LRT_SpecializePropertyFuncs(float, Float)
-LRT_SpecializePropertyFuncsCast(GamepadConfig::InstrumentationMode, Uint, unsigned int)
+LRT_SpecializePropertyFuncsEnum(GamepadConfig::InstrumentationMode)
 
 template<> Property<Serializable*>::~Property<Serializable*>()
 {
