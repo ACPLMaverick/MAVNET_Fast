@@ -373,16 +373,17 @@ inline void GamepadDevice::PollStateXInput()
 
 inline void GamepadDevice::ApplyDeadzones()
 {
+	//LRT_Todo();
 }
 
 inline void GamepadDevice::VibrateDirectInput() const
 {
-	// TODO
+	LRT_Todo();
 }
 
 inline void GamepadDevice::VibrateXInput() const
 {
-	// TODO
+	LRT_Todo();
 }
 
 void GamepadDevice::PrintDinputState(const DIJOYSTATE & a_diState)

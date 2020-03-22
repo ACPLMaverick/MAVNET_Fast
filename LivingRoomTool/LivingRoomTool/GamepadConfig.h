@@ -21,7 +21,7 @@ public:
 
 	GamepadConfig();
 	GamepadConfig(const std::wstring& deviceGUID);
-	~GamepadConfig();
+	virtual ~GamepadConfig();
 
 	void RestoreDefaults();
 
@@ -38,5 +38,7 @@ private:
 	LRT_PROPERTY(GamepadConfig, float, mouseSpeedX, 0.0f);
 	LRT_PROPERTY(GamepadConfig, float, mouseSpeedY, 0.0f);
 	LRT_PROPERTY(GamepadConfig, InstrumentationMode, instrumentationMode, InstrumentationMode::kOn);
+
+	static const char* k_propertyName;
 };
 

@@ -93,6 +93,7 @@
   <ItemGroup>
     <ClCompile Include="BaseProcessor.cpp" />
     <ClCompile Include="Common.cpp" />
+    <ClCompile Include="FilePath.cpp" />
     <ClCompile Include="GamepadConfig.cpp" />
     <ClCompile Include="GamepadDevice.cpp" />
     <ClCompile Include="GamepadProcessor.cpp" />
@@ -100,6 +101,7 @@
     <ClCompile Include="InputAction.cpp" />
     <ClCompile Include="InputBinding.cpp" />
     <ClCompile Include="InputPreset.cpp" />
+    <ClCompile Include="InputPresetManager.cpp" />
     <ClCompile Include="InputProcessor.cpp" />
     <ClCompile Include="LivingRoomTool.cpp" />
     <ClCompile Include="main.cpp" />
@@ -119,8 +121,10 @@
     <ResourceCompile Include="LivingRoomTool.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="FilePath.h" />
     <ClInclude Include="InputAction.h" />
     <ClInclude Include="InputBinding.h" />
+    <ClInclude Include="InputPresetManager.h" />
     <ClInclude Include="Serializable.h" />
     <QtMoc Include="QTweakSlider.h" />
     <QtMoc Include="BaseProcessor.h" />

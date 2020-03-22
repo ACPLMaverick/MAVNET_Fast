@@ -1,14 +1,14 @@
 #include "GamepadConfig.h"
 
 GamepadConfig::GamepadConfig()
-	: Serializable("GamepadConfig")
+	: Serializable(k_propertyName)
 	, m_GUID(L"")
 {
 	RestoreDefaults();
 }
 
 GamepadConfig::GamepadConfig(const std::wstring & a_deviceGUID)
-	: Serializable("GamepadConfig")
+	: Serializable(k_propertyName)
 	, m_GUID(a_deviceGUID)
 {
 	if (LoadFromFile() == false)
@@ -37,7 +37,9 @@ void GamepadConfig::RestoreDefaults()
 	m_instrumentationMode = InstrumentationMode::kOn;
 }
 
-const Serializable::FilePath GamepadConfig::GetFilePath_Internal()
+const FilePath GamepadConfig::GetFilePath_Internal()
 {
 	return FilePath(L"configs", m_GUID);
 }
+
+const char* GamepadConfig::k_propertyName = "GamepadConfig";

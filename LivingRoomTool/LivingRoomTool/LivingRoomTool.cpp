@@ -179,6 +179,7 @@ void LivingRoomTool::UpdatePanelsForSelectedDevice(size_t selectedDevice)
 
 void LivingRoomTool::UpdatePanelsForSelectedDevice_Presets(size_t selectedDevice)
 {
+	m_inputProcessor.GetInputPresetManager().LoadPresets();
 	// TODO
 }
 

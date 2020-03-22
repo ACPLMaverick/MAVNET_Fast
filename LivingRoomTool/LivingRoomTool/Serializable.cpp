@@ -1,9 +1,11 @@
 #include "Serializable.h"
 
 #include "GamepadConfig.h"
+#include "InputAction.h"
+#include "InputBinding.h"
+#include "GamepadState.h"
 
 #include <Windows.h>
-#include <ShlObj_core.h>
 
 #include <magic_enum/magic_enum.hpp>
 
@@ -63,20 +65,23 @@ void Property<std::vector<_type_>>::Deserialize(rapidjson::Value& a_value)	\
 #define LRT_SpecializePropertyFuncs(_type_, _rjType_)	\
 	LRT_SpecializePropertyFuncsCast(_type_, _rjType_, _type_)
 
-#define LRT_SpecializePropertyFuncsEnum(_type_)	\
+#define LRT_SpecializePropertyFuncsEnumConvert(_type_, _convertToFunc_, _convertFromFunc_)	\
 template<> Property<_type_>::~Property<_type_>() {}							\
+template<> Property<std::vector<_type_>>::~Property<std::vector<_type_>>() {}\
 template<>																	\
 void Property<_type_>::Serialize(rapidjson::Document& a_doc, rapidjson::Value& a_root)\
 {																			\
 	auto nameRef = rapidjson::StringRef(m_name.c_str(), m_name.size());		\
-	auto valueRef = rapidjson::StringRef(magic_enum::enum_name(m_value).data());	\
+	auto enumToText = _convertToFunc_(m_value);								\
+	LRT_Assert(enumToText.data() != nullptr);								\
+	auto valueRef = rapidjson::StringRef(enumToText.data());				\
 	a_root.AddMember(nameRef, valueRef, a_doc.GetAllocator());				\
 }																			\
 																			\
 template<>																	\
 void Property<_type_>::Deserialize(rapidjson::Value& a_value)				\
 {																			\
-	auto optional = magic_enum::enum_cast<_type_>(a_value[m_name.c_str()].GetString());\
+	auto optional = _convertFromFunc_(a_value[m_name.c_str()].GetString());	\
 	if(optional.has_value())												\
 	{																		\
 		m_value = optional.value();											\
@@ -91,9 +96,11 @@ template<>																	\
 void Property<std::vector<_type_>>::Serialize(rapidjson::Document& a_doc, rapidjson::Value& a_root)	\
 {																			\
 	rapidjson::Value arrayOfValues(rapidjson::kArrayType);					\
-	for(_type_& obj : m_value)												\
+	for(_type_ obj : m_value)												\
 	{																		\
-		auto valueRef = rapidjson::StringRef(magic_enum::enum_name(obj).data());	\
+		auto enumToText = _convertToFunc_(obj);								\
+		LRT_Assert(enumToText.data() != nullptr);							\
+		auto valueRef = rapidjson::StringRef(enumToText.data(), enumToText.size());\
 		rapidjson::Value value(valueRef);									\
 		arrayOfValues.PushBack(value, a_doc.GetAllocator());				\
 	}																		\
@@ -109,7 +116,7 @@ void Property<std::vector<_type_>>::Deserialize(rapidjson::Value& a_value)	\
 	for(auto it = arrayOfValues.Begin(); it != arrayOfValues.End(); ++it)	\
 	{																		\
 		_type_ tempVal;														\
-		auto optional = magic_enum::enum_cast<_type_>(it->GetString());		\
+		auto optional = _convertFromFunc_(it->GetString());					\
 		if(optional.has_value())											\
 		{																	\
 			tempVal = optional.value();										\
@@ -123,72 +130,102 @@ void Property<std::vector<_type_>>::Deserialize(rapidjson::Value& a_value)	\
 	}																		\
 }
 
+#define LRT_SpecializePropertyFuncsEnum(_type_) LRT_SpecializePropertyFuncsEnumConvert(_type_, magic_enum::enum_name, magic_enum::enum_cast<_type_>)
+
+#define LRT_SpecializePropertyFuncsSerializable(_type_)									\
+template<>																				\
+Property<_type_*>::~Property<_type_*>()													\
+{																						\
+	if (m_value != nullptr)																\
+	{																					\
+		delete m_value;																	\
+		m_value = nullptr;																\
+	}																					\
+}																						\
+																						\
+template<>																				\
+Property<std::vector<_type_*>>::~Property<std::vector<_type_*>>()						\
+{																						\
+	for(_type_* obj : m_value)															\
+	{																					\
+		if (obj != nullptr)																\
+		{																				\
+			delete obj;																	\
+		}																				\
+	}																					\
+	m_value.clear();																	\
+}																						\
+																						\
+template<>																				\
+void Property<_type_*>::Serialize(rapidjson::Document& a_doc, rapidjson::Value& a_root)	\
+{																						\
+	rapidjson::Value value(rapidjson::kObjectType);										\
+	if (m_value != nullptr)																\
+	{																					\
+		m_value->Serialize(a_doc, value);												\
+	}																					\
+	else																				\
+	{																					\
+		value.SetNull();																\
+	}																					\
+	auto nameRef = rapidjson::StringRef(m_name.c_str(), m_name.size());					\
+	a_root.AddMember(nameRef, value, a_doc.GetAllocator());								\
+}																						\
+																						\
+template<>																				\
+void Property<_type_*>::Deserialize(rapidjson::Value& a_value)							\
+{																						\
+	if (m_value != nullptr)																\
+	{																					\
+		rapidjson::Value& value = a_value[m_name.c_str()];								\
+		m_value->Deserialize(value);													\
+	}																					\
+}																						\
+																						\
+template<>																				\
+void Property<std::vector<_type_*>>::Serialize(rapidjson::Document& a_doc, rapidjson::Value& a_root)\
+{																						\
+	rapidjson::Value arrayOfValues(rapidjson::kArrayType);								\
+	for(_type_* obj : m_value)															\
+	{																					\
+		rapidjson::Value value(rapidjson::kObjectType);									\
+		if (obj != nullptr)																\
+		{																				\
+			obj->Serialize(a_doc, value);												\
+		}																				\
+		else																			\
+		{																				\
+			value.SetNull();															\
+		}																				\
+		arrayOfValues.PushBack(value, a_doc.GetAllocator());							\
+	}																					\
+	auto nameRef = rapidjson::StringRef(m_name.c_str(), m_name.size());					\
+	a_root.AddMember(nameRef, arrayOfValues, a_doc.GetAllocator());						\
+}																						\
+																						\
+template<>																				\
+void Property<std::vector<_type_*>>::Deserialize(rapidjson::Value& a_value)				\
+{																						\
+	rapidjson::Value& arrayOfValues = a_value[m_name.c_str()];							\
+	LRT_Assert(arrayOfValues.IsArray());												\
+	m_value.resize(arrayOfValues.Size());												\
+	size_t i = 0;																		\
+	for (auto it = arrayOfValues.Begin(); it != arrayOfValues.End(); ++it, ++i)			\
+	{																					\
+		m_value[i] = new _type_();														\
+		m_value[i]->Deserialize(*it);													\
+	}																					\
+}
+
 LRT_SpecializePropertyFuncs(float, Float)
 LRT_SpecializePropertyFuncsEnum(GamepadConfig::InstrumentationMode)
+LRT_SpecializePropertyFuncsEnumConvert(GamepadButtons, GamepadButtonsConvert::ToString, GamepadButtonsConvert::FromString)
+LRT_SpecializePropertyFuncsEnum(InputActionKey)
+LRT_SpecializePropertyFuncsSerializable(InputBinding)
 
-template<> Property<Serializable*>::~Property<Serializable*>()
+Serializable::Serializable()
+	: PropertyBase(__func__)
 {
-	if (m_value != nullptr)
-	{
-		delete m_value;
-		m_value = nullptr;
-	}
-}
-
-template<> void Property<Serializable*>::Serialize(rapidjson::Document& a_doc, rapidjson::Value& a_root)
-{
-	rapidjson::Value value(rapidjson::kObjectType);
-	if (m_value != nullptr)
-	{
-		m_value->Serialize(a_doc, value);
-	}
-	else
-	{
-		value.SetNull();
-	}
-	auto nameRef = rapidjson::StringRef(m_name.c_str(), m_name.size());
-	a_root.AddMember(nameRef, value, a_doc.GetAllocator());
-}
-
-template<> void Property<Serializable*>::Deserialize(rapidjson::Value& a_value)
-{
-	if (m_value != nullptr)
-	{
-		rapidjson::Value& value = a_value[m_name.c_str()];
-		m_value->Deserialize(value);
-	}
-}
-
-template<> void Property<std::vector<Serializable*>>::Serialize(rapidjson::Document& a_doc, rapidjson::Value& a_root)
-{
-	rapidjson::Value arrayOfValues(rapidjson::kArrayType);
-	for(Serializable* obj : m_value)
-	{
-		rapidjson::Value value(rapidjson::kObjectType);
-		if (obj != nullptr)
-		{
-			obj->Deserialize(value);
-		}
-		else
-		{
-			value.SetNull();
-		}
-		arrayOfValues.PushBack(value, a_doc.GetAllocator());
-	}
-	auto nameRef = rapidjson::StringRef(m_name.c_str(), m_name.size());
-	a_root.AddMember(nameRef, arrayOfValues, a_doc.GetAllocator());
-}
-
-template<> void Property<std::vector<Serializable*>>::Deserialize(rapidjson::Value& a_value)
-{
-	rapidjson::Value& arrayOfValues = a_value[m_name.c_str()];
-	LRT_Assert(arrayOfValues.IsArray());
-	LRT_Assert(arrayOfValues.Size() == m_value.size()); // Value objects must be created.
-	size_t i = 0;
-	for (auto it = arrayOfValues.Begin(); it != arrayOfValues.End(); ++it, ++i)
-	{
-		m_value[i]->Deserialize(*it);
-	}
 }
 
 Serializable::Serializable(const char* a_name)
@@ -261,20 +298,20 @@ bool Serializable::SaveToFile()
 	return true;
 }
 
-const Serializable::FilePath& Serializable::GetFilePath()
+bool Serializable::DeleteMyFile()
 {
-	static FilePath filePath;
+	return false;
+}
 
-	if (filePath.IsEmpty())
+const FilePath Serializable::GetFilePath()
+{
+	FilePath filePath;
+
+	const std::wstring& baseDir = FilePath::GetBaseDirectory();
+	if (baseDir.empty() == false)
 	{
-		wchar_t* pathPtr(nullptr);
-		LRT_CheckHR(SHGetKnownFolderPath(FOLDERID_RoamingAppData, KF_FLAG_CREATE, NULL, &pathPtr));
-		if (pathPtr != nullptr)
-		{
-			FilePath filePathInternal = GetFilePath_Internal();
-			filePath = FilePath(std::wstring(pathPtr) + L"\\LivingRoomTool" + (filePathInternal.GetDirectory().empty() ? L"" : L"\\") + filePathInternal.GetDirectory(), filePathInternal.GetFile() + L".json");
-			CoTaskMemFree(pathPtr);
-		}
+		FilePath filePathInternal = GetFilePath_Internal();
+		filePath = FilePath(baseDir + (filePathInternal.GetDirectory().empty() ? L"" : L"\\") + filePathInternal.GetDirectory(), filePathInternal.GetFile() + L".json");
 	}
 
 	return filePath;
@@ -282,8 +319,10 @@ const Serializable::FilePath& Serializable::GetFilePath()
 
 bool Serializable::LoadJSONFromFile(std::string& a_outJSON)
 {
+	const FilePath& filePath = GetFilePath();
+
 	HANDLE file = CreateFileW(
-		GetFilePath().GetFullFile().c_str(),
+		filePath.GetFullFile().c_str(),
 		GENERIC_READ,
 		FILE_SHARE_READ,
 		NULL,
@@ -329,7 +368,7 @@ bool Serializable::LoadJSONFromFile(std::string& a_outJSON)
 bool Serializable::SaveJSONToFile(const std::string& a_JSON)
 {
 	const FilePath& filePath = GetFilePath();
-	MakeSureDirectoryExists(filePath.GetDirectory());
+	filePath.MakeSureDirectoryExists();
 
 	HANDLE file = CreateFileW(
 		filePath.GetFullFile().c_str(),
@@ -361,34 +400,6 @@ bool Serializable::SaveJSONToFile(const std::string& a_JSON)
 	LRT_Verify(CloseHandle(file));
 
 	return bSuccess;
-}
-
-inline void Serializable::MakeSureDirectoryExists(const std::wstring& a_directory)
-{
-	// Do not proceed if there is only drive leter left.
-	if (a_directory.length() <= 3)
-	{
-		return;
-	}
-
-	// Simply try to create that directory without caring about errors.
-	BOOL ret = CreateDirectoryW(a_directory.c_str(), NULL);
-	if (ret == FALSE)
-	{
-		if (GetLastError() == ERROR_PATH_NOT_FOUND)
-		{
-			// Go backwards until we find a valid directory.
-			size_t splitPos = a_directory.find_last_of('\\');
-			if (splitPos != std::string::npos)
-			{
-				std::wstring cutDirectory = a_directory.substr(0, splitPos);
-				MakeSureDirectoryExists(cutDirectory);
-			}
-			// Try to create it again.
-			ret = CreateDirectoryW(a_directory.c_str(), NULL);
-			LRT_Assert(ret == TRUE);	// We should not fail this time.
-		}
-	}
 }
 
 PropertyBase* Serializable::GetPropertyFromOffset(PropertyOffset a_offset)

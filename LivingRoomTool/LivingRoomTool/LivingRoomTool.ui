@@ -531,31 +531,11 @@
              </rect>
             </property>
            </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_RThumbX">
-            <property name="geometry">
-             <rect>
-              <x>450</x>
-              <y>470</y>
-              <width>128</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_RThumbY">
-            <property name="geometry">
-             <rect>
-              <x>450</x>
-              <y>500</y>
-              <width>128</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
            <widget class="QComboBox" name="Cb_Gamepad_RThumbPress">
             <property name="geometry">
              <rect>
-              <x>450</x>
-              <y>530</y>
+              <x>350</x>
+              <y>550</y>
               <width>128</width>
               <height>24</height>
              </rect>
@@ -564,29 +544,89 @@
            <widget class="QComboBox" name="Cb_Gamepad_LThumbPress">
             <property name="geometry">
              <rect>
-              <x>20</x>
-              <y>300</y>
+              <x>30</x>
+              <y>310</y>
               <width>128</width>
               <height>24</height>
              </rect>
             </property>
            </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_LThumbY">
+           <widget class="QComboBox" name="Cb_Gamepad_LThumbDown">
             <property name="geometry">
              <rect>
-              <x>20</x>
+              <x>50</x>
               <y>270</y>
-              <width>128</width>
+              <width>84</width>
               <height>24</height>
              </rect>
             </property>
            </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_LThumbX">
+           <widget class="QComboBox" name="Cb_Gamepad_LThumbUp">
             <property name="geometry">
              <rect>
-              <x>20</x>
-              <y>240</y>
-              <width>128</width>
+              <x>50</x>
+              <y>190</y>
+              <width>84</width>
+              <height>24</height>
+             </rect>
+            </property>
+           </widget>
+           <widget class="QComboBox" name="Cb_Gamepad_LThumbLeft">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>230</y>
+              <width>84</width>
+              <height>24</height>
+             </rect>
+            </property>
+           </widget>
+           <widget class="QComboBox" name="Cb_Gamepad_LThumbRight">
+            <property name="geometry">
+             <rect>
+              <x>100</x>
+              <y>230</y>
+              <width>84</width>
+              <height>24</height>
+             </rect>
+            </property>
+           </widget>
+           <widget class="QComboBox" name="Cb_Gamepad_RThumbUp">
+            <property name="geometry">
+             <rect>
+              <x>490</x>
+              <y>470</y>
+              <width>84</width>
+              <height>24</height>
+             </rect>
+            </property>
+           </widget>
+           <widget class="QComboBox" name="Cb_Gamepad_RThumbDown">
+            <property name="geometry">
+             <rect>
+              <x>490</x>
+              <y>550</y>
+              <width>84</width>
+              <height>24</height>
+             </rect>
+            </property>
+           </widget>
+           <widget class="QComboBox" name="Cb_Gamepad_RThumbLeft">
+            <property name="geometry">
+             <rect>
+              <x>440</x>
+              <y>510</y>
+              <width>84</width>
+              <height>24</height>
+             </rect>
+            </property>
+           </widget>
+           <widget class="QComboBox" name="Cb_Gamepad_RThumbRight">
+            <property name="geometry">
+             <rect>
+              <x>540</x>
+              <y>510</y>
+              <width>84</width>
               <height>24</height>
              </rect>
             </property>

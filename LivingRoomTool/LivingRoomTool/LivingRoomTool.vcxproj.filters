@@ -29,6 +29,18 @@
     <Filter Include="Source Files\UI">
       <UniqueIdentifier>{fc949efc-b6c5-4e80-b23e-e4fe8e2301ba}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Input">
+      <UniqueIdentifier>{f339d2de-9078-4aff-86e4-66f86f05a57d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Gamepad">
+      <UniqueIdentifier>{67119564-81f6-4947-b086-a4184f87a704}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Input">
+      <UniqueIdentifier>{959a008b-e060-4c34-9e51-a600dd0499ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Gamepad">
+      <UniqueIdentifier>{deecb253-7223-4b94-9692-573c0ad353dd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -37,29 +49,11 @@
     <ClCompile Include="LivingRoomTool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="InputProcessor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="BaseProcessor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GamepadProcessor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GamepadDevice.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GamepadState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="QTweakSlider.cpp">
       <Filter>Source Files\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="InputPreset.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GamepadConfig.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Serializable.cpp">
       <Filter>Source Files</Filter>
@@ -67,10 +61,34 @@
     <ClCompile Include="Common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GamepadConfig.cpp">
+      <Filter>Source Files\Gamepad</Filter>
+    </ClCompile>
+    <ClCompile Include="GamepadDevice.cpp">
+      <Filter>Source Files\Gamepad</Filter>
+    </ClCompile>
+    <ClCompile Include="GamepadProcessor.cpp">
+      <Filter>Source Files\Gamepad</Filter>
+    </ClCompile>
+    <ClCompile Include="GamepadState.cpp">
+      <Filter>Source Files\Gamepad</Filter>
+    </ClCompile>
     <ClCompile Include="InputAction.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Input</Filter>
     </ClCompile>
     <ClCompile Include="InputBinding.cpp">
+      <Filter>Source Files\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="InputPreset.cpp">
+      <Filter>Source Files\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="InputProcessor.cpp">
+      <Filter>Source Files\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="InputPresetManager.cpp">
+      <Filter>Source Files\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="FilePath.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -102,31 +120,37 @@
     <ClInclude Include="Common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="InputProcessor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GamepadProcessor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GamepadDevice.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GamepadState.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="InputPreset.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GamepadConfig.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Serializable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GamepadConfig.h">
+      <Filter>Header Files\Gamepad</Filter>
+    </ClInclude>
+    <ClInclude Include="GamepadDevice.h">
+      <Filter>Header Files\Gamepad</Filter>
+    </ClInclude>
+    <ClInclude Include="GamepadProcessor.h">
+      <Filter>Header Files\Gamepad</Filter>
+    </ClInclude>
+    <ClInclude Include="GamepadState.h">
+      <Filter>Header Files\Gamepad</Filter>
+    </ClInclude>
     <ClInclude Include="InputAction.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Input</Filter>
     </ClInclude>
     <ClInclude Include="InputBinding.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="InputPreset.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="InputProcessor.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="InputPresetManager.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="FilePath.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

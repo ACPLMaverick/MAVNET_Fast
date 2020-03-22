@@ -26,6 +26,7 @@ extern std::string LRT_GetLastErrorAsString();
 
 #define LRT_Assert(_predicate_) assert(_predicate_)
 #define LRT_Fail() LRT_Assert(false)
+#define LRT_Todo() LRT_Fail()
 
 #ifdef NDEBUG
 #define LRT_Verify(_predicate_) _predicate_

@@ -2,6 +2,7 @@
 
 #include "BaseProcessor.h"
 #include "GamepadProcessor.h"
+#include "InputPresetManager.h"
 
 #include <qtimer.h>
 
@@ -15,6 +16,7 @@ public:
 	LRT_DisallowCopy(InputProcessor);
 
 	GamepadProcessor& GetGamepadProcessor() { return m_gamepadProcessor; }
+	InputPresetManager& GetInputPresetManager() { return m_inputPresetManager; }
 
 protected:
 	// Inherited via BaseProcessor
@@ -26,6 +28,7 @@ protected:
 	static const int32_t k_tickIntervalMs;
 
 	GamepadProcessor m_gamepadProcessor;
+	InputPresetManager m_inputPresetManager;
 
 	QTimer m_qTimer;
 	QMetaObject::Connection m_qTimerConnection;

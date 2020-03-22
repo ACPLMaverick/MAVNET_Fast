@@ -2,9 +2,11 @@
 
 #include "Common.h"
 
+#include <magic_enum/magic_enum.hpp>
+
 enum class InputActionKey : uint8_t
 {
-	kNone = 0,
+	kNone,
 
 	// Keyboard
 	kEsc,
@@ -99,22 +101,27 @@ enum class InputActionKey : uint8_t
 	kArrowDown,
 	kArrowLeft,
 
-	ENUM_KEYBOARD_SIZE,
-	ENUM_KEYBOARD_FIRST = kEsc,
-
 	// Mouse
-	kMouseX,
-	kMouseY,
+	kMouseUp,
+	kMouseDown,
+	kMouseLeft,
+	kMouseRight,
 	kMouseLMB,
 	kMouseMMB,
 	kMouseRMB,
-	kMouseScroll,
-
-	ENUM_MOUSE_SIZE,
-	ENUM_MOUSE_FIRST = kMouseX,
-
-	ENUM_SIZE = ENUM_MOUSE_SIZE
+	kMouseScrollUp,
+	kMouseScrollDown
 };
+
+namespace magic_enum
+{
+	template <>
+	struct enum_range<InputActionKey>
+	{
+		static constexpr int min = 0; // Must be greater than `INT16_MIN`.
+		static constexpr int max = 255; // Must be less than `INT16_MAX`.
+	};
+}
 
 class InputAction
 {
