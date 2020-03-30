@@ -13,6 +13,7 @@
 #include <vector>
 #include <stack>
 #include <string>
+#include <map>
 
 #include "qdebug.h"
 

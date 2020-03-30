@@ -31,7 +31,13 @@ void InputPresetManager::LoadPresets()
 	}
 }
 
-const InputPreset & InputPresetManager::GetPreset(size_t a_index) const
+InputPreset& InputPresetManager::GetPreset(size_t a_index)
+{
+	LRT_InputPresetManagerCheckIndex(a_index);
+	return m_presets[a_index];
+}
+
+const InputPreset& InputPresetManager::GetPreset(size_t a_index) const
 {
 	LRT_InputPresetManagerCheckIndex(a_index);
 	return m_presets[a_index];

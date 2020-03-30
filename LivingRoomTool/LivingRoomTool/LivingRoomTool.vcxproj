@@ -105,6 +105,7 @@
     <ClCompile Include="InputProcessor.cpp" />
     <ClCompile Include="LivingRoomTool.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="PresetEditor.cpp" />
     <ClCompile Include="QTweakSlider.cpp" />
     <ClCompile Include="Serializable.cpp" />
   </ItemGroup>
@@ -125,6 +126,7 @@
     <ClInclude Include="InputAction.h" />
     <ClInclude Include="InputBinding.h" />
     <ClInclude Include="InputPresetManager.h" />
+    <QtMoc Include="PresetEditor.h" />
     <ClInclude Include="Serializable.h" />
     <QtMoc Include="QTweakSlider.h" />
     <QtMoc Include="BaseProcessor.h" />

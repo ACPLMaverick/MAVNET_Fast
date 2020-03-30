@@ -641,29 +641,29 @@
           </widget>
          </item>
          <item>
-          <layout class="QVBoxLayout" name="VertLaout_Specials">
+          <layout class="QVBoxLayout" name="VertLayout_Specials">
            <property name="spacing">
             <number>10</number>
            </property>
            <item>
-            <widget class="QLabel" name="Lbl_Specials">
+            <widget class="QLabel" name="Lbl_AdvancedBindings">
              <property name="font">
               <font>
                <pointsize>12</pointsize>
               </font>
              </property>
              <property name="text">
-              <string>Special combinations</string>
+              <string>Advanced bindings</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QListWidget" name="listWidget"/>
+            <widget class="QListWidget" name="List_AdvancedBindings"/>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="HorLLayout_SpecialBtns">
+            <layout class="QHBoxLayout" name="HorLLayout_AdvancedBindingsBtns">
              <item>
-              <widget class="QPushButton" name="BtnSpecialAdd">
+              <widget class="QPushButton" name="BtnAdvancedAdd">
                <property name="font">
                 <font>
                  <pointsize>12</pointsize>
@@ -675,7 +675,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="BtnSpecialDuplicate">
+              <widget class="QPushButton" name="BtnAdvancedDuplicate">
                <property name="font">
                 <font>
                  <pointsize>12</pointsize>
@@ -687,7 +687,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="BtnSpecialEdit">
+              <widget class="QPushButton" name="BtnAdvancedEdit">
                <property name="font">
                 <font>
                  <pointsize>12</pointsize>
@@ -699,7 +699,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="BtnSpecialRemove">
+              <widget class="QPushButton" name="BtnAdvancedRemove">
                <property name="font">
                 <font>
                  <pointsize>12</pointsize>

@@ -13,6 +13,12 @@ LivingRoomTool::LivingRoomTool(QWidget *parent)
 
 	InitConnections();
 	InitTweakNames();
+	InitPresetEditor();
+}
+
+LivingRoomTool::~LivingRoomTool()
+{
+	CleanupPresetEditor();
 }
 
 void LivingRoomTool::InitTweakNames()
@@ -78,6 +84,48 @@ void LivingRoomTool::InitConnections()
 	connect(ui.Btn_SaveTweaks, &QAbstractButton::clicked, this, &LivingRoomTool::OnSaveTweakClicked);
 	connect(ui.Btn_RestoreTweaks, &QAbstractButton::clicked, this, &LivingRoomTool::OnRestoreTweakClicked);
 	connect(ui.Btn_DefaultTweaks, &QAbstractButton::clicked, this, &LivingRoomTool::OnDefaultsTweakClicked);
+}
+
+void LivingRoomTool::InitPresetEditor()
+{
+	m_presetEditor.Init(
+		{
+			ui.Cb_Gamepad_RT,
+			ui.Cb_Gamepad_RB,
+			ui.Cb_Gamepad_LT,
+			ui.Cb_Gamepad_LB,
+			ui.Cb_Gamepad_View,
+			ui.Cb_Gamepad_Menu,
+			ui.Cb_Gamepad_RUp,
+			ui.Cb_Gamepad_RLeft,
+			ui.Cb_Gamepad_RDown,
+			ui.Cb_Gamepad_RRight,
+			ui.Cb_Gamepad_LDown,
+			ui.Cb_Gamepad_LLeft,
+			ui.Cb_Gamepad_LRight,
+			ui.Cb_Gamepad_LUp,
+			ui.Cb_Gamepad_RThumbPress,
+			ui.Cb_Gamepad_LThumbPress,
+			ui.Cb_Gamepad_LThumbDown,
+			ui.Cb_Gamepad_LThumbUp,
+			ui.Cb_Gamepad_LThumbLeft,
+			ui.Cb_Gamepad_LThumbRight,
+			ui.Cb_Gamepad_RThumbUp,
+			ui.Cb_Gamepad_RThumbDown,
+			ui.Cb_Gamepad_RThumbLeft,
+			ui.Cb_Gamepad_RThumbRight,
+			ui.List_AdvancedBindings,
+			ui.BtnAdvancedAdd,
+			ui.BtnAdvancedDuplicate,
+			ui.BtnAdvancedEdit,
+			ui.BtnAdvancedRemove
+		},
+		&m_inputProcessor.GetInputPresetManager());
+}
+
+void LivingRoomTool::CleanupPresetEditor()
+{
+	m_presetEditor.Cleanup();
 }
 
 void LivingRoomTool::EnableDevicePanels()
@@ -169,6 +217,16 @@ void LivingRoomTool::OnDeviceSelectionChanged()
 
 void LivingRoomTool::OnPresetSelectionChanged()
 {
+	const size_t selectedIndex = GetPresetSelectedIndex();
+	if (selectedIndex != k_invalidIndex)
+	{
+		EnablePresetEditor();
+		UpdateEditorForSelectedPreset(selectedIndex);
+	}
+	else
+	{
+		DisablePresetEditor();
+	}
 }
 
 void LivingRoomTool::UpdatePanelsForSelectedDevice(size_t selectedDevice)
@@ -180,7 +238,16 @@ void LivingRoomTool::UpdatePanelsForSelectedDevice(size_t selectedDevice)
 void LivingRoomTool::UpdatePanelsForSelectedDevice_Presets(size_t selectedDevice)
 {
 	m_inputProcessor.GetInputPresetManager().LoadPresets();
-	// TODO
+	
+	ui.List_Presets->clear();
+
+	const size_t presetNum = m_inputProcessor.GetInputPresetManager().GetPresetNum();
+	for (size_t i = 0; i < presetNum; ++i)
+	{
+		const std::string& nameStr = m_inputProcessor.GetInputPresetManager().GetPreset(i).GetName();
+		const std::wstring nameWstr(nameStr.begin(), nameStr.end());
+		ui.List_Presets->addItem(QString::fromStdWString(nameWstr));
+	}
 }
 
 void LivingRoomTool::UpdatePanelsForSelectedDevice_Tweaks(size_t selectedDevice)
@@ -211,6 +278,12 @@ void LivingRoomTool::UpdatePanelsForSelectedDevice_Tweaks(size_t selectedDevice)
 
 void LivingRoomTool::UpdateEditorForSelectedPreset(size_t selectedPreset)
 {
+	m_presetEditor.AssignPreset(selectedPreset);
+}
+
+void LivingRoomTool::ClearEditor()
+{
+	m_presetEditor.InvalidatePreset();
 }
 
 void LivingRoomTool::SetQLayoutElementsFrozen(QLayout * a_layout, bool a_frozen)
@@ -243,13 +316,13 @@ void LivingRoomTool::SetQLayoutElementsFrozen(QLayout * a_layout, bool a_frozen)
 	}
 }
 
-size_t LivingRoomTool::GetGamepadSelectedIndex()
+size_t LivingRoomTool::GetQListSelectedIndex(QListWidget* list)
 {
-	const int selectedIndex = ui.List_Devices->currentRow();
-	QList<QListWidgetItem*> selectedItems = ui.List_Devices->selectedItems();
+	const int selectedIndex = list->currentRow();
+	QList<QListWidgetItem*> selectedItems = list->selectedItems();
 	if (selectedItems.size() == 1
 		&& selectedIndex >= 0
-		&& selectedIndex < ui.List_Devices->count())
+		&& selectedIndex < list->count())
 	{
 		return static_cast<size_t>(selectedIndex);
 	}
@@ -257,4 +330,14 @@ size_t LivingRoomTool::GetGamepadSelectedIndex()
 	{
 		return k_invalidIndex;
 	}
+}
+
+size_t LivingRoomTool::GetGamepadSelectedIndex()
+{
+	return GetQListSelectedIndex(ui.List_Devices);
+}
+
+size_t LivingRoomTool::GetPresetSelectedIndex()
+{
+	return GetQListSelectedIndex(ui.List_Presets);
 }

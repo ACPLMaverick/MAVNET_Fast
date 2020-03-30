@@ -10,6 +10,7 @@ public:
 	void LoadPresets();
 
 	size_t GetPresetNum() const { return m_presets.size(); }
+	InputPreset& GetPreset(size_t index);
 	const InputPreset& GetPreset(size_t index) const;
 
 	void DuplicatePreset(size_t index, const std::string& newName);

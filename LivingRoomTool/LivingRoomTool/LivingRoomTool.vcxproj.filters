@@ -91,6 +91,9 @@
     <ClCompile Include="FilePath.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PresetEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="LivingRoomTool.h">
@@ -101,6 +104,9 @@
     </QtMoc>
     <QtMoc Include="QTweakSlider.h">
       <Filter>Header Files\UI</Filter>
+    </QtMoc>
+    <QtMoc Include="PresetEditor.h">
+      <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
   <ItemGroup>

@@ -110,8 +110,16 @@ enum class InputActionKey : uint8_t
 	kMouseMMB,
 	kMouseRMB,
 	kMouseScrollUp,
-	kMouseScrollDown
+	kMouseScrollDown,
+
+	ENUM_SIZE
 };
+
+namespace InputActionKeyHelper
+{
+	extern const InputActionKey g_MouseFirst;
+	extern const InputActionKey g_MouseLast;
+}
 
 namespace magic_enum
 {

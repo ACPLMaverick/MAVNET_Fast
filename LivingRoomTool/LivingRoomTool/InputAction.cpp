@@ -1,5 +1,11 @@
 #include "InputAction.h"
 
+namespace InputActionKeyHelper
+{
+	const InputActionKey g_MouseFirst = InputActionKey::kMouseUp;
+	const InputActionKey g_MouseLast = InputActionKey::kMouseScrollDown;
+}
+
 InputAction::InputAction(InputActionKey a_key, bool a_bPressed)
 	: m_key(a_key)
 {
