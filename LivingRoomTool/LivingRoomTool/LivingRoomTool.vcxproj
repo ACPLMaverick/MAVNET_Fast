@@ -108,12 +108,15 @@
     <ClCompile Include="PresetEditor.cpp" />
     <ClCompile Include="QTweakSlider.cpp" />
     <ClCompile Include="Serializable.cpp" />
+    <ClCompile Include="SimpleConfirmationDialog.cpp" />
+    <ClCompile Include="SimpleTextInputDialog.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="LivingRoomTool.h" />
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="LivingRoomTool.ui" />
+    <QtUic Include="SimpleTextInputDialog.ui" />
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="LivingRoomTool.qrc" />
@@ -126,6 +129,8 @@
     <ClInclude Include="InputAction.h" />
     <ClInclude Include="InputBinding.h" />
     <ClInclude Include="InputPresetManager.h" />
+    <ClInclude Include="SimpleConfirmationDialog.h" />
+    <QtMoc Include="SimpleTextInputDialog.h" />
     <QtMoc Include="PresetEditor.h" />
     <ClInclude Include="Serializable.h" />
     <QtMoc Include="QTweakSlider.h" />

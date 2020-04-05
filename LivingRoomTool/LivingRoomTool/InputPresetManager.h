@@ -19,6 +19,8 @@ public:
 	void SavePreset(size_t index);
 	void RestorePreset(size_t index);
 
+	bool FindPresetByName(const std::string& name, size_t* outIndex = nullptr) const;
+
 	static const std::wstring& GetDirectory();
 
 private:

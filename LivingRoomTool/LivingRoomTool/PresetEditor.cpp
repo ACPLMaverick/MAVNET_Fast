@@ -51,6 +51,14 @@ void PresetEditor::AssignPreset(size_t a_assignedPresetIndex)
 void PresetEditor::InvalidatePreset()
 {
 	m_assignedPresetIndex = k_invalidIndex;
+	m_elements.List_AdvancedBindings->clear();
+
+	m_bDisableConnections = true;
+	for (QComboBox* cb : m_elements.ComboBoxes)
+	{
+		cb->setCurrentIndex(0);
+	}
+	m_bDisableConnections = false;
 }
 
 inline InputPreset& PresetEditor::GetPreset()
@@ -144,6 +152,14 @@ inline void PresetEditor::UpdateElements()
 
 	m_bDisableConnections = true;
 
+	// First set all UIs to default state.
+	for (QComboBox* cb : m_elements.ComboBoxes)
+	{
+		cb->setCurrentIndex(0);
+	}
+	m_elements.List_AdvancedBindings->clear();
+
+	// Now update UIs with new state.
 	for (InputBinding* binding : bindings)
 	{
 		const size_t sourcesSize = binding->Get_sources().size();

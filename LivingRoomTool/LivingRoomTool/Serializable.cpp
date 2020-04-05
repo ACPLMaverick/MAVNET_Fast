@@ -300,7 +300,8 @@ bool Serializable::SaveToFile()
 
 bool Serializable::DeleteMyFile()
 {
-	return false;
+	const FilePath& filePath = GetFilePath();
+	return DeleteFileW(filePath.GetFullFile().c_str()) != FALSE;
 }
 
 const FilePath Serializable::GetFilePath()

@@ -4,21 +4,37 @@
 InputPreset::InputPreset(const char * name)
 	: Serializable(name)
 {
-	LRT_Verify(LoadFromFile());
 }
 
 InputPreset::InputPreset(InputPreset && a_move)
 	: Serializable(a_move.m_name.c_str())
 {
-	for (InputBinding* binding : a_move.m_bindings.Get())
-	{
-		m_bindings.Get().push_back(binding);
-	}
+	m_bindings = a_move.m_bindings;
+	a_move.m_bindings.Get().clear();
+}
+
+InputPreset::InputPreset(InputPreset && a_move, const char * a_newName)
+	: Serializable(a_newName)
+{
+	m_bindings = a_move.m_bindings;
 	a_move.m_bindings.Get().clear();
 }
 
 InputPreset::~InputPreset()
 {
+	for (InputBinding* binding : m_bindings.Get())
+	{
+		delete binding;
+	}
+	m_bindings.Get().clear();
+}
+
+InputPreset & InputPreset::operator=(InputPreset && a_move)
+{
+	m_name = a_move.m_name;
+	m_bindings = a_move.m_bindings;
+	a_move.m_bindings.Get().clear();
+	return *this;
 }
 
 void InputPreset::GenerateActions(const GamepadState & gamepadState, const GamepadConfig & gamepadConfig, std::vector<InputAction>& outActions) const
@@ -35,9 +51,14 @@ void InputPreset::Rename(const std::string& newName)
 	m_name = newName;
 }
 
+bool InputPreset::IsDefault() const
+{
+	return GetName() == k_defaultName;
+}
+
 InputPreset InputPreset::CreateDefault()
 {
-	InputPreset defaultPreset("default");
+	InputPreset defaultPreset(k_defaultName);
 
 	defaultPreset.Get_bindings() =
 	{
@@ -76,8 +97,22 @@ InputPreset InputPreset::CreateDefault()
 	return std::move(defaultPreset);
 }
 
+InputPreset InputPreset::DeepCopy(const InputPreset & a_copy, const char* a_newName)
+{
+	InputPreset preset(a_newName);
+
+	for (InputBinding* binding : a_copy.Get_bindings())
+	{
+		InputBinding* newBinding = new InputBinding(binding->Get_sources(), binding->Get_destinations());
+		preset.Get_bindings().push_back(newBinding);
+	}
+	return std::move(preset);
+}
+
 const FilePath InputPreset::GetFilePath_Internal()
 {
 	std::wstring name(m_name.begin(), m_name.end());
 	return FilePath(InputPresetManager::GetDirectory(), name);
 }
+
+const char* InputPreset::k_defaultName("default");

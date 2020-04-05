@@ -27,6 +27,7 @@ void InputPresetManager::LoadPresets()
 		{
 			const std::string name(wname.begin(), wname.end());
 			m_presets.emplace_back(name.c_str());// This creates object directly inside vec.
+			LRT_Verify(m_presets.back().LoadFromFile());
 		}
 	}
 }
@@ -43,20 +44,26 @@ const InputPreset& InputPresetManager::GetPreset(size_t a_index) const
 	return m_presets[a_index];
 }
 
-void InputPresetManager::DuplicatePreset(size_t a_index, const std::string& newName)
+void InputPresetManager::DuplicatePreset(size_t a_index, const std::string& a_newName)
 {
 	LRT_InputPresetManagerCheckIndex(a_index);
-	LRT_Todo();
+	m_presets.push_back(std::move(InputPreset::DeepCopy(m_presets[a_index], a_newName.c_str())));
+	LRT_Verify(m_presets.back().SaveToFile());
 }
 
-void InputPresetManager::RenamePreset(size_t a_index, const std::string& newName)
+void InputPresetManager::RenamePreset(size_t a_index, const std::string& a_newName)
 {
 	LRT_InputPresetManagerCheckIndex(a_index);
+	if (m_presets[a_index].GetName() == a_newName)
+	{
+		return;
+	}
 
-	// When renaming a preset, remember to save it, create a new one with a new name, 
-	// and remove the old one. This should be the safest approach.
-	// I should also display a prompt signalling that the preset will be saved when renamed.
-	LRT_Todo();
+	// We can make a shallow copy here.
+	InputPreset presetWithNewName(std::move(m_presets[a_index]), a_newName.c_str());
+	LRT_Verify(presetWithNewName.SaveToFile());
+	LRT_Verify(m_presets[a_index].DeleteMyFile());
+	m_presets[a_index] = std::move(presetWithNewName);
 }
 
 void InputPresetManager::RemovePreset(size_t a_index)
@@ -64,20 +71,42 @@ void InputPresetManager::RemovePreset(size_t a_index)
 	LRT_InputPresetManagerCheckIndex(a_index);
 	const bool success = m_presets[a_index].DeleteMyFile();
 	LRT_Assert(success);
+
+	if (success)
+	{
+		m_presets.erase(m_presets.begin() + a_index);
+	}
 }
 
 void InputPresetManager::SavePreset(size_t a_index)
 {
 	LRT_InputPresetManagerCheckIndex(a_index);
-	const bool success = m_presets[a_index].SaveToFile();
-	LRT_Assert(success);
+	LRT_Verify(m_presets[a_index].SaveToFile());
 }
 
 void InputPresetManager::RestorePreset(size_t a_index)
 {
 	LRT_InputPresetManagerCheckIndex(a_index);
-	const bool success = m_presets[a_index].LoadFromFile();
-	LRT_Assert(success);
+	LRT_Verify(m_presets[a_index].LoadFromFile());
+}
+
+bool InputPresetManager::FindPresetByName(const std::string & a_name, size_t* a_outIndex) const
+{
+	const size_t numPresets = GetPresetNum();
+
+	for (size_t i = 0; i < numPresets; ++i)
+	{
+		if (m_presets[i].GetName() == a_name)
+		{
+			if (a_outIndex != nullptr)
+			{
+				*a_outIndex = i;
+			}
+			return true;
+		}
+	}
+
+	return false;
 }
 
 const std::wstring & InputPresetManager::GetDirectory()

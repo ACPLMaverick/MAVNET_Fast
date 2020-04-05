@@ -174,7 +174,19 @@
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="Btn_SavePresets">
+            <widget class="QPushButton" name="Btn_RenamePreset">
+             <property name="font">
+              <font>
+               <pointsize>12</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Rename</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="Btn_SavePreset">
              <property name="font">
               <font>
                <pointsize>12</pointsize>
@@ -186,7 +198,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="Btn_RestorePresets">
+            <widget class="QPushButton" name="Btn_RestorePreset">
              <property name="font">
               <font>
                <pointsize>12</pointsize>

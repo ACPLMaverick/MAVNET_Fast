@@ -1,7 +1,10 @@
 #include "LivingRoomTool.h"
 
-LivingRoomTool::LivingRoomTool(QWidget *parent)
-	: QMainWindow(parent)
+#include "SimpleTextInputDialog.h"
+#include "SimpleConfirmationDialog.h"
+
+LivingRoomTool::LivingRoomTool(QWidget* a_parent)
+	: QMainWindow(a_parent)
 {
 	ui.setupUi(this);
 
@@ -40,6 +43,11 @@ void LivingRoomTool::InitConnections()
 
 	// Preset list
 	connect(ui.List_Presets, &QListWidget::itemSelectionChanged, this, &LivingRoomTool::OnPresetSelectionChanged);
+	connect(ui.Btn_DuplicatePreset, &QPushButton::clicked, this, &LivingRoomTool::OnDuplicatePresetClicked);
+	connect(ui.Btn_RemovePreset, &QPushButton::clicked, this, &LivingRoomTool::OnRemovePresetClicked);
+	connect(ui.Btn_RenamePreset, &QPushButton::clicked, this, &LivingRoomTool::OnRenamePresetClicked);
+	connect(ui.Btn_SavePreset, &QPushButton::clicked, this, &LivingRoomTool::OnSavePresetClicked);
+	connect(ui.Btn_RestorePreset, &QPushButton::clicked, this, &LivingRoomTool::OnRestorePresetClicked);
 
 	// Tweaks
 #define LRT_ConnectTweakSlider(_type_, _control_, _property_)						\
@@ -136,6 +144,7 @@ void LivingRoomTool::EnableDevicePanels()
 
 void LivingRoomTool::DisableDevicePanels()
 {
+	ui.List_Presets->clearSelection();
 	SetQLayoutElementsFrozen(ui.VertLayout_Presets, true);
 	SetQLayoutElementsFrozen(ui.VertLayout_Tweaks, true);
 }
@@ -167,6 +176,103 @@ void LivingRoomTool::OnRefreshDevicesClicked()
 void LivingRoomTool::OnIdentifyDeviceClicked()
 {
 	m_inputProcessor.GetGamepadProcessor().IdentifyDeviceByVibrating(ui.List_Devices->currentIndex().row());
+}
+
+void LivingRoomTool::OnDuplicatePresetClicked()
+{
+	size_t presetIndex = GetPresetSelectedIndex();
+	if (presetIndex == k_invalidIndex)
+	{
+		return;
+	}
+
+	std::string name;
+	if (AskForPresetNameWithExistenceCheck(
+		presetIndex,
+		name,
+		L"Please name a duplicated preset",
+		L"Such name already exists. Try again?",
+		"_Copy") == false)
+	{
+		return;
+	}
+
+	m_inputProcessor.GetInputPresetManager().DuplicatePreset(presetIndex, name);
+	UpdatePanels_Presets();
+}
+
+void LivingRoomTool::OnRemovePresetClicked()
+{
+	size_t presetIndex = GetPresetSelectedIndex();
+	if (presetIndex == k_invalidIndex)
+	{
+		return;
+	}
+
+	const std::string message = "Do you want to remove a \""
+		+ m_inputProcessor.GetInputPresetManager().GetPreset(presetIndex).GetName()
+		+ "\" preset?";
+	if (SimpleConfirmationDialog::Open(message) == false)
+	{
+		return;
+	}
+
+	m_inputProcessor.GetInputPresetManager().RemovePreset(presetIndex);
+	UpdatePanels_Presets();
+	m_presetEditor.InvalidatePreset();
+}
+
+void LivingRoomTool::OnRenamePresetClicked()
+{
+	size_t presetIndex = GetPresetSelectedIndex();
+	if (presetIndex == k_invalidIndex)
+	{
+		return;
+	}
+
+	std::string name;
+	if (AskForPresetNameWithExistenceCheck(
+		presetIndex,
+		name,
+		L"Please give a new name",
+		L"Such name already exists. Try again?") == false)
+	{
+		return;
+	}
+
+	m_inputProcessor.GetInputPresetManager().RenamePreset(presetIndex, name);
+	UpdatePanels_Presets();
+}
+
+void LivingRoomTool::OnSavePresetClicked()
+{
+	size_t presetIndex = GetPresetSelectedIndex();
+	if (presetIndex == k_invalidIndex)
+	{
+		return;
+	}
+
+	m_inputProcessor.GetInputPresetManager().SavePreset(presetIndex);
+}
+
+void LivingRoomTool::OnRestorePresetClicked()
+{
+	size_t presetIndex = GetPresetSelectedIndex();
+	if (presetIndex == k_invalidIndex)
+	{
+		return;
+	}
+
+	const std::string message = "Do you want to restore a \""
+		+ m_inputProcessor.GetInputPresetManager().GetPreset(presetIndex).GetName()
+		+ "\" preset?";
+	if (SimpleConfirmationDialog::Open(message) == false)
+	{
+		return;
+	}
+
+	m_inputProcessor.GetInputPresetManager().RestorePreset(presetIndex);
+	UpdateEditorForSelectedPreset(presetIndex);
 }
 
 void LivingRoomTool::OnSaveTweakClicked()
@@ -206,6 +312,8 @@ void LivingRoomTool::OnDeviceSelectionChanged()
 	const size_t selectedIndex = GetGamepadSelectedIndex();
 	if (selectedIndex != k_invalidIndex)
 	{
+		m_inputProcessor.GetInputPresetManager().LoadPresets();
+
 		EnableDevicePanels();
 		UpdatePanelsForSelectedDevice(selectedIndex);
 	}
@@ -218,6 +326,9 @@ void LivingRoomTool::OnDeviceSelectionChanged()
 void LivingRoomTool::OnPresetSelectionChanged()
 {
 	const size_t selectedIndex = GetPresetSelectedIndex();
+
+	UpdatePresetButtonAvailabilityForSelectedPreset(selectedIndex);
+
 	if (selectedIndex != k_invalidIndex)
 	{
 		EnablePresetEditor();
@@ -225,20 +336,19 @@ void LivingRoomTool::OnPresetSelectionChanged()
 	}
 	else
 	{
+		m_presetEditor.InvalidatePreset();
 		DisablePresetEditor();
 	}
 }
 
-void LivingRoomTool::UpdatePanelsForSelectedDevice(size_t selectedDevice)
+void LivingRoomTool::UpdatePanelsForSelectedDevice(size_t a_selectedDevice)
 {
-	UpdatePanelsForSelectedDevice_Presets(selectedDevice);
-	UpdatePanelsForSelectedDevice_Tweaks(selectedDevice);
+	UpdatePanels_Presets();
+	UpdatePanelsForSelectedDevice_Tweaks(a_selectedDevice);
 }
 
-void LivingRoomTool::UpdatePanelsForSelectedDevice_Presets(size_t selectedDevice)
+void LivingRoomTool::UpdatePanels_Presets()
 {
-	m_inputProcessor.GetInputPresetManager().LoadPresets();
-	
 	ui.List_Presets->clear();
 
 	const size_t presetNum = m_inputProcessor.GetInputPresetManager().GetPresetNum();
@@ -250,9 +360,9 @@ void LivingRoomTool::UpdatePanelsForSelectedDevice_Presets(size_t selectedDevice
 	}
 }
 
-void LivingRoomTool::UpdatePanelsForSelectedDevice_Tweaks(size_t selectedDevice)
+void LivingRoomTool::UpdatePanelsForSelectedDevice_Tweaks(size_t a_selectedDevice)
 {
-	const GamepadConfig& config = m_inputProcessor.GetGamepadProcessor().GetGamepadDevice(selectedDevice).GetConfig();
+	const GamepadConfig& config = m_inputProcessor.GetGamepadProcessor().GetGamepadDevice(a_selectedDevice).GetConfig();
 
 	QRadioButton* radioButtons[] =
 	{
@@ -276,14 +386,65 @@ void LivingRoomTool::UpdatePanelsForSelectedDevice_Tweaks(size_t selectedDevice)
 	ui.Tweak_MouseSpeed_Y->SetValue(config.Get_mouseSpeedY());
 }
 
-void LivingRoomTool::UpdateEditorForSelectedPreset(size_t selectedPreset)
+void LivingRoomTool::UpdateEditorForSelectedPreset(size_t a_selectedPreset)
 {
-	m_presetEditor.AssignPreset(selectedPreset);
+	m_presetEditor.AssignPreset(a_selectedPreset);
+}
+
+void LivingRoomTool::UpdatePresetButtonAvailabilityForSelectedPreset(size_t a_selectedPreset)
+{
+	if (a_selectedPreset == k_invalidIndex
+		|| m_inputProcessor.GetInputPresetManager().GetPreset(a_selectedPreset).IsDefault())
+	{
+		ui.Btn_RemovePreset->setEnabled(false);
+		ui.Btn_RenamePreset->setEnabled(false);
+	}
+	else
+	{
+		ui.Btn_RemovePreset->setEnabled(true);
+		ui.Btn_RenamePreset->setEnabled(true);
+	}
 }
 
 void LivingRoomTool::ClearEditor()
 {
 	m_presetEditor.InvalidatePreset();
+}
+
+bool LivingRoomTool::AskForPresetNameWithExistenceCheck(
+	size_t a_selectedPreset,
+	std::string& a_outName,
+	const wchar_t* a_askTitle,
+	const wchar_t* a_askErrorMessage,
+	const char* a_nameSuffix)
+{
+	const std::string& baseName = m_inputProcessor.GetInputPresetManager().GetPreset(a_selectedPreset).GetName();
+
+	while (true)
+	{
+		a_outName = baseName;
+		if (a_nameSuffix != nullptr)
+		{
+			a_outName += a_nameSuffix;
+		}
+
+		if (SimpleTextInputDialog::Open(a_outName, a_askTitle, this) == false)
+		{
+			return false;
+		}
+
+		if (m_inputProcessor.GetInputPresetManager().FindPresetByName(a_outName))
+		{
+			if (SimpleConfirmationDialog::Open(a_askErrorMessage) == false)
+			{
+				return false;
+			}
+		}
+		else
+		{
+			return true;
+		}
+	}
 }
 
 void LivingRoomTool::SetQLayoutElementsFrozen(QLayout * a_layout, bool a_frozen)
@@ -316,13 +477,13 @@ void LivingRoomTool::SetQLayoutElementsFrozen(QLayout * a_layout, bool a_frozen)
 	}
 }
 
-size_t LivingRoomTool::GetQListSelectedIndex(QListWidget* list)
+size_t LivingRoomTool::GetQListSelectedIndex(QListWidget* a_list)
 {
-	const int selectedIndex = list->currentRow();
-	QList<QListWidgetItem*> selectedItems = list->selectedItems();
+	const int selectedIndex = a_list->currentRow();
+	QList<QListWidgetItem*> selectedItems = a_list->selectedItems();
 	if (selectedItems.size() == 1
 		&& selectedIndex >= 0
-		&& selectedIndex < list->count())
+		&& selectedIndex < a_list->count())
 	{
 		return static_cast<size_t>(selectedIndex);
 	}
