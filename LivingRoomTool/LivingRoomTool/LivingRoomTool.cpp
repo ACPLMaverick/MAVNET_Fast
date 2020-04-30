@@ -7,6 +7,7 @@ LivingRoomTool::LivingRoomTool(QWidget* a_parent)
 	: QMainWindow(a_parent)
 {
 	ui.setupUi(this);
+	setWindowFlags(Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
 
 	m_inputProcessor.Init();
 	OnRefreshDevicesClicked();
@@ -75,7 +76,7 @@ void LivingRoomTool::InitConnections()
 		[this]()																		\
 	{																					\
 		const size_t selectedIndex = GetGamepadSelectedIndex();							\
-		if (selectedIndex != k_invalidIndex)											\
+		if (selectedIndex != LRT_QTHelper::k_invalidIndex)								\
 		{																				\
 			m_inputProcessor.GetGamepadProcessor().GetGamepadDevice(selectedIndex)		\
 				.GetConfig()															\
@@ -128,7 +129,7 @@ void LivingRoomTool::InitPresetEditor()
 			ui.BtnAdvancedEdit,
 			ui.BtnAdvancedRemove
 		},
-		&m_inputProcessor.GetInputPresetManager());
+		&m_inputProcessor.GetInputPresetManager(), this);
 }
 
 void LivingRoomTool::CleanupPresetEditor()
@@ -181,7 +182,7 @@ void LivingRoomTool::OnIdentifyDeviceClicked()
 void LivingRoomTool::OnDuplicatePresetClicked()
 {
 	size_t presetIndex = GetPresetSelectedIndex();
-	if (presetIndex == k_invalidIndex)
+	if (presetIndex == LRT_QTHelper::k_invalidIndex)
 	{
 		return;
 	}
@@ -204,7 +205,7 @@ void LivingRoomTool::OnDuplicatePresetClicked()
 void LivingRoomTool::OnRemovePresetClicked()
 {
 	size_t presetIndex = GetPresetSelectedIndex();
-	if (presetIndex == k_invalidIndex)
+	if (presetIndex == LRT_QTHelper::k_invalidIndex)
 	{
 		return;
 	}
@@ -225,7 +226,7 @@ void LivingRoomTool::OnRemovePresetClicked()
 void LivingRoomTool::OnRenamePresetClicked()
 {
 	size_t presetIndex = GetPresetSelectedIndex();
-	if (presetIndex == k_invalidIndex)
+	if (presetIndex == LRT_QTHelper::k_invalidIndex)
 	{
 		return;
 	}
@@ -247,7 +248,7 @@ void LivingRoomTool::OnRenamePresetClicked()
 void LivingRoomTool::OnSavePresetClicked()
 {
 	size_t presetIndex = GetPresetSelectedIndex();
-	if (presetIndex == k_invalidIndex)
+	if (presetIndex == LRT_QTHelper::k_invalidIndex)
 	{
 		return;
 	}
@@ -258,7 +259,7 @@ void LivingRoomTool::OnSavePresetClicked()
 void LivingRoomTool::OnRestorePresetClicked()
 {
 	size_t presetIndex = GetPresetSelectedIndex();
-	if (presetIndex == k_invalidIndex)
+	if (presetIndex == LRT_QTHelper::k_invalidIndex)
 	{
 		return;
 	}
@@ -278,7 +279,7 @@ void LivingRoomTool::OnRestorePresetClicked()
 void LivingRoomTool::OnSaveTweakClicked()
 {
 	const size_t selectedIndex = GetGamepadSelectedIndex();
-	if (selectedIndex != k_invalidIndex)
+	if (selectedIndex != LRT_QTHelper::k_invalidIndex)
 	{
 		m_inputProcessor.GetGamepadProcessor().GetGamepadDevice(selectedIndex)
 			.GetConfig().SaveToFile();
@@ -288,7 +289,7 @@ void LivingRoomTool::OnSaveTweakClicked()
 void LivingRoomTool::OnRestoreTweakClicked()
 {
 	const size_t selectedIndex = GetGamepadSelectedIndex();
-	if (selectedIndex != k_invalidIndex)
+	if (selectedIndex != LRT_QTHelper::k_invalidIndex)
 	{
 		m_inputProcessor.GetGamepadProcessor().GetGamepadDevice(selectedIndex)
 			.GetConfig().LoadFromFile();
@@ -299,7 +300,7 @@ void LivingRoomTool::OnRestoreTweakClicked()
 void LivingRoomTool::OnDefaultsTweakClicked()
 {
 	const size_t selectedIndex = GetGamepadSelectedIndex();
-	if (selectedIndex != k_invalidIndex)
+	if (selectedIndex != LRT_QTHelper::k_invalidIndex)
 	{
 		m_inputProcessor.GetGamepadProcessor().GetGamepadDevice(selectedIndex)
 			.GetConfig().RestoreDefaults();
@@ -310,7 +311,7 @@ void LivingRoomTool::OnDefaultsTweakClicked()
 void LivingRoomTool::OnDeviceSelectionChanged()
 {
 	const size_t selectedIndex = GetGamepadSelectedIndex();
-	if (selectedIndex != k_invalidIndex)
+	if (selectedIndex != LRT_QTHelper::k_invalidIndex)
 	{
 		m_inputProcessor.GetInputPresetManager().LoadPresets();
 
@@ -329,7 +330,7 @@ void LivingRoomTool::OnPresetSelectionChanged()
 
 	UpdatePresetButtonAvailabilityForSelectedPreset(selectedIndex);
 
-	if (selectedIndex != k_invalidIndex)
+	if (selectedIndex != LRT_QTHelper::k_invalidIndex)
 	{
 		EnablePresetEditor();
 		UpdateEditorForSelectedPreset(selectedIndex);
@@ -393,7 +394,7 @@ void LivingRoomTool::UpdateEditorForSelectedPreset(size_t a_selectedPreset)
 
 void LivingRoomTool::UpdatePresetButtonAvailabilityForSelectedPreset(size_t a_selectedPreset)
 {
-	if (a_selectedPreset == k_invalidIndex
+	if (a_selectedPreset == LRT_QTHelper::k_invalidIndex
 		|| m_inputProcessor.GetInputPresetManager().GetPreset(a_selectedPreset).IsDefault())
 	{
 		ui.Btn_RemovePreset->setEnabled(false);
@@ -477,28 +478,12 @@ void LivingRoomTool::SetQLayoutElementsFrozen(QLayout * a_layout, bool a_frozen)
 	}
 }
 
-size_t LivingRoomTool::GetQListSelectedIndex(QListWidget* a_list)
-{
-	const int selectedIndex = a_list->currentRow();
-	QList<QListWidgetItem*> selectedItems = a_list->selectedItems();
-	if (selectedItems.size() == 1
-		&& selectedIndex >= 0
-		&& selectedIndex < a_list->count())
-	{
-		return static_cast<size_t>(selectedIndex);
-	}
-	else
-	{
-		return k_invalidIndex;
-	}
-}
-
 size_t LivingRoomTool::GetGamepadSelectedIndex()
 {
-	return GetQListSelectedIndex(ui.List_Devices);
+	return LRT_QTHelper::GetQListSelectedIndex(ui.List_Devices);
 }
 
 size_t LivingRoomTool::GetPresetSelectedIndex()
 {
-	return GetQListSelectedIndex(ui.List_Presets);
+	return LRT_QTHelper::GetQListSelectedIndex(ui.List_Presets);
 }

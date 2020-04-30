@@ -39,8 +39,12 @@ GamepadButtons operator|(GamepadButtons buttons, GamepadButtons val);
 
 namespace GamepadButtonsConvert
 {
-	extern std::basic_string_view<char> ToString(GamepadButtons buttons);
-	extern std::optional<GamepadButtons> FromString(const std::basic_string_view<char>& str);
+	constexpr const uint32_t k_enumSize = 25;
+
+	extern std::string_view ToString(GamepadButtons buttons);
+	extern std::optional<GamepadButtons> FromString(const std::string_view& str);
+	extern const std::array<std::string_view, k_enumSize>& GetLabels();
+	extern const std::array<GamepadButtons, k_enumSize>& GetValues();
 }
 
 class GamepadState

@@ -25,4 +25,5 @@ void SimpleConfirmationDialog::PrepareCommon(QMessageBox& messageBox)
 	messageBox.setIcon(QMessageBox::Icon::Question);
 	messageBox.setStandardButtons(QMessageBox::StandardButton::Yes | QMessageBox::StandardButton::No);
 	messageBox.button(QMessageBox::StandardButton::Yes)->setFocus();
+	messageBox.setWindowFlags(Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
 }

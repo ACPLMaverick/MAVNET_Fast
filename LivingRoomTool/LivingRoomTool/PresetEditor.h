@@ -2,8 +2,11 @@
 
 #include "Common.h"
 
+#include "AdvancedBindingEditor.h"
+
 class InputPreset;
 class InputPresetManager;
+class LivingRoomTool;
 class InputBinding;
 class QComboBox;
 class QListWidget;
@@ -61,7 +64,7 @@ public:
 	PresetEditor();
 	~PresetEditor();
 
-	void Init(const Elements& elements, InputPresetManager* manager);
+	void Init(const Elements& elements, InputPresetManager* manager, LivingRoomTool* mainWidget);
 	void Cleanup();
 
 	void AssignPreset(size_t assignedPresetIndex);
@@ -78,10 +81,11 @@ private:
 	inline void InitializeConnections();
 	inline void UpdateElements();
 
-	void UpdateCombobox(InputBinding* binding);
+	// Will return false if corresponding combobox has already an assigned value.
+	bool UpdateCombobox(InputBinding* binding);
 	void UpdateAdvancedList(InputBinding* binding);
 
-	inline std::string GetInputBindingAsString(const InputBinding* binding);
+	std::string GetInputBindingAsString(const InputBinding* binding);
 	class QComboBox* GetComboBox(GamepadButtons button);
 	GamepadButtons GetGamepadButtons(class QComboBox* comboBox);
 	InputBinding* GetSimpleInputBinding(class QComboBox* comboBox);
@@ -94,6 +98,16 @@ private:
 	void OnAdvancedEditClicked();
 	void OnAdvancedRemoveClicked();
 
+	void AddInputBindingToPreset(InputBinding* binding);
+	void RemoveInputBindingFromPreset(InputBinding* binding);
+
+	void RemoveSimpleBinding(QComboBox* comboBox, InputBinding* binding);
+
+	void AddAdvancedBinding();
+	void DuplicateAdvancedBinding(size_t bindingIndex);
+	void EditAdvancedBinding(size_t bindingIndex);
+	void RemoveAdvancedBinding(size_t bindingIndex);
+
 	static const size_t k_invalidIndex = static_cast<size_t>(-1);
 
 	Elements m_elements;
@@ -105,6 +119,7 @@ private:
 	std::vector<InputBinding*> m_advancedBindingsLookup;
 
 	InputPresetManager* m_presetManager{ nullptr };
+	LivingRoomTool* m_mainWidget{ nullptr };
 	size_t m_assignedPresetIndex{ k_invalidIndex };
 
 	bool m_bDisableConnections{ false };

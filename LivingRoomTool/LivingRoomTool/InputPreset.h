@@ -12,13 +12,13 @@ class InputPreset : public Serializable
 public:
 
 	InputPreset(const char* name);										// Empty input preset with this name.
-	InputPreset(const InputPreset& copy) = delete;
 	InputPreset(InputPreset&& move);									// Move - clears source array.
 	InputPreset(InputPreset&& move, const char* newName);				// Move with new name.
 	virtual ~InputPreset();
 
-	InputPreset& operator=(const InputPreset& copy) = delete;
 	InputPreset& operator=(InputPreset&& move);
+
+	LRT_DisallowCopy(InputPreset);
 
 	void GenerateActions(const GamepadState& gamepadState, const GamepadConfig& gamepadConfig, std::vector<InputAction>& outActions) const;
 	void Rename(const std::string& newName);

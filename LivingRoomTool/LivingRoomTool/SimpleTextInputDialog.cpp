@@ -44,6 +44,8 @@ SimpleTextInputDialog::~SimpleTextInputDialog()
 void SimpleTextInputDialog::Init(const std::wstring & title)
 {
 	m_ui.setupUi(this);
+	setWindowFlags(Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+
 	connect(m_ui.okButton, &QPushButton::click, this, &SimpleTextInputDialog::accept);
 	connect(m_ui.cancelButton, &QPushButton::click, this, &SimpleTextInputDialog::reject);
 

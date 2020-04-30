@@ -91,6 +91,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AdvancedBindingEditor.cpp" />
+    <ClCompile Include="AdvancedBindingEditorDialog.cpp" />
     <ClCompile Include="BaseProcessor.cpp" />
     <ClCompile Include="Common.cpp" />
     <ClCompile Include="FilePath.cpp" />
@@ -106,6 +108,7 @@
     <ClCompile Include="LivingRoomTool.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PresetEditor.cpp" />
+    <ClCompile Include="QBindingExchangeWidget.cpp" />
     <ClCompile Include="QTweakSlider.cpp" />
     <ClCompile Include="Serializable.cpp" />
     <ClCompile Include="SimpleConfirmationDialog.cpp" />
@@ -115,6 +118,8 @@
     <QtMoc Include="LivingRoomTool.h" />
   </ItemGroup>
   <ItemGroup>
+    <QtUic Include="AdvancedBindingEditorDialog.ui" />
+    <QtUic Include="BindingExchangeWidget.ui" />
     <QtUic Include="LivingRoomTool.ui" />
     <QtUic Include="SimpleTextInputDialog.ui" />
   </ItemGroup>
@@ -125,10 +130,13 @@
     <ResourceCompile Include="LivingRoomTool.rc" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="AdvancedBindingEditorDialog.h" />
+    <QtMoc Include="AdvancedBindingEditor.h" />
     <ClInclude Include="FilePath.h" />
     <ClInclude Include="InputAction.h" />
     <ClInclude Include="InputBinding.h" />
     <ClInclude Include="InputPresetManager.h" />
+    <QtMoc Include="QBindingExchangeWidget.h" />
     <ClInclude Include="SimpleConfirmationDialog.h" />
     <QtMoc Include="SimpleTextInputDialog.h" />
     <QtMoc Include="PresetEditor.h" />

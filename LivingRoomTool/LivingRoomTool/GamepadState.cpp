@@ -1,170 +1,139 @@
 #include "GamepadState.h"
 
-std::basic_string_view<char> GamepadButtonsConvert::ToString(GamepadButtons buttons)
+namespace GamepadButtonsConvert
 {
-	switch (buttons)
-	{
-	case GamepadButtons::kNone:
-		return "kNone";
-	case GamepadButtons::kLT:
-		return "kLT";
-	case GamepadButtons::kLB:
-		return "kLB";
-	case GamepadButtons::kLThumb:
-		return "kLThumb";
-	case GamepadButtons::kLLeft:
-		return "kLLeft";
-	case GamepadButtons::kLUp:
-		return "kLUp";
-	case GamepadButtons::kLRight:
-		return "kLRight";
-	case GamepadButtons::kLDown:
-		return "kLDown";
-	case GamepadButtons::kView:
-		return "kView";
-	case GamepadButtons::kMenu:
-		return "kMenu";
-	case GamepadButtons::kRT:
-		return "kRT";
-	case GamepadButtons::kRB:
-		return "kRB";
-	case GamepadButtons::kRThumb:
-		return "kRThumb";
-	case GamepadButtons::kRLeft:
-		return "kRLeft";
-	case GamepadButtons::kRUp:
-		return "kRUp";
-	case GamepadButtons::kRRight:
-		return "kRRight";
-	case GamepadButtons::kRDown:
-		return "kRDown";
-	case GamepadButtons::kLThumbLeft:
-		return "kLThumbLeft";
-	case GamepadButtons::kLThumbUp:
-		return "kLThumbUp";
-	case GamepadButtons::kLThumbRight:
-		return "kLThumbRight";
-	case GamepadButtons::kLThumbDown:
-		return "kLThumbDown";
-	case GamepadButtons::kRThumbLeft:
-		return "kRThumbLeft";
-	case GamepadButtons::kRThumbUp:
-		return "kRThumbUp";
-	case GamepadButtons::kRThumbRight:
-		return "kRThumbRight";
-	case GamepadButtons::kRThumbDown:
-		return "kRThumbDown";
-	default:
-		LRT_Fail();
-		return "";
-	}
-}
+	static_assert(static_cast<uint32_t>(GamepadButtons::kRThumbDown) == (1 << (k_enumSize - 1 - 1)));
 
-std::optional<GamepadButtons> GamepadButtonsConvert::FromString(const std::basic_string_view<char>& str)
-{
-	if (strcmp(str.data(), "kNone") == 0)
+	static const std::array<std::string_view, k_enumSize> k_labels = 
 	{
-		return GamepadButtons::kNone;
-	}
-	else if (strcmp(str.data(), "kLT") == 0)
+		"kNone"
+		, "kLT"
+		, "kLB"
+		, "kLThumb"
+		, "kLLeft"
+		, "kLUp"
+		, "kLRight"
+		, "kLDown"
+		, "kView"
+		, "kMenu"
+		, "kRT"
+		, "kRB"
+		, "kRThumb"
+		, "kRLeft"
+		, "kRUp"
+		, "kRRight"
+		, "kRDown"
+		, "kLThumbLeft"
+		, "kLThumbUp"
+		, "kLThumbRight"
+		, "kLThumbDown"
+		, "kRThumbLeft"
+		, "kRThumbUp"
+		, "kRThumbRight"
+		, "kRThumbDown"
+	};
+
+	static const std::array<GamepadButtons, k_enumSize> k_values = 
 	{
-		return GamepadButtons::kLT;
-	}
-	else if (strcmp(str.data(), "kLB") == 0)
+		GamepadButtons::kNone,
+		GamepadButtons::kLT,
+		GamepadButtons::kLB,
+		GamepadButtons::kLThumb,
+		GamepadButtons::kLLeft,
+		GamepadButtons::kLUp,
+		GamepadButtons::kLRight,
+		GamepadButtons::kLDown,
+		GamepadButtons::kView,
+		GamepadButtons::kMenu,
+		GamepadButtons::kRT,
+		GamepadButtons::kRB,
+		GamepadButtons::kRThumb,
+		GamepadButtons::kRLeft,
+		GamepadButtons::kRUp,
+		GamepadButtons::kRRight,
+		GamepadButtons::kRDown,
+		GamepadButtons::kLThumbLeft,
+		GamepadButtons::kLThumbUp,
+		GamepadButtons::kLThumbRight,
+		GamepadButtons::kLThumbDown,
+		GamepadButtons::kRThumbLeft,
+		GamepadButtons::kRThumbUp,
+		GamepadButtons::kRThumbRight,
+		GamepadButtons::kRThumbDown,
+	};
+
+	// Note that this will fail on merged bit flags.
+	static constexpr uint32_t GetOrdinalOfEnum(GamepadButtons buttons)
 	{
-		return GamepadButtons::kLB;
-	}
-	else if (strcmp(str.data(), "kLThumb") == 0)
-	{
-		return GamepadButtons::kLThumb;
-	}
-	else if (strcmp(str.data(), "kLLeft") == 0)
-	{
-		return GamepadButtons::kLLeft;
-	}
-	else if (strcmp(str.data(), "kLUp") == 0)
-	{
-		return GamepadButtons::kLUp;
-	}
-	else if (strcmp(str.data(), "kLRight") == 0)
-	{
-		return GamepadButtons::kLRight;
-	}
-	else if (strcmp(str.data(), "kLDown") == 0)
-	{
-		return GamepadButtons::kLDown;
-	}
-	else if (strcmp(str.data(), "kView") == 0)
-	{
-		return GamepadButtons::kView;
-	}
-	else if (strcmp(str.data(), "kMenu") == 0)
-	{
-		return GamepadButtons::kMenu;
-	}
-	else if (strcmp(str.data(), "kRT") == 0)
-	{
-		return GamepadButtons::kRT;
-	}
-	else if (strcmp(str.data(), "kRB") == 0)
-	{
-		return GamepadButtons::kRB;
-	}
-	else if (strcmp(str.data(), "kRThumb") == 0)
-	{
-		return GamepadButtons::kRThumb;
-	}
-	else if (strcmp(str.data(), "kRLeft") == 0)
-	{
-		return GamepadButtons::kRLeft;
-	}
-	else if (strcmp(str.data(), "kRUp") == 0)
-	{
-		return GamepadButtons::kRUp;
-	}
-	else if (strcmp(str.data(), "kRRight") == 0)
-	{
-		return GamepadButtons::kRRight;
-	}
-	else if (strcmp(str.data(), "kRDown") == 0)
-	{
-		return GamepadButtons::kRDown;
-	}
-	else if (strcmp(str.data(), "kLThumbLeft") == 0)
-	{
-		return GamepadButtons::kLThumbLeft;
-	}
-	else if (strcmp(str.data(), "kLThumbUp") == 0)
-	{
-		return GamepadButtons::kLThumbUp;
-	}
-	else if (strcmp(str.data(), "kLThumbRight") == 0)
-	{
-		return GamepadButtons::kLThumbRight;
-	}
-	else if (strcmp(str.data(), "kLThumbDown") == 0)
-	{
-		return GamepadButtons::kLThumbDown;
-	}
-	else if (strcmp(str.data(), "kRThumbLeft") == 0)
-	{
-		return GamepadButtons::kRThumbLeft;
-	}
-	else if (strcmp(str.data(), "kRThumbUp") == 0)
-	{
-		return GamepadButtons::kRThumbUp;
-	}
-	else if (strcmp(str.data(), "kRThumbRight") == 0)
-	{
-		return GamepadButtons::kRThumbRight;
-	}
-	else if (strcmp(str.data(), "kRThumbDown") == 0)
-	{
-		return GamepadButtons::kRThumbDown;
+		uint32_t value = static_cast<uint32_t>(buttons);
+		uint32_t num = 0;
+		while (value != 0)
+		{
+			value = value >> 1;
+			++num;
+		}
+		return num;
 	}
 
-	LRT_Fail();
-	return std::optional<GamepadButtons>();
+	static constexpr const std::string_view& GetNameByEnum(GamepadButtons buttons)
+	{
+		return k_labels[GetOrdinalOfEnum(buttons)];
+	}
+
+	static constexpr GamepadButtons GetEnumByName(const std::string_view& str)
+	{
+		uint32_t num = 0;
+		for (const std::string_view& staticStr : k_labels)
+		{
+			if (staticStr.compare(str) == 0)
+			{
+				break;
+			}
+
+			++num;
+		}
+
+		if (num == 0)
+		{
+			return static_cast<GamepadButtons>(num);
+		}
+		else if (num < k_enumSize)
+		{
+			return static_cast<GamepadButtons>(1 << (num - 1));
+		}
+		else
+		{
+			return static_cast<GamepadButtons>(-1);
+		}
+	}
+
+	std::string_view ToString(GamepadButtons buttons)
+	{
+		return GetNameByEnum(buttons);
+	}
+
+	std::optional<GamepadButtons> FromString(const std::string_view& str)
+	{
+		const GamepadButtons buttons = GetEnumByName(str);
+		if (buttons == static_cast<GamepadButtons>(-1))
+		{
+			return std::optional<GamepadButtons>();
+		}
+		else
+		{
+			return std::optional(buttons);
+		}
+	}
+
+	const std::array<std::string_view, k_enumSize>& GetLabels()
+	{
+		return k_labels;
+	}
+
+	const std::array<GamepadButtons, k_enumSize>& GetValues()
+	{
+		return k_values;
+	}
 }
 
 GamepadState::GamepadState()

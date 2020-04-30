@@ -1,6 +1,7 @@
 #include "Common.h"
 
 #include <Windows.h>
+#include <QtWidgets/QListWidget.h>
 
 #ifndef NDEBUG
 //Returns the last Win32 error, in string format. Returns an empty string if there is no error.
@@ -33,3 +34,18 @@ std::string LRT_GetLastErrorAsString()
 }
 #endif
 
+size_t LRT_QTHelper::GetQListSelectedIndex(QListWidget * a_list)
+{
+	const int selectedIndex = a_list->currentRow();
+	QList<QListWidgetItem*> selectedItems = a_list->selectedItems();
+	if (selectedItems.size() == 1
+		&& selectedIndex >= 0
+		&& selectedIndex < a_list->count())
+	{
+		return static_cast<size_t>(selectedIndex);
+	}
+	else
+	{
+		return k_invalidIndex;
+	}
+}

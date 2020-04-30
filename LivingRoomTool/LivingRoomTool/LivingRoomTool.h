@@ -63,6 +63,4 @@ private:
 	Ui::LivingRoomToolClass ui;
 	InputProcessor m_inputProcessor;
 	PresetEditor m_presetEditor;
-
-	static const size_t k_invalidIndex = static_cast<size_t>(-1);
 };

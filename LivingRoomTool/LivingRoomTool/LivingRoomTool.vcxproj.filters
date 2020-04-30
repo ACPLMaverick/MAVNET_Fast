@@ -100,6 +100,15 @@
     <ClCompile Include="SimpleConfirmationDialog.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
+    <ClCompile Include="QBindingExchangeWidget.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="AdvancedBindingEditorDialog.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="AdvancedBindingEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="LivingRoomTool.h">
@@ -117,12 +126,27 @@
     <QtMoc Include="SimpleTextInputDialog.h">
       <Filter>Header Files\UI</Filter>
     </QtMoc>
+    <QtMoc Include="QBindingExchangeWidget.h">
+      <Filter>Header Files\UI</Filter>
+    </QtMoc>
+    <QtMoc Include="AdvancedBindingEditorDialog.h">
+      <Filter>Header Files\UI</Filter>
+    </QtMoc>
+    <QtMoc Include="AdvancedBindingEditor.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="LivingRoomTool.ui">
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="SimpleTextInputDialog.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="AdvancedBindingEditorDialog.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="BindingExchangeWidget.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>

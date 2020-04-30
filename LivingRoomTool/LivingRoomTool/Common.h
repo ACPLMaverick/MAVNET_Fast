@@ -51,3 +51,18 @@ _type_(const _type_&) = delete;				\
 _type_& operator=(const _type_&) = delete;
 
 #define LRT_QAddName(_qObject_) _qObject_->setObjectName(QString::fromUtf8(#_qObject_))
+
+#define LRT_SafeDelete(_ptr_)	\
+if (_ptr_ != nullptr)			\
+{								\
+	delete _ptr_;				\
+	_ptr_ = nullptr;			\
+}
+
+class QListWidget;
+namespace LRT_QTHelper
+{
+	size_t GetQListSelectedIndex(QListWidget* list);
+
+	static const size_t k_invalidIndex = static_cast<size_t>(-1);
+}
