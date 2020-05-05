@@ -2,8 +2,15 @@
 
 namespace InputActionKeyHelper
 {
-	const InputActionKey g_MouseFirst = InputActionKey::kMouseUp;
-	const InputActionKey g_MouseLast = InputActionKey::kMouseScrollDown;
+	bool IsMouse(InputActionKey key)
+	{
+		return key >= InputActionKey::kMouseUp && key <= InputActionKey::kMouseScrollDown;
+	}
+
+	bool IsMouseMove(InputActionKey key)
+	{
+		return key >= InputActionKey::kMouseUp && key <= InputActionKey::kMouseRight;
+	}
 }
 
 InputAction::InputAction(InputActionKey a_key, bool a_bPressed)

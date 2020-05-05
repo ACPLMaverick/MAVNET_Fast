@@ -219,7 +219,7 @@ void Property<std::vector<_type_*>>::Deserialize(rapidjson::Value& a_value)				\
 
 LRT_SpecializePropertyFuncs(float, Float)
 LRT_SpecializePropertyFuncsEnum(GamepadConfig::InstrumentationMode)
-LRT_SpecializePropertyFuncsEnumConvert(GamepadButtons, GamepadButtonsConvert::ToString, GamepadButtonsConvert::FromString)
+LRT_SpecializePropertyFuncsEnumConvert(GamepadButtons, GamepadButtonsHelper::ToString, GamepadButtonsHelper::FromString)
 LRT_SpecializePropertyFuncsEnum(InputActionKey)
 LRT_SpecializePropertyFuncsSerializable(InputBinding)
 

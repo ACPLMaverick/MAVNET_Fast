@@ -117,8 +117,8 @@ enum class InputActionKey : uint8_t
 
 namespace InputActionKeyHelper
 {
-	extern const InputActionKey g_MouseFirst;
-	extern const InputActionKey g_MouseLast;
+	extern bool IsMouse(InputActionKey key);
+	extern bool IsMouseMove(InputActionKey key);
 }
 
 namespace magic_enum

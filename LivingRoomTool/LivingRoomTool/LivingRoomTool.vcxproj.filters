@@ -109,6 +109,9 @@
     <ClCompile Include="AdvancedBindingEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="InputActionGenerator.cpp">
+      <Filter>Source Files\Input</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="LivingRoomTool.h">
@@ -197,6 +200,9 @@
     </ClInclude>
     <ClInclude Include="SimpleConfirmationDialog.h">
       <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="InputActionGenerator.h">
+      <Filter>Header Files\Input</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

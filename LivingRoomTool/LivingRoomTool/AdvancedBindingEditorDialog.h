@@ -104,7 +104,7 @@ private:
 	Ui_AdvancedBindingEditorDialog m_ui;
 
 	// Starting from 1, to skip kNone present in both enums.
-	ExchangeWrapper<GamepadButtons, 1, GamepadButtonsConvert::k_enumSize> m_sourceExchange;
+	ExchangeWrapper<GamepadButtons, 1, GamepadButtonsHelper::k_enumSize> m_sourceExchange;
 	ExchangeWrapper<InputActionKey, 1, magic_enum::enum_count<InputActionKey>()> m_destinationExchange;
 };
 

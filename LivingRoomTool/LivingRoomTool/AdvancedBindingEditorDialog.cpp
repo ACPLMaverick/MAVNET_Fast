@@ -11,7 +11,7 @@ AdvancedBindingEditorDialog::AdvancedBindingEditorDialog(QWidget* a_parent, cons
 	connect(m_ui.Exch_InputActionKeys, &QBindingExchangeWidget::selectionChanged, this, &AdvancedBindingEditorDialog::OnSelectedListContentChanged);
 
 	// Create exchange widgets.
-	m_sourceExchange.Init(m_ui.Exch_GamepadButtons, L"Sources", GamepadButtonsConvert::GetLabels(), GamepadButtonsConvert::GetValues(), a_selectedSources);
+	m_sourceExchange.Init(m_ui.Exch_GamepadButtons, L"Sources", GamepadButtonsHelper::GetLabels(), GamepadButtonsHelper::GetValues(), a_selectedSources);
 	m_destinationExchange.Init(m_ui.Exch_InputActionKeys, L"Destinations", magic_enum::enum_names<InputActionKey>(), magic_enum::enum_values<InputActionKey>(), a_selectedDestinations);
 
 	// Process button availability on init.

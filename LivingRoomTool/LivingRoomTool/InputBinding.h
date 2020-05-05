@@ -4,6 +4,7 @@
 #include "Serializable.h"
 #include "GamepadState.h"
 #include "InputAction.h"
+#include "InputActionGenerator.h"
 
 class GamepadConfig;
 
@@ -20,14 +21,27 @@ public:
 	InputBinding();	// Empty ctor.
 	InputBinding(GamepadButtons source, InputActionKey destination); // Simple 1-1 ctor.
 	InputBinding(const Sources& sources, const Destinations& destinations); // General purpose ctor.
+	InputBinding(const InputBinding& other);
+	InputBinding(InputBinding&& other);
 	virtual ~InputBinding();
 
-	void GenerateActions(const GamepadState& gamepadState, const GamepadConfig& gamepadConfig, std::vector<InputAction>& outActions) const;
+	InputBinding& operator=(const InputBinding& other);
+	InputBinding& operator=(InputBinding&& other);
+
+	void SetSource(GamepadButtons source);
+	void SetDestination(InputActionKey destination);
+	void SetSources(const Sources& sources);
+	void SetDestinations(const Destinations& destinations);
+	void SetData(const Sources& sources, const Destinations& destinations);
+
+	void GenerateActions(const GamepadState& gamepadState, const GamepadConfig& gamepadConfig, std::vector<InputAction>& outActions);
 
 private:
 
-	LRT_PROPERTY(InputBinding, Sources, sources, {});
-	LRT_PROPERTY(InputBinding, Destinations, destinations, {});
+	LRT_PROPERTY_READONLY(InputBinding, Sources, sources, {});
+	LRT_PROPERTY_READONLY(InputBinding, Destinations, destinations, {});
+
+	InputActionGenerator m_generator;
 
 	static const char* k_propertyName;
 	static const int32_t k_mouseMovementMultiplier;

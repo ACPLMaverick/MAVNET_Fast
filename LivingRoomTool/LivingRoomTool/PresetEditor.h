@@ -70,8 +70,6 @@ public:
 	void AssignPreset(size_t assignedPresetIndex);
 	void InvalidatePreset();
 
-	// TODO Custom Bindings.
-
 private:
 
 	inline InputPreset& GetPreset();

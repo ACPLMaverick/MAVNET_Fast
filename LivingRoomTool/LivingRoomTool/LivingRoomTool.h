@@ -44,9 +44,9 @@ private:
 	void UpdatePanelsForSelectedDevice(size_t selectedDevice);
 	void UpdatePanels_Presets();
 	void UpdatePanelsForSelectedDevice_Tweaks(size_t selectedDevice);
-	void UpdateEditorForSelectedPreset(size_t selectedPreset);
+	void UpdateSelectedPreset(size_t selectedPreset);
 	void UpdatePresetButtonAvailabilityForSelectedPreset(size_t selectedPreset);
-	void ClearEditor();
+	void ClearSelectedPreset();
 
 	bool AskForPresetNameWithExistenceCheck(
 		size_t selectedPreset,

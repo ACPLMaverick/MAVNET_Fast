@@ -88,11 +88,18 @@ protected:
 
 	PropertyDatabase m_propertyDatabase;
 
-#define LRT_PROPERTY(_outerType_, _type_, _name_, _defVal_)				\
+#define LRT_PROPERTY_PROTECTED(_outerType_, _type_, _name_, _defVal_)	\
 protected:																\
-	Property<_type_> m_##_name_{_defVal_, #_name_, m_propertyDatabase, offsetof(_outerType_, m_##_name_)};						\
+	Property<_type_> m_##_name_{_defVal_, #_name_, m_propertyDatabase, offsetof(_outerType_, m_##_name_)};
+
+#define LRT_PROPERTY_READONLY(_outerType_, _type_, _name_, _defVal_)	\
+LRT_PROPERTY_PROTECTED(_outerType_, _type_, _name_, _defVal_)			\
 public:																	\
-	const _type_& Get_##_name_() const { return m_##_name_; }			\
+	const _type_& Get_##_name_() const { return m_##_name_; }
+
+#define LRT_PROPERTY(_outerType_, _type_, _name_, _defVal_)	\
+LRT_PROPERTY_READONLY(_outerType_, _type_, _name_, _defVal_)			\
+public:																	\
 	_type_& Get_##_name_() { return m_##_name_; }						\
 	void Set_##_name_(const _type_& value) { m_##_name_ = value; }
 

@@ -101,6 +101,7 @@
     <ClCompile Include="GamepadProcessor.cpp" />
     <ClCompile Include="GamepadState.cpp" />
     <ClCompile Include="InputAction.cpp" />
+    <ClCompile Include="InputActionGenerator.cpp" />
     <ClCompile Include="InputBinding.cpp" />
     <ClCompile Include="InputPreset.cpp" />
     <ClCompile Include="InputPresetManager.cpp" />
@@ -134,6 +135,7 @@
     <QtMoc Include="AdvancedBindingEditor.h" />
     <ClInclude Include="FilePath.h" />
     <ClInclude Include="InputAction.h" />
+    <ClInclude Include="InputActionGenerator.h" />
     <ClInclude Include="InputBinding.h" />
     <ClInclude Include="InputPresetManager.h" />
     <QtMoc Include="QBindingExchangeWidget.h" />

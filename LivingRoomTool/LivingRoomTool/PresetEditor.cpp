@@ -221,7 +221,7 @@ std::string PresetEditor::GetInputBindingAsString(const InputBinding * a_binding
 
 	for (GamepadButtons button : sources)
 	{
-		const std::string_view& strButton = GamepadButtonsConvert::ToString(button);
+		const std::string_view& strButton = GamepadButtonsHelper::ToString(button);
 		LRT_Assert(strButton.size() > 0);
 		
 		text += strButton;
@@ -318,16 +318,14 @@ void PresetEditor::OnComboBoxIndexChanged(QComboBox* a_comboBox, int a_newIdx)
 		if (binding == nullptr)
 		{
 			// Create a new simple InputBinding.
-			InputBinding* binding = new InputBinding();
-			binding->Get_sources().push_back(GetGamepadButtons(a_comboBox));
-			binding->Get_destinations().push_back(static_cast<InputActionKey>(a_newIdx));
+			InputBinding* binding = new InputBinding(GetGamepadButtons(a_comboBox), static_cast<InputActionKey>(a_newIdx));
 
 			GetPreset().Get_bindings().push_back(binding);
 			m_simpleBindingsLookup.emplace(a_comboBox, binding);
 		}
 		else
 		{
-			binding->Get_destinations()[0] = static_cast<InputActionKey>(a_newIdx);
+			binding->SetDestination(static_cast<InputActionKey>(a_newIdx));
 		}
 	}
 }

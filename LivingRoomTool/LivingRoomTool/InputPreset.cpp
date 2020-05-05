@@ -40,7 +40,7 @@ InputPreset & InputPreset::operator=(InputPreset && a_move)
 void InputPreset::GenerateActions(const GamepadState & gamepadState, const GamepadConfig & gamepadConfig, std::vector<InputAction>& outActions) const
 {
 	const std::vector<InputBinding*>& bindings = m_bindings.Get();
-	for (const InputBinding* binding : bindings)
+	for (InputBinding* binding : bindings)
 	{
 		binding->GenerateActions(gamepadState, gamepadConfig, outActions);
 	}
@@ -103,7 +103,7 @@ InputPreset InputPreset::DeepCopy(const InputPreset & a_copy, const char* a_newN
 
 	for (InputBinding* binding : a_copy.Get_bindings())
 	{
-		InputBinding* newBinding = new InputBinding(binding->Get_sources(), binding->Get_destinations());
+		InputBinding* newBinding = new InputBinding(*binding);
 		preset.Get_bindings().push_back(newBinding);
 	}
 	return std::move(preset);

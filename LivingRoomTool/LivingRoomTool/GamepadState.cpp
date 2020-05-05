@@ -1,6 +1,6 @@
 #include "GamepadState.h"
 
-namespace GamepadButtonsConvert
+namespace GamepadButtonsHelper
 {
 	static_assert(static_cast<uint32_t>(GamepadButtons::kRThumbDown) == (1 << (k_enumSize - 1 - 1)));
 
@@ -133,6 +133,11 @@ namespace GamepadButtonsConvert
 	const std::array<GamepadButtons, k_enumSize>& GetValues()
 	{
 		return k_values;
+	}
+
+	bool IsAnalog(GamepadButtons a_buttons)
+	{
+		return a_buttons >= GamepadButtons::kLThumbLeft;
 	}
 }
 

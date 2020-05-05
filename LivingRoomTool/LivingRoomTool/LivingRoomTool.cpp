@@ -273,7 +273,7 @@ void LivingRoomTool::OnRestorePresetClicked()
 	}
 
 	m_inputProcessor.GetInputPresetManager().RestorePreset(presetIndex);
-	UpdateEditorForSelectedPreset(presetIndex);
+	UpdateSelectedPreset(presetIndex);
 }
 
 void LivingRoomTool::OnSaveTweakClicked()
@@ -333,7 +333,7 @@ void LivingRoomTool::OnPresetSelectionChanged()
 	if (selectedIndex != LRT_QTHelper::k_invalidIndex)
 	{
 		EnablePresetEditor();
-		UpdateEditorForSelectedPreset(selectedIndex);
+		UpdateSelectedPreset(selectedIndex);
 	}
 	else
 	{
@@ -387,9 +387,10 @@ void LivingRoomTool::UpdatePanelsForSelectedDevice_Tweaks(size_t a_selectedDevic
 	ui.Tweak_MouseSpeed_Y->SetValue(config.Get_mouseSpeedY());
 }
 
-void LivingRoomTool::UpdateEditorForSelectedPreset(size_t a_selectedPreset)
+void LivingRoomTool::UpdateSelectedPreset(size_t a_selectedPreset)
 {
 	m_presetEditor.AssignPreset(a_selectedPreset);
+	m_inputProcessor.AssignPreset(a_selectedPreset);
 }
 
 void LivingRoomTool::UpdatePresetButtonAvailabilityForSelectedPreset(size_t a_selectedPreset)
@@ -407,9 +408,10 @@ void LivingRoomTool::UpdatePresetButtonAvailabilityForSelectedPreset(size_t a_se
 	}
 }
 
-void LivingRoomTool::ClearEditor()
+void LivingRoomTool::ClearSelectedPreset()
 {
 	m_presetEditor.InvalidatePreset();
+	m_inputProcessor.InvalidatePreset();
 }
 
 bool LivingRoomTool::AskForPresetNameWithExistenceCheck(

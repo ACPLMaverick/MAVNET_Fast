@@ -6,11 +6,22 @@ InputProcessor::InputProcessor()
 	: BaseProcessor()
 	, m_gamepadProcessor()
 	, m_qTimer(nullptr)
+	, m_assignedPreset(k_invalidPresetIndex)
 {
 }
 
 InputProcessor::~InputProcessor()
 {
+}
+
+void InputProcessor::AssignPreset(size_t presetIndex)
+{
+	m_assignedPreset = presetIndex;
+}
+
+void InputProcessor::InvalidatePreset()
+{
+	m_assignedPreset = k_invalidPresetIndex;
 }
 
 void InputProcessor::Init_Internal()
@@ -31,8 +42,41 @@ void InputProcessor::Cleanup_Internal()
 
 void InputProcessor::Tick()
 {
+	if (m_assignedPreset == k_invalidPresetIndex)
+	{
+		return;
+	}
+
 	// Poll all states on every tick.
 	m_gamepadProcessor.PollInputStates();
+
+	std::vector<InputAction> actionsToTake;
+
+	const size_t devicesNum = m_gamepadProcessor.GetDevicesNum();
+	for (size_t i = 0; i < devicesNum; ++i)
+	{
+		ResolveGamepad(m_gamepadProcessor.GetGamepadDevice(i), m_inputPresetManager.GetPreset(m_assignedPreset), actionsToTake);
+	}
+
+	for (const InputAction& action : actionsToTake)
+	{
+		ProcessAction(action);
+	}
+}
+
+inline void InputProcessor::ResolveGamepad(const GamepadDevice& a_device, const InputPreset& a_preset, std::vector<InputAction>& outActions)
+{
+	const GamepadState& deviceState = a_device.GetState();
+
+	for (InputBinding* binding : a_preset.Get_bindings())
+	{
+		binding->GenerateActions(a_device.GetState(), a_device.GetConfig(), outActions);
+	}
+}
+
+inline void InputProcessor::ProcessAction(const InputAction & action)
+{
+	LRT_Todo();
 }
 
 /*
