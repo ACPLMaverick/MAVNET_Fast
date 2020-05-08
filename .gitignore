@@ -58,12 +58,8 @@ VulkanTutorialApp/VulkanTutorialApp/x64/
 VulkanTutorialApp/x64/
 VulkanTutorialApp/VulkanTutorialApp/build/
 
-JadeEngine/JadeEngine/x64/
-JadeEngine/x64/
-JadeEngine/Debug/
-JadeEngine/Release/
-JadeEngine/JadeEngine/Debug/
-JadeEngine/JadeEngine/Release/
+JadeEngine/bin
+JadeEngine/build
 
 SimpleRenderer/SimpleRenderer/x64/
 SimpleRenderer/x64/
