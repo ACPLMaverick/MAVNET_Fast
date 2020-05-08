@@ -1,0 +1,32 @@
+{
+	"folders":
+	[
+		{
+			"path": "resources"
+		},
+		{
+			"path": "src"
+		}
+	],
+	"build_systems":
+	[
+		{
+			"name": "JadeEngine",
+			"variants":
+			[
+				{
+					"name": "Build Debug",
+					"shell_cmd": "cmake . -DJE_PLATFORM=$platform -DJE_CONFIGURATION=Debug -B build/$platform/Debug && ninja -C build/$platform/Debug"
+				},
+				{
+					"name": "Build Profile",
+					"shell_cmd": "cmake . -DJE_PLATFORM=$platform -DJE_CONFIGURATION=Profile -B build/$platform/Profile && ninja -C build/$platform/Profile"
+				},
+				{
+					"name": "Build Release",
+					"shell_cmd": "cmake . -DJE_PLATFORM=$platform -DJE_CONFIGURATION=Release -B build/$platform/Release && ninja -C build/$platform/Release"
+				}
+			]
+		}
+	]
+}
