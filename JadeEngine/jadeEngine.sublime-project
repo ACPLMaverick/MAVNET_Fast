@@ -1,13 +1,4 @@
 {
-	"folders":
-	[
-		{
-			"path": "resources"
-		},
-		{
-			"path": "src"
-		}
-	],
 	"build_systems":
 	[
 		{
@@ -16,17 +7,41 @@
 			[
 				{
 					"name": "Build Debug",
-					"shell_cmd": "cmake . -DJE_PLATFORM=$platform -DJE_CONFIGURATION=Debug -B build/$platform/Debug && ninja -C build/$platform/Debug"
+					"cmd": ["python", "scripts/build.py", "build", "$platform", "Debug"]
 				},
 				{
 					"name": "Build Profile",
-					"shell_cmd": "cmake . -DJE_PLATFORM=$platform -DJE_CONFIGURATION=Profile -B build/$platform/Profile && ninja -C build/$platform/Profile"
+					"cmd": ["python", "scripts/build.py", "build", "$platform", "Profile"]
 				},
 				{
 					"name": "Build Release",
-					"shell_cmd": "cmake . -DJE_PLATFORM=$platform -DJE_CONFIGURATION=Release -B build/$platform/Release && ninja -C build/$platform/Release"
+					"cmd": ["python", "scripts/build.py", "build", "$platform", "Release"]
+				},
+				{
+					"name": "Clean All",
+					"cmd": ["python", "scripts/build.py", "clean"]
 				}
-			]
+			],
+			"working_dir": "$project_path"
+		},
+		{
+			"file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
+			"name": "Anaconda Python Builder",
+			"selector": "source.python",
+			"shell_cmd": "\"python\" -u \"$file\""
+		}
+	],
+	"folders":
+	[
+		{
+			"path": "resources"
+		},
+		{
+			"path": "scripts",
+			"file_include_patterns": ["*.py"]
+		},
+		{
+			"path": "src"
 		}
 	]
 }
