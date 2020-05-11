@@ -110,6 +110,11 @@ void InputBinding::GenerateActions(const GamepadState& a_gamepadState, const Gam
 	m_generator.GenerateActions(*this, a_gamepadState, a_gamepadConfig, a_outActions);
 }
 
+void InputBinding::OnDeserialized()
+{
+	m_generator.ResolveMode(*this);
+}
+
 const FilePath InputBinding::GetFilePath_Internal()
 {
 	return FilePath(L"", L"inputBinding");

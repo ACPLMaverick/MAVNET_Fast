@@ -31,12 +31,14 @@ protected:
 
 	void Tick();
 	inline void ResolveGamepad(const GamepadDevice& device, const InputPreset& preset, std::vector<InputAction>& outActions);
-	inline void ProcessAction(const InputAction& action);
+	inline void ProcessActions();
 
 	static const int32_t k_tickIntervalMs;
 
 	GamepadProcessor m_gamepadProcessor;
 	InputPresetManager m_inputPresetManager;
+
+	std::vector<InputAction> m_actionsToTakePerTick;
 
 	QTimer m_qTimer;
 	QMetaObject::Connection m_qTimerConnection;

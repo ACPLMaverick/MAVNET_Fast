@@ -218,6 +218,7 @@ void Property<std::vector<_type_*>>::Deserialize(rapidjson::Value& a_value)				\
 }
 
 LRT_SpecializePropertyFuncs(float, Float)
+LRT_SpecializePropertyFuncs(int32_t, Int)
 LRT_SpecializePropertyFuncsEnum(GamepadConfig::InstrumentationMode)
 LRT_SpecializePropertyFuncsEnumConvert(GamepadButtons, GamepadButtonsHelper::ToString, GamepadButtonsHelper::FromString)
 LRT_SpecializePropertyFuncsEnum(InputActionKey)
@@ -239,6 +240,8 @@ Serializable::~Serializable()
 
 void Serializable::Serialize(rapidjson::Document & a_doc, rapidjson::Value & a_root)
 {
+	OnSerialized();
+
 	for (PropertyOffset propOffset : m_propertyDatabase)
 	{
 		PropertyBase* prop = GetPropertyFromOffset(propOffset);
@@ -253,6 +256,8 @@ void Serializable::Deserialize(rapidjson::Value& a_value)
 		PropertyBase* prop = GetPropertyFromOffset(propOffset);
 		prop->Deserialize(a_value);
 	}
+
+	OnDeserialized();
 }
 
 bool Serializable::LoadFromFile()

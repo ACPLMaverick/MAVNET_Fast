@@ -83,6 +83,9 @@ public:
 
 protected:
 
+	virtual void OnSerialized() {};
+	virtual void OnDeserialized() {};
+
 	const FilePath GetFilePath();
 	virtual const FilePath GetFilePath_Internal() = 0;
 

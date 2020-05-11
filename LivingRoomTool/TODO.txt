@@ -1,0 +1,6 @@
+LRT TODO:
+- identify device
+- simple and advanced binding through simple key pressing
+- merge GamepadButtons into one bitfield instead of storing it as an array
+- add numpad buttons to InputActionKey
+- make ProcessActions be able to properly move mouse diagonally

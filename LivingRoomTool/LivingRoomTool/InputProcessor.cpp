@@ -37,6 +37,8 @@ void InputProcessor::Cleanup_Internal()
 	m_qTimer.stop();
 	disconnect(m_qTimerConnection);
 
+	m_actionsToTakePerTick.clear();
+
 	m_gamepadProcessor.Cleanup();
 }
 
@@ -50,17 +52,16 @@ void InputProcessor::Tick()
 	// Poll all states on every tick.
 	m_gamepadProcessor.PollInputStates();
 
-	std::vector<InputAction> actionsToTake;
-
 	const size_t devicesNum = m_gamepadProcessor.GetDevicesNum();
 	for (size_t i = 0; i < devicesNum; ++i)
 	{
-		ResolveGamepad(m_gamepadProcessor.GetGamepadDevice(i), m_inputPresetManager.GetPreset(m_assignedPreset), actionsToTake);
+		ResolveGamepad(m_gamepadProcessor.GetGamepadDevice(i), m_inputPresetManager.GetPreset(m_assignedPreset), m_actionsToTakePerTick);
 	}
 
-	for (const InputAction& action : actionsToTake)
+	if (m_actionsToTakePerTick.size() > 0)
 	{
-		ProcessAction(action);
+		ProcessActions();
+		m_actionsToTakePerTick.clear();
 	}
 }
 
@@ -74,9 +75,172 @@ inline void InputProcessor::ResolveGamepad(const GamepadDevice& a_device, const 
 	}
 }
 
-inline void InputProcessor::ProcessAction(const InputAction & action)
+inline void InputProcessor::ProcessActions()
 {
-	LRT_Todo();
+	static const uint8_t k_actionKeyToDIK[] = 
+	{
+		0x00,			// kNone,
+						// 
+		DIK_ESCAPE,		// kEsc,
+		DIK_F1,			// kF1,
+		DIK_F2,			// kF2,
+		DIK_F3,			// kF3,
+		DIK_F4,			// kF4,
+		DIK_F5,			// kF5,
+		DIK_F6,			// kF6,
+		DIK_F7,			// kF7,
+		DIK_F8,			// kF8,
+		DIK_F9,			// kF9,
+		DIK_F10,		// kF10,
+		DIK_F11,		// kF11,
+		DIK_F12,		// kF12,
+						// 
+		DIK_GRAVE,		// kGrave,
+		DIK_1,			// k1,
+		DIK_2,			// k2,
+		DIK_3,			// k3,
+		DIK_4,			// k4,
+		DIK_5,			// k5,
+		DIK_6,			// k6,
+		DIK_7,			// k7,
+		DIK_8,			// k8,
+		DIK_9,			// k9,
+		DIK_0,			// k0,
+		DIK_MINUS,		// kMinus,
+		DIK_EQUALS,		// kPlus,
+		DIK_LBRACKET,	// kLeftBracket,
+		DIK_RBRACKET,	// kRightBracket,
+		DIK_SEMICOLON,	// kSemicolon,
+		DIK_APOSTROPHE,	// kApostrophe,
+		DIK_BACKSLASH,	// kBackslash,
+		DIK_COMMA,		// kComma,
+		DIK_PERIOD,		// kPeriod,
+		DIK_SLASH,		// kSlash,
+						// 
+		DIK_TAB,		// kTab,
+		DIK_CAPSLOCK,	// kCapsLock,
+		DIK_LSHIFT,		// kLeftShift,
+		DIK_LCONTROL,	// kLeftCtrl,
+		DIK_LWIN,		// kSystemKey,
+		DIK_LALT,		// kLeftAlt,
+		DIK_SPACE,		// kSpace,
+		DIK_RALT,		// kRightAlt,
+		DIK_RMENU,		// kMenu,
+		DIK_RCONTROL,	// kRightCtrl,
+		DIK_RSHIFT,		// kRightShift,
+		DIK_RETURN,		// kEnter,
+		DIK_BACKSPACE,	// kBackspace,
+						// 
+		DIK_Q,			// kQ,
+		DIK_W,			// kW,
+		DIK_E,			// kE,
+		DIK_R,			// kR,
+		DIK_T,			// kT,
+		DIK_Y,			// kY,
+		DIK_U,			// kU,
+		DIK_I,			// kI,
+		DIK_O,			// kO,
+		DIK_P,			// kP,
+		DIK_A,			// kA,
+		DIK_S,			// kS,
+		DIK_D,			// kD,
+		DIK_F,			// kF,
+		DIK_G,			// kG,
+		DIK_H,			// kH,
+		DIK_J,			// kJ,
+		DIK_K,			// kK,
+		DIK_L,			// kL,
+		DIK_Z,			// kZ,
+		DIK_X,			// kX,
+		DIK_C,			// kC,
+		DIK_V,			// kV,
+		DIK_B,			// kB,
+		DIK_N,			// kN,
+		DIK_M,			// kM,
+						// 
+		DIK_SYSRQ,		// kPrintScreen,
+		DIK_SCROLL,		// kScrollLock,
+		DIK_PAUSE,		// kPauseBreak,
+		DIK_INSERT,		// kInsert,
+		DIK_HOME,		// kHome,
+		DIK_PGUP,		// kPageUp,
+		DIK_DELETE,		// kDelete,
+		DIK_END,		// kEnd,
+		DIK_PGDN,		// kPageDown,
+						// 
+		DIK_UPARROW,	// kArrowUp,
+		DIK_RIGHTARROW,	// kArrowRight,
+		DIK_DOWNARROW,	// kArrowDown,
+		DIK_LEFTARROW	// kArrowLeft,
+	};
+
+	static std::vector<INPUT> s_inputs;
+
+	const size_t numInputs = m_actionsToTakePerTick.size();
+	s_inputs.resize(numInputs);
+	ZeroMemory(s_inputs.data(), sizeof(INPUT) * numInputs);
+
+	for (size_t i = 0; i < numInputs; ++i)
+	{
+		const InputAction& action = m_actionsToTakePerTick[i];
+		INPUT& input = s_inputs[i];
+
+		if (InputActionKeyHelper::IsMouse(action.GetKey()))
+		{
+			input.type = INPUT_MOUSE;
+			input.mi.dwFlags = MOUSEEVENTF_MOVE;
+
+			switch (action.GetKey())
+			{
+			case InputActionKey::kMouseUp:
+				input.mi.dy = -action.GetInt();
+				break;
+			case InputActionKey::kMouseDown:
+				input.mi.dy = action.GetInt();
+				break;
+			case InputActionKey::kMouseLeft:
+				input.mi.dx = -action.GetInt();
+				break;
+			case InputActionKey::kMouseRight:
+				input.mi.dx = action.GetInt();
+				break;
+			case InputActionKey::kMouseScrollUp:
+				input.mi.dwFlags = MOUSEEVENTF_WHEEL;
+				input.mi.mouseData = WHEEL_DELTA * action.GetInt();
+				break;
+			case InputActionKey::kMouseScrollDown:
+				input.mi.dwFlags = MOUSEEVENTF_WHEEL;
+				input.mi.mouseData = WHEEL_DELTA * (-action.GetInt());
+				break;
+			case InputActionKey::kMouseLMB:
+				input.mi.dwFlags = action.GetIsPressed() ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_LEFTUP;
+				break;
+			case InputActionKey::kMouseMMB:
+				input.mi.dwFlags = action.GetIsPressed() ? MOUSEEVENTF_MIDDLEDOWN : MOUSEEVENTF_MIDDLEUP;
+				break;
+			case InputActionKey::kMouseRMB:
+				input.mi.dwFlags = action.GetIsPressed() ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_RIGHTUP;
+				break;
+			default:
+				LRT_Fail();
+				break;
+			}
+		}
+		else
+		{
+			input.type = INPUT_KEYBOARD;
+			input.ki.wScan = k_actionKeyToDIK[static_cast<uint8_t>(action.GetKey())];
+			input.ki.dwFlags = KEYEVENTF_SCANCODE;
+
+			if (action.GetIsPressed() == false)
+			{
+				input.ki.dwFlags |= KEYEVENTF_KEYUP;
+			}
+		}
+	}
+
+	UINT sentInput = SendInput(numInputs, s_inputs.data(), sizeof(INPUT));
+	LRT_Assert(sentInput == numInputs);
 }
 
 /*

@@ -25,7 +25,8 @@ GamepadConfig::~GamepadConfig()
 void GamepadConfig::RestoreDefaults()
 {
 	static const float k_commonDeadzone = 0.1f;
-	static const float k_commonMouseSpeed = 0.5f;
+	static const int32_t k_commonMouseSpeed = 250;
+	static const int32_t k_commonMouseScrollSpeed = 3;
 
 	m_deadzoneLeftThumb = k_commonDeadzone;
 	m_deadzoneRightThumb = k_commonDeadzone;
@@ -33,6 +34,7 @@ void GamepadConfig::RestoreDefaults()
 	m_deadzoneRightTrigger = k_commonDeadzone;
 	m_mouseSpeedX = k_commonMouseSpeed;
 	m_mouseSpeedY = k_commonMouseSpeed;
+	m_mouseSpeedScroll = k_commonMouseScrollSpeed;
 
 	m_instrumentationMode = InstrumentationMode::kOn;
 }

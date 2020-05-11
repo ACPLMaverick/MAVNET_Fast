@@ -35,8 +35,9 @@ private:
 	LRT_PROPERTY(GamepadConfig, float, deadzoneRightThumb, 0.0f);
 	LRT_PROPERTY(GamepadConfig, float, deadzoneLeftTrigger, 0.0f);
 	LRT_PROPERTY(GamepadConfig, float, deadzoneRightTrigger, 0.0f);
-	LRT_PROPERTY(GamepadConfig, float, mouseSpeedX, 0.0f);
-	LRT_PROPERTY(GamepadConfig, float, mouseSpeedY, 0.0f);
+	LRT_PROPERTY(GamepadConfig, int32_t, mouseSpeedX, 0);
+	LRT_PROPERTY(GamepadConfig, int32_t, mouseSpeedY, 0);
+	LRT_PROPERTY(GamepadConfig, int32_t, mouseSpeedScroll, 0);
 	LRT_PROPERTY(GamepadConfig, InstrumentationMode, instrumentationMode, InstrumentationMode::kOn);
 
 	static const char* k_propertyName;

@@ -35,10 +35,16 @@ private:
 	void GenerateActions_Mixed(const InputBinding& inputBinding, const GamepadState& gamepadState, const GamepadConfig& gamepadConfig, std::vector<InputAction>& outActions);
 
 	static bool IsButtonBindingSatisfied(const InputBinding& inputBinding, const GamepadState& gamepadState, const GamepadConfig& gamepadConfig);
+	static float GetAnalogBindingValue(const InputBinding& inputBinding, const GamepadState& gamepadState, const GamepadConfig& gamepadConfig);
 	static void SubmitKeyActions(bool value, const InputBinding& inputBinding, std::vector<InputAction>& outActions);
-	static void SubmitAnalogActions(int32_t value, const InputBinding& inputBinding, std::vector<InputAction>& outActions);
+	static void SubmitMouseActions(float value, const InputBinding& inputBinding, const GamepadConfig& gamepadConfig, std::vector<InputAction>& outActions);
+	static float ApplyDeadzone(float rawValue, float deadzone);
+	static float ApplyDeadzoneAndDirection(float rawValue, float deadzone, bool bIsNegative);
+	static int32_t AnalogToMouse(float analogValue, InputActionKey mouseKey, const GamepadConfig& gamepadConfig);
 
 	GenerateActionsFunc m_generateActionsFunc;
 	bool m_bBindingIssued;
+
+	static const float k_analogToKeyThershold;
 };
 

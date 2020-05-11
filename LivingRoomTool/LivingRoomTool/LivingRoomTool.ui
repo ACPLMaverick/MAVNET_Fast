@@ -310,18 +310,14 @@
               <widget class="QTweakSlider" name="Tweak_Deadzone_TR" native="true"/>
              </item>
              <item>
-              <widget class="QTweakSlider" name="Tweak_MouseSpeed_X" native="true">
-               <property name="minimumSize">
-                <size>
-                 <width>0</width>
-                 <height>0</height>
-                </size>
-               </property>
-              </widget>
+              <widget class="QTweakSlider" name="Tweak_MouseSpeed_X" native="true"/>
              </item>
              <item>
               <widget class="QTweakSlider" name="Tweak_MouseSpeed_Y" native="true"/>
              </item>
+              <item>
+              <widget class="QTweakSlider" name="Tweak_MouseScroll" native="true"/>
+              </item>
             </layout>
            </item>
            <item>

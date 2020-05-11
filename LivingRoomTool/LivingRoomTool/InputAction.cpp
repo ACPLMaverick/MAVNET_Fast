@@ -9,7 +9,9 @@ namespace InputActionKeyHelper
 
 	bool IsMouseMove(InputActionKey key)
 	{
-		return key >= InputActionKey::kMouseUp && key <= InputActionKey::kMouseRight;
+		return (key >= InputActionKey::kMouseUp && key <= InputActionKey::kMouseRight)
+			|| key == InputActionKey::kMouseScrollUp
+			|| key == InputActionKey::kMouseScrollDown;
 	}
 }
 

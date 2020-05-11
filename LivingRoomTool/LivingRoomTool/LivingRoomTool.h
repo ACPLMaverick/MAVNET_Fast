@@ -16,7 +16,7 @@ public:
 
 private:
 
-	void InitTweakNames();
+	void InitTweaks();
 	void InitConnections();
 	void InitPresetEditor();
 

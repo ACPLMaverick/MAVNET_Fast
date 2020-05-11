@@ -16,7 +16,7 @@ LivingRoomTool::LivingRoomTool(QWidget* a_parent)
 	DisablePresetEditor();
 
 	InitConnections();
-	InitTweakNames();
+	InitTweaks();
 	InitPresetEditor();
 }
 
@@ -25,14 +25,18 @@ LivingRoomTool::~LivingRoomTool()
 	CleanupPresetEditor();
 }
 
-void LivingRoomTool::InitTweakNames()
+void LivingRoomTool::InitTweaks()
 {
 	ui.Tweak_Deadzone_L->SetName(L"L Deadzone");
 	ui.Tweak_Deadzone_R->SetName(L"R Deadzone");
 	ui.Tweak_Deadzone_TL->SetName(L"LT Deadzone");
 	ui.Tweak_Deadzone_TR->SetName(L"RT Deadzone");
 	ui.Tweak_MouseSpeed_X->SetName(L"Mouse Speed X");
+	ui.Tweak_MouseSpeed_X->SetMaxValue(1000);
 	ui.Tweak_MouseSpeed_Y->SetName(L"Mouse Speed Y");
+	ui.Tweak_MouseSpeed_Y->SetMaxValue(1000);
+	ui.Tweak_MouseScroll->SetName(L"Mouse Speed Scroll");
+	ui.Tweak_MouseScroll->SetMaxValue(10);
 }
 
 void LivingRoomTool::InitConnections()
@@ -52,7 +56,7 @@ void LivingRoomTool::InitConnections()
 
 	// Tweaks
 #define LRT_ConnectTweakSlider(_type_, _control_, _property_)						\
-	connect(_control_, &QTweakSlider::valueChanged, this,							\
+	connect(_control_, &QTweakSlider::valueChanged_##_type_, this,					\
 		[this](_type_ newVal)														\
 	{																				\
 		const int selectedIndex = ui.List_Devices->currentRow();					\
@@ -67,8 +71,9 @@ void LivingRoomTool::InitConnections()
 	LRT_ConnectTweakSlider(float, ui.Tweak_Deadzone_R, deadzoneRightThumb);
 	LRT_ConnectTweakSlider(float, ui.Tweak_Deadzone_TL, deadzoneLeftTrigger);
 	LRT_ConnectTweakSlider(float, ui.Tweak_Deadzone_TR, deadzoneRightTrigger);
-	LRT_ConnectTweakSlider(float, ui.Tweak_MouseSpeed_X, mouseSpeedX);
-	LRT_ConnectTweakSlider(float, ui.Tweak_MouseSpeed_Y, mouseSpeedY);
+	LRT_ConnectTweakSlider(int32_t, ui.Tweak_MouseSpeed_X, mouseSpeedX);
+	LRT_ConnectTweakSlider(int32_t, ui.Tweak_MouseSpeed_Y, mouseSpeedY);
+	LRT_ConnectTweakSlider(int32_t, ui.Tweak_MouseScroll, mouseSpeedScroll);
 #undef LRT_ConnectTweakSlider
 
 #define LRT_ConnectTweakInstrumentationMode(_control_, _value_)							\
@@ -385,6 +390,7 @@ void LivingRoomTool::UpdatePanelsForSelectedDevice_Tweaks(size_t a_selectedDevic
 	ui.Tweak_Deadzone_TR->SetValue(config.Get_deadzoneRightTrigger());
 	ui.Tweak_MouseSpeed_X->SetValue(config.Get_mouseSpeedX());
 	ui.Tweak_MouseSpeed_Y->SetValue(config.Get_mouseSpeedY());
+	ui.Tweak_MouseScroll->SetValue(config.Get_mouseSpeedScroll());
 }
 
 void LivingRoomTool::UpdateSelectedPreset(size_t a_selectedPreset)

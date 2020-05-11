@@ -38,6 +38,8 @@ public:
 
 private:
 
+	virtual void OnDeserialized() override;
+
 	LRT_PROPERTY_READONLY(InputBinding, Sources, sources, {});
 	LRT_PROPERTY_READONLY(InputBinding, Destinations, destinations, {});
 

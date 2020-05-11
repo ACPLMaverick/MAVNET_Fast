@@ -21,15 +21,19 @@ public:
 public:
 	// Set value is clamped between 0-1.
 	void SetValue(float value);
+	void SetValue(int32_t value);
 	// Retrieved value is in range of 0-1.
-	float GetValue() const;
+	float GetValueFloat() const;
+	int32_t GetValueInt() const;
 
 public:
 	void SetName(const wchar_t* name);
+	void SetMaxValue(int maxValue);
 	QString GetName() const;
 
 signals:
-	void valueChanged(float newValue);
+	void valueChanged_float(float newValue);
+	void valueChanged_int32_t(int32_t newValue);
 
 private:
 
@@ -41,6 +45,8 @@ private:
 	QLabel* Lbl_Name;
 	QSpinBox* SpinBox_Value;
 	QSlider* Slider_Value;
+
+	int m_maxValue;
 };
 
 QT_END_NAMESPACE
