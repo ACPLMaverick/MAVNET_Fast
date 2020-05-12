@@ -2,15 +2,28 @@
 
 #include <Windows.h>
 #include <QtWidgets/QListWidget.h>
+#include <comdef.h>
 
 #ifndef NDEBUG
 //Returns the last Win32 error, in string format. Returns an empty string if there is no error.
 void LRT_PrintLastError()
 {
-	const std::string str = "LRT : ERROR : " + LRT_GetLastErrorAsString();
+	const std::string str = LRT_GetLastErrorAsString();
 	if (str.empty() == false)
 	{
-		OutputDebugStringA(str.c_str());
+		const std::string inStr = "LRT : ERROR : " + str + "\n";
+		OutputDebugStringA(inStr.c_str());
+	}
+}
+
+void LRT_PrintHResult(long hr)
+{
+	_com_error err((HRESULT)hr);
+	const std::wstring str = err.ErrorMessage();
+	if (str.empty() == false)
+	{
+		const std::wstring inStr = L"LRT : COM ERROR : " + str + L"\n";
+		OutputDebugStringW(inStr.c_str());
 	}
 }
 

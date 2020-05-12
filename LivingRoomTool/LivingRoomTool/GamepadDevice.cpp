@@ -378,12 +378,52 @@ inline void GamepadDevice::ApplyDeadzones()
 
 inline void GamepadDevice::VibrateDirectInput() const
 {
-	LRT_Todo();
+	DIEFFECT effect = {};
+	DWORD axes[] = { DIJOFS_X, DIJOFS_Y };
+	LONG directions[2] = { 18000, 0 };
+	
+	DICONSTANTFORCE constantForce;
+	constantForce.lMagnitude = DI_FFNOMINALMAX;
+
+	effect.dwSize = sizeof(DIEFFECT);
+	effect.dwFlags = DIEFF_POLAR | DIEFF_OBJECTOFFSETS;
+	effect.dwDuration = (DWORD)(0.5 * DI_SECONDS);
+	effect.dwSamplePeriod = 0;
+	effect.dwGain = DI_FFNOMINALMAX;
+	effect.dwTriggerButton = DIEB_NOTRIGGER;
+	effect.dwTriggerRepeatInterval = 0;
+	effect.cAxes = 2;
+	effect.rgdwAxes = axes;
+	effect.rglDirection = directions;
+	effect.lpEnvelope = nullptr;
+	effect.cbTypeSpecificParams = sizeof(DICONSTANTFORCE);
+	effect.lpvTypeSpecificParams = &constantForce;
+
+	LPDIRECTINPUTEFFECT lpdiEffect = {};
+	HRESULT hr = m_handle->CreateEffect(GUID_ConstantForce, &effect, &lpdiEffect, NULL);
+	if (hr != S_OK)
+	{
+		LRT_PrintHResult(hr);
+		return;
+	}
+
+	LRT_CheckHR(lpdiEffect->Start(1, 0));
+
+	Sleep(500);
+
+	lpdiEffect->Release();
 }
 
 inline void GamepadDevice::VibrateXInput() const
 {
-	LRT_Todo();
+	static XINPUT_VIBRATION k_vibrationOn = { UINT16_MAX, 0 };
+	static XINPUT_VIBRATION k_vibrationOff = { 0, 0 };
+	
+	LRT_Assert(XInputSetState(m_xInputIndex, &k_vibrationOn) == ERROR_SUCCESS);
+
+	Sleep(500);
+
+	LRT_Assert(XInputSetState(m_xInputIndex, &k_vibrationOff) == ERROR_SUCCESS);
 }
 
 void GamepadDevice::PrintDinputState(const DIJOYSTATE & a_diState)

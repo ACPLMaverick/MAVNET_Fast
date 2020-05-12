@@ -17,12 +17,14 @@
 
 #include "qdebug.h"
 
-#ifndef NDEBUG
-extern void LRT_PrintLastError();
-extern std::string LRT_GetLastErrorAsString();
-#else
+#ifdef NDEBUG
 #define LRT_PrintLastError()
+#define LRT_PrintHResult(HRESULT hr)
 #define LRT_GetLastErrorAsString() ""
+#else
+extern void LRT_PrintLastError();
+extern void LRT_PrintHResult(long hr);
+extern std::string LRT_GetLastErrorAsString();
 #endif
 
 #define LRT_Assert(_predicate_) assert(_predicate_)
@@ -31,19 +33,19 @@ extern std::string LRT_GetLastErrorAsString();
 
 #ifdef NDEBUG
 #define LRT_Verify(_predicate_) _predicate_
+#define LRT_CheckHR(_call_) _call_
 #else
 #define LRT_Verify(_predicate_) LRT_Assert(_predicate_)
-#endif
-
 #define LRT_CheckHR(_call_)				\
 {										\
 	HRESULT hr = _call_;				\
 	if(hr != S_OK)						\
 	{									\
-		LRT_PrintLastError();			\
+		LRT_PrintHResult((long)hr);		\
 	}									\
 	LRT_Assert(hr == S_OK);				\
 }
+#endif
 
 
 #define LRT_DisallowCopy(_type_)			\
