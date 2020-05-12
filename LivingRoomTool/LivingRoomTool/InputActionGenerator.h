@@ -2,9 +2,9 @@
 
 #include "Common.h"
 #include "InputAction.h"
+#include "GamepadState.h"
 
 class InputBinding;
-class GamepadState;
 class GamepadConfig;
 
 class InputActionGenerator
@@ -38,8 +38,9 @@ private:
 	static float GetAnalogBindingValue(const InputBinding& inputBinding, const GamepadState& gamepadState, const GamepadConfig& gamepadConfig);
 	static void SubmitKeyActions(bool value, const InputBinding& inputBinding, std::vector<InputAction>& outActions);
 	static void SubmitMouseActions(float value, const InputBinding& inputBinding, const GamepadConfig& gamepadConfig, std::vector<InputAction>& outActions);
-	static float ApplyDeadzone(float rawValue, float deadzone);
-	static float ApplyDeadzoneAndDirection(float rawValue, float deadzone, bool bIsNegative);
+	static float ApplyDeadzone(float rawValue, float deadzone); 
+	static float ApplyDeadzone(float rawValue, const GamepadState::Thumb& thumb, float deadzone);
+	static float ApplyDeadzoneAndDirection(float rawValue, const GamepadState::Thumb& thumb, float deadzone, bool bIsNegative);
 	static int32_t AnalogToMouse(float analogValue, InputActionKey mouseKey, const GamepadConfig& gamepadConfig);
 
 	GenerateActionsFunc m_generateActionsFunc;

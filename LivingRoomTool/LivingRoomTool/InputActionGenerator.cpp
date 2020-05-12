@@ -161,34 +161,66 @@ void InputActionGenerator::GenerateActions_Mixed(const InputBinding& a_inputBind
 		switch (buttons)
 		{
 		case GamepadButtons::kLT:
-			analogValue = ApplyDeadzone(a_gamepadState.GetLeftTrigger().Axis, a_gamepadConfig.Get_deadzoneLeftTrigger());
+			localAnalogValue = ApplyDeadzone(a_gamepadState.GetLeftTrigger().Axis, a_gamepadConfig.Get_deadzoneLeftTrigger());
 			break;
 		case GamepadButtons::kRT:
-			analogValue = ApplyDeadzone(a_gamepadState.GetRightTrigger().Axis, a_gamepadConfig.Get_deadzoneRightTrigger());
+			localAnalogValue = ApplyDeadzone(a_gamepadState.GetRightTrigger().Axis, a_gamepadConfig.Get_deadzoneRightTrigger());
 			break;
 		case GamepadButtons::kLThumbLeft:
-			analogValue = ApplyDeadzoneAndDirection(a_gamepadState.GetLeftThumb().AxisX, a_gamepadConfig.Get_deadzoneLeftThumb(), true);
+			localAnalogValue = ApplyDeadzoneAndDirection(
+				a_gamepadState.GetLeftThumb().AxisX,
+				a_gamepadState.GetLeftThumb(),
+				a_gamepadConfig.Get_deadzoneLeftThumb(),
+				true);
 			break;
 		case GamepadButtons::kLThumbUp:
-			analogValue = ApplyDeadzoneAndDirection(a_gamepadState.GetLeftThumb().AxisY, a_gamepadConfig.Get_deadzoneLeftThumb(), false);
+			localAnalogValue = ApplyDeadzoneAndDirection(
+				a_gamepadState.GetLeftThumb().AxisY,
+				a_gamepadState.GetLeftThumb(),
+				a_gamepadConfig.Get_deadzoneLeftThumb(),
+				false);
 			break;
 		case GamepadButtons::kLThumbRight:
-			analogValue = ApplyDeadzoneAndDirection(a_gamepadState.GetLeftThumb().AxisX, a_gamepadConfig.Get_deadzoneLeftThumb(), false);
+			localAnalogValue = ApplyDeadzoneAndDirection(
+				a_gamepadState.GetLeftThumb().AxisX,
+				a_gamepadState.GetLeftThumb(),
+				a_gamepadConfig.Get_deadzoneLeftThumb(),
+				false);
 			break;
 		case GamepadButtons::kLThumbDown:
-			analogValue = ApplyDeadzoneAndDirection(a_gamepadState.GetLeftThumb().AxisY, a_gamepadConfig.Get_deadzoneLeftThumb(), true);
+			localAnalogValue = ApplyDeadzoneAndDirection(
+				a_gamepadState.GetLeftThumb().AxisY,
+				a_gamepadState.GetLeftThumb(),
+				a_gamepadConfig.Get_deadzoneLeftThumb(),
+				true);
 			break;
 		case GamepadButtons::kRThumbLeft:
-			analogValue = ApplyDeadzoneAndDirection(a_gamepadState.GetRightThumb().AxisX, a_gamepadConfig.Get_deadzoneRightThumb(), true);
+			localAnalogValue = ApplyDeadzoneAndDirection(
+				a_gamepadState.GetRightThumb().AxisX,
+				a_gamepadState.GetRightThumb(),
+				a_gamepadConfig.Get_deadzoneRightThumb(),
+				true);
 			break;
 		case GamepadButtons::kRThumbUp:
-			analogValue = ApplyDeadzoneAndDirection(a_gamepadState.GetRightThumb().AxisY, a_gamepadConfig.Get_deadzoneRightThumb(), false);
+			localAnalogValue = ApplyDeadzoneAndDirection(
+				a_gamepadState.GetRightThumb().AxisY,
+				a_gamepadState.GetRightThumb(),
+				a_gamepadConfig.Get_deadzoneRightThumb(),
+				false);
 			break;
 		case GamepadButtons::kRThumbRight:
-			analogValue = ApplyDeadzoneAndDirection(a_gamepadState.GetRightThumb().AxisX, a_gamepadConfig.Get_deadzoneRightThumb(), false);
+			localAnalogValue = ApplyDeadzoneAndDirection(
+				a_gamepadState.GetRightThumb().AxisX,
+				a_gamepadState.GetRightThumb(),
+				a_gamepadConfig.Get_deadzoneRightThumb(),
+				false);
 			break;
 		case GamepadButtons::kRThumbDown:
-			analogValue = ApplyDeadzoneAndDirection(a_gamepadState.GetRightThumb().AxisY, a_gamepadConfig.Get_deadzoneRightThumb(), true);
+			localAnalogValue = ApplyDeadzoneAndDirection(
+				a_gamepadState.GetRightThumb().AxisY,
+				a_gamepadState.GetRightThumb(),
+				a_gamepadConfig.Get_deadzoneRightThumb(),
+				true);
 			break;
 		default:
 			combinedSource |= buttons;
@@ -275,34 +307,66 @@ float InputActionGenerator::GetAnalogBindingValue(const InputBinding & a_inputBi
 		switch (buttons)
 		{
 		case GamepadButtons::kLT:
-			analogValue = ApplyDeadzone(a_gamepadState.GetLeftTrigger().Axis, a_gamepadConfig.Get_deadzoneLeftTrigger());
+			localAnalogValue = ApplyDeadzone(a_gamepadState.GetLeftTrigger().Axis, a_gamepadConfig.Get_deadzoneLeftTrigger());
 			break;
 		case GamepadButtons::kRT:
-			analogValue = ApplyDeadzone(a_gamepadState.GetRightTrigger().Axis, a_gamepadConfig.Get_deadzoneRightTrigger());
+			localAnalogValue = ApplyDeadzone(a_gamepadState.GetRightTrigger().Axis, a_gamepadConfig.Get_deadzoneRightTrigger());
 			break;
 		case GamepadButtons::kLThumbLeft:
-			analogValue = ApplyDeadzoneAndDirection(a_gamepadState.GetLeftThumb().AxisX, a_gamepadConfig.Get_deadzoneLeftThumb(), true);
+			localAnalogValue = ApplyDeadzoneAndDirection(
+				a_gamepadState.GetLeftThumb().AxisX,
+				a_gamepadState.GetLeftThumb(),
+				a_gamepadConfig.Get_deadzoneLeftThumb(), 
+				true);
 			break;
 		case GamepadButtons::kLThumbUp:
-			analogValue = ApplyDeadzoneAndDirection(a_gamepadState.GetLeftThumb().AxisY, a_gamepadConfig.Get_deadzoneLeftThumb(), false);
+			localAnalogValue = ApplyDeadzoneAndDirection(
+				a_gamepadState.GetLeftThumb().AxisY,
+				a_gamepadState.GetLeftThumb(),
+				a_gamepadConfig.Get_deadzoneLeftThumb(),
+				false);
 			break;
 		case GamepadButtons::kLThumbRight:
-			analogValue = ApplyDeadzoneAndDirection(a_gamepadState.GetLeftThumb().AxisX, a_gamepadConfig.Get_deadzoneLeftThumb(), false);
+			localAnalogValue = ApplyDeadzoneAndDirection(
+				a_gamepadState.GetLeftThumb().AxisX,
+				a_gamepadState.GetLeftThumb(),
+				a_gamepadConfig.Get_deadzoneLeftThumb(),
+				false);
 			break;
 		case GamepadButtons::kLThumbDown:
-			analogValue = ApplyDeadzoneAndDirection(a_gamepadState.GetLeftThumb().AxisY, a_gamepadConfig.Get_deadzoneLeftThumb(), true);
+			localAnalogValue = ApplyDeadzoneAndDirection(
+				a_gamepadState.GetLeftThumb().AxisY,
+				a_gamepadState.GetLeftThumb(),
+				a_gamepadConfig.Get_deadzoneLeftThumb(),
+				true);
 			break;
 		case GamepadButtons::kRThumbLeft:
-			analogValue = ApplyDeadzoneAndDirection(a_gamepadState.GetRightThumb().AxisX, a_gamepadConfig.Get_deadzoneRightThumb(), true);
+			localAnalogValue = ApplyDeadzoneAndDirection(
+				a_gamepadState.GetRightThumb().AxisX,
+				a_gamepadState.GetRightThumb(),
+				a_gamepadConfig.Get_deadzoneRightThumb(),
+				true);
 			break;
 		case GamepadButtons::kRThumbUp:
-			analogValue = ApplyDeadzoneAndDirection(a_gamepadState.GetRightThumb().AxisY, a_gamepadConfig.Get_deadzoneRightThumb(), false);
+			localAnalogValue = ApplyDeadzoneAndDirection(
+				a_gamepadState.GetRightThumb().AxisY,
+				a_gamepadState.GetRightThumb(),
+				a_gamepadConfig.Get_deadzoneRightThumb(),
+				false);
 			break;
 		case GamepadButtons::kRThumbRight:
-			analogValue = ApplyDeadzoneAndDirection(a_gamepadState.GetRightThumb().AxisX, a_gamepadConfig.Get_deadzoneRightThumb(), false);
+			localAnalogValue = ApplyDeadzoneAndDirection(
+				a_gamepadState.GetRightThumb().AxisX,
+				a_gamepadState.GetRightThumb(),
+				a_gamepadConfig.Get_deadzoneRightThumb(),
+				false);
 			break;
 		case GamepadButtons::kRThumbDown:
-			analogValue = ApplyDeadzoneAndDirection(a_gamepadState.GetRightThumb().AxisY, a_gamepadConfig.Get_deadzoneRightThumb(), true);
+			localAnalogValue = ApplyDeadzoneAndDirection(
+				a_gamepadState.GetRightThumb().AxisY,
+				a_gamepadState.GetRightThumb(),
+				a_gamepadConfig.Get_deadzoneRightThumb(),
+				true);
 			break;
 		default:
 			LRT_Fail();	// Should not get here.
@@ -357,12 +421,28 @@ float InputActionGenerator::ApplyDeadzone(float a_rawValue, float a_deadzone)
 	}
 }
 
-float InputActionGenerator::ApplyDeadzoneAndDirection(float a_rawValue, float a_deadzone, bool a_bIsNegative)
+float InputActionGenerator::ApplyDeadzone(float a_rawValue, const GamepadState::Thumb& a_thumb, float a_deadzone)
+{
+	const float x = a_thumb.AxisX;
+	const float y = a_thumb.AxisY;
+	const float length = fmaxf(fminf(sqrtf(x * x + y * y), 1.0f), 0.0f);
+
+	if (length < a_deadzone)
+	{
+		return 0.0f;
+	}
+	else
+	{
+		return a_rawValue * ((length - a_deadzone) / (1.0f - a_deadzone));
+	}
+}
+
+float InputActionGenerator::ApplyDeadzoneAndDirection(float a_rawValue, const GamepadState::Thumb& a_thumb, float a_deadzone, bool a_bIsNegative)
 {
 	if ((a_bIsNegative && a_rawValue < 0.0f)
 		|| (a_bIsNegative == false && a_rawValue > 0.0f))
 	{
-		return ApplyDeadzone(a_rawValue, a_deadzone);
+		return ApplyDeadzone(a_rawValue, a_thumb, a_deadzone);
 	}
 	else
 	{
@@ -372,6 +452,7 @@ float InputActionGenerator::ApplyDeadzoneAndDirection(float a_rawValue, float a_
 
 int32_t InputActionGenerator::AnalogToMouse(float a_analogValue, InputActionKey a_mouseKey, const GamepadConfig& a_gamepadConfig)
 {
+	printf("Analog value: %f \n", a_analogValue);
 	const float absAnalogValue = fabsf(a_analogValue);
 
 	switch (a_mouseKey)

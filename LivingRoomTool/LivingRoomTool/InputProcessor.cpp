@@ -49,6 +49,8 @@ void InputProcessor::Tick()
 		return;
 	}
 
+	DisableNumlockIfNecessary();
+
 	// Poll all states on every tick.
 	m_gamepadProcessor.PollInputStates();
 
@@ -177,57 +179,74 @@ inline void InputProcessor::ProcessActions()
 	static std::vector<INPUT> s_inputs;
 
 	const size_t numInputs = m_actionsToTakePerTick.size();
-	s_inputs.resize(numInputs);
-	ZeroMemory(s_inputs.data(), sizeof(INPUT) * numInputs);
+	s_inputs.clear();
+
+	INPUT accumulatedMouseMovement = {};
 
 	for (size_t i = 0; i < numInputs; ++i)
 	{
 		const InputAction& action = m_actionsToTakePerTick[i];
-		INPUT& input = s_inputs[i];
 
 		if (InputActionKeyHelper::IsMouse(action.GetKey()))
 		{
-			input.type = INPUT_MOUSE;
-			input.mi.dwFlags = MOUSEEVENTF_MOVE;
-
-			switch (action.GetKey())
+			if (InputActionKeyHelper::IsMouseMove(action.GetKey()))
 			{
-			case InputActionKey::kMouseUp:
-				input.mi.dy = -action.GetInt();
-				break;
-			case InputActionKey::kMouseDown:
-				input.mi.dy = action.GetInt();
-				break;
-			case InputActionKey::kMouseLeft:
-				input.mi.dx = -action.GetInt();
-				break;
-			case InputActionKey::kMouseRight:
-				input.mi.dx = action.GetInt();
-				break;
-			case InputActionKey::kMouseScrollUp:
-				input.mi.dwFlags = MOUSEEVENTF_WHEEL;
-				input.mi.mouseData = WHEEL_DELTA * action.GetInt();
-				break;
-			case InputActionKey::kMouseScrollDown:
-				input.mi.dwFlags = MOUSEEVENTF_WHEEL;
-				input.mi.mouseData = WHEEL_DELTA * (-action.GetInt());
-				break;
-			case InputActionKey::kMouseLMB:
-				input.mi.dwFlags = action.GetIsPressed() ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_LEFTUP;
-				break;
-			case InputActionKey::kMouseMMB:
-				input.mi.dwFlags = action.GetIsPressed() ? MOUSEEVENTF_MIDDLEDOWN : MOUSEEVENTF_MIDDLEUP;
-				break;
-			case InputActionKey::kMouseRMB:
-				input.mi.dwFlags = action.GetIsPressed() ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_RIGHTUP;
-				break;
-			default:
-				LRT_Fail();
-				break;
+				switch (action.GetKey())
+				{
+				case InputActionKey::kMouseUp:
+					accumulatedMouseMovement.mi.dy += -action.GetInt();
+					break;
+				case InputActionKey::kMouseDown:
+					accumulatedMouseMovement.mi.dy += action.GetInt();
+					break;
+				case InputActionKey::kMouseLeft:
+					accumulatedMouseMovement.mi.dx += -action.GetInt();
+					break;
+				case InputActionKey::kMouseRight:
+					accumulatedMouseMovement.mi.dx += action.GetInt();
+					break;
+				default:
+					LRT_Fail();
+					break;
+				}
+			}
+			else
+			{
+				INPUT& input = s_inputs.emplace_back(INPUT());
+				ZeroMemory(&input, sizeof(INPUT));
+
+				input.type = INPUT_MOUSE;
+
+				switch (action.GetKey())
+				{
+				case InputActionKey::kMouseScrollUp:
+					input.mi.dwFlags = MOUSEEVENTF_WHEEL;
+					input.mi.mouseData = WHEEL_DELTA * action.GetInt();
+					break;
+				case InputActionKey::kMouseScrollDown:
+					input.mi.dwFlags = MOUSEEVENTF_WHEEL;
+					input.mi.mouseData = WHEEL_DELTA * (-action.GetInt());
+					break;
+				case InputActionKey::kMouseLMB:
+					input.mi.dwFlags = action.GetIsPressed() ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_LEFTUP;
+					break;
+				case InputActionKey::kMouseMMB:
+					input.mi.dwFlags = action.GetIsPressed() ? MOUSEEVENTF_MIDDLEDOWN : MOUSEEVENTF_MIDDLEUP;
+					break;
+				case InputActionKey::kMouseRMB:
+					input.mi.dwFlags = action.GetIsPressed() ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_RIGHTUP;
+					break;
+				default:
+					LRT_Fail();
+					break;
+				}
 			}
 		}
 		else
 		{
+			INPUT& input = s_inputs.emplace_back(INPUT());
+			ZeroMemory(&input, sizeof(INPUT));
+
 			input.type = INPUT_KEYBOARD;
 			input.ki.wScan = k_actionKeyToDIK[static_cast<uint8_t>(action.GetKey())];
 			input.ki.dwFlags = KEYEVENTF_SCANCODE;
@@ -239,8 +258,36 @@ inline void InputProcessor::ProcessActions()
 		}
 	}
 
-	UINT sentInput = SendInput(numInputs, s_inputs.data(), sizeof(INPUT));
-	LRT_Assert(sentInput == numInputs);
+	if (accumulatedMouseMovement.mi.dx != 0
+		|| accumulatedMouseMovement.mi.dy != 0)
+	{
+		accumulatedMouseMovement.type = INPUT_MOUSE;
+		accumulatedMouseMovement.mi.dwFlags = MOUSEEVENTF_MOVE;
+		s_inputs.push_back(accumulatedMouseMovement);
+	}
+
+	UINT sentInput = SendInput(s_inputs.size(), s_inputs.data(), sizeof(INPUT));
+	LRT_Assert(sentInput == s_inputs.size());
+}
+
+inline void InputProcessor::DisableNumlockIfNecessary()
+{
+	SHORT numLockState = GetKeyState(VK_NUMLOCK);
+	if (numLockState & (1 << 1) != 0)
+	{
+		// Disable num lock if it is toggled.
+		INPUT inputs[2] = {};
+		for (size_t i = 0; i < 2; ++i)
+		{
+			inputs[i].type = INPUT_KEYBOARD;
+			inputs[i].ki.wVk = VK_NUMLOCK;
+			inputs[i].ki.dwFlags = 0;
+		}
+
+		inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
+		UINT sentInput = SendInput(2, inputs, sizeof(INPUT));
+		LRT_Assert(sentInput == 2);
+	}
 }
 
 /*

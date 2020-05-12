@@ -32,6 +32,7 @@ protected:
 	void Tick();
 	inline void ResolveGamepad(const GamepadDevice& device, const InputPreset& preset, std::vector<InputAction>& outActions);
 	inline void ProcessActions();
+	inline void DisableNumlockIfNecessary();
 
 	static const int32_t k_tickIntervalMs;
 

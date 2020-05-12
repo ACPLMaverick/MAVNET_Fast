@@ -14,6 +14,8 @@ public:
 	LivingRoomTool(QWidget *parent = Q_NULLPTR);
 	~LivingRoomTool();
 
+	void PostInit();
+
 private:
 
 	void InitTweaks();

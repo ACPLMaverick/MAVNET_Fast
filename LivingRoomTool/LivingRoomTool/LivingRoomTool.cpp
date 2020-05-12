@@ -10,7 +10,6 @@ LivingRoomTool::LivingRoomTool(QWidget* a_parent)
 	setWindowFlags(Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
 
 	m_inputProcessor.Init();
-	OnRefreshDevicesClicked();
 
 	DisableDevicePanels();
 	DisablePresetEditor();
@@ -23,6 +22,11 @@ LivingRoomTool::LivingRoomTool(QWidget* a_parent)
 LivingRoomTool::~LivingRoomTool()
 {
 	CleanupPresetEditor();
+}
+
+void LivingRoomTool::PostInit()
+{
+	OnRefreshDevicesClicked();
 }
 
 void LivingRoomTool::InitTweaks()

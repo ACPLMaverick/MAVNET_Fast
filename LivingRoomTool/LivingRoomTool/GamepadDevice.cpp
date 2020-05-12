@@ -113,7 +113,7 @@ inline void GamepadDevice::InitDirectInput()
 	// Set cooperative level.
 	HWND activeWindow = GetActiveWindow();
 	LRT_Assert(activeWindow != 0);
-	LRT_CheckHR(m_handle->SetCooperativeLevel(activeWindow, DISCL_BACKGROUND));
+	//LRT_CheckHR(m_handle->SetCooperativeLevel(activeWindow, DISCL_BACKGROUND));	// Fails. Is it even necessary?
 
 	// Set data format.
 	LRT_CheckHR(m_handle->SetDataFormat(&c_dfDIJoystick));
