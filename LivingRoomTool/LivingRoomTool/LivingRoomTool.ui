@@ -471,7 +471,7 @@
              <widget class="BindingSelectorWidget" name="Bs_Gamepad_RUp" native="true">
               <property name="geometry">
                <rect>
-                <x>550</x>
+                <x>530</x>
                 <y>200</y>
                 <width>96</width>
                 <height>24</height>
@@ -481,7 +481,7 @@
              <widget class="BindingSelectorWidget" name="Bs_Gamepad_RLeft" native="true">
               <property name="geometry">
                <rect>
-                <x>500</x>
+                <x>480</x>
                 <y>240</y>
                 <width>96</width>
                 <height>24</height>
@@ -491,7 +491,7 @@
              <widget class="BindingSelectorWidget" name="Bs_Gamepad_RDown" native="true">
               <property name="geometry">
                <rect>
-                <x>550</x>
+                <x>530</x>
                 <y>280</y>
                 <width>96</width>
                 <height>24</height>
@@ -501,7 +501,7 @@
              <widget class="BindingSelectorWidget" name="Bs_Gamepad_RRight" native="true">
               <property name="geometry">
                <rect>
-                <x>600</x>
+                <x>580</x>
                 <y>240</y>
                 <width>96</width>
                 <height>24</height>

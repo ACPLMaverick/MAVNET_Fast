@@ -117,6 +117,7 @@
     <ClCompile Include="QTweakSlider.cpp" />
     <ClCompile Include="Serializable.cpp" />
     <ClCompile Include="SimpleConfirmationDialog.cpp" />
+    <ClCompile Include="SimpleKeypressRetrieverDialog.cpp" />
     <ClCompile Include="SimpleTextInputDialog.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -136,6 +137,7 @@
     <ResourceCompile Include="LivingRoomTool.rc" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="SimpleKeypressRetrieverDialog.h" />
     <QtMoc Include="AdvancedBindingEditorDialog.h" />
     <QtMoc Include="AdvancedBindingEditor.h" />
     <QtMoc Include="BindingSelectorWidget.h" />

@@ -61,6 +61,8 @@ private:
 	void OnMoveToSourceButtonClicked();
 	void OnMoveTo(class QListWidget* listSource, class QListWidget* listDestination, OnMoveHelperFunc helperFunc);
 
+	void OnEditClicked();
+
 	static void OnMoveToFuncAddValue(SelectedValues& a_selectedValues, ValueType a_value);
 	static void OnMoveToFuncRemValue(SelectedValues& a_selectedValues, ValueType a_value);
 

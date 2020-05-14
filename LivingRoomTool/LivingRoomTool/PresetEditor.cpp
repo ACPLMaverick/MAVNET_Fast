@@ -75,7 +75,7 @@ inline void PresetEditor::InitializeBindingSelectors()
 	for (size_t i = 0; i < Elements::k_bindingSelectorNum; ++i)
 	{
 		BindingSelectorWidget* bs = m_elements.BindingSelectors[i];
-		bs->Fill<InputActionKey>();
+		bs->Fill();
 	}
 }
 

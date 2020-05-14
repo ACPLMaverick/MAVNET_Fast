@@ -37,6 +37,7 @@ void QBindingExchangeWidget::InitContents(const Contents& a_initialContents)
 
 	connect(m_ui.Btn_Add, &QPushButton::clicked, this, &QBindingExchangeWidget::OnMoveToSelectedButtonClicked);
 	connect(m_ui.Btn_Remove, &QPushButton::clicked, this, &QBindingExchangeWidget::OnMoveToSourceButtonClicked);
+	connect(m_ui.Btn_EditByClick, &QPushButton::clicked, this, &QBindingExchangeWidget::OnEditClicked);
 }
 
 inline void QBindingExchangeWidget::Cleanup()
@@ -99,6 +100,10 @@ void QBindingExchangeWidget::OnMoveTo(QListWidget* a_listSource, QListWidget* a_
 
 	// Fire signal.
 	selectionChanged();
+}
+
+void QBindingExchangeWidget::OnEditClicked()
+{
 }
 
 void QBindingExchangeWidget::OnMoveToFuncAddValue(SelectedValues& a_selectedValues, ValueType a_value)
