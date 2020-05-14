@@ -111,8 +111,8 @@ void GamepadDevice::CleanupMembers()
 inline void GamepadDevice::InitDirectInput()
 {
 	// Set cooperative level.
-	HWND activeWindow = GetActiveWindow();
-	LRT_Assert(activeWindow != 0);
+	//HWND activeWindow = GetActiveWindow();
+	//LRT_Assert(activeWindow != 0);
 	//LRT_CheckHR(m_handle->SetCooperativeLevel(activeWindow, DISCL_BACKGROUND));	// Fails. Is it even necessary?
 
 	// Set data format.

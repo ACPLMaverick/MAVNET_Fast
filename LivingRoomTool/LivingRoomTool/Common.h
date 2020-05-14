@@ -19,7 +19,7 @@
 
 #ifdef NDEBUG
 #define LRT_PrintLastError()
-#define LRT_PrintHResult(HRESULT hr)
+#define LRT_PrintHResult(_hr_)
 #define LRT_GetLastErrorAsString() ""
 #else
 extern void LRT_PrintLastError();

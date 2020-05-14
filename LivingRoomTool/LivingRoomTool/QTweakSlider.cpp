@@ -6,7 +6,7 @@ QTweakSlider::QTweakSlider(QWidget* a_parent /*= Q_NULLPTR*/)
 	, Lbl_Name(new QLabel("Tweak Name", this))
 	, SpinBox_Value(new QSpinBox(this))
 	, Slider_Value(new QSlider(Qt::Orientation::Horizontal, this))
-	, m_maxValue(100)
+	, m_maxValue(99)
 {
 	LRT_QAddName(Hor_Layout);
 	LRT_QAddName(Lbl_Name);

@@ -94,6 +94,7 @@
     <ClCompile Include="AdvancedBindingEditor.cpp" />
     <ClCompile Include="AdvancedBindingEditorDialog.cpp" />
     <ClCompile Include="BaseProcessor.cpp" />
+    <ClCompile Include="BindingSelectorWidget.cpp" />
     <ClCompile Include="Common.cpp" />
     <ClCompile Include="FilePath.cpp" />
     <ClCompile Include="GamepadConfig.cpp" />
@@ -101,8 +102,11 @@
     <ClCompile Include="GamepadProcessor.cpp" />
     <ClCompile Include="GamepadState.cpp" />
     <ClCompile Include="InputAction.cpp" />
+    <ClCompile Include="InputActionConverter.cpp" />
     <ClCompile Include="InputActionGenerator.cpp" />
+    <ClCompile Include="InputActionKeypressRetriever.cpp" />
     <ClCompile Include="InputBinding.cpp" />
+    <ClCompile Include="InputLibraryWrapper.cpp" />
     <ClCompile Include="InputPreset.cpp" />
     <ClCompile Include="InputPresetManager.cpp" />
     <ClCompile Include="InputProcessor.cpp" />
@@ -121,6 +125,7 @@
   <ItemGroup>
     <QtUic Include="AdvancedBindingEditorDialog.ui" />
     <QtUic Include="BindingExchangeWidget.ui" />
+    <QtUic Include="BindingSelectorWidget.ui" />
     <QtUic Include="LivingRoomTool.ui" />
     <QtUic Include="SimpleTextInputDialog.ui" />
   </ItemGroup>
@@ -133,10 +138,14 @@
   <ItemGroup>
     <QtMoc Include="AdvancedBindingEditorDialog.h" />
     <QtMoc Include="AdvancedBindingEditor.h" />
+    <QtMoc Include="BindingSelectorWidget.h" />
     <ClInclude Include="FilePath.h" />
     <ClInclude Include="InputAction.h" />
+    <ClInclude Include="InputActionConverter.h" />
     <ClInclude Include="InputActionGenerator.h" />
+    <ClInclude Include="InputActionKeypressRetriever.h" />
     <ClInclude Include="InputBinding.h" />
+    <ClInclude Include="InputLibraryWrapper.h" />
     <ClInclude Include="InputPresetManager.h" />
     <QtMoc Include="QBindingExchangeWidget.h" />
     <ClInclude Include="SimpleConfirmationDialog.h" />

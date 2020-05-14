@@ -3,6 +3,7 @@
 #include "BaseProcessor.h"
 #include "GamepadProcessor.h"
 #include "InputPresetManager.h"
+#include "InputActionConverter.h"
 
 #include <qtimer.h>
 
@@ -40,6 +41,8 @@ protected:
 	InputPresetManager m_inputPresetManager;
 
 	std::vector<InputAction> m_actionsToTakePerTick;
+
+	InputActionConverter m_converter;
 
 	QTimer m_qTimer;
 	QMetaObject::Connection m_qTimerConnection;

@@ -4,8 +4,8 @@
 #include "InputPresetManager.h"
 #include "InputAction.h"
 #include "SimpleConfirmationDialog.h"
+#include "BindingSelectorWidget.h"
 
-#include <QtWidgets/QComboBox>
 #include <QtWidgets/QListWidget.h>
 #include <QtWidgets/QPushButton.h>
 
@@ -27,7 +27,7 @@ void PresetEditor::Init(const Elements & a_elements, InputPresetManager* a_manag
 	m_presetManager = a_manager;
 	m_mainWidget = a_mainWidget;
 
-	InitializeComboboxes();
+	InitializeBindingSelectors();
 	InitializeLookups();
 	InitializeConnections();
 }
@@ -36,8 +36,8 @@ void PresetEditor::Cleanup()
 {
 	m_presetManager = nullptr;
 	m_assignedPresetIndex = k_invalidIndex;
-	m_gamepadButtonsToComboBox.clear();
-	m_comboBoxToGamepadButtons.clear();
+	m_gamepadButtonsToBindingSelector.clear();
+	m_bindingSelectorToGamepadButtons.clear();
 	m_simpleBindingsLookup.clear();
 	m_advancedBindingsLookup.clear();
 	m_bDisableConnections = false;
@@ -57,9 +57,9 @@ void PresetEditor::InvalidatePreset()
 	m_elements.List_AdvancedBindings->clear();
 
 	m_bDisableConnections = true;
-	for (QComboBox* cb : m_elements.ComboBoxes)
+	for (BindingSelectorWidget* bs : m_elements.BindingSelectors)
 	{
-		cb->setCurrentIndex(0);
+		bs->SetIndex(0);
 	}
 	m_bDisableConnections = false;
 }
@@ -70,68 +70,55 @@ inline InputPreset& PresetEditor::GetPreset()
 	return m_presetManager->GetPreset(m_assignedPresetIndex);
 }
 
-inline void PresetEditor::InitializeComboboxes()
+inline void PresetEditor::InitializeBindingSelectors()
 {
-	for (size_t i = 0; i < Elements::k_comboBoxNum; ++i)
+	for (size_t i = 0; i < Elements::k_bindingSelectorNum; ++i)
 	{
-		QComboBox* cb = m_elements.ComboBoxes[i];
-
-		for (size_t j = 0; j < static_cast<size_t>(InputActionKey::ENUM_SIZE); ++j)
-		{
-			const std::string_view& str = magic_enum::enum_name(static_cast<InputActionKey>(j));
-			LRT_Assert(str.size() > 0);
-			if (str.size() == 0)
-			{
-				continue;
-			}
-
-			cb->addItem(QString::fromUtf8(str.data(), str.size()));
-			cb->setCurrentIndex(0);
-		}
+		BindingSelectorWidget* bs = m_elements.BindingSelectors[i];
+		bs->Fill<InputActionKey>();
 	}
 }
 
 inline void PresetEditor::InitializeLookups()
 {
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kLT, m_elements.Cb_LT);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kLB, m_elements.Cb_LB);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kLThumb, m_elements.Cb_LThumbPress);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kLLeft, m_elements.Cb_LLeft);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kLUp, m_elements.Cb_LUp);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kLRight, m_elements.Cb_LRight);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kLDown, m_elements.Cb_LDown);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kView, m_elements.Cb_View);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kMenu, m_elements.Cb_Menu);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kRT, m_elements.Cb_RT);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kRB, m_elements.Cb_RB);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kRThumb, m_elements.Cb_RThumbPress);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kRLeft, m_elements.Cb_RLeft);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kRUp, m_elements.Cb_RUp);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kRRight, m_elements.Cb_RRight);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kRDown, m_elements.Cb_RDown);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kLThumbLeft, m_elements.Cb_LThumbLeft);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kLThumbUp, m_elements.Cb_LThumbUp);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kLThumbRight, m_elements.Cb_LThumbRight);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kLThumbDown, m_elements.Cb_LThumbDown);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kRThumbLeft, m_elements.Cb_RThumbLeft);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kRThumbUp, m_elements.Cb_RThumbUp);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kRThumbRight, m_elements.Cb_RThumbRight);
-	m_gamepadButtonsToComboBox.emplace(GamepadButtons::kRThumbDown, m_elements.Cb_RThumbDown);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kLT, m_elements.Bs_LT);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kLB, m_elements.Bs_LB);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kLThumb, m_elements.Bs_LThumbPress);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kLLeft, m_elements.Bs_LLeft);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kLUp, m_elements.Bs_LUp);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kLRight, m_elements.Bs_LRight);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kLDown, m_elements.Bs_LDown);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kView, m_elements.Bs_View);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kMenu, m_elements.Bs_Menu);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kRT, m_elements.Bs_RT);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kRB, m_elements.Bs_RB);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kRThumb, m_elements.Bs_RThumbPress);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kRLeft, m_elements.Bs_RLeft);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kRUp, m_elements.Bs_RUp);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kRRight, m_elements.Bs_RRight);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kRDown, m_elements.Bs_RDown);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kLThumbLeft, m_elements.Bs_LThumbLeft);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kLThumbUp, m_elements.Bs_LThumbUp);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kLThumbRight, m_elements.Bs_LThumbRight);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kLThumbDown, m_elements.Bs_LThumbDown);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kRThumbLeft, m_elements.Bs_RThumbLeft);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kRThumbUp, m_elements.Bs_RThumbUp);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kRThumbRight, m_elements.Bs_RThumbRight);
+	m_gamepadButtonsToBindingSelector.emplace(GamepadButtons::kRThumbDown, m_elements.Bs_RThumbDown);
 
-	for (std::pair<const GamepadButtons, QComboBox*>& pair : m_gamepadButtonsToComboBox)
+	for (std::pair<const GamepadButtons, BindingSelectorWidget*>& pair : m_gamepadButtonsToBindingSelector)
 	{
-		m_comboBoxToGamepadButtons.emplace(pair.second, pair.first);
+		m_bindingSelectorToGamepadButtons.emplace(pair.second, pair.first);
 	}
 }
 
 inline void PresetEditor::InitializeConnections()
 {
-	for (size_t i = 0; i < Elements::k_comboBoxNum; ++i)
+	for (size_t i = 0; i < Elements::k_bindingSelectorNum; ++i)
 	{
-		void (QComboBox::*indexChangedSignal)(int) = &QComboBox::currentIndexChanged;
-		connect(m_elements.ComboBoxes[i], indexChangedSignal, this, [=](int newIdx) 
+		connect(m_elements.BindingSelectors[i], &BindingSelectorWidget::indexChanged, this, [=](int newIdx) 
 		{
-			OnComboBoxIndexChanged(m_elements.ComboBoxes[i], newIdx);
+			OnBindingSelectorIndexChanged(m_elements.BindingSelectors[i], newIdx);
 		});
 	}
 
@@ -157,9 +144,9 @@ inline void PresetEditor::UpdateElements()
 	m_bDisableConnections = true;
 
 	// First set all UIs to default state.
-	for (QComboBox* cb : m_elements.ComboBoxes)
+	for (BindingSelectorWidget* cb : m_elements.BindingSelectors)
 	{
-		cb->setCurrentIndex(0);
+		cb->SetIndex(0);
 	}
 	m_elements.List_AdvancedBindings->clear();
 
@@ -176,7 +163,7 @@ inline void PresetEditor::UpdateElements()
 		}
 		else if (sourcesSize == 1 && destinationsSize == 1)
 		{
-			if (UpdateCombobox(binding) == false)
+			if (UpdateBindingSelector(binding) == false)
 			{
 				UpdateAdvancedList(binding);
 			}
@@ -190,15 +177,15 @@ inline void PresetEditor::UpdateElements()
 	m_bDisableConnections = false;
 }
 
-bool PresetEditor::UpdateCombobox(InputBinding * a_binding)
+bool PresetEditor::UpdateBindingSelector(InputBinding * a_binding)
 {
 	const GamepadButtons source = a_binding->Get_sources()[0];
 	const InputActionKey destination = a_binding->Get_destinations()[0];
-	QComboBox* comboBox = GetComboBox(source);
-	if (comboBox->currentIndex() == 0)
+	BindingSelectorWidget* bindingSelector = GetBindingSelector(source);
+	if (bindingSelector->GetIndex() == 0)
 	{
-		comboBox->setCurrentIndex(static_cast<int>(destination));
-		m_simpleBindingsLookup.emplace(comboBox, a_binding);
+		bindingSelector->SetIndex(static_cast<int>(destination));
+		m_simpleBindingsLookup.emplace(bindingSelector, a_binding);
 		return true;
 	}
 	else
@@ -256,30 +243,30 @@ std::string PresetEditor::GetInputBindingAsString(const InputBinding * a_binding
 	return text;
 }
 
-QComboBox* PresetEditor::GetComboBox(GamepadButtons a_button)
+BindingSelectorWidget* PresetEditor::GetBindingSelector(GamepadButtons a_button)
 {
-	auto it  = m_gamepadButtonsToComboBox.find(a_button);
-	LRT_Assert(it != m_gamepadButtonsToComboBox.end());
+	auto it  = m_gamepadButtonsToBindingSelector.find(a_button);
+	LRT_Assert(it != m_gamepadButtonsToBindingSelector.end());
 	return it->second;
 }
 
-GamepadButtons PresetEditor::GetGamepadButtons(QComboBox* a_comboBox)
+GamepadButtons PresetEditor::GetGamepadButtons(BindingSelectorWidget* a_bindingSelector)
 {
-	auto it = m_comboBoxToGamepadButtons.find(a_comboBox);
-	LRT_Assert(it != m_comboBoxToGamepadButtons.end());
+	auto it = m_bindingSelectorToGamepadButtons.find(a_bindingSelector);
+	LRT_Assert(it != m_bindingSelectorToGamepadButtons.end());
 	return it->second;
 }
 
-InputBinding* PresetEditor::GetSimpleInputBinding(QComboBox* a_comboBox)
+InputBinding* PresetEditor::GetSimpleInputBinding(BindingSelectorWidget* a_bindingSelector)
 {
-	auto it = m_simpleBindingsLookup.find(a_comboBox);
+	auto it = m_simpleBindingsLookup.find(a_bindingSelector);
 	LRT_Assert(it != m_simpleBindingsLookup.end());
 	return it->second;
 }
 
-InputBinding* PresetEditor::TryGetSimpleInputBinding(class QComboBox* a_comboBox)
+InputBinding* PresetEditor::TryGetSimpleInputBinding(BindingSelectorWidget* a_bindingSelector)
 {
-	auto it = m_simpleBindingsLookup.find(a_comboBox);
+	auto it = m_simpleBindingsLookup.find(a_bindingSelector);
 	if (it != m_simpleBindingsLookup.end())
 	{
 		return it->second;
@@ -296,7 +283,7 @@ InputBinding* PresetEditor::GetAdvancedInputBinding(size_t a_index)
 	return m_advancedBindingsLookup[a_index];
 }
 
-void PresetEditor::OnComboBoxIndexChanged(QComboBox* a_comboBox, int a_newIdx)
+void PresetEditor::OnBindingSelectorIndexChanged(BindingSelectorWidget* a_bindingSelector, int a_newIdx)
 {
 	if (m_bDisableConnections)
 	{
@@ -305,23 +292,23 @@ void PresetEditor::OnComboBoxIndexChanged(QComboBox* a_comboBox, int a_newIdx)
 
 	LRT_Assert(a_newIdx < static_cast<int>(InputActionKey::ENUM_SIZE));
 
-	InputBinding* binding = TryGetSimpleInputBinding(a_comboBox);
+	InputBinding* binding = TryGetSimpleInputBinding(a_bindingSelector);
 
 	if (static_cast<InputActionKey>(a_newIdx) == InputActionKey::kNone)
 	{
 		// Remove that simple input binding.
 		LRT_Assert(binding != nullptr);
-		RemoveSimpleBinding(a_comboBox, binding);
+		RemoveSimpleBinding(a_bindingSelector, binding);
 	}
 	else
 	{
 		if (binding == nullptr)
 		{
 			// Create a new simple InputBinding.
-			InputBinding* binding = new InputBinding(GetGamepadButtons(a_comboBox), static_cast<InputActionKey>(a_newIdx));
+			InputBinding* binding = new InputBinding(GetGamepadButtons(a_bindingSelector), static_cast<InputActionKey>(a_newIdx));
 
 			GetPreset().Get_bindings().push_back(binding);
-			m_simpleBindingsLookup.emplace(a_comboBox, binding);
+			m_simpleBindingsLookup.emplace(a_bindingSelector, binding);
 		}
 		else
 		{
@@ -378,9 +365,9 @@ void PresetEditor::RemoveInputBindingFromPreset(InputBinding* a_binding)
 	bindings.erase(std::find(bindings.begin(), bindings.end(), a_binding));
 }
 
-void PresetEditor::RemoveSimpleBinding(QComboBox* a_comboBox, InputBinding* a_binding)
+void PresetEditor::RemoveSimpleBinding(BindingSelectorWidget* a_bindingSelector, InputBinding* a_binding)
 {
-	m_simpleBindingsLookup.erase(a_comboBox);
+	m_simpleBindingsLookup.erase(a_bindingSelector);
 	RemoveInputBindingFromPreset(a_binding);
 }
 

@@ -32,7 +32,5 @@ protected:
 
 	std::vector<GamepadDevice> m_devices;
 	size_t m_HACK_xInputDeviceCounter;
-
-	IDirectInput8* m_dinput;
 };
 

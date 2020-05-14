@@ -24,8 +24,8 @@ GamepadConfig::~GamepadConfig()
 
 void GamepadConfig::RestoreDefaults()
 {
-	static const float k_commonDeadzone = 0.1f;
-	static const int32_t k_commonMouseSpeed = 250;
+	static const float k_commonDeadzone = 0.15f;
+	static const int32_t k_commonMouseSpeed = 50;
 	static const int32_t k_commonMouseScrollSpeed = 3;
 
 	m_deadzoneLeftThumb = k_commonDeadzone;

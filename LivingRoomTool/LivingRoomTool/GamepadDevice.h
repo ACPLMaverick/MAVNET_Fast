@@ -9,15 +9,12 @@
 #include <Xinput.h>
 #pragma comment (lib, "Xinput9_1_0.lib")
 
-#define DIRECTINPUT_VERSION 0x0800
-#include <dinput.h>
-#pragma comment (lib, "dinput8.lib")
-#pragma comment (lib, "dxguid.lib")
+#include "InputLibraryWrapper.h"
 
 class GamepadDevice
 {
 public:
-	using InternalHandle = IDirectInputDevice8 * ;
+	using InternalHandle = IDirectInputDevice8* ;
 
 	explicit GamepadDevice
 	(
@@ -51,7 +48,7 @@ private:
 
 	inline void PollStateDirectInput();
 	inline void PollStateXInput();
-
+				
 	inline void ApplyDeadzones();
 
 	inline void VibrateDirectInput() const;

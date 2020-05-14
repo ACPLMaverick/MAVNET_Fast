@@ -14,676 +14,152 @@
    <string>LivingRoomTool</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="QTabWidget" name="tabWidget">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>1024</width>
-      <height>1024</height>
-     </rect>
-    </property>
-    <property name="sizePolicy">
-     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-      <horstretch>0</horstretch>
-      <verstretch>0</verstretch>
-     </sizepolicy>
-    </property>
-    <property name="tabShape">
-     <enum>QTabWidget::Rounded</enum>
-    </property>
-    <property name="currentIndex">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <property name="spacing">
      <number>0</number>
     </property>
-    <property name="iconSize">
-     <size>
-      <width>64</width>
-      <height>64</height>
-     </size>
+    <property name="leftMargin">
+     <number>0</number>
     </property>
-    <property name="elideMode">
-     <enum>Qt::ElideNone</enum>
+    <property name="topMargin">
+     <number>0</number>
     </property>
-    <widget class="QWidget" name="Tab_GamepadInstrumentation">
-     <attribute name="title">
-      <string>Gamepad Instrumentation</string>
-     </attribute>
-     <widget class="QWidget" name="horizontalLayoutWidget">
-      <property name="geometry">
-       <rect>
-        <x>9</x>
-        <y>9</y>
-        <width>1001</width>
-        <height>801</height>
-       </rect>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
       </property>
-      <layout class="QHBoxLayout" name="HorLayout_Base" stretch="30,0,70">
-       <property name="spacing">
-        <number>10</number>
-       </property>
-       <item>
-        <layout class="QVBoxLayout" name="VertLayout_DevPres" stretch="0,0,0,0,0">
-         <property name="spacing">
-          <number>10</number>
-         </property>
-         <property name="sizeConstraint">
-          <enum>QLayout::SetDefaultConstraint</enum>
-         </property>
-         <item>
-          <layout class="QVBoxLayout" name="VertLayout_Devices" stretch="0,0,0,0">
-           <item>
-            <widget class="QLabel" name="Lbl_SelectDevice">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-               <kerning>true</kerning>
-              </font>
-             </property>
-             <property name="text">
-              <string>Available gamepads</string>
-             </property>
-             <property name="textFormat">
-              <enum>Qt::RichText</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QListWidget" name="List_Devices"/>
-           </item>
-           <item>
-            <widget class="QPushButton" name="Btn_RefreshDevices">
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Refresh</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="Btn_IdentifyDevice">
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Identify device</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="Line" name="line">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QVBoxLayout" name="VertLayout_Presets">
-           <item>
-            <widget class="QLabel" name="Lbl_SelectPreset">
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Available presets</string>
-             </property>
-             <property name="textFormat">
-              <enum>Qt::RichText</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QListWidget" name="List_Presets"/>
-           </item>
-           <item>
-            <widget class="QPushButton" name="Btn_DuplicatePreset">
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Duplicate</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="Btn_RemovePreset">
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Remove</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="Btn_RenamePreset">
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Rename</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="Btn_SavePreset">
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Save</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="Btn_RestorePreset">
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Restore</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="Line" name="line_4">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QVBoxLayout" name="VertLayout_Tweaks" stretch="0,0,0,0,0">
-           <item>
-            <widget class="QLabel" name="Lbl_Tweaks">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-               <kerning>true</kerning>
-              </font>
-             </property>
-             <property name="text">
-              <string>Gamepad configuration</string>
-             </property>
-             <property name="textFormat">
-              <enum>Qt::RichText</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <layout class="QVBoxLayout" name="VertLayout_TweaksInner">
-             <property name="spacing">
-              <number>0</number>
-             </property>
-             <property name="sizeConstraint">
-              <enum>QLayout::SetDefaultConstraint</enum>
-             </property>
-             <item>
-              <layout class="QHBoxLayout" name="Tweak_Enables">
-               <item>
-                <widget class="QRadioButton" name="Tweak_Enables_RB_Off">
-                 <property name="text">
-                  <string>Off</string>
-                 </property>
-                 <property name="checked">
-                  <bool>true</bool>
-                 </property>
-                 <property name="autoExclusive">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="Tweak_Enables_RB_Desktop">
-                 <property name="text">
-                  <string>Desktop Only</string>
-                 </property>
-                 <property name="autoExclusive">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="Tweak_Enables_RB_Game">
-                 <property name="text">
-                  <string>Game Only</string>
-                 </property>
-                 <property name="autoExclusive">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QRadioButton" name="Tweak_Enables_RB_On">
-                 <property name="text">
-                  <string>On</string>
-                 </property>
-                 <property name="autoExclusive">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <widget class="QTweakSlider" name="Tweak_Deadzone_L" native="true"/>
-             </item>
-             <item>
-              <widget class="QTweakSlider" name="Tweak_Deadzone_R" native="true"/>
-             </item>
-             <item>
-              <widget class="QTweakSlider" name="Tweak_Deadzone_TL" native="true"/>
-             </item>
-             <item>
-              <widget class="QTweakSlider" name="Tweak_Deadzone_TR" native="true"/>
-             </item>
-             <item>
-              <widget class="QTweakSlider" name="Tweak_MouseSpeed_X" native="true"/>
-             </item>
-             <item>
-              <widget class="QTweakSlider" name="Tweak_MouseSpeed_Y" native="true"/>
-             </item>
-              <item>
-              <widget class="QTweakSlider" name="Tweak_MouseScroll" native="true"/>
-              </item>
-            </layout>
-           </item>
-           <item>
-            <widget class="QPushButton" name="Btn_SaveTweaks">
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Save</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="Btn_RestoreTweaks">
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Restore</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="Btn_DefaultTweaks">
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Set defaults</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="Line" name="line_2">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QVBoxLayout" name="VertLayout_EditPreset" stretch="75,0,25">
+      <property name="tabShape">
+       <enum>QTabWidget::Rounded</enum>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>64</width>
+        <height>64</height>
+       </size>
+      </property>
+      <property name="elideMode">
+       <enum>Qt::ElideNone</enum>
+      </property>
+      <widget class="QWidget" name="Tab_GamepadInstrumentation">
+       <attribute name="title">
+        <string>Gamepad Instrumentation</string>
+       </attribute>
+       <widget class="QWidget" name="horizontalLayoutWidget">
+        <property name="geometry">
+         <rect>
+          <x>9</x>
+          <y>9</y>
+          <width>1001</width>
+          <height>801</height>
+         </rect>
+        </property>
+        <layout class="QHBoxLayout" name="HorLayout_Base" stretch="30,0,70">
          <property name="spacing">
           <number>10</number>
          </property>
          <item>
-          <widget class="QWidget" name="Widget_Gamepad" native="true">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <widget class="QLabel" name="Lbl_Gamepad">
-            <property name="geometry">
-             <rect>
-              <x>0</x>
-              <y>0</y>
-              <width>681</width>
-              <height>601</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string/>
-            </property>
-            <property name="pixmap">
-             <pixmap resource="LivingRoomTool.qrc">:/LivingRoomTool/Resources/gamepad_xb1.png</pixmap>
-            </property>
-            <property name="scaledContents">
-             <bool>true</bool>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_RT">
-            <property name="geometry">
-             <rect>
-              <x>510</x>
-              <y>20</y>
-              <width>128</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_RB">
-            <property name="geometry">
-             <rect>
-              <x>510</x>
-              <y>83</y>
-              <width>128</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_LT">
-            <property name="geometry">
-             <rect>
-              <x>40</x>
-              <y>20</y>
-              <width>128</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_LB">
-            <property name="geometry">
-             <rect>
-              <x>40</x>
-              <y>83</y>
-              <width>128</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_View">
-            <property name="geometry">
-             <rect>
-              <x>260</x>
-              <y>130</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_Menu">
-            <property name="geometry">
-             <rect>
-              <x>330</x>
-              <y>80</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_RUp">
-            <property name="geometry">
-             <rect>
-              <x>550</x>
-              <y>200</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_RLeft">
-            <property name="geometry">
-             <rect>
-              <x>500</x>
-              <y>240</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_RDown">
-            <property name="geometry">
-             <rect>
-              <x>550</x>
-              <y>280</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_RRight">
-            <property name="geometry">
-             <rect>
-              <x>600</x>
-              <y>240</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_LDown">
-            <property name="geometry">
-             <rect>
-              <x>100</x>
-              <y>550</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_LLeft">
-            <property name="geometry">
-             <rect>
-              <x>50</x>
-              <y>510</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_LRight">
-            <property name="geometry">
-             <rect>
-              <x>150</x>
-              <y>510</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_LUp">
-            <property name="geometry">
-             <rect>
-              <x>100</x>
-              <y>470</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_RThumbPress">
-            <property name="geometry">
-             <rect>
-              <x>350</x>
-              <y>550</y>
-              <width>128</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_LThumbPress">
-            <property name="geometry">
-             <rect>
-              <x>30</x>
-              <y>310</y>
-              <width>128</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_LThumbDown">
-            <property name="geometry">
-             <rect>
-              <x>50</x>
-              <y>270</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_LThumbUp">
-            <property name="geometry">
-             <rect>
-              <x>50</x>
-              <y>190</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_LThumbLeft">
-            <property name="geometry">
-             <rect>
-              <x>0</x>
-              <y>230</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_LThumbRight">
-            <property name="geometry">
-             <rect>
-              <x>100</x>
-              <y>230</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_RThumbUp">
-            <property name="geometry">
-             <rect>
-              <x>490</x>
-              <y>470</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_RThumbDown">
-            <property name="geometry">
-             <rect>
-              <x>490</x>
-              <y>550</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_RThumbLeft">
-            <property name="geometry">
-             <rect>
-              <x>440</x>
-              <y>510</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="Cb_Gamepad_RThumbRight">
-            <property name="geometry">
-             <rect>
-              <x>540</x>
-              <y>510</y>
-              <width>84</width>
-              <height>24</height>
-             </rect>
-            </property>
-           </widget>
-          </widget>
-         </item>
-         <item>
-          <widget class="Line" name="line_3">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QVBoxLayout" name="VertLayout_Specials">
+          <layout class="QVBoxLayout" name="VertLayout_DevPres" stretch="0,0,0,0,0">
            <property name="spacing">
             <number>10</number>
            </property>
+           <property name="sizeConstraint">
+            <enum>QLayout::SetDefaultConstraint</enum>
+           </property>
            <item>
-            <widget class="QLabel" name="Lbl_AdvancedBindings">
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Advanced bindings</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QListWidget" name="List_AdvancedBindings"/>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="HorLLayout_AdvancedBindingsBtns">
+            <layout class="QVBoxLayout" name="VertLayout_Devices" stretch="0,0,0,0">
              <item>
-              <widget class="QPushButton" name="BtnAdvancedAdd">
+              <widget class="QLabel" name="Lbl_SelectDevice">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                 <kerning>true</kerning>
+                </font>
+               </property>
+               <property name="text">
+                <string>Available gamepads</string>
+               </property>
+               <property name="textFormat">
+                <enum>Qt::RichText</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QListWidget" name="List_Devices"/>
+             </item>
+             <item>
+              <widget class="QPushButton" name="Btn_RefreshDevices">
                <property name="font">
                 <font>
                  <pointsize>12</pointsize>
                 </font>
                </property>
                <property name="text">
-                <string>Add</string>
+                <string>Refresh</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="BtnAdvancedDuplicate">
+              <widget class="QPushButton" name="Btn_IdentifyDevice">
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Identify device</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="Line" name="line">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="VertLayout_Presets">
+             <item>
+              <widget class="QLabel" name="Lbl_SelectPreset">
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Available presets</string>
+               </property>
+               <property name="textFormat">
+                <enum>Qt::RichText</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QListWidget" name="List_Presets"/>
+             </item>
+             <item>
+              <widget class="QPushButton" name="Btn_DuplicatePreset">
                <property name="font">
                 <font>
                  <pointsize>12</pointsize>
@@ -695,19 +171,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="BtnAdvancedEdit">
-               <property name="font">
-                <font>
-                 <pointsize>12</pointsize>
-                </font>
-               </property>
-               <property name="text">
-                <string>Edit</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="BtnAdvancedRemove">
+              <widget class="QPushButton" name="Btn_RemovePreset">
                <property name="font">
                 <font>
                  <pointsize>12</pointsize>
@@ -718,75 +182,628 @@
                </property>
               </widget>
              </item>
+             <item>
+              <widget class="QPushButton" name="Btn_RenamePreset">
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Rename</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="Btn_SavePreset">
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Save</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="Btn_RestorePreset">
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Restore</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="Line" name="line_4">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="VertLayout_Tweaks" stretch="0,0,0,0,0">
+             <item>
+              <widget class="QLabel" name="Lbl_Tweaks">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                 <kerning>true</kerning>
+                </font>
+               </property>
+               <property name="text">
+                <string>Gamepad configuration</string>
+               </property>
+               <property name="textFormat">
+                <enum>Qt::RichText</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QVBoxLayout" name="VertLayout_TweaksInner">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="sizeConstraint">
+                <enum>QLayout::SetDefaultConstraint</enum>
+               </property>
+               <item>
+                <layout class="QHBoxLayout" name="Tweak_Enables">
+                 <item>
+                  <widget class="QRadioButton" name="Tweak_Enables_RB_Off">
+                   <property name="text">
+                    <string>Off</string>
+                   </property>
+                   <property name="checked">
+                    <bool>true</bool>
+                   </property>
+                   <property name="autoExclusive">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="Tweak_Enables_RB_Desktop">
+                   <property name="text">
+                    <string>Desktop Only</string>
+                   </property>
+                   <property name="autoExclusive">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="Tweak_Enables_RB_Game">
+                   <property name="text">
+                    <string>Game Only</string>
+                   </property>
+                   <property name="autoExclusive">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="Tweak_Enables_RB_On">
+                   <property name="text">
+                    <string>On</string>
+                   </property>
+                   <property name="autoExclusive">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QTweakSlider" name="Tweak_Deadzone_L" native="true"/>
+               </item>
+               <item>
+                <widget class="QTweakSlider" name="Tweak_Deadzone_R" native="true"/>
+               </item>
+               <item>
+                <widget class="QTweakSlider" name="Tweak_Deadzone_TL" native="true"/>
+               </item>
+               <item>
+                <widget class="QTweakSlider" name="Tweak_Deadzone_TR" native="true"/>
+               </item>
+               <item>
+                <widget class="QTweakSlider" name="Tweak_MouseSpeed_X" native="true"/>
+               </item>
+               <item>
+                <widget class="QTweakSlider" name="Tweak_MouseSpeed_Y" native="true"/>
+               </item>
+               <item>
+                <widget class="QTweakSlider" name="Tweak_MouseScroll" native="true"/>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <widget class="QPushButton" name="Btn_SaveTweaks">
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Save</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="Btn_RestoreTweaks">
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Restore</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="Btn_DefaultTweaks">
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Set defaults</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="Line" name="line_2">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="VertLayout_EditPreset" stretch="75,0,25">
+           <property name="spacing">
+            <number>10</number>
+           </property>
+           <item>
+            <widget class="QWidget" name="Widget_Gamepad" native="true">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <widget class="QLabel" name="Lbl_Gamepad">
+              <property name="geometry">
+               <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>681</width>
+                <height>601</height>
+               </rect>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="pixmap">
+               <pixmap resource="LivingRoomTool.qrc">:/LivingRoomTool/Resources/gamepad_xb1.png</pixmap>
+              </property>
+              <property name="scaledContents">
+               <bool>true</bool>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_RT" native="true">
+              <property name="geometry">
+               <rect>
+                <x>510</x>
+                <y>20</y>
+                <width>128</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_RB" native="true">
+              <property name="geometry">
+               <rect>
+                <x>510</x>
+                <y>83</y>
+                <width>128</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_LT" native="true">
+              <property name="geometry">
+               <rect>
+                <x>40</x>
+                <y>20</y>
+                <width>128</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_LB" native="true">
+              <property name="geometry">
+               <rect>
+                <x>40</x>
+                <y>83</y>
+                <width>128</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_View" native="true">
+              <property name="geometry">
+               <rect>
+                <x>260</x>
+                <y>130</y>
+                <width>84</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_Menu" native="true">
+              <property name="geometry">
+               <rect>
+                <x>330</x>
+                <y>80</y>
+                <width>84</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_RUp" native="true">
+              <property name="geometry">
+               <rect>
+                <x>550</x>
+                <y>200</y>
+                <width>96</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_RLeft" native="true">
+              <property name="geometry">
+               <rect>
+                <x>500</x>
+                <y>240</y>
+                <width>96</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_RDown" native="true">
+              <property name="geometry">
+               <rect>
+                <x>550</x>
+                <y>280</y>
+                <width>96</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_RRight" native="true">
+              <property name="geometry">
+               <rect>
+                <x>600</x>
+                <y>240</y>
+                <width>96</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_LDown" native="true">
+              <property name="geometry">
+               <rect>
+                <x>100</x>
+                <y>550</y>
+                <width>96</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_LLeft" native="true">
+              <property name="geometry">
+               <rect>
+                <x>50</x>
+                <y>510</y>
+                <width>96</width>
+                <height>24</height>
+               </rect>
+              </property>
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_LRight" native="true">
+              <property name="geometry">
+               <rect>
+                <x>150</x>
+                <y>510</y>
+                <width>96</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_LUp" native="true">
+              <property name="geometry">
+               <rect>
+                <x>100</x>
+                <y>470</y>
+                <width>96</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_RThumbPress" native="true">
+              <property name="geometry">
+               <rect>
+                <x>350</x>
+                <y>550</y>
+                <width>128</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_LThumbPress" native="true">
+              <property name="geometry">
+               <rect>
+                <x>30</x>
+                <y>310</y>
+                <width>128</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_LThumbDown" native="true">
+              <property name="geometry">
+               <rect>
+                <x>50</x>
+                <y>270</y>
+                <width>96</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_LThumbUp" native="true">
+              <property name="geometry">
+               <rect>
+                <x>50</x>
+                <y>190</y>
+                <width>96</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_LThumbLeft" native="true">
+              <property name="geometry">
+               <rect>
+                <x>0</x>
+                <y>230</y>
+                <width>96</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_LThumbRight" native="true">
+              <property name="geometry">
+               <rect>
+                <x>100</x>
+                <y>230</y>
+                <width>96</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_RThumbUp" native="true">
+              <property name="geometry">
+               <rect>
+                <x>490</x>
+                <y>470</y>
+                <width>96</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_RThumbDown" native="true">
+              <property name="geometry">
+               <rect>
+                <x>490</x>
+                <y>550</y>
+                <width>96</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_RThumbLeft" native="true">
+              <property name="geometry">
+               <rect>
+                <x>440</x>
+                <y>510</y>
+                <width>96</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+             <widget class="BindingSelectorWidget" name="Bs_Gamepad_RThumbRight" native="true">
+              <property name="geometry">
+               <rect>
+                <x>540</x>
+                <y>510</y>
+                <width>96</width>
+                <height>24</height>
+               </rect>
+              </property>
+             </widget>
+            </widget>
+           </item>
+           <item>
+            <widget class="Line" name="line_3">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="VertLayout_Specials">
+             <property name="spacing">
+              <number>10</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="Lbl_AdvancedBindings">
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Advanced bindings</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QListWidget" name="List_AdvancedBindings"/>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="HorLLayout_AdvancedBindingsBtns">
+               <item>
+                <widget class="QPushButton" name="BtnAdvancedAdd">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Add</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="BtnAdvancedDuplicate">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Duplicate</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="BtnAdvancedEdit">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Edit</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="BtnAdvancedRemove">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Remove</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
             </layout>
            </item>
           </layout>
          </item>
         </layout>
-       </item>
-      </layout>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="Tab_MonitorControl">
+       <attribute name="title">
+        <string>Monitor Control</string>
+       </attribute>
+       <widget class="QPushButton" name="Btn_OfficeMode">
+        <property name="geometry">
+         <rect>
+          <x>312</x>
+          <y>50</y>
+          <width>400</width>
+          <height>128</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>32</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Office</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="Btn_LivingRoomMode">
+        <property name="geometry">
+         <rect>
+          <x>312</x>
+          <y>220</y>
+          <width>400</width>
+          <height>128</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>32</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Living Room</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="Btn_AllMode">
+        <property name="geometry">
+         <rect>
+          <x>312</x>
+          <y>390</y>
+          <width>400</width>
+          <height>128</height>
+         </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>32</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>All Monitors On</string>
+        </property>
+       </widget>
+      </widget>
      </widget>
-    </widget>
-    <widget class="QWidget" name="Tab_MonitorControl">
-     <attribute name="title">
-      <string>Monitor Control</string>
-     </attribute>
-     <widget class="QPushButton" name="Btn_OfficeMode">
-      <property name="geometry">
-       <rect>
-        <x>312</x>
-        <y>50</y>
-        <width>400</width>
-        <height>128</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>32</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Office</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="Btn_LivingRoomMode">
-      <property name="geometry">
-       <rect>
-        <x>312</x>
-        <y>220</y>
-        <width>400</width>
-        <height>128</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>32</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Living Room</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="Btn_AllMode">
-      <property name="geometry">
-       <rect>
-        <x>312</x>
-        <y>390</y>
-        <width>400</width>
-        <height>128</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>32</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>All Monitors On</string>
-      </property>
-     </widget>
-    </widget>
-   </widget>
+    </item>
+   </layout>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
@@ -796,6 +813,11 @@
    <extends>QWidget</extends>
    <header>QTweakSlider.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BindingSelectorWidget</class>
+   <extends>QWidget</extends>
+   <header>BindingSelectorWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources>

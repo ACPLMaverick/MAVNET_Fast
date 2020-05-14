@@ -8,7 +8,7 @@ class InputPreset;
 class InputPresetManager;
 class LivingRoomTool;
 class InputBinding;
-class QComboBox;
+class BindingSelectorWidget;
 class QListWidget;
 class QPushButton;
 enum class GamepadButtons : uint32_t;
@@ -21,38 +21,38 @@ public:
 
 	struct Elements
 	{
-		static const size_t k_comboBoxNum = 24;
+		static const size_t k_bindingSelectorNum = 24;
 
 		union
 		{
 			struct
 			{
-				QComboBox* Cb_RT;
-				QComboBox* Cb_RB;
-				QComboBox* Cb_LT;
-				QComboBox* Cb_LB;
-				QComboBox* Cb_View;
-				QComboBox* Cb_Menu;
-				QComboBox* Cb_RUp;
-				QComboBox* Cb_RLeft;
-				QComboBox* Cb_RDown;
-				QComboBox* Cb_RRight;
-				QComboBox* Cb_LDown;
-				QComboBox* Cb_LLeft;
-				QComboBox* Cb_LRight;
-				QComboBox* Cb_LUp;
-				QComboBox* Cb_RThumbPress;
-				QComboBox* Cb_LThumbPress;
-				QComboBox* Cb_LThumbDown;
-				QComboBox* Cb_LThumbUp;
-				QComboBox* Cb_LThumbLeft;
-				QComboBox* Cb_LThumbRight;
-				QComboBox* Cb_RThumbUp;
-				QComboBox* Cb_RThumbDown;
-				QComboBox* Cb_RThumbLeft;
-				QComboBox* Cb_RThumbRight;
+				BindingSelectorWidget* Bs_RT;
+				BindingSelectorWidget* Bs_RB;
+				BindingSelectorWidget* Bs_LT;
+				BindingSelectorWidget* Bs_LB;
+				BindingSelectorWidget* Bs_View;
+				BindingSelectorWidget* Bs_Menu;
+				BindingSelectorWidget* Bs_RUp;
+				BindingSelectorWidget* Bs_RLeft;
+				BindingSelectorWidget* Bs_RDown;
+				BindingSelectorWidget* Bs_RRight;
+				BindingSelectorWidget* Bs_LDown;
+				BindingSelectorWidget* Bs_LLeft;
+				BindingSelectorWidget* Bs_LRight;
+				BindingSelectorWidget* Bs_LUp;
+				BindingSelectorWidget* Bs_RThumbPress;
+				BindingSelectorWidget* Bs_LThumbPress;
+				BindingSelectorWidget* Bs_LThumbDown;
+				BindingSelectorWidget* Bs_LThumbUp;
+				BindingSelectorWidget* Bs_LThumbLeft;
+				BindingSelectorWidget* Bs_LThumbRight;
+				BindingSelectorWidget* Bs_RThumbUp;
+				BindingSelectorWidget* Bs_RThumbDown;
+				BindingSelectorWidget* Bs_RThumbLeft;
+				BindingSelectorWidget* Bs_RThumbRight;
 			};
-			QComboBox* ComboBoxes[k_comboBoxNum];
+			BindingSelectorWidget* BindingSelectors[k_bindingSelectorNum];
 		};
 		QListWidget* List_AdvancedBindings;
 		QPushButton* Btn_AdvancedAdd;
@@ -74,23 +74,23 @@ private:
 
 	inline InputPreset& GetPreset();
 
-	inline void InitializeComboboxes();
+	inline void InitializeBindingSelectors();
 	inline void InitializeLookups();
 	inline void InitializeConnections();
 	inline void UpdateElements();
 
-	// Will return false if corresponding combobox has already an assigned value.
-	bool UpdateCombobox(InputBinding* binding);
+	// Will return false if corresponding BindingSelector has already an assigned value.
+	bool UpdateBindingSelector(InputBinding* binding);
 	void UpdateAdvancedList(InputBinding* binding);
 
 	std::string GetInputBindingAsString(const InputBinding* binding);
-	class QComboBox* GetComboBox(GamepadButtons button);
-	GamepadButtons GetGamepadButtons(class QComboBox* comboBox);
-	InputBinding* GetSimpleInputBinding(class QComboBox* comboBox);
-	InputBinding* TryGetSimpleInputBinding(class QComboBox* comboBox);
+	class BindingSelectorWidget* GetBindingSelector(GamepadButtons button);
+	GamepadButtons GetGamepadButtons(class BindingSelectorWidget* bindingSelector);
+	InputBinding* GetSimpleInputBinding(class BindingSelectorWidget* bindingSelector);
+	InputBinding* TryGetSimpleInputBinding(class BindingSelectorWidget* bindingSelector);
 	InputBinding* GetAdvancedInputBinding(size_t index);
 
-	void OnComboBoxIndexChanged(QComboBox* comboBox, int newIdx);
+	void OnBindingSelectorIndexChanged(BindingSelectorWidget* bindingSelector, int newIdx);
 	void OnAdvancedAddClicked();
 	void OnAdvancedDuplicateClicked();
 	void OnAdvancedEditClicked();
@@ -99,7 +99,7 @@ private:
 	void AddInputBindingToPreset(InputBinding* binding);
 	void RemoveInputBindingFromPreset(InputBinding* binding);
 
-	void RemoveSimpleBinding(QComboBox* comboBox, InputBinding* binding);
+	void RemoveSimpleBinding(BindingSelectorWidget* bindingSelector, InputBinding* binding);
 
 	void AddAdvancedBinding();
 	void DuplicateAdvancedBinding(size_t bindingIndex);
@@ -110,10 +110,10 @@ private:
 
 	Elements m_elements;
 	
-	std::map<GamepadButtons, QComboBox*> m_gamepadButtonsToComboBox;
-	std::map<QComboBox*, GamepadButtons> m_comboBoxToGamepadButtons;
+	std::map<GamepadButtons, BindingSelectorWidget*> m_gamepadButtonsToBindingSelector;
+	std::map<BindingSelectorWidget*, GamepadButtons> m_bindingSelectorToGamepadButtons;
 
-	std::map<QComboBox*, InputBinding*> m_simpleBindingsLookup;
+	std::map<BindingSelectorWidget*, InputBinding*> m_simpleBindingsLookup;
 	std::vector<InputBinding*> m_advancedBindingsLookup;
 
 	InputPresetManager* m_presetManager{ nullptr };

@@ -1,5 +1,7 @@
 #include "GamepadProcessor.h"
 
+#include "InputLibraryWrapper.h"
+
 #define LRT_CheckDeviceIndex(_index_, _toReturn_)	\
 if (_index_ >= m_devices.size())					\
 {													\
@@ -10,7 +12,6 @@ if (_index_ >= m_devices.size())					\
 GamepadProcessor::GamepadProcessor()
 	: BaseProcessor()
 	, m_HACK_xInputDeviceCounter(0)
-	, m_dinput(nullptr)
 {
 }
 
@@ -23,7 +24,7 @@ void GamepadProcessor::RescanGamepads()
 	m_devices.clear();
 	m_HACK_xInputDeviceCounter = 0;
 
-	LRT_CheckHR(m_dinput->EnumDevices(
+	LRT_CheckHR(InputLibraryWrapper::Get()->EnumDevices(
 		DI8DEVCLASS_GAMECTRL,
 		StaticDinputEnumerateGamepads,
 		reinterpret_cast<LPVOID>(this),
@@ -75,15 +76,7 @@ void GamepadProcessor::IdentifyDeviceByVibrating(size_t a_index) const
 void GamepadProcessor::Init_Internal()
 {
 	// Create DirectInput main handle.
-	LRT_CheckHR(DirectInput8Create
-	(
-		GetModuleHandle(NULL),
-		DIRECTINPUT_VERSION,
-		IID_IDirectInput8,
-		reinterpret_cast<LPVOID*>(&m_dinput),
-		NULL
-	));
-	LRT_Assert(m_dinput != nullptr);
+	InputLibraryWrapper::Init();
 }
 
 void GamepadProcessor::Cleanup_Internal()
@@ -91,8 +84,7 @@ void GamepadProcessor::Cleanup_Internal()
 	m_devices.clear();
 	m_HACK_xInputDeviceCounter = 0;
 
-	m_dinput->Release();
-	m_dinput = nullptr;
+	InputLibraryWrapper::Cleanup();
 }
 
 BOOL GamepadProcessor::StaticDinputEnumerateGamepads(LPCDIDEVICEINSTANCE a_lpddi, LPVOID a_pvRef)
@@ -115,7 +107,7 @@ BOOL GamepadProcessor::StaticDinputEnumerateGamepads(LPCDIDEVICEINSTANCE a_lpddi
 
 BOOL GamepadProcessor::DinputEnumerateGamepads(LPCDIDEVICEINSTANCE a_device)
 {
-	m_devices.push_back(std::move(GamepadDevice(m_dinput, a_device, m_HACK_xInputDeviceCounter)));
+	m_devices.push_back(std::move(GamepadDevice(InputLibraryWrapper::Get(), a_device, m_HACK_xInputDeviceCounter)));
 
 	if (m_devices.back().IsXInputDevice())
 	{

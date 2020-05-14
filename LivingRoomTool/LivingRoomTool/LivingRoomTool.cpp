@@ -36,9 +36,9 @@ void LivingRoomTool::InitTweaks()
 	ui.Tweak_Deadzone_TL->SetName(L"LT Deadzone");
 	ui.Tweak_Deadzone_TR->SetName(L"RT Deadzone");
 	ui.Tweak_MouseSpeed_X->SetName(L"Mouse Speed X");
-	ui.Tweak_MouseSpeed_X->SetMaxValue(1000);
+	ui.Tweak_MouseSpeed_X->SetMaxValue(300);
 	ui.Tweak_MouseSpeed_Y->SetName(L"Mouse Speed Y");
-	ui.Tweak_MouseSpeed_Y->SetMaxValue(1000);
+	ui.Tweak_MouseSpeed_Y->SetMaxValue(300);
 	ui.Tweak_MouseScroll->SetName(L"Mouse Speed Scroll");
 	ui.Tweak_MouseScroll->SetMaxValue(10);
 }
@@ -108,30 +108,30 @@ void LivingRoomTool::InitPresetEditor()
 {
 	m_presetEditor.Init(
 		{
-			ui.Cb_Gamepad_RT,
-			ui.Cb_Gamepad_RB,
-			ui.Cb_Gamepad_LT,
-			ui.Cb_Gamepad_LB,
-			ui.Cb_Gamepad_View,
-			ui.Cb_Gamepad_Menu,
-			ui.Cb_Gamepad_RUp,
-			ui.Cb_Gamepad_RLeft,
-			ui.Cb_Gamepad_RDown,
-			ui.Cb_Gamepad_RRight,
-			ui.Cb_Gamepad_LDown,
-			ui.Cb_Gamepad_LLeft,
-			ui.Cb_Gamepad_LRight,
-			ui.Cb_Gamepad_LUp,
-			ui.Cb_Gamepad_RThumbPress,
-			ui.Cb_Gamepad_LThumbPress,
-			ui.Cb_Gamepad_LThumbDown,
-			ui.Cb_Gamepad_LThumbUp,
-			ui.Cb_Gamepad_LThumbLeft,
-			ui.Cb_Gamepad_LThumbRight,
-			ui.Cb_Gamepad_RThumbUp,
-			ui.Cb_Gamepad_RThumbDown,
-			ui.Cb_Gamepad_RThumbLeft,
-			ui.Cb_Gamepad_RThumbRight,
+			ui.Bs_Gamepad_RT,
+			ui.Bs_Gamepad_RB,
+			ui.Bs_Gamepad_LT,
+			ui.Bs_Gamepad_LB,
+			ui.Bs_Gamepad_View,
+			ui.Bs_Gamepad_Menu,
+			ui.Bs_Gamepad_RUp,
+			ui.Bs_Gamepad_RLeft,
+			ui.Bs_Gamepad_RDown,
+			ui.Bs_Gamepad_RRight,
+			ui.Bs_Gamepad_LDown,
+			ui.Bs_Gamepad_LLeft,
+			ui.Bs_Gamepad_LRight,
+			ui.Bs_Gamepad_LUp,
+			ui.Bs_Gamepad_RThumbPress,
+			ui.Bs_Gamepad_LThumbPress,
+			ui.Bs_Gamepad_LThumbDown,
+			ui.Bs_Gamepad_LThumbUp,
+			ui.Bs_Gamepad_LThumbLeft,
+			ui.Bs_Gamepad_LThumbRight,
+			ui.Bs_Gamepad_RThumbUp,
+			ui.Bs_Gamepad_RThumbDown,
+			ui.Bs_Gamepad_RThumbLeft,
+			ui.Bs_Gamepad_RThumbRight,
 			ui.List_AdvancedBindings,
 			ui.BtnAdvancedAdd,
 			ui.BtnAdvancedDuplicate,

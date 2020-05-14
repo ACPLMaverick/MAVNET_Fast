@@ -112,6 +112,18 @@
     <ClCompile Include="InputActionGenerator.cpp">
       <Filter>Source Files\Input</Filter>
     </ClCompile>
+    <ClCompile Include="BindingSelectorWidget.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="InputActionConverter.cpp">
+      <Filter>Source Files\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="InputLibraryWrapper.cpp">
+      <Filter>Source Files\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="InputActionKeypressRetriever.cpp">
+      <Filter>Source Files\Input</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="LivingRoomTool.h">
@@ -138,6 +150,9 @@
     <QtMoc Include="AdvancedBindingEditor.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="BindingSelectorWidget.h">
+      <Filter>Header Files\UI</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="LivingRoomTool.ui">
@@ -150,6 +165,9 @@
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="BindingExchangeWidget.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="BindingSelectorWidget.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>
@@ -202,6 +220,15 @@
       <Filter>Header Files\UI</Filter>
     </ClInclude>
     <ClInclude Include="InputActionGenerator.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="InputActionConverter.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="InputActionKeypressRetriever.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="InputLibraryWrapper.h">
       <Filter>Header Files\Input</Filter>
     </ClInclude>
   </ItemGroup>
