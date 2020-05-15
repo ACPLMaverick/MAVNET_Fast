@@ -1,5 +1,2 @@
 LRT TODO:
-- merge GamepadButtons into one bitfield instead of storing it as an array
-//- add numpad buttons to InputActionKey
-- implement Gamepad Modes (can it be done? Detect if a foreground app is present?)
 - application should be able to work in background

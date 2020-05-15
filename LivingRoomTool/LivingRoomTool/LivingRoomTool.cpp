@@ -5,6 +5,7 @@
 
 LivingRoomTool::LivingRoomTool(QWidget* a_parent)
 	: QMainWindow(a_parent)
+	, m_inputProcessor(reinterpret_cast<InputProcessor::WindowHandle>(winId()))
 {
 	ui.setupUi(this);
 	setWindowFlags(Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);

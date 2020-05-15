@@ -4,9 +4,10 @@
 
 bool HACK_g_disallowInstrumentation = false;
 
-InputProcessor::InputProcessor()
+InputProcessor::InputProcessor(WindowHandle a_windowHandle)
 	: BaseProcessor()
 	, m_gamepadProcessor()
+	, m_windowHandle(a_windowHandle)
 	, m_qTimer(nullptr)
 	, m_assignedPreset(k_invalidPresetIndex)
 {
@@ -76,11 +77,34 @@ void InputProcessor::Tick()
 
 inline void InputProcessor::ResolveGamepad(const GamepadDevice& a_device, const InputPreset& a_preset, std::vector<InputAction>& outActions)
 {
+	if (CanResolveGamepad(a_device) == false)
+	{
+		return;
+	}
+
 	const GamepadState& deviceState = a_device.GetState();
 
 	for (InputBinding* binding : a_preset.Get_bindings())
 	{
 		binding->GenerateActions(a_device.GetState(), a_device.GetConfig(), outActions);
+	}
+}
+
+inline bool InputProcessor::CanResolveGamepad(const GamepadDevice& device)
+{
+	const GamepadConfig::InstrumentationMode mode = device.GetConfig().Get_instrumentationMode();
+
+	switch (mode)
+	{
+	case GamepadConfig::InstrumentationMode::kOff:
+		return false;
+	case GamepadConfig::InstrumentationMode::kDesktop:
+		return IsGameOnScreen(m_windowHandle) == false;
+	case GamepadConfig::InstrumentationMode::kGame:
+		return IsGameOnScreen(m_windowHandle);
+	case GamepadConfig::InstrumentationMode::kOn:
+	default:
+		return true;
 	}
 }
 
@@ -210,37 +234,43 @@ inline void InputProcessor::DisableNumlockIfNecessary()
 	}
 }
 
-/*
-void InputProcessor::Test_EmitInput()
+bool InputProcessor::IsGameOnScreen(WindowHandle a_myHandle)
 {
-	static bool bIsUp = false;
+	const HWND foregroundWindow = GetForegroundWindow();
 
-#if 1
-	INPUT testInput[4] = {};
+	if (foregroundWindow == nullptr
+		|| foregroundWindow == a_myHandle
+		|| foregroundWindow == GetDesktopWindow()
+		|| foregroundWindow == GetShellWindow())
+	{
+		return false;
+	}
 
-	const WORD key = static_cast<WORD>(MapVirtualKey(VK_UP, MAPVK_VK_TO_VSC));
+	QUERY_USER_NOTIFICATION_STATE query;
+	LRT_CheckHR(SHQueryUserNotificationState(&query));
+	
+	if (query == QUNS_BUSY
+		|| query == QUNS_RUNNING_D3D_FULL_SCREEN)
+	{
+		return true;
+	}
 
-	testInput[0].type = INPUT_KEYBOARD;
-	testInput[0].ki.wScan = key;
-	testInput[0].ki.dwFlags = KEYEVENTF_SCANCODE;
+	RECT foregroundRect;
+	GetWindowRect(foregroundWindow, &foregroundRect);
 
-	testInput[1].type = INPUT_KEYBOARD;
-	testInput[1].ki.wVk = key;
-	testInput[1].ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
+	MONITORINFO monitorInfo{};
+	monitorInfo.cbSize = sizeof(MONITORINFO);
+	LRT_Verify(GetMonitorInfo(MonitorFromWindow(foregroundWindow, MONITOR_DEFAULTTOPRIMARY), &monitorInfo));
 
-	//testInput[2].type = INPUT_MOUSE;
-	//testInput[2].mi.dx = 1;
-	//testInput[2].mi.dwFlags = MOUSEEVENTF_MOVE;
+	if (foregroundRect.left == monitorInfo.rcMonitor.left
+		&& foregroundRect.right == monitorInfo.rcMonitor.right
+		&& foregroundRect.bottom == monitorInfo.rcMonitor.bottom
+		&& foregroundRect.top == monitorInfo.rcMonitor.top)
+	{
+		return true;
+	}
 
-	//testInput[3].type = INPUT_MOUSE;
-	//testInput[3].mi.dy = 1;
-	//testInput[3].mi.dwFlags = MOUSEEVENTF_MOVE;
-
-	SendInput(2, testInput, sizeof(INPUT));
-#endif
-
-	bIsUp = !bIsUp;
+	return false;
 }
-*/
 
 const int32_t InputProcessor::k_tickIntervalMs = 8;

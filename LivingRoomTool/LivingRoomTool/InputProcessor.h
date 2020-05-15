@@ -11,7 +11,9 @@ class InputProcessor : public BaseProcessor
 {
 public:
 
-	InputProcessor();
+	using WindowHandle = HWND;
+
+	InputProcessor(WindowHandle windowHandle);
 	~InputProcessor();
 
 	LRT_DisallowCopy(InputProcessor);
@@ -27,18 +29,23 @@ protected:
 	static const size_t k_invalidPresetIndex = static_cast<size_t>(-1);
 
 	// Inherited via BaseProcessor
-	virtual void Init_Internal() override;
-	virtual void Cleanup_Internal() override;
+	void Init_Internal() override;
+	void Cleanup_Internal() override;
 
 	void Tick();
 	inline void ResolveGamepad(const GamepadDevice& device, const InputPreset& preset, std::vector<InputAction>& outActions);
+	inline bool CanResolveGamepad(const GamepadDevice& device);
 	inline void ProcessActions();
 	inline void DisableNumlockIfNecessary();
+
+	static bool IsGameOnScreen(WindowHandle myHandle);
 
 	static const int32_t k_tickIntervalMs;
 
 	GamepadProcessor m_gamepadProcessor;
 	InputPresetManager m_inputPresetManager;
+
+	WindowHandle m_windowHandle;
 
 	std::vector<InputAction> m_actionsToTakePerTick;
 
