@@ -49,7 +49,7 @@ private:
 	inline void PollStateDirectInput();
 	inline void PollStateXInput();
 				
-	inline void ApplyDeadzones();
+	inline void ApplyAnalogGamepadButtons();
 
 	inline void VibrateDirectInput() const;
 	inline void VibrateXInput() const;

@@ -127,6 +127,9 @@
     <ClCompile Include="SimpleKeypressRetrieverDialog.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
+    <ClCompile Include="SimpleGamepadPressRetrieverDialog.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="LivingRoomTool.h">
@@ -157,6 +160,9 @@
       <Filter>Header Files\UI</Filter>
     </QtMoc>
     <QtMoc Include="SimpleKeypressRetrieverDialog.h">
+      <Filter>Header Files\UI</Filter>
+    </QtMoc>
+    <QtMoc Include="SimpleGamepadPressRetrieverDialog.h">
       <Filter>Header Files\UI</Filter>
     </QtMoc>
   </ItemGroup>

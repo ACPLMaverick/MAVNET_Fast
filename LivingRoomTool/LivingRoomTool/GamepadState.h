@@ -75,6 +75,8 @@ public:
 	bool AreButtonsPressed(GamepadButtons buttons) const;
 	bool AreButtonsReleased(GamepadButtons buttons) const;
 
+	GamepadButtons GetCurrentButtons() const { return m_currentButtons; }
+
 	const Thumb& GetLeftThumb() const { return m_leftThumb; }
 	const Thumb& GetRightThumb() const { return m_rightThumb; }
 	const Trigger& GetLeftTrigger() const { return m_leftTrigger; }
@@ -90,7 +92,7 @@ private:
 	Trigger m_leftTrigger;
 	Trigger m_rightTrigger;
 
-	static const float k_analogToDigitalThreshold;
+	static const float k_analogAsGamepadButtonThreshold;
 
 	friend class GamepadDevice;
 };

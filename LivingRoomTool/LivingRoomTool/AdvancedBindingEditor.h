@@ -7,6 +7,7 @@ enum class GamepadButtons : uint32_t;
 enum class InputActionKey : uint8_t;
 
 class InputBinding;
+class LivingRoomTool;
 
 class AdvancedBindingEditor : public QObject
 {
@@ -17,7 +18,7 @@ public:
 	AdvancedBindingEditor();
 	~AdvancedBindingEditor();
 
-	bool Open(QWidget* parent, InputBinding& binding);
+	bool Open(LivingRoomTool* parent, InputBinding& binding);
 
 private:
 

@@ -4,7 +4,8 @@
 
 #include <QtWidgets/qpushbutton.h>
 
-SimpleKeypressRetrieverDialog::SimpleKeypressRetrieverDialog()
+SimpleKeypressRetrieverDialog::SimpleKeypressRetrieverDialog(QWidget* a_baseWidget)
+	: m_messageBox(a_baseWidget)
 {
 	m_messageBox.setModal(true);
 	m_messageBox.setIcon(QMessageBox::Icon::Question);
@@ -46,12 +47,12 @@ void SimpleKeypressRetrieverDialog::Close()
 	m_keypressRetriever.RetrieveAndCleanup();
 }
 
-InputActionKey SimpleKeypressRetrieverDialog::GetResult()
+InputActionKey SimpleKeypressRetrieverDialog::GetResult() const
 {
 	return m_results[0];
 }
 
-void SimpleKeypressRetrieverDialog::GetResults(std::vector<InputActionKey>& a_outResults)
+void SimpleKeypressRetrieverDialog::GetResults(std::vector<InputActionKey>& a_outResults) const
 {
 	a_outResults = m_results;
 }

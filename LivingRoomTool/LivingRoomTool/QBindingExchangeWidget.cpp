@@ -104,6 +104,8 @@ void QBindingExchangeWidget::OnMoveTo(QListWidget* a_listSource, QListWidget* a_
 
 void QBindingExchangeWidget::OnEditClicked()
 {
+	// Just fire the signal, it will be supported externally.
+	editClicked();
 }
 
 void QBindingExchangeWidget::OnMoveToFuncAddValue(SelectedValues& a_selectedValues, ValueType a_value)

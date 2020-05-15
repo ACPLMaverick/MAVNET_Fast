@@ -4,6 +4,10 @@
 
 #include "InputAction.h"
 #include "GamepadState.h"
+#include "SimpleKeypressRetrieverDialog.h"
+#include "SimpleGamepadPressRetrieverDialog.h"
+
+class GamepadDevice;
 
 class AdvancedBindingEditorDialog : public QDialog
 {
@@ -86,7 +90,7 @@ private:
 
 public:
 
-	AdvancedBindingEditorDialog(QWidget* parent, const std::vector<GamepadButtons>* selectedSources = nullptr, const std::vector<InputActionKey>* selectedDestinations = nullptr);
+	AdvancedBindingEditorDialog(QWidget* parent, const GamepadDevice* editedDevice, const std::vector<GamepadButtons>* selectedSources = nullptr, const std::vector<InputActionKey>* selectedDestinations = nullptr);
 	~AdvancedBindingEditorDialog();
 
 	std::vector<GamepadButtons> ObtainResultSources() const;
@@ -96,12 +100,22 @@ public:
 
 private:
 
+	void InitSources(const std::vector<GamepadButtons>* selectedSources);
+	void InitDestinations(const std::vector<InputActionKey>* selectedDestinations);
+
 	void OnSelectedListContentChanged();
+	void OnSourcesEditClicked();
+	void OnDestinationsEditClicked();
+	void OnSourcesEditAccepted();
+	void OnDestinationsEditAccepted();
 
 	void EnableAccept();
 	void DisableAccept();
 
 	Ui_AdvancedBindingEditorDialog m_ui;
+
+	SimpleGamepadPressRetrieverDialog m_sourceRetriever;
+	SimpleKeypressRetrieverDialog m_destinationRetriever;
 
 	// Starting from 1, to skip kNone present in both enums.
 	ExchangeWrapper<GamepadButtons, 1, GamepadButtonsHelper::k_enumSize> m_sourceExchange;

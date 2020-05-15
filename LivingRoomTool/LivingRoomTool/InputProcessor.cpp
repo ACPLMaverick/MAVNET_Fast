@@ -2,6 +2,8 @@
 
 #include <Windows.h>
 
+bool HACK_g_disallowInstrumentation = false;
+
 InputProcessor::InputProcessor()
 	: BaseProcessor()
 	, m_gamepadProcessor()
@@ -53,6 +55,11 @@ void InputProcessor::Tick()
 
 	// Poll all states on every tick.
 	m_gamepadProcessor.PollInputStates();
+
+	if (HACK_g_disallowInstrumentation)
+	{
+		return;
+	}
 
 	const size_t devicesNum = m_gamepadProcessor.GetDevicesNum();
 	for (size_t i = 0; i < devicesNum; ++i)

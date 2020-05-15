@@ -14,13 +14,13 @@ class SimpleKeypressRetrieverDialog :
 
 public:
 
-	SimpleKeypressRetrieverDialog();
+	SimpleKeypressRetrieverDialog(QWidget* baseWidget);
 	~SimpleKeypressRetrieverDialog();
 
 	void OpenAsync(bool bAllowKeyCombinations = false);
 	void Close();
-	InputActionKey GetResult();
-	void GetResults(std::vector<InputActionKey>& outResults);
+	InputActionKey GetResult() const;
+	void GetResults(std::vector<InputActionKey>& outResults) const;
 
 signals:
 	void resultsAvailable();

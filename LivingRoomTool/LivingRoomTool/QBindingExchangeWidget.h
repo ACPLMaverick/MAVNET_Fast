@@ -36,6 +36,7 @@ public:
 signals:
 
 	void selectionChanged();
+	void editClicked();
 
 private:
 

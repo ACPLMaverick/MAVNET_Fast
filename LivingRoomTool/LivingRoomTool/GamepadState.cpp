@@ -176,4 +176,4 @@ GamepadButtons operator|(GamepadButtons a_a, GamepadButtons a_b)
 	return static_cast<GamepadButtons>(static_cast<uint16_t>(a_a) | static_cast<uint16_t>(a_b));
 }
 
-const float GamepadState::k_analogToDigitalThreshold = 0.9f;
+const float GamepadState::k_analogAsGamepadButtonThreshold = 0.1f;

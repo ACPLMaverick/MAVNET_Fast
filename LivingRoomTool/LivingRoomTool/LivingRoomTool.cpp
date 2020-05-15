@@ -29,6 +29,20 @@ void LivingRoomTool::PostInit()
 	OnRefreshDevicesClicked();
 }
 
+const GamepadDevice* LivingRoomTool::GetCurrentlySelectedDevice()
+{
+	const size_t selectedIndex = GetGamepadSelectedIndex();
+	const size_t gamepadsNum = m_inputProcessor.GetGamepadProcessor().GetDevicesNum();
+	if (selectedIndex < gamepadsNum)
+	{
+		return &m_inputProcessor.GetGamepadProcessor().GetGamepadDevice(selectedIndex);
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
 void LivingRoomTool::InitTweaks()
 {
 	ui.Tweak_Deadzone_L->SetName(L"L Deadzone");

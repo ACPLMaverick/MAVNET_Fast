@@ -4,6 +4,7 @@
 
 BindingSelectorWidget::BindingSelectorWidget(QWidget* a_parent)
 	: QWidget(a_parent)
+	, m_keypressRetrieverDialog(a_parent)
 {
 	m_ui.setupUi(this);
 

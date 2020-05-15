@@ -15,6 +15,7 @@ public:
 	~LivingRoomTool();
 
 	void PostInit();
+	const class GamepadDevice* GetCurrentlySelectedDevice();
 
 private:
 
