@@ -3,18 +3,22 @@
 #include "SimpleTextInputDialog.h"
 #include "SimpleConfirmationDialog.h"
 
+#include <qmenu.h>
+
 LivingRoomTool::LivingRoomTool(QWidget* a_parent)
 	: QMainWindow(a_parent)
 	, m_inputProcessor(reinterpret_cast<InputProcessor::WindowHandle>(winId()))
+	, m_trayIcon(this)
 {
 	ui.setupUi(this);
-	setWindowFlags(Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
+	setWindowFlags(Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint | Qt::WindowMinimizeButtonHint | Qt::WindowCloseButtonHint);
 
 	m_inputProcessor.Init();
 
 	DisableDevicePanels();
 	DisablePresetEditor();
 
+	InitTrayWindow();
 	InitConnections();
 	InitTweaks();
 	InitPresetEditor();
@@ -42,6 +46,21 @@ const GamepadDevice* LivingRoomTool::GetCurrentlySelectedDevice()
 	{
 		return nullptr;
 	}
+}
+
+void LivingRoomTool::InitTrayWindow()
+{
+	m_trayIcon.setIcon(style()->standardIcon(QStyle::StandardPixmap::SP_DesktopIcon));
+	m_trayIcon.setToolTip("Living Room Tool. Gamepad instrumentation and monitor control.");
+
+	QMenu* menu = new QMenu(this);
+	menu->addAction("Restore", this, &QWidget::showNormal);
+	menu->addAction("Exit", this, &QWidget::close);
+
+	connect(&m_trayIcon, &QSystemTrayIcon::activated, this, &LivingRoomTool::OnTrayIconClicked);
+
+	m_trayIcon.setContextMenu(menu);
+	m_trayIcon.show();
 }
 
 void LivingRoomTool::InitTweaks()
@@ -363,6 +382,27 @@ void LivingRoomTool::OnPresetSelectionChanged()
 	{
 		m_presetEditor.InvalidatePreset();
 		DisablePresetEditor();
+	}
+}
+
+void LivingRoomTool::OnTrayIconClicked(QSystemTrayIcon::ActivationReason a_activationReason)
+{
+	switch (a_activationReason)
+	{
+	case QSystemTrayIcon::DoubleClick:
+		showNormal();
+	case QSystemTrayIcon::Context:
+	case QSystemTrayIcon::Trigger:
+	{
+		QPoint appearPos = QCursor::pos();
+		const QRect& popupRect = m_trayIcon.contextMenu()->rect();
+		appearPos.setX(appearPos.x() - popupRect.width());
+		appearPos.setY(appearPos.y() - popupRect.height());
+		m_trayIcon.contextMenu()->popup(appearPos);
+	}
+		break;
+	default:
+		break;
 	}
 }
 

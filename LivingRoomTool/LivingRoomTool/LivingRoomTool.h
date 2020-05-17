@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QtWidgets/QMainWindow>
+#include <qsystemtrayicon.h>
+
 #include "ui_LivingRoomTool.h"
 
 #include "InputProcessor.h"
@@ -19,6 +21,7 @@ public:
 
 private:
 
+	void InitTrayWindow();
 	void InitTweaks();
 	void InitConnections();
 	void InitPresetEditor();
@@ -44,6 +47,8 @@ private:
 	void OnDeviceSelectionChanged();
 	void OnPresetSelectionChanged();
 
+	void OnTrayIconClicked(QSystemTrayIcon::ActivationReason activationReason);
+
 	void UpdatePanelsForSelectedDevice(size_t selectedDevice);
 	void UpdatePanels_Presets();
 	void UpdatePanelsForSelectedDevice_Tweaks(size_t selectedDevice);
@@ -66,4 +71,6 @@ private:
 	Ui::LivingRoomToolClass ui;
 	InputProcessor m_inputProcessor;
 	PresetEditor m_presetEditor;
+
+	QSystemTrayIcon m_trayIcon;
 };
