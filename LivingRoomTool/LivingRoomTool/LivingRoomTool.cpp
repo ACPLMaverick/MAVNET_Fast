@@ -4,11 +4,13 @@
 #include "SimpleConfirmationDialog.h"
 
 #include <qmenu.h>
+#include <qevent.h>
 
 LivingRoomTool::LivingRoomTool(QWidget* a_parent)
 	: QMainWindow(a_parent)
 	, m_inputProcessor(reinterpret_cast<InputProcessor::WindowHandle>(winId()))
 	, m_trayIcon(this)
+	, m_bIsClosing(false)
 {
 	ui.setupUi(this);
 	setWindowFlags(Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint | Qt::WindowMinimizeButtonHint | Qt::WindowCloseButtonHint);
@@ -48,14 +50,44 @@ const GamepadDevice* LivingRoomTool::GetCurrentlySelectedDevice()
 	}
 }
 
+void LivingRoomTool::closeEvent(QCloseEvent* a_event)
+{
+	if (m_bIsClosing)
+	{
+		m_trayIcon.hide();
+		a_event->accept();
+	}
+	else
+	{
+		hide();
+		a_event->ignore();
+	}
+}
+
+void LivingRoomTool::hideEvent(QHideEvent* a_event)
+{
+	hide();
+	a_event->accept();
+}
+
 void LivingRoomTool::InitTrayWindow()
 {
-	m_trayIcon.setIcon(style()->standardIcon(QStyle::StandardPixmap::SP_DesktopIcon));
-	m_trayIcon.setToolTip("Living Room Tool. Gamepad instrumentation and monitor control.");
+	m_trayIcon.setIcon(style()->standardIcon(QStyle::StandardPixmap::SP_ComputerIcon));
+	m_trayIcon.setToolTip("Living Room Tool");
 
 	QMenu* menu = new QMenu(this);
-	menu->addAction("Restore", this, &QWidget::showNormal);
-	menu->addAction("Exit", this, &QWidget::close);
+	menu->addAction("Restore", this,
+		[this]()
+		{
+			showNormal();
+			setFocus();
+		});
+	menu->addAction("Exit", this,
+		[this]() 
+		{ 
+			m_bIsClosing = true;
+			close(); 
+		});
 
 	connect(&m_trayIcon, &QSystemTrayIcon::activated, this, &LivingRoomTool::OnTrayIconClicked);
 
@@ -391,6 +423,7 @@ void LivingRoomTool::OnTrayIconClicked(QSystemTrayIcon::ActivationReason a_activ
 	{
 	case QSystemTrayIcon::DoubleClick:
 		showNormal();
+		break;
 	case QSystemTrayIcon::Context:
 	case QSystemTrayIcon::Trigger:
 	{

@@ -21,6 +21,9 @@ public:
 
 private:
 
+	void closeEvent(QCloseEvent* event) override;
+	void hideEvent(QHideEvent* event) override;
+
 	void InitTrayWindow();
 	void InitTweaks();
 	void InitConnections();
@@ -64,7 +67,6 @@ private:
 		const char* nameSuffix = nullptr);
 
 	void SetQLayoutElementsFrozen(QLayout* layout, bool frozen);
-	size_t GetQListSelectedIndex(QListWidget* list);
 	size_t GetGamepadSelectedIndex();
 	size_t GetPresetSelectedIndex();
 
@@ -73,4 +75,6 @@ private:
 	PresetEditor m_presetEditor;
 
 	QSystemTrayIcon m_trayIcon;
+
+	bool m_bIsClosing;
 };
