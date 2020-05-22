@@ -51,16 +51,6 @@ if(JE_PLATFORM STREQUAL ${PLATFORM_NAME_WINDOWS})
 		JE_PLATFORM_LINUX=0
 	)
 
-	target_include_directories(${EXE_NAME} PUBLIC
-		"C:\\Program Files\\LLVM\\lib\\clang\\10.0.0\\include"
-		"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.25.28610\\include"
-		"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.25.28610\\atlmfc\\include"
-		"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\ucrt"
-		"C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.18362.0\\shared"
-		"C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.18362.0\\um"
-		"C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.18362.0\\winrt"
-	)
-
 	target_link_directories(${EXE_NAME} PUBLIC
 		"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.25.28610\\lib\\x64"
 		"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.25.28610\\atlmfc\\lib\\x64"
@@ -85,7 +75,7 @@ if(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_DEBUG})
 		JE_CONFIG_RELEASE=0
 	)
 
-	add_compile_options(
+	target_compile_options(${EXE_NAME} PUBLIC
 		-O0
 	)
 elseif(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_PROFILE})
@@ -95,7 +85,7 @@ elseif(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_PROFILE})
 		JE_CONFIG_RELEASE=0
 	)
 
-	add_compile_options(
+	target_compile_options(${EXE_NAME} PUBLIC
 		-O2
 	)
 elseif(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_RELEASE})
@@ -105,7 +95,7 @@ elseif(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_RELEASE})
 		JE_CONFIG_RELEASE=1
 	)
 
-	add_compile_options(
+	target_compile_options(${EXE_NAME} PUBLIC
 		-O2
 	)
 endif()
@@ -116,7 +106,7 @@ target_include_directories(${EXE_NAME} PUBLIC
 )
 
 # Global compiler flags
-add_compile_options(
+target_compile_options(${EXE_NAME} PUBLIC
 	-std=c++17
 	-Wall	# Enable warnings
 	-Wundef
@@ -124,7 +114,6 @@ add_compile_options(
 	-Wstrict-prototypes
 	-Werror
 	-Wfatal-errors
-	-Wl,--relax,--gc-sections
 )
 
 # Global libraries

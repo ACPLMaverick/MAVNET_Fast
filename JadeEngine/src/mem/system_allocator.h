@@ -2,7 +2,11 @@
 
 #include "base_allocator.h"
 
-namespace JE_NAMESPACE { namespace mem { 
+#if JE_TRACK_ALLOCATIONS
+#include <unordered_map>
+#endif
+
+namespace je { namespace mem { 
 
     class system_allocator : public base_allocator
     {
@@ -14,8 +18,11 @@ namespace JE_NAMESPACE { namespace mem {
     protected:
 
         virtual void* allocate_internal(size_t num_bytes, size_t alignment) override final;
-        virtual bool free_internal(void* memory) override final;
+        virtual size_t free_internal(void* memory) override final;
 
+#if JE_TRACK_ALLOCATIONS
+        std::unordered_map<void*, size_t> m_allocation_map;
+#endif
     };
 
 }}

@@ -4,7 +4,7 @@
 
 // Global defines.
 
-#define JE_NAMESPACE je
+#define JE_unused(_var_) (void)(_var_)
 
 // ///////////////////////
 
@@ -17,7 +17,7 @@
 
 // Debug print.
 
-#if JE_CONFIG_RETAIL == 0
+#if JE_CONFIG_RELEASE == 0
 #define JE_printf(_text_, ...) printf(_text_, __VA_ARGS__);
 #define JE_printf_ln(_text_, ...) JE_printf(_text_ "\n", __VA_ARGS__);
 #else

@@ -1,6 +1,6 @@
 #include "base_allocator.h"
 
-namespace JE_NAMESPACE { namespace mem { 
+namespace je { namespace mem { 
 
     base_allocator::base_allocator()
 #if JE_TRACK_ALLOCATIONS
@@ -13,7 +13,7 @@ namespace JE_NAMESPACE { namespace mem {
     base_allocator::~base_allocator()
     {
 #if JE_TRACK_ALLOCATIONS
-        JE_assert(m_num_allocations == 0, "Memory leak.");
+        JE_assert(m_num_allocations == 0 && m_used_memory == 0, "Memory leak.");
 #endif
     }
 
@@ -21,7 +21,11 @@ namespace JE_NAMESPACE { namespace mem {
     {
         void* mem = allocate_internal(a_num_bytes, a_alignment);
 #if JE_TRACK_ALLOCATIONS
-        m_num_allocations += static_cast<size_t>(mem != nullptr);
+        if(mem != nullptr)
+        {
+            ++m_num_allocations;
+            m_used_memory += a_num_bytes;
+        }
 #endif
         JE_assert(mem != nullptr, "Allocation failed.");
         return mem;
@@ -29,10 +33,14 @@ namespace JE_NAMESPACE { namespace mem {
 
     void base_allocator::free(void* a_memory)
     {
-        const bool free_success = free_internal(a_memory);
+        const size_t freed = free_internal(a_memory);
 #if JE_TRACK_ALLOCATIONS
-        m_num_allocations -= static_cast<size_t>(free_success);
+        if(freed != 0)
+        {
+            --m_num_allocations;
+            m_used_memory -= freed;
+        }
 #endif
-        JE_assert(free_success, "Free failed.");
+        JE_assert(freed != 0, "Free failed.");
     }
 }}

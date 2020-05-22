@@ -4,22 +4,22 @@
 
 #include <iostream>
 
-namespace JE_NAMESPACE {
+namespace je {
 
-    void testConfig()
+    void test_config()
     {
-    #if JE_CONFIG_DEBUG
+#if JE_CONFIG_DEBUG
         std::cout << "Hello world! Debug.";
-    #elif JE_CONFIG_PROFILE
+#elif JE_CONFIG_PROFILE
         std::cout << "Hello world! Profile.";
-    #elif JE_CONFIG_RELEASE
+#elif JE_CONFIG_RELEASE
         std::cout << "Hello world! Release.";
-    #else
+#else
     #error "Configuration not specified."
-    #endif
+#endif
     }
 
-    void testAlloc()
+    void test_alloc()
     {
         mem::system_allocator allocator;
         void* mem = allocator.allocate(64);
@@ -30,7 +30,7 @@ namespace JE_NAMESPACE {
 
 int main()
 {
-    //testConfig();
-    je::testAlloc();
+    //test_config();
+    je::test_alloc();
     return 0;
 }
