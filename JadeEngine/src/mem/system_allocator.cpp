@@ -13,11 +13,12 @@ namespace je { namespace mem {
 
     }
 
-    void* system_allocator::allocate_internal(size_t a_num_bytes, size_t a_alignment)
+    void* system_allocator::allocate_internal(size_t a_num_bytes,
+        alignment a_alignment)
     {
         void* mem = 
 #if JE_PLATFORM_WINDOWS
-            _aligned_malloc(a_num_bytes, a_alignment);
+            _aligned_malloc(a_num_bytes, alignment_to_num(a_alignment));
 #elif JE_PLATFORM_LINUX || JE_PLATFORM_ANDROID
             aligned_alloc(a_alignment, a_num_bytes);
 #else
