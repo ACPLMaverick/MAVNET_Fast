@@ -31,8 +31,7 @@ endif()
 message("Configuration: ${JE_CONFIGURATION}.")
 
 # Global definitions
-set(RUNTIME_WORK_DIR ../../../bin)
-# Adding three backs here because this is relative to the build directory.
+set(RUNTIME_WORK_DIR ../bin)	# Adding back here because this is relative to the build directory.
 set(SOURCE_DIR src)
 
 set(EXE_NAME JadeEngine_${JE_PLATFORM}_${JE_CONFIGURATION})
@@ -49,16 +48,7 @@ add_subdirectory (${SOURCE_DIR})
 if(JE_PLATFORM STREQUAL ${PLATFORM_NAME_WINDOWS})
 	target_compile_definitions(${EXE_NAME} PUBLIC
 		JE_PLATFORM_WINDOWS=1
-	)
-
-	target_include_directories(${EXE_NAME} PUBLIC
-		"C:\\Program Files\\LLVM\\lib\\clang\\10.0.0\\include"
-		"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.25.28610\\include"
-		"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.25.28610\\atlmfc\\include"
-		"C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.18362.0\\ucrt"
-		"C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.18362.0\\shared"
-		"C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.18362.0\\um"
-		"C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.18362.0\\winrt"
+		JE_PLATFORM_LINUX=0
 	)
 
 	target_link_directories(${EXE_NAME} PUBLIC
@@ -69,6 +59,7 @@ if(JE_PLATFORM STREQUAL ${PLATFORM_NAME_WINDOWS})
 	)
 elseif(JE_PLATFORM STREQUAL {PLATFORM_NAME_LINUX})
 	target_compile_definitions(${EXE_NAME} PUBLIC
+		JE_PLATFORM_WINDOWS=0
 		JE_PLATFORM_LINUX=1
 	)
 
@@ -80,25 +71,31 @@ endif()
 if(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_DEBUG})
 	target_compile_definitions(${EXE_NAME} PUBLIC
 		JE_CONFIG_DEBUG=1
+		JE_CONFIG_PROFILE=0
+		JE_CONFIG_RELEASE=0
 	)
 
-	add_compile_options(
+	target_compile_options(${EXE_NAME} PUBLIC
 		-O0
 	)
 elseif(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_PROFILE})
 	target_compile_definitions(${EXE_NAME} PUBLIC
+		JE_CONFIG_DEBUG=0
 		JE_CONFIG_PROFILE=1
+		JE_CONFIG_RELEASE=0
 	)
 
-	add_compile_options(
+	target_compile_options(${EXE_NAME} PUBLIC
 		-O2
 	)
 elseif(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_RELEASE})
 	target_compile_definitions(${EXE_NAME} PUBLIC
+		JE_CONFIG_DEBUG=0
+		JE_CONFIG_PROFILE=0
 		JE_CONFIG_RELEASE=1
 	)
 
-	add_compile_options(
+	target_compile_options(${EXE_NAME} PUBLIC
 		-O2
 	)
 endif()
@@ -109,7 +106,7 @@ target_include_directories(${EXE_NAME} PUBLIC
 )
 
 # Global compiler flags
-add_compile_options(
+target_compile_options(${EXE_NAME} PUBLIC
 	-std=c++17
 	-Wall	# Enable warnings
 	-Wundef
@@ -117,7 +114,6 @@ add_compile_options(
 	-Wstrict-prototypes
 	-Werror
 	-Wfatal-errors
-	-Wl,--relax,--gc-sections
 )
 
 # Global libraries

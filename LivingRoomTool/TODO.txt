@@ -1,2 +1,1 @@
 LRT TODO:
-- application should be able to work in background

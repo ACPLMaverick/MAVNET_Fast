@@ -1,0 +1,35 @@
+buildType:
+  default: debug
+  choices:
+    debug:
+      short: Debug
+      long: No optimizations, debug symbols, logging, CPU/GPU markers for profiling.
+      buildType: Debug
+      settings:
+        JE_CONFIGURATION: Debug
+    profile:
+      short: Profile
+      long: CPU/GPU markers for profiling.
+      buildType: Release
+      settings:
+        JE_CONFIGURATION: Profile
+    release:
+      short: Release
+      long: Full release build.
+      buildType: Release
+      settings:
+        JE_CONFIGURATION: Release
+
+platform:
+  default: windows
+  choices:
+    windows:
+      short: Windows
+      long: Windows
+      settings:
+        JE_PLATFORM: Windows
+    linux:
+      short: Linux
+      long: Linux
+      settings:
+        JE_PLAFTORM: Linux
