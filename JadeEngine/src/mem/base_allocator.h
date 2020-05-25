@@ -2,7 +2,11 @@
 
 #include "global.h"
 
-#define JE_TRACK_ALLOCATIONS JE_CONFIG_DEBUG
+#if JE_CONFIG_DEBUG
+#define JE_DEBUG_ALLOCATIONS 1
+#else
+#define JE_DEBUG_ALLOCATIONS 0
+#endif
 
 namespace je { namespace mem { 
 
@@ -32,16 +36,18 @@ namespace je { namespace mem {
         void* allocate(size_t num_bytes, alignment a_alignment = k_default_alignment);
         void free(void* memory);
 
-#if JE_TRACK_ALLOCATIONS
+#if JE_DEBUG_ALLOCATIONS
         size_t get_num_allocations() const { return m_num_allocations; }
         size_t get_used_memory() const { return m_used_num_bytes; }
 #endif
 
     protected:
 
+        // Virtual interface.
         virtual void* allocate_internal(size_t num_bytes, alignment a_alignment) = 0;
-        virtual size_t free_internal(void* memory) = 0;
+        virtual bool free_internal(void* memory, size_t& out_num_bytes_freed) = 0;
 
+        // Utilities.
         static inline uintptr_t memory_to_uint(void* memory)
             { return reinterpret_cast<uintptr_t>(memory); }
         static inline void* uint_to_memory(uintptr_t number)
@@ -57,12 +63,13 @@ namespace je { namespace mem {
         static void* align_memory(void* memory, alignment a_alignment);
         static bool is_memory_aligned(void* memory, alignment a_alignment);
 
+
         base_allocator* m_allocator_from;
         void* m_memory;
-        size_t m_memory_num_bytes;
+        const size_t m_memory_num_bytes;
         
-#if JE_TRACK_ALLOCATIONS
-    private:
+#if JE_DEBUG_ALLOCATIONS
+    protected:
         size_t m_num_allocations;
         size_t m_used_num_bytes;
 #endif

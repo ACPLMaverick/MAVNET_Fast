@@ -6,7 +6,7 @@ namespace je { namespace mem {
         : m_allocator_from(nullptr)
         , m_memory(nullptr)
         , m_memory_num_bytes(0)
-#if JE_TRACK_ALLOCATIONS
+#if JE_DEBUG_ALLOCATIONS
         , m_num_allocations(0)
         , m_used_num_bytes(0)
 #endif
@@ -23,7 +23,7 @@ namespace je { namespace mem {
         : m_allocator_from(&a_allocator_from)
         , m_memory(a_allocator_from.allocate(a_num_bytes, a_alignment))
         , m_memory_num_bytes(a_num_bytes)
-#if JE_TRACK_ALLOCATIONS
+#if JE_DEBUG_ALLOCATIONS
         , m_num_allocations(0)
         , m_used_num_bytes(0)
 #endif
@@ -37,28 +37,27 @@ namespace je { namespace mem {
         {
             m_allocator_from->free(m_memory);
             m_memory = nullptr;
-            m_memory_num_bytes = 0;
             m_allocator_from = nullptr;
         }
-#if JE_TRACK_ALLOCATIONS
+#if JE_DEBUG_ALLOCATIONS
         JE_assert(m_num_allocations == 0 && m_used_num_bytes == 0, "Memory leak.");
 #endif
     }
 
     void* base_allocator::allocate(size_t a_num_bytes, alignment a_alignment)
     {
-        JE_assert(a_num_bytes <= m_memory_num_bytes,
+        JE_assert_bailout(a_num_bytes <= m_memory_num_bytes, nullptr,
             "Allocation too big for an allocator.");
-        JE_assert(a_num_bytes % alignment_to_num(a_alignment) == 0,
+        JE_assert_bailout(a_num_bytes % alignment_to_num(a_alignment) == 0, nullptr,
             "Number of bytes is not a multiple of alignment.");
-#if JE_TRACK_ALLOCATIONS
+#if JE_DEBUG_ALLOCATIONS
         JE_assert(a_num_bytes <= (m_memory_num_bytes - m_used_num_bytes),
             "Not enough memory in allocator.");
 #endif
 
         void* mem = allocate_internal(a_num_bytes, a_alignment);
 
-#if JE_TRACK_ALLOCATIONS
+#if JE_DEBUG_ALLOCATIONS
         if(mem != nullptr)
         {
             ++m_num_allocations;
@@ -66,13 +65,13 @@ namespace je { namespace mem {
         }
 #endif
 
-        JE_assert(mem != nullptr, "Allocation failed.");
+        JE_assert(mem != nullptr, "Allocate failed.");
         return mem;
     }
 
     void base_allocator::free(void* a_memory)
     {
-#if JE_TRACK_ALLOCATIONS
+#if JE_DEBUG_ALLOCATIONS
         if(m_memory != nullptr)
         {
             const uintptr_t memory_uint = reinterpret_cast<uintptr_t>(a_memory);
@@ -82,15 +81,16 @@ namespace je { namespace mem {
         }
 #endif
 
-        const size_t freed = free_internal(a_memory);
-#if JE_TRACK_ALLOCATIONS
-        if(freed != 0)
+        size_t num_bytes_freed = 0;
+        const bool free_succeeded = free_internal(a_memory, num_bytes_freed);
+#if JE_DEBUG_ALLOCATIONS
+        if(free_succeeded)
         {
             --m_num_allocations;
-            m_used_num_bytes -= freed;
+            m_used_num_bytes -= num_bytes_freed;
         }
 #endif
-        JE_assert(freed != 0, "Free failed.");
+        JE_assert(free_succeeded, "Free failed.");
     }
 
     void* base_allocator::align_memory(void* a_memory, alignment a_alignment)

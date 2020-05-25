@@ -2,7 +2,7 @@
 
 #include "base_allocator.h"
 
-#if JE_TRACK_ALLOCATIONS
+#if JE_DEBUG_ALLOCATIONS
 #include <unordered_map>
 #endif
 
@@ -18,9 +18,9 @@ namespace je { namespace mem {
     protected:
 
         virtual void* allocate_internal(size_t num_bytes, alignment a_alignment) override final;
-        virtual size_t free_internal(void* memory) override final;
+        virtual bool free_internal(void* memory, size_t& out_num_bytes_freed) override final;
 
-#if JE_TRACK_ALLOCATIONS
+#if JE_DEBUG_ALLOCATIONS
         std::unordered_map<void*, size_t> m_allocation_map;
 #endif
     };

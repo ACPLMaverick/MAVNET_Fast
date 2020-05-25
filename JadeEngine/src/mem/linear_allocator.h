@@ -4,20 +4,24 @@
 
 namespace je { namespace mem { 
 
-    class constant_allocator : public base_allocator
+    class linear_allocator : public base_allocator
     {
     public:
 
-        constant_allocator(
+        linear_allocator(
             base_allocator& allocator_from,
             size_t num_bytes,
             alignment a_alignment = k_default_alignment);
-        ~constant_allocator();
+        ~linear_allocator();
+
+        void clear();
 
     protected:
 
         virtual void* allocate_internal(size_t num_bytes, alignment a_alignment) override final;
-        virtual size_t free_internal(void* memory) override final;
+        virtual bool free_internal(void* memory, size_t& out_num_bytes_freed) override final;
+
+        void* m_memory_head;
     };
 
 }}

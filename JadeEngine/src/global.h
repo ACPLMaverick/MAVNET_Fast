@@ -4,6 +4,8 @@
 
 // Global defines.
 
+#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+
 #define JE_unused(_var_) (void)(_var_)
 
 // ///////////////////////
@@ -19,7 +21,7 @@
 
 #if JE_CONFIG_RELEASE == 0
 #define JE_printf(_text_, ...) printf(_text_, __VA_ARGS__);
-#define JE_printf_ln(_text_, ...) JE_printf(_text_ "\n", __VA_ARGS__);
+#define JE_printf_ln(_text_, ...) JE_printf(_text_, __VA_ARGS__); JE_printf("\n")
 #else
 #define JE_printf(_text_, ...)
 #define JE_printf_ln(_text_, ...)
@@ -38,5 +40,6 @@
 #endif
 
 #define JE_fail(...) JE_assert(false, __VA_ARGS__)
+#define JE_assert_bailout(_value_, _return_type_, ...) { JE_assert(_value_, __VA_ARGS__); if(!(_value_)) { return _return_type_; } }
 
 // ///////////////////////

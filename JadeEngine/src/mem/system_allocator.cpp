@@ -1,11 +1,13 @@
 #include "system_allocator.h"
 
+#include <limits>
+
 namespace je { namespace mem { 
 
     system_allocator::system_allocator()
         : base_allocator()
     {
-
+        const_cast<size_t&>(m_memory_num_bytes) = std::numeric_limits<size_t>::max();
     }
 
     system_allocator::~system_allocator()
@@ -26,7 +28,7 @@ namespace je { namespace mem {
             nullptr;
 #endif
 
-#if JE_TRACK_ALLOCATIONS
+#if JE_DEBUG_ALLOCATIONS
         if(mem != nullptr)
         {
             m_allocation_map.emplace(mem, a_num_bytes);
@@ -36,7 +38,7 @@ namespace je { namespace mem {
         return mem;
     }
 
-    size_t system_allocator::free_internal(void* a_memory)
+    bool system_allocator::free_internal(void* a_memory, size_t& a_out_num_bytes_freed)
     {
 #if JE_PLATFORM_WINDOWS
         _aligned_free(a_memory);
@@ -46,20 +48,20 @@ namespace je { namespace mem {
         #error "Implement free_internal."
 #endif
         
-#if JE_TRACK_ALLOCATIONS
+#if JE_DEBUG_ALLOCATIONS
         auto it = m_allocation_map.find(a_memory);
         if(it != m_allocation_map.end())
         {
-            const size_t num_bytes = it->second;
+            a_out_num_bytes_freed = it->second;
             m_allocation_map.erase(it);
-            return num_bytes;
+            return true;
         }
         else
         {
-            return 0;
+            return false;
         }
 #else
-        return 0;
+        return true;
 #endif
     }
 
