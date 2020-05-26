@@ -48,24 +48,32 @@ namespace je { namespace mem {
     {
         JE_assert_bailout(a_num_bytes <= m_memory_num_bytes, nullptr,
             "Allocation too big for an allocator.");
-        JE_assert_bailout(a_num_bytes % alignment_to_num(a_alignment) == 0, nullptr,
-            "Number of bytes is not a multiple of alignment.");
 #if JE_DEBUG_ALLOCATIONS
         JE_assert(a_num_bytes <= (m_memory_num_bytes - m_used_num_bytes),
             "Not enough memory in allocator.");
 #endif
 
-        void* mem = allocate_internal(a_num_bytes, a_alignment);
+        size_t bytes_allocated = 0;
+        void* mem = allocate_internal(a_num_bytes, a_alignment, bytes_allocated);
 
 #if JE_DEBUG_ALLOCATIONS
         if(mem != nullptr)
         {
             ++m_num_allocations;
-            m_used_num_bytes += a_num_bytes;
+            m_used_num_bytes += bytes_allocated;
         }
 #endif
 
-        JE_assert(mem != nullptr, "Allocate failed.");
+#if JE_DEBUG_ALLOCATIONS_FILL_MEMORY_ON_ALLOC
+        if(mem != nullptr)
+        {
+            memset(mem, 0xCD, a_num_bytes);
+        }
+#endif
+
+        JE_assert(mem != nullptr && bytes_allocated != 0, "Allocate failed.");
+        JE_assert(mem_ptr(mem).is_aligned(a_alignment), "Pointer is not properly aligned.");
+
         return mem;
     }
 
@@ -75,14 +83,16 @@ namespace je { namespace mem {
         if(m_memory != nullptr)
         {
             const uintptr_t memory_uint = reinterpret_cast<uintptr_t>(a_memory);
-            JE_assert(memory_uint >= get_memory_uint()
-                && memory_uint < get_memory_uint() + m_memory_num_bytes,
+            const mem_ptr m_memory_ptr(m_memory);
+            JE_assert(memory_uint >= m_memory_ptr
+                && memory_uint < m_memory_ptr + m_memory_num_bytes,
                 "Freed memory does not belong to this allocator.");
         }
 #endif
 
         size_t num_bytes_freed = 0;
         const bool free_succeeded = free_internal(a_memory, num_bytes_freed);
+
 #if JE_DEBUG_ALLOCATIONS
         if(free_succeeded)
         {
@@ -90,33 +100,72 @@ namespace je { namespace mem {
             m_used_num_bytes -= num_bytes_freed;
         }
 #endif
+
         JE_assert(free_succeeded, "Free failed.");
     }
 
-    void* base_allocator::align_memory(void* a_memory, alignment a_alignment)
+    alignment base_allocator::get_alignment(mem_ptr a_memory)
     {
-        if(is_memory_aligned(a_memory, a_alignment))
+        // TODO Use enum util for this.
+
+        if(a_memory.is_aligned(alignment::k_16))
         {
-            return a_memory;
+            return alignment::k_16;
+        }
+        else if(a_memory.is_aligned(alignment::k_64))
+        {
+            return alignment::k_64;
+        }
+        else if(a_memory.is_aligned(alignment::k_32))
+        {
+            return alignment::k_32;
+        }
+        else if(a_memory.is_aligned(alignment::k_8))
+        {
+            return alignment::k_8;
+        }
+        else if(a_memory.is_aligned(alignment::k_4))
+        {
+            return alignment::k_4;
         }
         else
         {
-            const uintptr_t num = memory_to_uint(a_memory);
-            const uintptr_t alignment_num = alignment_to_uint(a_alignment);
-
-            return uint_to_memory((num + alignment_num) & (~alignment_num));
+            JE_fail("Pointer is not aligned!");
+            return alignment::k_0;
         }
     }
 
-    bool base_allocator::is_memory_aligned(void* a_memory, alignment a_alignment)
+    void base_allocator::mem_ptr::align(alignment a_alignment)
+    {
+        if(a_alignment == alignment::k_0)
+        {
+            return;
+        }
+        else
+        {
+            const uintptr_t num = *this;
+            const uintptr_t alignment_num = static_cast<uintptr_t>(a_alignment);
+            const uintptr_t all_ones = alignment_num - 1;
+
+            *this = ((num + alignment_num) & (~all_ones));
+        }
+    }
+
+    void base_allocator::mem_ptr::align(alignment a_alignment, size_t a_additional_num_bytes)
+    {
+        *this += a_additional_num_bytes;
+        align(a_alignment);
+    }
+
+    bool base_allocator::mem_ptr::is_aligned(alignment a_alignment)
     {
         if(a_alignment == alignment::k_0)
         {
             return true;
         }
 
-        const uintptr_t num = memory_to_uint(a_memory);
-        const uintptr_t alignment_num = alignment_to_uint(a_alignment);
+        const uintptr_t num = *this;
+        const uintptr_t alignment_num = static_cast<uintptr_t>(a_alignment);
 
         const uintptr_t all_ones = alignment_num - 1;
         return (num & all_ones) == 0;

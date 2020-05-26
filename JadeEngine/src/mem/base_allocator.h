@@ -4,8 +4,10 @@
 
 #if JE_CONFIG_DEBUG
 #define JE_DEBUG_ALLOCATIONS 1
+#define JE_DEBUG_ALLOCATIONS_FILL_MEMORY_ON_ALLOC 1
 #else
 #define JE_DEBUG_ALLOCATIONS 0
+#define JE_DEBUG_ALLOCATIONS_FILL_MEMORY_ON_ALLOC 0
 #endif
 
 namespace je { namespace mem { 
@@ -43,26 +45,66 @@ namespace je { namespace mem {
 
     protected:
 
+        class mem_ptr
+        {
+        public:
+            mem_ptr()
+                : m_memory(nullptr)
+            {}
+            mem_ptr(void* a_memory)
+                : m_memory(a_memory)
+            {}
+            mem_ptr(uintptr_t a_num)
+                : m_memory(reinterpret_cast<void*>(a_num))
+            {}
+            mem_ptr(void* a_memory, alignment a_alignment)
+                : mem_ptr(a_memory)
+            {
+                align(a_alignment);
+            }
+            mem_ptr(uintptr_t a_num, alignment a_alignment)
+                : mem_ptr(a_num)
+            {
+                align(a_alignment);
+            }
+
+            operator const void*() const { return m_memory; }
+            operator void*&() { return m_memory; }
+            operator uintptr_t() const { return reinterpret_cast<uintptr_t>(m_memory); }
+            operator uintptr_t&() { return reinterpret_cast<uintptr_t&>(m_memory); }
+
+            uintptr_t as_num() const { return reinterpret_cast<uintptr_t>(m_memory); }
+            const void* get() const { return m_memory; }
+            void* get() { return m_memory; }
+            const uint8_t* as_data() const { return reinterpret_cast<const uint8_t*>(m_memory); }
+            uint8_t* as_data() { return reinterpret_cast<uint8_t*&>(m_memory); }
+            
+            mem_ptr& operator=(const mem_ptr& other) { m_memory = other.m_memory; return *this; }
+            mem_ptr& operator=(void* other) { m_memory = other; return *this; }
+            mem_ptr& operator=(uint8_t* other) { m_memory = other; return *this; }
+            mem_ptr& operator=(uintptr_t other) { m_memory = reinterpret_cast<void*>(other); return *this; }
+
+            bool operator==(const mem_ptr& other) const { return m_memory == other.m_memory; }
+            bool operator!=(const mem_ptr& other) const { return m_memory != other.m_memory; }
+
+            void align(alignment a_alignment);
+            void align(alignment a_alignment, size_t additional_num_bytes);
+            bool is_aligned(alignment a_alignment);
+
+        private:
+            void* m_memory;
+        };
+
+        static const size_t k_kB = 1024ULL;
+        static const size_t k_MB = 1024ULL * 1024ULL;
+        static const size_t k_GB = 1024ULL * 1024ULL * 1024ULL;
+
         // Virtual interface.
-        virtual void* allocate_internal(size_t num_bytes, alignment a_alignment) = 0;
-        virtual bool free_internal(void* memory, size_t& out_num_bytes_freed) = 0;
+        virtual mem_ptr allocate_internal(size_t num_bytes, alignment a_alignment, size_t& out_num_bytes_allocated) = 0;
+        virtual bool free_internal(mem_ptr memory, size_t& out_num_bytes_freed) = 0;
 
         // Utilities.
-        static inline uintptr_t memory_to_uint(void* memory)
-            { return reinterpret_cast<uintptr_t>(memory); }
-        static inline void* uint_to_memory(uintptr_t number)
-            { return reinterpret_cast<void*>(number); }
-        inline uintptr_t get_memory_uint() const 
-            { return memory_to_uint(m_memory); }
-
-        static size_t alignment_to_num(alignment a_alignment)
-            { return static_cast<size_t>(a_alignment); }
-        static size_t alignment_to_uint(alignment a_alignment)
-            { return static_cast<uintptr_t>(a_alignment); }
-
-        static void* align_memory(void* memory, alignment a_alignment);
-        static bool is_memory_aligned(void* memory, alignment a_alignment);
-
+        static alignment get_alignment(mem_ptr memory);
 
         base_allocator* m_allocator_from;
         void* m_memory;

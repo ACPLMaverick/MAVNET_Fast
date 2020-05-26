@@ -13,12 +13,12 @@ namespace je { namespace mem {
     public:
         
         system_allocator();
-        ~system_allocator();
+        virtual ~system_allocator();
 
     protected:
 
-        virtual void* allocate_internal(size_t num_bytes, alignment a_alignment) override final;
-        virtual bool free_internal(void* memory, size_t& out_num_bytes_freed) override final;
+        virtual mem_ptr allocate_internal(size_t num_bytes, alignment a_alignment, size_t& out_num_bytes_allocated) override final;
+        virtual bool free_internal(mem_ptr memory, size_t& out_num_bytes_freed) override final;
 
 #if JE_DEBUG_ALLOCATIONS
         std::unordered_map<void*, size_t> m_allocation_map;
