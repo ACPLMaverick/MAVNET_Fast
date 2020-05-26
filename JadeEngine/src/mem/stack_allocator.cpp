@@ -15,6 +15,12 @@ namespace je { namespace mem {
     {
     }
 
+    stack_mem stack_allocator::allocate_stack_mem(size_t a_num_bytes,
+        alignment a_alignment /*= base_allocator::k_default_alignment*/)
+    {
+        return stack_mem(*this, a_num_bytes, a_alignment);
+    }
+
     stack_allocator::mem_ptr stack_allocator::allocate_internal(size_t a_num_bytes, alignment a_alignment, size_t& out_num_bytes_allocated)
     {
         const mem_ptr head(m_memory_head);
@@ -79,6 +85,18 @@ namespace je { namespace mem {
         m_memory_head = last_head.get();
 
         return true;
+    }
+
+    stack_mem::stack_mem(stack_allocator& allocator, size_t a_num_bytes,
+        alignment a_alignment /*= base_allocator::k_default_alignment*/)
+        : m_allocator(allocator)
+        , m_memory(allocator.allocate(a_num_bytes, a_alignment))
+    {
+    }
+
+    stack_mem::~stack_mem()
+    {
+        m_allocator.free(m_memory);
     }
 
 }}

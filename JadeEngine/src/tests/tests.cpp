@@ -70,9 +70,13 @@ namespace je { namespace tests {
             void* mem_3 = mem_alloc_and_fill(stack_allocator, 12, 0x12,
                 je::mem::alignment::k_0);
 
-            mem_free_and_check(stack_allocator, mem_2, 40, 0xEF);
             mem_free_and_check(stack_allocator, mem_3, 12, 0x12);
+            mem_free_and_check(stack_allocator, mem_2, 40, 0xEF);
             mem_free_and_check(stack_allocator, mem_1, 32, 0xAB);
+
+            mem::stack_mem st_mem_1 = stack_allocator.allocate_stack_mem(16);
+            mem::stack_mem st_mem_2 = stack_allocator.allocate_stack_mem(16);
+            mem::stack_mem st_mem_3 = stack_allocator.allocate_stack_mem(32);
         }
 
         JE_printf_ln("Allocation test passed.");

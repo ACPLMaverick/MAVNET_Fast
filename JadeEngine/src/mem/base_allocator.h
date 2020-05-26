@@ -38,9 +38,12 @@ namespace je { namespace mem {
         void* allocate(size_t num_bytes, alignment a_alignment = k_default_alignment);
         void free(void* memory);
 
+        size_t get_total_memory() const { return m_memory_num_bytes; }
+
 #if JE_DEBUG_ALLOCATIONS
         size_t get_num_allocations() const { return m_num_allocations; }
         size_t get_used_memory() const { return m_used_num_bytes; }
+        size_t get_memory_left() const { return get_total_memory() - get_used_memory(); }
 #endif
 
     protected:
