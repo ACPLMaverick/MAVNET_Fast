@@ -2,6 +2,12 @@
 
 #include "base_allocator.h"
 
+#if JE_DEBUG_ALLOCATIONS
+#define JE_DEBUG_ALLOCATIONS_STACK_CHECK_PREV 1
+#else
+#define JE_DEBUG_ALLOCATIONS_STACK_CHECK_PREV 0
+#endif
+
 namespace je { namespace mem { 
 
     class stack_allocator;
@@ -49,13 +55,19 @@ namespace je { namespace mem {
 
         struct control_block
         {
+#if JE_DEBUG_ALLOCATIONS_STACK_CHECK_PREV
             size_t m_prev_block_num_bytes;
+#endif
+            uint8_t m_alignment_num;
         };
 
         virtual mem_ptr allocate_internal(size_t num_bytes, alignment a_alignment, size_t& out_num_bytes_allocated) override final;
         virtual bool free_internal(mem_ptr memory, size_t& out_num_bytes_freed) override final;
 
         void* m_memory_head;
+#if JE_DEBUG_ALLOCATIONS_STACK_CHECK_PREV
+        void* m_prev_head_aligned;
+#endif
     };
 
 }}

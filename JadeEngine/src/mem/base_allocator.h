@@ -12,7 +12,7 @@
 
 namespace je { namespace mem { 
 
-    enum class alignment : size_t
+    enum class alignment : uint8_t
     {
         k_0 = 0,
         k_4 = 4,

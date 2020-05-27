@@ -8,11 +8,15 @@ namespace je { namespace mem {
             alignment a_alignment /*= k_default_alignment*/)
         : base_allocator(a_allocator_from, a_num_bytes, a_alignment)
         , m_memory_head(m_memory)
+#if JE_DEBUG_ALLOCATIONS_STACK_CHECK_PREV
+        , m_prev_head_aligned(m_memory_head)
+#endif
     {
     }
 
     stack_allocator::~stack_allocator()
     {
+        JE_assert(m_memory_head == m_memory, "Memory leak.");
     }
 
     stack_mem stack_allocator::allocate_stack_mem(size_t a_num_bytes,
@@ -24,7 +28,9 @@ namespace je { namespace mem {
     stack_allocator::mem_ptr stack_allocator::allocate_internal(size_t a_num_bytes, alignment a_alignment, size_t& out_num_bytes_allocated)
     {
         const mem_ptr head(m_memory_head);
-        const mem_ptr aligned_head(m_memory_head, a_alignment);
+        mem_ptr aligned_head(m_memory_head);
+        aligned_head.align(a_alignment, sizeof(control_block)); // This assures that I have at least sizeof(control_block) free space before.
+
         mem_ptr next_head(aligned_head + a_num_bytes);
 
 #if JE_DEBUG_ALLOCATIONS
@@ -38,10 +44,15 @@ namespace je { namespace mem {
         }
 #endif
 
-        control_block* cb = reinterpret_cast<control_block*>(next_head.get());
+        control_block* cb = reinterpret_cast<control_block*>(aligned_head - sizeof(control_block));
         out_num_bytes_allocated = next_head - head;
-        cb->m_prev_block_num_bytes = out_num_bytes_allocated;
-        next_head += sizeof(control_block);
+        cb->m_alignment_num = aligned_head - head;
+
+#if JE_DEBUG_ALLOCATIONS_STACK_CHECK_PREV
+        cb->m_prev_block_num_bytes = aligned_head - mem_ptr(m_prev_head_aligned);
+        m_prev_head_aligned = aligned_head;
+#endif
+
         m_memory_head = next_head;
 
         return aligned_head;
@@ -56,33 +67,39 @@ namespace je { namespace mem {
             return false;
         }
 #endif
-
-        const mem_ptr head(m_memory_head);
-        control_block* cb = reinterpret_cast<control_block*>(head - sizeof(control_block));
-        JE_assert(cb->m_prev_block_num_bytes != 0 && cb->m_prev_block_num_bytes < (8ULL * k_GB),
-            "Sanity check for control block failed.");
-
-        mem_ptr last_head = head - cb->m_prev_block_num_bytes - sizeof(control_block);
-        
-#if JE_DEBUG_ALLOCATIONS
-        if(last_head != a_memory)
+#if JE_DEBUG_ALLOCATIONS_STACK_CHECK_PREV
+        if(a_memory.get() != m_prev_head_aligned)
         {
-            // This looks way too complex but I'm leaving it for now.
-
-            alignment mem_alignment = get_alignment(a_memory);
-            mem_ptr last_head_aligned(last_head);
-            last_head_aligned.align(mem_alignment);
-            
-            if(last_head_aligned != a_memory)
-            {
-                JE_fail("Trying to free non-top block.");
-                return false;
-            }
+            JE_fail("Trying to free non-top block.");
+            return false;
         }
 #endif
 
-        a_out_num_bytes_freed = cb->m_prev_block_num_bytes;
-        m_memory_head = last_head.get();
+        control_block* cb = reinterpret_cast<control_block*>(a_memory - sizeof(control_block));
+        JE_assert(cb->m_alignment_num <= static_cast<uint8_t>(alignment::k_64), "Sanity check for control block failed.");
+#if JE_DEBUG_ALLOCATIONS_STACK_CHECK_PREV
+        JE_assert(cb->m_prev_block_num_bytes != 0 && cb->m_prev_block_num_bytes < (8ULL * k_GB),
+            "Sanity check for control block failed.");
+#endif
+
+        mem_ptr prev_head_nonaligned = mem_ptr(a_memory - cb->m_alignment_num);
+        a_out_num_bytes_freed = mem_ptr(m_memory_head) - prev_head_nonaligned;
+        m_memory_head = prev_head_nonaligned;
+
+#if JE_DEBUG_ALLOCATIONS_STACK_CHECK_PREV
+        m_prev_head_aligned = mem_ptr(a_memory - cb->m_prev_block_num_bytes);
+
+        if(m_memory_head != m_memory)
+        {
+            // Check if this pointer is really aligned.
+            JE_assert(get_alignment(m_prev_head_aligned) != alignment::k_0, "Bad prev pointer alignment");
+            // Check previous control block.
+            control_block* pcb = reinterpret_cast<control_block*>(mem_ptr(m_prev_head_aligned) - sizeof(control_block));
+        JE_assert(pcb->m_alignment_num <= static_cast<uint8_t>(alignment::k_64), "Sanity check for control block failed.");
+        JE_assert(pcb->m_prev_block_num_bytes != 0 && pcb->m_prev_block_num_bytes < (8ULL * k_GB),
+            "Sanity check for control block failed.");
+        }
+#endif
 
         return true;
     }

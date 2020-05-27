@@ -44,6 +44,7 @@
 #define JE_verify(_call_, ...) _call_
 #endif
 
+#define JE_static_assert(_value_) static_assert(_value_)
 #define JE_fail(...) JE_assert(false, __VA_ARGS__)
 #define JE_assert_bailout(_value_, _return_type_, ...) { JE_assert(_value_, __VA_ARGS__); if(!(_value_)) { return _return_type_; } }
 

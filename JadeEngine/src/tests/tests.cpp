@@ -59,7 +59,7 @@ namespace je { namespace tests {
         }
 
         {
-            mem::stack_allocator stack_allocator(allocator, 128);
+            mem::stack_allocator stack_allocator(allocator, 256);
 
             void* mem_1 = mem_alloc_and_fill(stack_allocator, 32, 0xAB);
             void* mem_2 = mem_alloc_and_fill(stack_allocator, 53, 0xCD);
