@@ -46,6 +46,8 @@ namespace je { namespace mem {
 
     void* base_allocator::allocate(size_t a_num_bytes, alignment a_alignment)
     {
+        JE_assert_bailout(a_num_bytes > 0, nullptr,
+            "Zero allocation is not possible.");
         JE_assert_bailout(a_num_bytes <= m_memory_num_bytes, nullptr,
             "Allocation too big for an allocator.");
 #if JE_DEBUG_ALLOCATIONS
@@ -151,10 +153,12 @@ namespace je { namespace mem {
         }
     }
 
-    void base_allocator::mem_ptr::align(alignment a_alignment, size_t a_additional_num_bytes)
+    size_t base_allocator::mem_ptr::align_adjust(alignment a_alignment, size_t a_additional_num_bytes)
     {
+        size_t old = *this;
         *this += a_additional_num_bytes;
         align(a_alignment);
+        return *this - old;
     }
 
     bool base_allocator::mem_ptr::is_aligned(alignment a_alignment)

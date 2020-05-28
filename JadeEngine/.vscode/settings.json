@@ -1,6 +1,15 @@
 {
     "cmake.configureOnOpen": true,
     "files.associations": {
-        "unordered_map": "cpp"
+        "unordered_map": "cpp",
+        "memory": "cpp",
+        "cstddef": "cpp",
+        "initializer_list": "cpp",
+        "list": "cpp",
+        "type_traits": "cpp",
+        "vector": "cpp",
+        "xhash": "cpp",
+        "xstring": "cpp",
+        "xutility": "cpp"
     }
 }

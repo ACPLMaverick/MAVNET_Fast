@@ -48,6 +48,8 @@ namespace je { namespace mem {
             alignment a_alignment = k_default_alignment);
         virtual ~stack_allocator();
 
+        JE_disallow_copy(stack_allocator);
+
         stack_mem allocate_stack_mem(size_t num_bytes,
             alignment a_alignment = base_allocator::k_default_alignment);
 
@@ -58,7 +60,7 @@ namespace je { namespace mem {
 #if JE_DEBUG_ALLOCATIONS_STACK_CHECK_PREV
             size_t m_prev_block_num_bytes;
 #endif
-            uint8_t m_alignment_num;
+            uint8_t m_alignment_num_bytes;
         };
 
         virtual mem_ptr allocate_internal(size_t num_bytes, alignment a_alignment, size_t& out_num_bytes_allocated) override final;

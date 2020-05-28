@@ -4,26 +4,37 @@
 
 namespace je { namespace mem { 
 
-    class linear_allocator : public base_allocator
+    class general_purpose_allocator : public base_allocator
     {
     public:
 
-        linear_allocator(
+        general_purpose_allocator(
             base_allocator& allocator_from,
             size_t num_bytes,
             alignment a_alignment = k_default_alignment);
-        virtual ~linear_allocator();
+        virtual ~general_purpose_allocator();
 
-        JE_disallow_copy(linear_allocator);
-
-        void clear();
+        JE_disallow_copy(general_purpose_allocator);
 
     protected:
+
+        struct allocation_header
+        {
+            size_t m_num_bytes;
+            uint8_t m_adjustment_num_bytes;
+        };
+
+        struct free_block
+        {
+            size_t m_num_bytes;
+            free_block* m_next;
+        };
 
         virtual mem_ptr allocate_internal(size_t num_bytes, alignment a_alignment, size_t& out_num_bytes_allocated) override final;
         virtual bool free_internal(mem_ptr memory, size_t& out_num_bytes_freed) override final;
 
-        void* m_memory_head;
+
+        free_block* m_free_blocks;
     };
 
 }}

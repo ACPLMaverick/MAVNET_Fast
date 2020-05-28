@@ -2,11 +2,20 @@
 
 // JadeEngine global header.
 
-// Global defines.
+// Global defines and utilities.
 
 #pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 
 #define JE_unused(_var_) (void)(_var_)
+#define JE_disallow_copy(_type_)			    \
+    _type_(const _type_&) = delete;				\
+    _type_& operator=(const _type_&) = delete;
+#define JE_safe_delete(_ptr_)	    \
+    if (_ptr_ != nullptr)			\
+    {								\
+        delete _ptr_;				\
+        _ptr_ = nullptr;			\
+    }
 
 // ///////////////////////
 
@@ -44,8 +53,8 @@
 #define JE_verify(_call_, ...) _call_
 #endif
 
-#define JE_static_assert(_value_) static_assert(_value_)
 #define JE_fail(...) JE_assert(false, __VA_ARGS__)
 #define JE_assert_bailout(_value_, _return_type_, ...) { JE_assert(_value_, __VA_ARGS__); if(!(_value_)) { return _return_type_; } }
+#define JE_todo() JE_fail("Not implemented.")
 
 // ///////////////////////

@@ -3,6 +3,7 @@
 #include "mem/system_allocator.h"
 #include "mem/linear_allocator.h"
 #include "mem/stack_allocator.h"
+#include "mem/general_purpose_allocator.h"
 
 namespace je { namespace tests {
 
@@ -11,75 +12,103 @@ namespace je { namespace tests {
         test_mem();
     }
 
-    void* mem_alloc_and_fill(mem::base_allocator& allocator, size_t size, 
-        uint8_t byte, mem::alignment al = mem::base_allocator::k_default_alignment)
+    class stack_mem_tester
     {
-        void* mem = allocator.allocate(size, al);
-        if(mem != nullptr)
+    public:
+        stack_mem_tester(mem::base_allocator& a_allocator, size_t a_num_bytes, 
+            uint8_t a_byte_to_fill, mem::alignment a_al = mem::base_allocator::k_default_alignment)
+            : m_allocator(a_allocator)
+            , m_mem(m_allocator.allocate(a_num_bytes, a_al))
+            , m_num_bytes(a_num_bytes)
+            , m_byte_to_fill(a_byte_to_fill)
         {
-            memset(mem, byte, size);
-        }
-
-        return mem;
-    }
-
-    void mem_free_and_check(mem::base_allocator& allocator, void* mem, 
-        size_t size, uint8_t byte)
-    {
-        uint8_t* byte_ptr = reinterpret_cast<uint8_t*>(mem);
-
-        for(size_t i = 0; i < size; ++i)
-        {
-            if(byte_ptr[i] != byte)
+            if(m_mem != nullptr)
             {
-                JE_fail("Memory has been corrupted!");
-                break;
+                memset(m_mem, m_byte_to_fill, m_num_bytes);
             }
         }
 
-        allocator.free(mem);
-    }
+        ~stack_mem_tester()
+        {
+            uint8_t* byte_ptr = reinterpret_cast<uint8_t*>(m_mem);
+
+            for(size_t i = 0; i < m_num_bytes; ++i)
+            {
+                if(byte_ptr[i] != m_byte_to_fill)
+                {
+                    JE_fail("Memory has been corrupted!");
+                    break;
+                }
+            }
+
+            m_allocator.free(m_mem);
+        }
+
+        void* get() { return m_mem; }
+
+    private:
+
+        mem::base_allocator& m_allocator;
+        void* m_mem;
+        size_t m_num_bytes;
+        uint8_t m_byte_to_fill;
+    };
 
     void tester::test_mem()
     {
-        mem::system_allocator allocator;
-
         {
-            mem::linear_allocator linear_allocator(allocator, 512);
+            mem::system_allocator allocator;
 
-            size_t num_bytes = 4;
-            while(num_bytes < 128)
             {
-                void* memory = linear_allocator.allocate(num_bytes, mem::alignment::k_16);
-                JE_unused(memory);
-                num_bytes *= 2;
+                mem::linear_allocator linear_allocator(allocator, 512);
+
+                size_t num_bytes = 4;
+                while(num_bytes < 128)
+                {
+                    void* memory = linear_allocator.allocate(num_bytes, mem::alignment::k_16);
+                    JE_unused(memory);
+                    num_bytes *= 2;
+                }
+
+                linear_allocator.clear();
             }
 
-            linear_allocator.clear();
+            {
+                mem::stack_allocator stack_allocator(allocator, 256);
+
+                {
+                    stack_mem_tester mem_1(stack_allocator, 32, 0xAB);
+                    {
+                        stack_mem_tester mem_2(stack_allocator, 53, 0xCD);
+                    }
+                    
+                    stack_mem_tester mem_2(stack_allocator, 40, 0xEF);
+                    stack_mem_tester mem_3(stack_allocator, 12, 0x12, je::mem::alignment::k_0);
+                }
+
+                mem::stack_mem st_mem_1 = stack_allocator.allocate_stack_mem(16);
+                mem::stack_mem st_mem_2 = stack_allocator.allocate_stack_mem(16);
+                mem::stack_mem st_mem_3 = stack_allocator.allocate_stack_mem(32);
+            }
+
+            {
+                mem::general_purpose_allocator gp_allocator(allocator, 300);
+
+                {
+                    stack_mem_tester mem_1(gp_allocator, 32, 0xAB);
+                    {
+                        stack_mem_tester mem_2(gp_allocator, 53, 0xCD, je::mem::alignment::k_4);
+                        stack_mem_tester mem_3(gp_allocator, 40, 0xEF);
+                        stack_mem_tester mem_4(gp_allocator, 12, 0x12, je::mem::alignment::k_0);
+                    }
+                    
+                    stack_mem_tester mem_2(gp_allocator, 128, 0xEF);
+                    stack_mem_tester mem_3(gp_allocator, 32, 0x12, je::mem::alignment::k_0);
+                }
+            }
         }
 
-        {
-            mem::stack_allocator stack_allocator(allocator, 256);
-
-            void* mem_1 = mem_alloc_and_fill(stack_allocator, 32, 0xAB);
-            void* mem_2 = mem_alloc_and_fill(stack_allocator, 53, 0xCD);
-
-            mem_free_and_check(stack_allocator, mem_2, 53, 0xCD);
-            
-            mem_alloc_and_fill(stack_allocator, 40, 0xEF);
-            void* mem_3 = mem_alloc_and_fill(stack_allocator, 12, 0x12,
-                je::mem::alignment::k_0);
-
-            mem_free_and_check(stack_allocator, mem_3, 12, 0x12);
-            mem_free_and_check(stack_allocator, mem_2, 40, 0xEF);
-            mem_free_and_check(stack_allocator, mem_1, 32, 0xAB);
-
-            mem::stack_mem st_mem_1 = stack_allocator.allocate_stack_mem(16);
-            mem::stack_mem st_mem_2 = stack_allocator.allocate_stack_mem(16);
-            mem::stack_mem st_mem_3 = stack_allocator.allocate_stack_mem(32);
-        }
-
-        JE_printf_ln("Allocation test passed.");
+        JE_printf_ln("Allocator test passed.");
     }
 
 }}

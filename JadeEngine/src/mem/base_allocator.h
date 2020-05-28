@@ -32,8 +32,10 @@ namespace je { namespace mem {
         base_allocator(
             base_allocator& allocator_from,
             size_t num_bytes,
-            alignment alignment = k_default_alignment);
+            alignment a_alignment = k_default_alignment);
         virtual ~base_allocator();
+
+        JE_disallow_copy(base_allocator);
 
         void* allocate(size_t num_bytes, alignment a_alignment = k_default_alignment);
         void free(void* memory);
@@ -79,20 +81,31 @@ namespace je { namespace mem {
             uintptr_t as_num() const { return reinterpret_cast<uintptr_t>(m_memory); }
             const void* get() const { return m_memory; }
             void* get() { return m_memory; }
-            const uint8_t* as_data() const { return reinterpret_cast<const uint8_t*>(m_memory); }
-            uint8_t* as_data() { return reinterpret_cast<uint8_t*&>(m_memory); }
             
             mem_ptr& operator=(const mem_ptr& other) { m_memory = other.m_memory; return *this; }
             mem_ptr& operator=(void* other) { m_memory = other; return *this; }
-            mem_ptr& operator=(uint8_t* other) { m_memory = other; return *this; }
             mem_ptr& operator=(uintptr_t other) { m_memory = reinterpret_cast<void*>(other); return *this; }
 
             bool operator==(const mem_ptr& other) const { return m_memory == other.m_memory; }
             bool operator!=(const mem_ptr& other) const { return m_memory != other.m_memory; }
+            bool operator>=(const mem_ptr& other) const { return m_memory >= other.m_memory; }
+            bool operator<=(const mem_ptr& other) const { return m_memory <= other.m_memory; }
+            bool operator>(const mem_ptr& other) const { return m_memory > other.m_memory; }
+            bool operator<(const mem_ptr& other) const { return m_memory < other.m_memory; }
 
             void align(alignment a_alignment);
-            void align(alignment a_alignment, size_t additional_num_bytes);
+            size_t align_adjust(alignment a_alignment, size_t additional_num_bytes);
             bool is_aligned(alignment a_alignment);
+
+            template <typename cast_type> cast_type* cast() const
+            {
+                return reinterpret_cast<cast_type*>(m_memory);
+            }
+
+            template <typename block_type> block_type* get_struct_ptr_before() const
+            {
+                return reinterpret_cast<block_type*>(*this - sizeof(block_type));
+            }
 
         private:
             void* m_memory;
