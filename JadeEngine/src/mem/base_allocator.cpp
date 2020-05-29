@@ -49,10 +49,11 @@ namespace je { namespace mem {
         JE_assert_bailout(a_num_bytes > 0, nullptr,
             "Zero allocation is not possible.");
         JE_assert_bailout(a_num_bytes <= m_memory_num_bytes, nullptr,
-            "Allocation too big for an allocator.");
+            "Allocation too big for an allocator. Alloc: [%lld], Space: [%lld]", a_num_bytes, m_memory_num_bytes);
 #if JE_DEBUG_ALLOCATIONS
         JE_assert(a_num_bytes <= (m_memory_num_bytes - m_used_num_bytes),
-            "Not enough memory in allocator.");
+            "Not enough memory in allocator. Has: [%lld], Needs: [%lld], Lacks: [%lld]", m_memory_num_bytes - m_used_num_bytes,
+                a_num_bytes, a_num_bytes - (m_memory_num_bytes - m_used_num_bytes));
 #endif
 
         size_t bytes_allocated = 0;
@@ -74,7 +75,8 @@ namespace je { namespace mem {
 #endif
 
         JE_assert(mem != nullptr && bytes_allocated != 0, "Allocate failed.");
-        JE_assert(mem_ptr(mem).is_aligned(a_alignment), "Pointer is not properly aligned.");
+        JE_assert(mem_ptr(mem).is_aligned(a_alignment), "Pointer is not properly aligned. Is: [%p], Needs: [%p]",
+            mem, mem_ptr(mem, a_alignment).get());
 
         return mem;
     }
@@ -82,6 +84,7 @@ namespace je { namespace mem {
     void base_allocator::free(void* a_memory)
     {
 #if JE_DEBUG_ALLOCATIONS
+        JE_assert_bailout(m_used_num_bytes > 0, , "Trying to free from an empty allocator.");
         if(m_memory != nullptr)
         {
             const uintptr_t memory_uint = reinterpret_cast<uintptr_t>(a_memory);

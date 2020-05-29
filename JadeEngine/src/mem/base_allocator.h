@@ -81,6 +81,8 @@ namespace je { namespace mem {
             uintptr_t as_num() const { return reinterpret_cast<uintptr_t>(m_memory); }
             const void* get() const { return m_memory; }
             void* get() { return m_memory; }
+
+            bool is_null() const { return m_memory == nullptr; }
             
             mem_ptr& operator=(const mem_ptr& other) { m_memory = other.m_memory; return *this; }
             mem_ptr& operator=(void* other) { m_memory = other; return *this; }

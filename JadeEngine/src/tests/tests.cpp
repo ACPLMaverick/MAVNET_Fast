@@ -4,6 +4,7 @@
 #include "mem/linear_allocator.h"
 #include "mem/stack_allocator.h"
 #include "mem/general_purpose_allocator.h"
+#include "mem/pool_allocator.h"
 
 namespace je { namespace tests {
 
@@ -12,10 +13,10 @@ namespace je { namespace tests {
         test_mem();
     }
 
-    class stack_mem_tester
+    class mem_tester
     {
     public:
-        stack_mem_tester(mem::base_allocator& a_allocator, size_t a_num_bytes, 
+        mem_tester(mem::base_allocator& a_allocator, size_t a_num_bytes, 
             uint8_t a_byte_to_fill, mem::alignment a_al = mem::base_allocator::k_default_alignment)
             : m_allocator(a_allocator)
             , m_mem(m_allocator.allocate(a_num_bytes, a_al))
@@ -28,7 +29,7 @@ namespace je { namespace tests {
             }
         }
 
-        ~stack_mem_tester()
+        ~mem_tester()
         {
             uint8_t* byte_ptr = reinterpret_cast<uint8_t*>(m_mem);
 
@@ -77,13 +78,13 @@ namespace je { namespace tests {
                 mem::stack_allocator stack_allocator(allocator, 256);
 
                 {
-                    stack_mem_tester mem_1(stack_allocator, 32, 0xAB);
+                    mem_tester mem_1(stack_allocator, 32, 0xAB);
                     {
-                        stack_mem_tester mem_2(stack_allocator, 53, 0xCD);
+                        mem_tester mem_2(stack_allocator, 53, 0xCD);
                     }
                     
-                    stack_mem_tester mem_2(stack_allocator, 40, 0xEF);
-                    stack_mem_tester mem_3(stack_allocator, 12, 0x12, je::mem::alignment::k_0);
+                    mem_tester mem_2(stack_allocator, 40, 0xEF);
+                    mem_tester mem_3(stack_allocator, 12, 0x12, je::mem::alignment::k_0);
                 }
 
                 mem::stack_mem st_mem_1 = stack_allocator.allocate_stack_mem(16);
@@ -95,15 +96,55 @@ namespace je { namespace tests {
                 mem::general_purpose_allocator gp_allocator(allocator, 300);
 
                 {
-                    stack_mem_tester mem_1(gp_allocator, 32, 0xAB);
+                    mem_tester mem_1(gp_allocator, 32, 0xAB);
                     {
-                        stack_mem_tester mem_2(gp_allocator, 53, 0xCD, je::mem::alignment::k_4);
-                        stack_mem_tester mem_3(gp_allocator, 40, 0xEF);
-                        stack_mem_tester mem_4(gp_allocator, 12, 0x12, je::mem::alignment::k_0);
+                        mem_tester* mem_2 = new mem_tester(gp_allocator, 53, 0xCD, je::mem::alignment::k_4);
+                        mem_tester* mem_3 = new mem_tester(gp_allocator, 40, 0xEF);
+                        mem_tester* mem_4 = new mem_tester(gp_allocator, 12, 0x12, je::mem::alignment::k_0);
+
+                        delete mem_3;
+                        delete mem_4;
+                        delete mem_2;
                     }
                     
-                    stack_mem_tester mem_2(gp_allocator, 128, 0xEF);
-                    stack_mem_tester mem_3(gp_allocator, 32, 0x12, je::mem::alignment::k_0);
+                    mem_tester* mem_2 = new mem_tester(gp_allocator, 128, 0xEF);
+                    mem_tester* mem_3 = new mem_tester(gp_allocator, 32, 0x12, je::mem::alignment::k_0);
+
+                    delete mem_2;
+                    delete mem_3;
+                }
+            }
+
+            {
+                static const size_t obj_num_bytes = 32;
+                mem::pool_allocator pool_allocator(allocator, obj_num_bytes, 8);
+
+                {
+                    mem_tester mem_1(pool_allocator, obj_num_bytes, 0xAB);
+                }
+                {
+                    mem_tester* mem_1 = new mem_tester(pool_allocator, obj_num_bytes, 0xAB);
+                    mem_tester* mem_2 = new mem_tester(pool_allocator, obj_num_bytes, 0xBC);
+                    mem_tester* mem_3 = new mem_tester(pool_allocator, obj_num_bytes, 0xCD);
+                    mem_tester* mem_4 = new mem_tester(pool_allocator, obj_num_bytes, 0xEF);
+
+                    delete mem_2;
+                    delete mem_3;
+
+                    {
+                        mem_tester* mem_5 = new mem_tester(pool_allocator, obj_num_bytes, 0xFE);
+                        mem_tester* mem_6 = new mem_tester(pool_allocator, obj_num_bytes, 0xDC);
+                        mem_tester* mem_7 = new mem_tester(pool_allocator, obj_num_bytes, 0xCB);
+                        mem_tester* mem_8 = new mem_tester(pool_allocator, obj_num_bytes, 0xBA);
+
+                        delete mem_6;
+                        delete mem_5;
+                        delete mem_7;
+                        delete mem_8;
+                    }
+
+                    delete mem_1;
+                    delete mem_4;
                 }
             }
         }
