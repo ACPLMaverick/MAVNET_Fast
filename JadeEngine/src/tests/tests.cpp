@@ -10,7 +10,9 @@ namespace je { namespace tests {
 
     void tester::run()
     {
-        test_mem();
+        //test_mem();
+        test_stack_tracer();
+        //test_memory_access_guard();
     }
 
     class mem_tester
@@ -70,8 +72,6 @@ namespace je { namespace tests {
                     JE_unused(memory);
                     num_bytes *= 2;
                 }
-
-                linear_allocator.clear();
             }
 
             {
@@ -150,6 +150,19 @@ namespace je { namespace tests {
         }
 
         JE_printf_ln("Allocator test passed.");
+    }
+
+    void tester::test_stack_tracer()
+    {
+        mem::system_allocator allocator;
+        void* mem = allocator.allocate(64);
+        JE_unused(mem);
+        // Forget to free this memory.
+    }
+
+    void tester::test_memory_access_guard()
+    {
+        JE_todo();
     }
 
 }}

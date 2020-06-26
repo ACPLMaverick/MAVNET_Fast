@@ -4,4 +4,10 @@
 
 #include "Windows.h"
 
+namespace je { namespace platform {
+
+void print_last_error();
+
+}}
+
 #endif

@@ -13,6 +13,7 @@ namespace je { namespace mem {
 
     linear_allocator::~linear_allocator()
     {
+        clear();
     }
 
     void linear_allocator::clear()
@@ -20,6 +21,9 @@ namespace je { namespace mem {
 #if JE_DEBUG_ALLOCATIONS
         m_used_num_bytes = 0;
         m_num_allocations = 0;
+#endif
+#if JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER
+        m_stack_tracer.clear();
 #endif
 
         m_memory_head = m_memory;

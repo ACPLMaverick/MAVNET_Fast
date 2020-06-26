@@ -5,9 +5,13 @@
 #if JE_CONFIG_DEBUG
 #define JE_DEBUG_ALLOCATIONS 1
 #define JE_DEBUG_ALLOCATIONS_FILL_MEMORY_ON_ALLOC 1
+
+#include "platform/stack_tracer.h"
+#define JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER (JE_USE_STACK_TRACER) && 1
 #else
 #define JE_DEBUG_ALLOCATIONS 0
 #define JE_DEBUG_ALLOCATIONS_FILL_MEMORY_ON_ALLOC 0
+#define JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER 0
 #endif
 
 namespace je { namespace mem { 
@@ -128,10 +132,13 @@ namespace je { namespace mem {
         void* m_memory;
         const size_t m_memory_num_bytes;
         
-#if JE_DEBUG_ALLOCATIONS
     protected:
+#if JE_DEBUG_ALLOCATIONS
         size_t m_num_allocations;
         size_t m_used_num_bytes;
+#endif
+#if JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER
+        platform::stack_tracer m_stack_tracer;
 #endif
     };
 

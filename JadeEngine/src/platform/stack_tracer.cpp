@@ -16,6 +16,11 @@ namespace je { namespace platform {
         }
     }
 
+    void stack_tracer::clear()
+    {
+        m_traces.clear();
+    }
+
     void stack_tracer::remove_trace(key a_key)
     {
         auto it = m_traces.find(a_key);
@@ -26,25 +31,6 @@ namespace je { namespace platform {
         else
         {
             JE_fail("Failed to remove a stack trace.");
-        }
-    }
-
-    void stack_tracer::init_symbol_ref()
-    {
-        JE_todo();  // Check if it is correct.
-        size_t prev_num_refs = s_symbol_reference_num++;
-        if(prev_num_refs == 0)
-        {
-            init_symbols();
-        }
-    }
-
-    void stack_tracer::cleanup_symbol_ref()
-    {
-        size_t prev_num_refs = s_symbol_reference_num--;
-        if(prev_num_refs == 1)
-        {
-            cleanup_symbols();
         }
     }
 
@@ -60,13 +46,34 @@ namespace je { namespace platform {
         for(auto it = m_traces.begin(); it != m_traces.end(); ++it)
         {
             JE_printf("Trace #%lld:", num);
-            print_trace(it->second);
+            stack_trace trace = it->second;
+            print_trace(trace);
             JE_printf("\n");
+
+            ++num;
         }
 
         JE_printf_ln("###########################################");
 
         cleanup_symbol_ref();
+    }
+
+    void stack_tracer::init_symbol_ref()
+    {
+        size_t prev_num_refs = s_symbol_reference_num++;
+        if(prev_num_refs == 0)
+        {
+            init_symbols();
+        }
+    }
+
+    void stack_tracer::cleanup_symbol_ref()
+    {
+        size_t prev_num_refs = s_symbol_reference_num--;
+        if(prev_num_refs == 1)
+        {
+            cleanup_symbols();
+        }
     }
 
 }}

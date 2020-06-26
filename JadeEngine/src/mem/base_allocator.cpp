@@ -39,6 +39,12 @@ namespace je { namespace mem {
             m_memory = nullptr;
             m_allocator_from = nullptr;
         }
+#if JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER
+        if(m_stack_tracer.get_num_remaining_traces() > 0)
+        {
+            m_stack_tracer.print_remaining_traces();
+        }
+#endif
 #if JE_DEBUG_ALLOCATIONS
         JE_assert(m_num_allocations == 0 && m_used_num_bytes == 0, "Memory leak.");
 #endif
@@ -74,6 +80,13 @@ namespace je { namespace mem {
         }
 #endif
 
+#if JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER
+        if(mem != nullptr)
+        {
+            m_stack_tracer.capture_trace(mem);
+        }
+#endif
+
         JE_assert(mem != nullptr && bytes_allocated != 0, "Allocate failed.");
         JE_assert(mem_ptr(mem).is_aligned(a_alignment), "Pointer is not properly aligned. Is: [%p], Needs: [%p]",
             mem, mem_ptr(mem, a_alignment).get());
@@ -92,6 +105,13 @@ namespace je { namespace mem {
             JE_assert(memory_uint >= m_memory_ptr
                 && memory_uint < m_memory_ptr + m_memory_num_bytes,
                 "Freed memory does not belong to this allocator.");
+        }
+#endif
+
+#if JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER
+        if(a_memory != nullptr)
+        {
+            m_stack_tracer.remove_trace(a_memory);
         }
 #endif
 
