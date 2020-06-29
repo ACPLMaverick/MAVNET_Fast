@@ -6,7 +6,10 @@
 
 namespace je { namespace platform {
 
-void print_last_error();
+    namespace util
+    {
+        void print_last_error();
+    }
 
 }}
 

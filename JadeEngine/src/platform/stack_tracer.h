@@ -32,6 +32,8 @@ namespace je { namespace platform {
         size_t get_num_remaining_traces() const { return m_traces.size(); }
         void print_remaining_traces();
 
+        static void print_current_trace();
+
     private:
 
         using stack_ptr = void*;
@@ -47,6 +49,9 @@ namespace je { namespace platform {
 
         static void init_symbols();
         static void cleanup_symbols();
+
+        // Does not allocate memory, returns pointer within the same string.
+        static const char* trim_file_name(const char* absolute_file_name);
 
         void init_symbol_ref();
         void cleanup_symbol_ref();

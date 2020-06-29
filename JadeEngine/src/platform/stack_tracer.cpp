@@ -10,10 +10,6 @@ namespace je { namespace platform {
 
     stack_tracer::~stack_tracer()
     {
-        if(get_num_remaining_traces() != 0)
-        {
-            print_remaining_traces();
-        }
     }
 
     void stack_tracer::clear()
@@ -39,7 +35,7 @@ namespace je { namespace platform {
         init_symbol_ref();
 
         JE_printf_ln("###########################################");
-        JE_printf_ln("There are [%lld] existing traces in stack tracker!", get_num_remaining_traces());
+        JE_printf_ln("There are [%lld] existing traces in the stack tracker!", get_num_remaining_traces());
         JE_printf("\n");
 
         size_t num = 1;
@@ -56,6 +52,18 @@ namespace je { namespace platform {
         JE_printf_ln("###########################################");
 
         cleanup_symbol_ref();
+    }
+
+    void stack_tracer::print_current_trace()
+    {
+        // TODO
+
+    }
+
+    const char* stack_tracer::trim_file_name(const char* a_absolute_file_name)
+    {
+        // TODO
+        return a_absolute_file_name;
     }
 
     void stack_tracer::init_symbol_ref()
@@ -76,6 +84,7 @@ namespace je { namespace platform {
         }
     }
 
+    std::atomic<size_t> stack_tracer::s_symbol_reference_num(0);
 }}
 
 #endif

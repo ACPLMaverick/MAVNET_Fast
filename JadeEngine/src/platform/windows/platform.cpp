@@ -2,30 +2,38 @@
 
 #if JE_PLATFORM_WINDOWS
 
-#include <strsafe.h>
-
 #include "global.h"
 
 namespace je { namespace platform {
 
-void print_last_error()
+namespace util
 {
-    LPVOID msg_buf;
-    DWORD error = GetLastError(); 
+    // Cross-platform implementations.
+    const char* get_file_separator()
+    {
+        return "\\";
+    }
 
-    FormatMessage(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-        FORMAT_MESSAGE_FROM_SYSTEM |
-        FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL,
-        error,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPTSTR) &msg_buf,
-        0, NULL );
+    // Platform-specific implementations.
+    void print_last_error()
+    {
+        LPVOID msg_buf;
+        DWORD error = GetLastError(); 
 
-    JE_printf("Windows error [%ld] : %s", error, reinterpret_cast<char*>(msg_buf));
+        FormatMessage(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL,
+            error,
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            (LPTSTR) &msg_buf,
+            0, NULL );
 
-    LocalFree(msg_buf);
+        JE_printf("Windows error [%ld] : %s", error, reinterpret_cast<char*>(msg_buf));
+
+        LocalFree(msg_buf);
+    }
 }
 
 }}

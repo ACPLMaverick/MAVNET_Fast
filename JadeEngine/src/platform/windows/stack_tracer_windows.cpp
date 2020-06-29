@@ -11,12 +11,16 @@
 
 namespace je { namespace platform {
 
+    static struct
+    {
+        HANDLE process{0};
+        DWORD64 symbol_module{0};
+    } g_symbol_data;
+
     void stack_tracer::capture_trace(key a_key)
     {
-        stack_trace new_trace;
+        stack_trace new_trace{};
         
-        // TODO Use this:
-        // https://stackoverflow.com/questions/22467604/how-can-you-use-capturestackbacktrace-to-capture-the-exception-stack-not-the-ca
         new_trace.m_num_traces = CaptureStackBackTrace(k_num_frames_to_skip, k_num_frames, new_trace.m_traces, NULL);
 
         if(new_trace.m_num_traces != 0)
@@ -34,53 +38,75 @@ namespace je { namespace platform {
 
     void stack_tracer::init_symbols()
     {
-        const HANDLE process = GetCurrentProcess();
-        JE_verify(SymInitialize(process, NULL, FALSE), "Symbol initialization failed.");
+        JE_verify(DuplicateHandle(
+            GetCurrentProcess(),
+            GetCurrentProcess(),
+            GetCurrentProcess(),
+            &g_symbol_data.process,
+            0,
+            FALSE,
+            DUPLICATE_SAME_ACCESS
+        ), "DuplicateHandle failed.");
+
+        TCHAR module_name[MAX_PATH];
+
+        JE_verify(GetModuleFileName(NULL, module_name, MAX_PATH), "GetModuleFilename failed.");
+
+        JE_verify(SymInitialize(g_symbol_data.process, module_name, TRUE), "Symbol initialization failed.");
         SymSetOptions(SYMOPT_LOAD_LINES);
+
+        g_symbol_data.symbol_module = SymLoadModule64(g_symbol_data.process, NULL, module_name, NULL, 0, 0);
+        JE_assert(g_symbol_data.symbol_module != 0, "SymLoadModule64 failed.");
     }
 
     void stack_tracer::cleanup_symbols()
     {
-        const HANDLE process = GetCurrentProcess();
-        JE_verify(SymCleanup(process), "Symbol cleanup failed.");
+        JE_assert(g_symbol_data.process != 0 && g_symbol_data.symbol_module != 0, "Cleaning up uninitialized symbols.");
+        JE_verify(SymUnloadModule64(g_symbol_data.process, g_symbol_data.symbol_module), "SymUnloadModule64 failed.");
+        JE_verify(SymCleanup(g_symbol_data.process), "Symbol cleanup failed.");
+
+        ZeroMemory(&g_symbol_data, sizeof(g_symbol_data));
     }
 
     void stack_tracer::print_trace(stack_trace& a_trace)
     {
-        const HANDLE process = GetCurrentProcess();
+        JE_assert(g_symbol_data.process != 0, "Uninitialized symbols");
+
         static char symbol_buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
 
         SYMBOL_INFO* symbol = reinterpret_cast<SYMBOL_INFO*>(symbol_buffer);
         symbol->MaxNameLen = MAX_SYM_NAME;
-        symbol->SizeOfStruct = sizeof(IMAGEHLP_SYMBOL);
+        symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
 
         IMAGEHLP_LINE line;
         line.SizeOfStruct = sizeof(IMAGEHLP_LINE);
 
+        DWORD64 displacement;
+
         for(size_t i = 0; i < a_trace.m_num_traces; ++i)
         {
-            if(SymFromAddr(process, reinterpret_cast<DWORD64>(a_trace.m_traces[i]), 0, symbol))
+            displacement = 0;
+            if(SymFromAddr(g_symbol_data.process, reinterpret_cast<DWORD64>(a_trace.m_traces[i]), &displacement, symbol))
             {
-                if(SymGetLineFromAddr(process, reinterpret_cast<DWORD64>(a_trace.m_traces[i]), 0, &line))
+                DWORD disp(displacement);
+                if(SymGetLineFromAddr(g_symbol_data.process, reinterpret_cast<DWORD64>(a_trace.m_traces[i]), &disp, &line))
                 {
                     JE_printf_ln("[%p] : [%s] : [%s] : [%lu]",
-                        a_trace.m_traces[i], symbol->Name, line.FileName, line.LineNumber);
+                        a_trace.m_traces[i], symbol->Name, trim_file_name(line.FileName), line.LineNumber);
                 }
                 else
                 {
-                    print_last_error();
+                    util::print_last_error();
                     JE_printf_ln("[%p] : [%s] : Unknown file", a_trace.m_traces[i], symbol->Name);
                 }
             }
             else
             {
-                print_last_error();
+                util::print_last_error();
                 JE_printf_ln("[%p] : Unknown function", a_trace.m_traces[i]);
             }
         }
     }
-
-    std::atomic<size_t> stack_tracer::s_symbol_reference_num(0);
 }}
 
 #endif
