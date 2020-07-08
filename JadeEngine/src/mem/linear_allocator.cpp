@@ -5,8 +5,9 @@ namespace je { namespace mem {
     linear_allocator::linear_allocator(
             base_allocator& a_allocator_from,
             size_t a_num_bytes,
-            alignment a_alignment /*= k_default_alignment */)
-        : base_allocator(a_allocator_from, a_num_bytes, a_alignment)
+            alignment a_alignment /*= k_default_alignment */,
+            allocator_debug_flags a_debug_flags /*= base_allocator::k_default_debug_flags*/)
+        : base_allocator(a_allocator_from, a_num_bytes, a_alignment, a_debug_flags)
         , m_memory_head(m_memory)
     {
     }
@@ -19,11 +20,17 @@ namespace je { namespace mem {
     void linear_allocator::clear()
     {
 #if JE_DEBUG_ALLOCATIONS
-        m_used_num_bytes = 0;
-        m_num_allocations = 0;
+        if(m_debug_flags & allocator_debug_flags::k_count_allocations)
+        {
+            m_used_num_bytes = 0;
+            m_num_allocations = 0;
+        }
 #endif
 #if JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER
-        m_stack_tracer.clear();
+        if(m_debug_flags & allocator_debug_flags::k_stack_tracer)
+        {
+            m_stack_tracer.clear();
+        }
 #endif
 
         m_memory_head = m_memory;

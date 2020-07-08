@@ -4,8 +4,8 @@
 
 namespace je { namespace mem { 
 
-    system_allocator::system_allocator()
-        : base_allocator()
+    system_allocator::system_allocator(allocator_debug_flags a_debug_flags /*= base_allocator::k_default_debug_flags*/)
+        : base_allocator(a_debug_flags)
     {
         const_cast<size_t&>(m_memory_num_bytes) = std::numeric_limits<size_t>::max();
     }

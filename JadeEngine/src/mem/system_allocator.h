@@ -12,7 +12,7 @@ namespace je { namespace mem {
     {
     public:
         
-        system_allocator();
+        system_allocator(allocator_debug_flags debug_flags = base_allocator::k_default_debug_flags);
         virtual ~system_allocator();
 
     protected:

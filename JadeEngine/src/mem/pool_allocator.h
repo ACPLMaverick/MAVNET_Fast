@@ -12,7 +12,8 @@ namespace je { namespace mem {
             base_allocator& allocator_from,
             size_t object_num_bytes,
             size_t num_objects,
-            alignment a_alignment = k_default_alignment);
+            alignment a_alignment = k_default_alignment,
+            allocator_debug_flags debug_flags = base_allocator::k_default_debug_flags);
         virtual ~pool_allocator();
 
         JE_disallow_copy(pool_allocator);

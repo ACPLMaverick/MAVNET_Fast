@@ -17,6 +17,22 @@
         _ptr_ = nullptr;			\
     }
 
+#define JE_bitfield_enum_begin(_enum_, _derived_)   \
+enum class _enum_ : _derived_                       \
+{
+
+#define JE_bitfield_enum_end(_enum_, _derived_)                             \
+};                                                                          \
+inline bool operator&(_enum_ a, _enum_ b)                                   \
+{                                                                           \
+    return static_cast<_derived_>(a) & static_cast<_derived_>(b);           \
+}                                                                           \
+inline bool operator|(_enum_ a, _enum_ b)                                   \
+{                                                                           \
+    return static_cast<_derived_>(a) | static_cast<_derived_>(b);           \
+}
+
+
 // ///////////////////////
 
 // Common includes.

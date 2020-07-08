@@ -11,7 +11,8 @@ namespace je { namespace mem {
         linear_allocator(
             base_allocator& allocator_from,
             size_t num_bytes,
-            alignment a_alignment = k_default_alignment);
+            alignment a_alignment = k_default_alignment,
+            allocator_debug_flags debug_flags = base_allocator::k_default_debug_flags);
         virtual ~linear_allocator();
 
         JE_disallow_copy(linear_allocator);

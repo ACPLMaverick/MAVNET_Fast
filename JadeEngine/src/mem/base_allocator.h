@@ -18,25 +18,36 @@ namespace je { namespace mem {
 
     enum class alignment : uint8_t
     {
-        k_0 = 0,
-        k_4 = 4,
-        k_8 = 8,
-        k_16 = 16,
-        k_32 = 32,
-        k_64 = 64
+        k_0     = 0,
+        k_4     = 4,
+        k_8     = 8,
+        k_16    = 16,
+        k_32    = 32,
+        k_64    = 64
     };
+
+    JE_bitfield_enum_begin(allocator_debug_flags, uint8_t)
+        k_none                  = 0,
+        k_count_allocations     = (1 << 0),
+        k_fill_memory_on_alloc  = (1 << 1),
+        k_stack_tracer          = (1 << 2),
+        k_boundary_guard        = (1 << 3),
+        k_all                   = 0xFF
+    JE_bitfield_enum_end(allocator_debug_flags, uint8_t)
 
     class base_allocator
     {
     public:
 
         static const alignment k_default_alignment = alignment::k_16;
+        static const allocator_debug_flags k_default_debug_flags = allocator_debug_flags::k_all;
 
-        base_allocator();
+        base_allocator(allocator_debug_flags debug_flags = base_allocator::k_default_debug_flags);
         base_allocator(
             base_allocator& allocator_from,
             size_t num_bytes,
-            alignment a_alignment = k_default_alignment);
+            alignment a_alignment = k_default_alignment,
+            allocator_debug_flags debug_flags = base_allocator::k_default_debug_flags);
         virtual ~base_allocator();
 
         JE_disallow_copy(base_allocator);
@@ -126,6 +137,12 @@ namespace je { namespace mem {
         virtual bool free_internal(mem_ptr memory, size_t& out_num_bytes_freed) = 0;
 
         // Utilities.
+        inline bool debug_process_before_allocate(size_t num_bytes, alignment a_alignment);
+        inline void debug_process_after_allocate(size_t num_bytes, alignment a_alignment, void* memory, size_t bytes_allocated);
+
+        inline bool debug_process_before_free(void* memory);
+        inline void debug_process_after_free(bool free_succeeded, size_t num_bytes_freed);
+
         void conditionally_print_stack_trace();
         static alignment get_alignment(mem_ptr memory);
 
@@ -137,6 +154,7 @@ namespace je { namespace mem {
 #if JE_DEBUG_ALLOCATIONS
         size_t m_num_allocations;
         size_t m_used_num_bytes;
+        allocator_debug_flags m_debug_flags;
 #endif
 #if JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER
         platform::stack_tracer m_stack_tracer;

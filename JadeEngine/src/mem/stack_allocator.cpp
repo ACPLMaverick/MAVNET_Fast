@@ -5,8 +5,9 @@ namespace je { namespace mem {
     stack_allocator::stack_allocator(
             base_allocator& a_allocator_from,
             size_t a_num_bytes,
-            alignment a_alignment /*= k_default_alignment*/)
-        : base_allocator(a_allocator_from, a_num_bytes, a_alignment)
+            alignment a_alignment /*= k_default_alignment*/,
+            allocator_debug_flags a_debug_flags /*= base_allocator::k_default_debug_flags*/)
+        : base_allocator(a_allocator_from, a_num_bytes, a_alignment, a_debug_flags)
         , m_memory_head(m_memory)
 #if JE_DEBUG_ALLOCATIONS_STACK_CHECK_PREV
         , m_prev_head_aligned(m_memory_head)
