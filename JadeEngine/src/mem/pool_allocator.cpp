@@ -22,6 +22,7 @@
 
     pool_allocator::~pool_allocator()
     {
+        conditionally_print_stack_trace();
     }
 
     void* pool_allocator::allocate()

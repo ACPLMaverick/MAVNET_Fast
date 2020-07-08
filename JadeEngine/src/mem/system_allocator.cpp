@@ -12,7 +12,7 @@ namespace je { namespace mem {
 
     system_allocator::~system_allocator()
     {
-
+        conditionally_print_stack_trace();
     }
 
     system_allocator::mem_ptr system_allocator::allocate_internal(size_t a_num_bytes,

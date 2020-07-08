@@ -17,23 +17,9 @@ namespace je { namespace platform {
         DWORD64 symbol_module{0};
     } g_symbol_data;
 
-    void stack_tracer::capture_trace(key a_key)
+    void stack_tracer::generate_trace(stack_trace& a_out_trace)
     {
-        stack_trace new_trace{};
-        
-        new_trace.m_num_traces = CaptureStackBackTrace(k_num_frames_to_skip, k_num_frames, new_trace.m_traces, NULL);
-
-        if(new_trace.m_num_traces != 0)
-        {
-            init_symbol_ref();
-            print_trace(new_trace);
-            cleanup_symbol_ref();
-            m_traces.emplace(a_key, new_trace);
-        }
-        else
-        {
-            JE_fail("Failed to capture a stack trace.");
-        }
+        a_out_trace.m_num_traces = CaptureStackBackTrace(0, k_num_frames, a_out_trace.m_traces, NULL);
     }
 
     void stack_tracer::init_symbols()

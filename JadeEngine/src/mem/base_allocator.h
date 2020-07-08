@@ -126,6 +126,7 @@ namespace je { namespace mem {
         virtual bool free_internal(mem_ptr memory, size_t& out_num_bytes_freed) = 0;
 
         // Utilities.
+        void conditionally_print_stack_trace();
         static alignment get_alignment(mem_ptr memory);
 
         base_allocator* m_allocator_from;

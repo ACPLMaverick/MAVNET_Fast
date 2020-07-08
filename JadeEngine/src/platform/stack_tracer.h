@@ -37,9 +37,7 @@ namespace je { namespace platform {
     private:
 
         using stack_ptr = void*;
-        static const size_t k_num_total_frames = 36;
-        static const size_t k_num_frames_to_skip = 4;
-        static const size_t k_num_frames = k_num_total_frames - k_num_frames_to_skip;
+        static const size_t k_num_frames = 64;
 
         struct stack_trace
         {
@@ -47,16 +45,18 @@ namespace je { namespace platform {
             size_t m_num_traces;
         };
 
+        static void generate_trace(stack_trace& out_trace);
+
         static void init_symbols();
         static void cleanup_symbols();
 
         // Does not allocate memory, returns pointer within the same string.
         static const char* trim_file_name(const char* absolute_file_name);
 
+        static void print_trace(stack_trace& trace);
+
         void init_symbol_ref();
         void cleanup_symbol_ref();
-
-        void print_trace(stack_trace& trace);
 
         std::unordered_map<key, stack_trace> m_traces;
 

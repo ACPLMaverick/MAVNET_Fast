@@ -16,6 +16,7 @@ namespace je { namespace mem {
 
     stack_allocator::~stack_allocator()
     {
+        conditionally_print_stack_trace();
         JE_assert(m_memory_head == m_memory, "Memory leak.");
     }
 

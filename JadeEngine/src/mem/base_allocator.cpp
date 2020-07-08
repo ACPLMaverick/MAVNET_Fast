@@ -39,12 +39,7 @@ namespace je { namespace mem {
             m_memory = nullptr;
             m_allocator_from = nullptr;
         }
-#if JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER
-        if(m_stack_tracer.get_num_remaining_traces() > 0)
-        {
-            m_stack_tracer.print_remaining_traces();
-        }
-#endif
+
 #if JE_DEBUG_ALLOCATIONS
         JE_assert(m_num_allocations == 0 && m_used_num_bytes == 0, "Memory leak.");
 #endif
@@ -127,6 +122,16 @@ namespace je { namespace mem {
 #endif
 
         JE_assert(free_succeeded, "Free failed.");
+    }
+
+    void base_allocator::conditionally_print_stack_trace()
+    {
+#if JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER
+        if(m_stack_tracer.get_num_remaining_traces() > 0)
+        {
+            m_stack_tracer.print_remaining_traces();
+        }
+#endif
     }
 
     alignment base_allocator::get_alignment(mem_ptr a_memory)

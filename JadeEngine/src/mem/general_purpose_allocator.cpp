@@ -16,6 +16,7 @@ namespace je { namespace mem {
 
     general_purpose_allocator::~general_purpose_allocator()
     {
+        conditionally_print_stack_trace();
         JE_assert(m_free_blocks == m_memory
             && m_free_blocks->m_num_bytes == m_memory_num_bytes
             && m_free_blocks->m_next == nullptr, "Destroyed allocator is corrupted.");

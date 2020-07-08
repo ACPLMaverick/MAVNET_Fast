@@ -10,8 +10,8 @@ namespace je { namespace tests {
 
     void tester::run()
     {
-        //test_mem();
-        test_stack_tracer();
+        test_mem();
+        //test_stack_tracer();
         //test_memory_access_guard();
     }
 
@@ -110,6 +110,7 @@ namespace je { namespace tests {
                     mem_tester* mem_2 = new mem_tester(gp_allocator, 128, 0xEF);
                     mem_tester* mem_3 = new mem_tester(gp_allocator, 32, 0x12, je::mem::alignment::k_0);
 
+                    JE_unused(mem_2);
                     delete mem_2;
                     delete mem_3;
                 }
