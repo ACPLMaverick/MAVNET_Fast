@@ -2,14 +2,11 @@
 
 #include "global.h"
 
-#if JE_CONFIG_DEBUG
-#define JE_DEBUG_ALLOCATIONS 1
+#if JE_DEBUG_ALLOCATIONS
 #define JE_DEBUG_ALLOCATIONS_FILL_MEMORY_ON_ALLOC 1
-
 #include "platform/stack_tracer.h"
 #define JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER (JE_USE_STACK_TRACER) && 1
 #else
-#define JE_DEBUG_ALLOCATIONS 0
 #define JE_DEBUG_ALLOCATIONS_FILL_MEMORY_ON_ALLOC 0
 #define JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER 0
 #endif
@@ -34,6 +31,11 @@ namespace je { namespace mem {
         k_boundary_guard        = (1 << 3),
         k_all                   = 0xFF
     JE_bitfield_enum_end(allocator_debug_flags, uint8_t)
+
+    static const size_t k_kB = 1024ULL;
+    static const size_t k_MB = 1024ULL * 1024ULL;
+    static const size_t k_GB = 1024ULL * 1024ULL * 1024ULL;
+
 
     class base_allocator
     {
@@ -128,10 +130,6 @@ namespace je { namespace mem {
             void* m_memory;
         };
 
-        static const size_t k_kB = 1024ULL;
-        static const size_t k_MB = 1024ULL * 1024ULL;
-        static const size_t k_GB = 1024ULL * 1024ULL * 1024ULL;
-
         // Virtual interface.
         virtual mem_ptr allocate_internal(size_t num_bytes, alignment a_alignment, size_t& out_num_bytes_allocated) = 0;
         virtual bool free_internal(mem_ptr memory, size_t& out_num_bytes_freed) = 0;
@@ -145,6 +143,7 @@ namespace je { namespace mem {
 
         void conditionally_print_stack_trace();
         static alignment get_alignment(mem_ptr memory);
+        static bool is_alignment_correct(alignment a_alignment);
 
         base_allocator* m_allocator_from;
         void* m_memory;

@@ -41,6 +41,9 @@
         "xmemory0": "cpp",
         "xstddef": "cpp",
         "xtr1common": "cpp",
-        "atomic": "cpp"
+        "atomic": "cpp",
+        "deque": "cpp",
+        "stack": "cpp",
+        "unordered_set": "cpp"
     }
 }

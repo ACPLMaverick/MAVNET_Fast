@@ -1,10 +1,14 @@
 #include "tests.h"
 
+#include "engine.h"
+
 #include "mem/system_allocator.h"
 #include "mem/linear_allocator.h"
 #include "mem/stack_allocator.h"
 #include "mem/general_purpose_allocator.h"
 #include "mem/pool_allocator.h"
+
+#include "data/data.h"
 
 namespace je { namespace tests {
 
@@ -12,7 +16,12 @@ namespace je { namespace tests {
     {
         test_mem();
         //test_stack_tracer();
-        //test_memory_access_guard();
+
+        m_engine = new engine();
+
+        test_collections();
+
+        JE_safe_delete(m_engine);
     }
 
     class mem_tester
@@ -161,9 +170,72 @@ namespace je { namespace tests {
         // Forget to free this memory.
     }
 
-    void tester::test_memory_access_guard()
+    void tester::test_collections()
     {
-        JE_todo();
+        // Array test.
+        {
+            je::data::array<int32_t, 16> small_array;
+            small_array[0] = 1;
+            small_array[5] = 2;
+            for(size_t i = 0; i < small_array.k_num_objects; ++i)
+            {
+                small_array[i] = small_array.k_num_objects - i;
+            }
+            //small_array[32] = 8;
+
+            je::data::array<int32_t, 32> big_array(small_array, 0);
+        }
+
+        // Vector test
+        {
+            je::data::vector<float> float_vec;
+            float_vec.push_back(4.0f);
+            float_vec.push_back(3.0f);
+
+            for(size_t i = 0; i < 2148; ++i)
+            {
+                float_vec.push_back(static_cast<float>(i));
+            }
+
+            je::data::vector<float> float_vec_2(float_vec);
+
+            for(size_t i = 0; i < 512; ++i)
+            {
+                float_vec_2.erase(float_vec_2.begin());
+            }
+
+            float_vec = float_vec_2;
+
+            /*
+            for(const float& flt : float_vec)
+            {
+                JE_printf_ln("%f ", flt);
+            }
+            JE_printf("\n");
+            */
+        }
+
+        // Stack test
+        {
+            JE_todo();
+        }
+
+        // Queue test
+        {
+            JE_todo();
+        }
+
+        // Set test
+        {
+            JE_todo();
+        }
+
+        // Dict test
+        {
+            JE_todo();
+        }
+        JE_printf_ln("Collection test passed.");
     }
 
+    je::engine* tester::m_engine(nullptr);
 }}

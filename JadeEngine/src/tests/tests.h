@@ -2,6 +2,11 @@
 
 #include "global.h"
 
+namespace je 
+{
+    class engine;
+}
+
 namespace je { namespace tests {
 
     class tester
@@ -14,7 +19,9 @@ namespace je { namespace tests {
 
         static void test_mem();
         static void test_stack_tracer();
-        static void test_memory_access_guard();
+        static void test_collections();
+
+        static engine* m_engine;
 
     };
 
