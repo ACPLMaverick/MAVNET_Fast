@@ -1,6 +1,7 @@
 #pragma once
 
 #include "array.h"
+#include "bit_array.h"
 
 #if JE_DATA_STRUCTS_STD_BACKEND
 
