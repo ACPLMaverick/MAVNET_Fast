@@ -1,10 +1,10 @@
-#include "platform.h"
+#include "platf_windows.h"
 
 #if JE_PLATFORM_WINDOWS
 
 #include "global.h"
 
-namespace je { namespace platform {
+namespace je { namespace platf {
 
 namespace util
 {

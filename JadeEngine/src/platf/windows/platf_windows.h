@@ -4,7 +4,7 @@
 
 #include "Windows.h"
 
-namespace je { namespace platform {
+namespace je { namespace platf {
 
     namespace util
     {

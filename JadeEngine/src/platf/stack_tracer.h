@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <atomic>
 
-namespace je { namespace platform {
+namespace je { namespace platf {
 
     class stack_tracer
     {

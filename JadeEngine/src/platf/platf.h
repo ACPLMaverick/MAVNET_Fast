@@ -2,7 +2,7 @@
 
 // Cross-platform header with declarations of platform-specific thingies.
 
-namespace je { namespace platform {
+namespace je { namespace platf {
 
     namespace util
     {

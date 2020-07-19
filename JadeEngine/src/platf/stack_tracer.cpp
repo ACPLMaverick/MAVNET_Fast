@@ -2,9 +2,9 @@
 
 #if JE_USE_STACK_TRACER
 
-#include "platform/platform.h"
+#include "platf/platf.h"
 
-namespace je { namespace platform {
+namespace je { namespace platf {
 
     stack_tracer::stack_tracer()
     {
