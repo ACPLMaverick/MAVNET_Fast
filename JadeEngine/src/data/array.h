@@ -28,11 +28,6 @@ namespace je { namespace data {
         {
         }
 
-        array(const array&& a_other)
-            : m_array(a_other.m_array)
-        {
-        }
-
         template <size_t other_num_objects>
         array(const array<object_type, other_num_objects>& a_other)
         {

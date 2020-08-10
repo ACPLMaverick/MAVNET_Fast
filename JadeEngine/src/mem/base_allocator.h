@@ -23,14 +23,15 @@ namespace je { namespace mem {
         k_64    = 64
     };
 
-    JE_bitfield_enum_begin(allocator_debug_flags, uint8_t)
+    JE_bitfield allocator_debug_flags
+    {
         k_none                  = 0,
         k_count_allocations     = (1 << 0),
         k_fill_memory_on_alloc  = (1 << 1),
         k_stack_tracer          = (1 << 2),
         k_boundary_guard        = (1 << 3),
         k_all                   = 0xFF
-    JE_bitfield_enum_end(allocator_debug_flags, uint8_t)
+    };
 
     static const size_t k_kB = 1024ULL;
     static const size_t k_MB = 1024ULL * 1024ULL;

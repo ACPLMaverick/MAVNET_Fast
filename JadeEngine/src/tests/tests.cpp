@@ -12,6 +12,15 @@
 
 namespace je { namespace tests {
 
+    JE_bitfield test_bitfield_enum
+    {
+        k_val_0 = (1 << 0),
+        k_val_1 = (1 << 1),
+        k_val_2 = (1 << 2),
+        k_num_bits = 3,
+        k_all = 0xFF
+    };
+
     void tester::run()
     {
         test_mem();
@@ -184,6 +193,17 @@ namespace je { namespace tests {
             //small_array[32] = 8;
 
             je::data::array<int32_t, 32> big_array(small_array, 0);
+
+            je::data::bit_array<6> bit_array;
+            bit_array.set(1, true);
+            bit_array.set(4, true);
+            JE_assert(bit_array.get(1) == true && bit_array.get(2) == false && bit_array.get(4) == true, "Assertion failed.");
+
+            je::data::bitfield_array<test_bitfield_enum> bitfield_array;
+            bitfield_array.set(test_bitfield_enum::k_val_1, true);
+            bitfield_array.set(test_bitfield_enum::k_val_2, false);
+            bitfield_array.set(test_bitfield_enum::k_val_1 | test_bitfield_enum::k_val_0, true);
+            JE_assert(bitfield_array.get(test_bitfield_enum::k_val_1) == true && bitfield_array.get(test_bitfield_enum::k_val_2) == false, "Assertion failed.");
         }
 
         // Vector test
