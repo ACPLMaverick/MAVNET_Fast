@@ -1,8 +1,5 @@
 #pragma once
 
-#include "array.h"
-#include "bit_array.h"
-
 #if JE_DATA_STRUCTS_STD_BACKEND
 
 #include <vector>
@@ -17,7 +14,8 @@ namespace je { namespace data {
 
     template <typename object_type> using allocator_type = mem::std_wrapper<object_type>;
 
-    template <typename object_type> using vector = std::vector<object_type, allocator_type<object_type>>;
+    template <typename object_type> using array = std::vector<object_type, allocator_type<object_type>>;
+    using bit_array = std::vector<bool, allocator_type<bool>>;
     template <typename object_type> using stack = std::stack<object_type, allocator_type<object_type>>;
     template <typename object_type> using queue = std::deque<object_type, allocator_type<object_type>>;
     template <typename object_type> using set = std::unordered_set<object_type, allocator_type<object_type>>;
@@ -29,3 +27,7 @@ namespace je { namespace data {
 #error "Not implemented custom data structs backend."
 
 #endif
+
+#include "static_array.h"
+#include "static_bit_array.h"
+#include "string.h"

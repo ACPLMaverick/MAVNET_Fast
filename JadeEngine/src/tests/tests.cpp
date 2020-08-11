@@ -183,7 +183,7 @@ namespace je { namespace tests {
     {
         // Array test.
         {
-            je::data::array<int32_t, 16> small_array;
+            je::data::static_array<int32_t, 16> small_array;
             small_array[0] = 1;
             small_array[5] = 2;
             for(size_t i = 0; i < small_array.k_num_objects; ++i)
@@ -192,42 +192,42 @@ namespace je { namespace tests {
             }
             //small_array[32] = 8;
 
-            je::data::array<int32_t, 32> big_array(small_array, 0);
+            je::data::static_array<int32_t, 32> big_array(small_array, 0);
 
-            je::data::bit_array<6> bit_array;
-            bit_array.set(1, true);
-            bit_array.set(4, true);
-            JE_assert(bit_array.get(1) == true && bit_array.get(2) == false && bit_array.get(4) == true, "Assertion failed.");
+            je::data::static_bit_array<6> static_bit_array;
+            static_bit_array.set(1, true);
+            static_bit_array.set(4, true);
+            JE_assert(static_bit_array.get(1) == true && static_bit_array.get(2) == false && static_bit_array.get(4) == true, "Assertion failed.");
 
-            je::data::bitfield_array<test_bitfield_enum> bitfield_array;
-            bitfield_array.set(test_bitfield_enum::k_val_1, true);
-            bitfield_array.set(test_bitfield_enum::k_val_2, false);
-            bitfield_array.set(test_bitfield_enum::k_val_1 | test_bitfield_enum::k_val_0, true);
-            JE_assert(bitfield_array.get(test_bitfield_enum::k_val_1) == true && bitfield_array.get(test_bitfield_enum::k_val_2) == false, "Assertion failed.");
+            je::data::static_bitfield_array<test_bitfield_enum> static_bitfield_array;
+            static_bitfield_array.set(test_bitfield_enum::k_val_1, true);
+            static_bitfield_array.set(test_bitfield_enum::k_val_2, false);
+            static_bitfield_array.set(test_bitfield_enum::k_val_1 | test_bitfield_enum::k_val_0, true);
+            JE_assert(static_bitfield_array.get(test_bitfield_enum::k_val_1) == true && static_bitfield_array.get(test_bitfield_enum::k_val_2) == false, "Assertion failed.");
         }
 
-        // Vector test
+        // Array test
         {
-            je::data::vector<float> float_vec;
-            float_vec.push_back(4.0f);
-            float_vec.push_back(3.0f);
+            je::data::array<float> float_arr;
+            float_arr.push_back(4.0f);
+            float_arr.push_back(3.0f);
 
             for(size_t i = 0; i < 2148; ++i)
             {
-                float_vec.push_back(static_cast<float>(i));
+                float_arr.push_back(static_cast<float>(i));
             }
 
-            je::data::vector<float> float_vec_2(float_vec);
+            je::data::array<float> float_arr_2(float_arr);
 
             for(size_t i = 0; i < 512; ++i)
             {
-                float_vec_2.erase(float_vec_2.begin());
+                float_arr_2.erase(float_arr_2.begin());
             }
 
-            float_vec = float_vec_2;
+            float_arr = float_arr_2;
 
             /*
-            for(const float& flt : float_vec)
+            for(const float& flt : float_arr)
             {
                 JE_printf_ln("%f ", flt);
             }
@@ -253,6 +253,11 @@ namespace je { namespace tests {
         // Dict test
         {
             JE_todo();
+        }
+
+        // String test
+        {
+            je::data::string str;
         }
         JE_printf_ln("Collection test passed.");
     }
