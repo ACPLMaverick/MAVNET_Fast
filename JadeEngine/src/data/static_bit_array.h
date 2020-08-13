@@ -78,43 +78,50 @@ namespace je { namespace data {
     {
     public:
 
-        bool get(size_t a_merged_index) const
+        bool get(size_t a_merged_enum) const
         {
-            return get_data_as_num() & a_merged_index;
+            check_enum(a_merged_enum);
+            return get_data_as_num() & a_merged_enum;
         }
 
-        void set(size_t a_merged_index, bool a_value)
+        void set(size_t a_merged_enum, bool a_value)
         {
+            check_enum(a_merged_enum);
             if(a_value)
             {
-                get_data_as_num() |= a_merged_index;
+                get_data_as_num() |= a_merged_enum;
             }
             else
             {
-                get_data_as_num() &= ~a_merged_index;
+                get_data_as_num() &= ~a_merged_enum;
             }
         }
 
-        bool get(bitfield_enum_type a_index) const
+        bool get(bitfield_enum_type a_enum) const
         {
-            return get(static_cast<size_t>(a_index));
+            return get(static_cast<size_t>(a_enum));
         }
 
-        void set(bitfield_enum_type a_index, bool a_value)
+        void set(bitfield_enum_type a_enum, bool a_value)
         {
-            set(static_cast<size_t>(a_index), a_value);
+            set(static_cast<size_t>(a_enum), a_value);
         }
 
     private:
 
-        const size_t& get_data_as_num() const
+        inline const size_t& get_data_as_num() const
         {
             return *reinterpret_cast<const size_t*>(static_bit_array<num_bits>::get_data());
         }
 
-        size_t& get_data_as_num()
+        inline size_t& get_data_as_num()
         {
             return *reinterpret_cast<size_t*>(static_bit_array<num_bits>::get_data());
+        }
+
+        static inline void check_enum(size_t a_enum)
+        {
+            JE_assert(a_enum < (1 << static_bit_array<num_bits>::k_num_bits), "Out-of-bounds index.");
         }
     };
 }}

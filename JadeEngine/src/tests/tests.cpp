@@ -29,6 +29,9 @@ namespace je { namespace tests {
         m_engine = new engine();
 
         test_collections();
+        test_string();
+        test_math();
+        test_thread();
 
         JE_safe_delete(m_engine);
     }
@@ -235,6 +238,7 @@ namespace je { namespace tests {
             */
         }
 
+        /*
         // Stack test
         {
             JE_todo();
@@ -254,12 +258,25 @@ namespace je { namespace tests {
         {
             JE_todo();
         }
-
-        // String test
-        {
-            je::data::string str;
-        }
+        */
         JE_printf_ln("Collection test passed.");
+    }
+
+    void tester::test_string()
+    {
+        je::data::string str("Janusz");
+        str.append("Wanusz");
+        JE_printf_ln("String test passed.");
+    }
+
+    void tester::test_math()
+    {
+        JE_todo();
+    }
+
+    void tester::test_thread()
+    {
+        JE_todo();
     }
 
     je::engine* tester::m_engine(nullptr);
