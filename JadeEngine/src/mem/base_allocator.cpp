@@ -218,7 +218,7 @@ namespace je { namespace mem {
         else
         {
             JE_fail("Pointer is not aligned!");
-            return alignment::k_0;
+            return alignment::k_1;
         }
     }
 
@@ -226,7 +226,7 @@ namespace je { namespace mem {
     {
         switch (a_alignment)
         {
-        case alignment::k_0:
+        case alignment::k_1:
         case alignment::k_4:
         case alignment::k_8:
         case alignment::k_16:
@@ -240,7 +240,7 @@ namespace je { namespace mem {
 
     void base_allocator::mem_ptr::align(alignment a_alignment)
     {
-        if(a_alignment == alignment::k_0)
+        if(a_alignment == alignment::k_1)
         {
             return;
         }
@@ -264,7 +264,7 @@ namespace je { namespace mem {
 
     bool base_allocator::mem_ptr::is_aligned(alignment a_alignment)
     {
-        if(a_alignment == alignment::k_0)
+        if(a_alignment == alignment::k_1)
         {
             return true;
         }

@@ -1,6 +1,7 @@
 #include "string.h"
 
 #include <cstring>
+#include <stdarg.h>
 
 namespace je { namespace data {
 
@@ -36,8 +37,18 @@ namespace je { namespace data {
 
     void string::hash::build(const char_type* a_str)
     {
-        JE_todo();
-        m_value = 0;
+        if(a_str != nullptr)
+        {
+            // http://www.cse.yorku.ca/~oz/hash.html - djb2.
+            m_value = 5381;
+            uint32_t c = 0;
+            while ((c = *(a_str++)) != 0)
+                m_value = ((m_value << 5) + m_value) + c; /* hash * 33 + c */
+        }
+        else
+        {
+            m_value = 0;
+        }
     }
 
     string::string()
@@ -50,6 +61,13 @@ namespace je { namespace data {
         : m_hash(nullptr)
     {
         create_from_str(a_str);
+    }
+
+    string::string(size_t a_num_chars_to_have)
+        : m_chars()
+        , m_hash(nullptr)
+    {
+        m_chars.resize(a_num_chars_to_have);
     }
     
     string::string(const string& a_copy)
@@ -89,42 +107,162 @@ namespace je { namespace data {
     }
     
 
-    string string::format(const char_type* a_format, const char_type* a_args...)
+    string string::format(const char_type* a_format, ...)
     {
-        JE_todo();
-        return string();
+        va_list args;
+        va_start(args, a_format);
+
+        const int char_num = vsnprintf(nullptr, 0, a_format, args);
+
+        JE_assert(char_num >= 0, "Failed to format a string.");
+        if(char_num <= 0)
+        {
+            va_end(args);
+            return string(nullptr);
+        }
+        else
+        {
+            string str(char_num + 1);
+            vsprintf_s(str.m_chars.data(), char_num + 1, a_format, args);
+            va_end(args);
+            str.chars_have_changed();
+            return str;
+        }
     }
     
     string string::from_int64(int64_t a_value)
     {
-        JE_todo();
-        return string();
+        static const char_type* k_fmt = "%lld";
+        const int char_num = std::snprintf(nullptr, 0, k_fmt, a_value);
+        if(char_num <= 0)
+        {
+            JE_fail("Failed to parse a number [%lld].", a_value);
+            return string(nullptr);
+        }
+        else
+        {
+            string str(char_num + 1);
+            std::snprintf(str.m_chars.data(), char_num + 1, k_fmt, a_value);
+            str.chars_have_changed();
+            return str;
+        }
     }
     
     string string::from_uint64(uint64_t a_value)
     {
-        JE_todo();
-        return string();
+        static const char_type* k_fmt = "%llu";
+        const int char_num = std::snprintf(nullptr, 0, k_fmt, a_value);
+        if(char_num <= 0)
+        {
+            JE_fail("Failed to parse a number [%llu].", a_value);
+            return string(nullptr);
+        }
+        else
+        {
+            string str(char_num + 1);
+            std::snprintf(str.m_chars.data(), char_num + 1, k_fmt, a_value);
+            str.chars_have_changed();
+            return str;
+        }
     }
     
-    string string::from_int32(int64_t a_value)
+    string string::from_int32(int32_t a_value)
     {
-        JE_todo();
-        return string();
+        static const char_type* k_fmt = "%d";
+        const int char_num = std::snprintf(nullptr, 0, k_fmt, a_value);
+        if(char_num <= 0)
+        {
+            JE_fail("Failed to parse a number [%d].", a_value);
+            return string(nullptr);
+        }
+        else
+        {
+            string str(char_num + 1);
+            std::snprintf(str.m_chars.data(), char_num + 1, k_fmt, a_value);
+            str.chars_have_changed();
+            return str;
+        }
     }
     
-    string string::from_uint32(uint64_t a_value)
+    string string::from_uint32(uint32_t a_value)
     {
-        JE_todo();
-        return string();
+        static const char_type* k_fmt = "%u";
+        const int char_num = std::snprintf(nullptr, 0, k_fmt, a_value);
+        if(char_num <= 0)
+        {
+            JE_fail("Failed to parse a number [%u].", a_value);
+            return string(nullptr);
+        }
+        else
+        {
+            string str(char_num + 1);
+            std::snprintf(str.m_chars.data(), char_num + 1, k_fmt, a_value);
+            str.chars_have_changed();
+            return str;
+        }
     }
     
     string string::from_float(float a_value, size_t a_decimal_places/* = std::numeric_limits<size_t>::max()*/)
     {
-        JE_todo();
-        return string();
+        static const char_type* k_fmt_base = "%f";
+        static const size_t k_fmt_dec_buf_size = 6;
+        static thread_local char_type k_fmt_dec_buf[k_fmt_dec_buf_size] = {};
+
+        const char_type* fmt = k_fmt_base;
+        if(a_decimal_places != std::numeric_limits<size_t>::max())
+        {
+            static const char_type* k_fmt_dec = ".%d";
+            const int num_chars = std::snprintf(k_fmt_dec_buf + 1, k_fmt_dec_buf_size - 3, k_fmt_dec, a_decimal_places);
+            k_fmt_dec_buf[0] = '%';
+            k_fmt_dec_buf[1 + num_chars] = 'f';
+            k_fmt_dec_buf[1 + num_chars + 1] = 0;
+            fmt = k_fmt_dec_buf;
+        }
+
+        const int char_num = std::snprintf(nullptr, 0, fmt, a_value);
+        if(char_num <= 0)
+        {
+            JE_fail("Failed to parse a number [%f].", a_value);
+            return string(nullptr);
+        }
+        else
+        {
+            string str(char_num + 1);
+            std::snprintf(str.m_chars.data(), char_num + 1, fmt, a_value);
+            str.chars_have_changed();
+            return str;
+        }
     }
-    
+
+    int64_t string::parse_int64(const string& str)
+    {
+        JE_todo();
+        return 0;
+    }
+
+    uint64_t string::parse_uint64(const string& str)
+    {
+        JE_todo();
+        return 0;
+    }
+
+    int32_t string::parse_int32(const string& str)
+    {
+        JE_todo();
+        return 0;
+    }
+
+    uint32_t string::parse_uint32(const string& str)
+    {
+        JE_todo();
+        return 0;
+    }
+
+    float string::parse_float(const string& str)
+    {
+        JE_todo();
+        return 0.0f;
+    }
 
     void string::clear()
     {
@@ -358,6 +496,7 @@ namespace je { namespace data {
 
     void string::create_from_str(const char_type* a_str)
     {
+        // TODO Check what is faster: strlen and memcpy or adding chars one by one.
         if(a_str == nullptr)
         {
             m_chars.push_back(char_end);
@@ -367,8 +506,9 @@ namespace je { namespace data {
         do
         {
             m_chars.push_back(*a_str);
-        } while(*a_str != char_end);
-        build_hash();
+        } while(*(++a_str) != char_end);
+        m_chars.push_back(char_end);
+        chars_have_changed();
     }
 
     void string::chars_have_changed()

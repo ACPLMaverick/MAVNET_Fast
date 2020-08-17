@@ -96,7 +96,7 @@ namespace je { namespace mem {
         if(m_memory_head != m_memory)
         {
             // Check if this pointer is really aligned.
-            JE_assert(get_alignment(m_prev_head_aligned) != alignment::k_0, "Bad prev pointer alignment");
+            JE_assert(get_alignment(m_prev_head_aligned) != alignment::k_1, "Bad prev pointer alignment");
             // Check previous control block.
             control_block* pcb = reinterpret_cast<control_block*>(mem_ptr(m_prev_head_aligned) - sizeof(control_block));
         JE_assert(pcb->m_alignment_num_bytes <= static_cast<uint8_t>(alignment::k_64), "Sanity check for control block failed.");

@@ -105,7 +105,7 @@ namespace je { namespace tests {
                     }
                     
                     mem_tester mem_2(stack_allocator, 40, 0xEF);
-                    mem_tester mem_3(stack_allocator, 12, 0x12, je::mem::alignment::k_0);
+                    mem_tester mem_3(stack_allocator, 12, 0x12, je::mem::alignment::k_1);
                 }
 
                 mem::stack_mem st_mem_1 = stack_allocator.allocate_stack_mem(16);
@@ -121,7 +121,7 @@ namespace je { namespace tests {
                     {
                         mem_tester* mem_2 = new mem_tester(gp_allocator, 53, 0xCD, je::mem::alignment::k_4);
                         mem_tester* mem_3 = new mem_tester(gp_allocator, 40, 0xEF);
-                        mem_tester* mem_4 = new mem_tester(gp_allocator, 12, 0x12, je::mem::alignment::k_0);
+                        mem_tester* mem_4 = new mem_tester(gp_allocator, 12, 0x12, je::mem::alignment::k_1);
 
                         delete mem_3;
                         delete mem_4;
@@ -129,7 +129,7 @@ namespace je { namespace tests {
                     }
                     
                     mem_tester* mem_2 = new mem_tester(gp_allocator, 128, 0xEF);
-                    mem_tester* mem_3 = new mem_tester(gp_allocator, 32, 0x12, je::mem::alignment::k_0);
+                    mem_tester* mem_3 = new mem_tester(gp_allocator, 32, 0x12, je::mem::alignment::k_1);
 
                     JE_unused(mem_2);
                     delete mem_2;
@@ -264,8 +264,22 @@ namespace je { namespace tests {
 
     void tester::test_string()
     {
+        je::data::string fmtted_str(je::data::string::format("%s %s %d %d %d", "Dupa", "Blada", 1, 2, 3));
+        JE_assert(fmtted_str == "Dupa Blada 1 2 3", "String error.");
+
+        je::data::string int_str(je::data::string::from_int64(-783246));
+        JE_assert(int_str == "-783246", "String error.");
+
+        je::data::string flt_str(je::data::string::from_float(-783.123456, 2));
+        JE_assert(flt_str == "-783.12", "String error.");
+
+        je::data::string flt_str_2(je::data::string::from_float(-783.123456));
+        //JE_assert(flt_str_2 == "-783.123456", "String error.");
+
         je::data::string str("Janusz");
+        JE_assert(str == "Janusz", "String error.");
         str.append("Wanusz");
+        JE_assert(str == "JanuszWanusz", "String error.");
         JE_printf_ln("String test passed.");
     }
 

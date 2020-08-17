@@ -6,11 +6,11 @@ namespace je { namespace mem {
         : m_mem_budgets()
         , m_system_allocator()
         , m_top_allocator(m_system_allocator, m_mem_budgets.m_total_byte_num, alignment::k_16)
-        , m_one_frame_allocator(m_top_allocator, m_mem_budgets.m_one_frame_byte_num, alignment::k_0)
-        , m_variable_allocator(m_top_allocator, m_mem_budgets.m_variable_byte_num, alignment::k_0)
-        , m_collections_allocator(m_variable_allocator, m_mem_budgets.m_collections_byte_num, alignment::k_0)
-        , m_general_purpose_allocator(m_variable_allocator, m_mem_budgets.m_general_purpose_byte_num, alignment::k_0)
-        , m_object_pool_allocator(m_top_allocator, m_mem_budgets.m_object_pool_byte_num, alignment::k_0)
+        , m_one_frame_allocator(m_top_allocator, m_mem_budgets.m_one_frame_byte_num, alignment::k_1)
+        , m_variable_allocator(m_top_allocator, m_mem_budgets.m_variable_byte_num, alignment::k_1)
+        , m_collections_allocator(m_variable_allocator, m_mem_budgets.m_collections_byte_num, alignment::k_1)
+        , m_general_purpose_allocator(m_variable_allocator, m_mem_budgets.m_general_purpose_byte_num, alignment::k_1)
+        , m_object_pool_allocator(m_top_allocator, m_mem_budgets.m_object_pool_byte_num, alignment::k_1)
     {
 
     }

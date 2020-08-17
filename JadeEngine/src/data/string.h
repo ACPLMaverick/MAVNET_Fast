@@ -36,6 +36,9 @@ namespace je { namespace data {
 
         string();
         string(const char_type* str);
+    private:
+        string(size_t num_chars_to_have);
+    public:
         string(const string& copy);
         string(string&& move);
         ~string();
@@ -43,12 +46,17 @@ namespace je { namespace data {
         string& operator=(const string& copy);
         string& operator=(const string&& move);
 
-        static string format(const char_type* format, const char_type* args...);
+        static string format(const char_type* format, ...);
         static string from_int64(int64_t value);
         static string from_uint64(uint64_t value);
-        static string from_int32(int64_t value);
-        static string from_uint32(uint64_t value);
+        static string from_int32(int32_t value);
+        static string from_uint32(uint32_t value);
         static string from_float(float value, size_t decimal_places = std::numeric_limits<size_t>::max());
+        static int64_t parse_int64(const string& str);
+        static uint64_t parse_uint64(const string& str);
+        static int32_t parse_int32(const string& str);
+        static uint32_t parse_uint32(const string& str);
+        static float parse_float(const string& str);
 
         void clear();
         void resize(size_t num_chars, char_type char_to_fill = char_end);
