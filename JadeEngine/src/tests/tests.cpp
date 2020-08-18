@@ -276,10 +276,34 @@ namespace je { namespace tests {
         je::data::string flt_str_2(je::data::string::from_float(-783.123456));
         //JE_assert(flt_str_2 == "-783.123456", "String error.");
 
+        const int32_t int_parsed = je::data::string::parse_int32("321");
+        JE_assert(int_parsed == 321, "String error.");
+
+        const float flt_parsed = je::data::string::parse_float("0.321");
+        JE_assert(flt_parsed == 0.321f, "String error.");
+
+        je::data::string starts = "Twoja Stara";
+        JE_assert(starts.is_starting_with("Two"), "String error.");
+        JE_assert(starts.is_starting_with("Twogrzyb") == false, "String error.");
+        JE_assert(starts.is_starting_with("Twoja Stara Zapier*ala") == false, "String error.");
+        JE_assert(starts.is_ending_with("Stara"), "String error.");
+        JE_assert(starts.is_ending_with("Star") == false, "String error.");
+        JE_assert(starts.is_ending_with("Zapier*ala Twoja Stara") == false, "String error.");
+
         je::data::string str("Janusz");
         JE_assert(str == "Janusz", "String error.");
         str.append("Wanusz");
         JE_assert(str == "JanuszWanusz", "String error.");
+
+        je::data::string zdz("Zdzislaw");
+        zdz.insert("Stary");
+        JE_assert(zdz == "ZdzislawStary", "String error.");
+        zdz.insert("Bardzo", 8);
+        JE_assert(zdz == "ZdzislawBardzoStary", "String error.");
+        zdz.insert("Trzeci Wielki Pan", 8, 6, 13);
+        JE_assert(zdz == "Zdzislaw Wielki BardzoStary", "String error.");
+        JE_assert(zdz.get_data()[zdz.get_size()] == 0, "String error.");
+
         JE_printf_ln("String test passed.");
     }
 

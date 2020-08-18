@@ -52,6 +52,12 @@ namespace je { namespace data {
         static string from_int32(int32_t value);
         static string from_uint32(uint32_t value);
         static string from_float(float value, size_t decimal_places = std::numeric_limits<size_t>::max());
+        
+        static int64_t parse_int64(const char_type* str);
+        static uint64_t parse_uint64(const char_type* str);
+        static int32_t parse_int32(const char_type* str);
+        static uint32_t parse_uint32(const char_type* str);
+        static float parse_float(const char_type* str);
         static int64_t parse_int64(const string& str);
         static uint64_t parse_uint64(const string& str);
         static int32_t parse_int32(const string& str);
@@ -83,15 +89,20 @@ namespace je { namespace data {
         string operator+(const char_type* str);
         string operator+(const string& str);
         
+        // All indices are inclusive.
         void insert(const char_type* str, size_t idx_dest = invalid_idx, size_t idx_src_start = invalid_idx, size_t idx_src_end = invalid_idx);
         void insert(const string& str, size_t idx_dest = invalid_idx, size_t idx_src_start = invalid_idx, size_t idx_src_end = invalid_idx);
-        void replace(const char_type* str, size_t idx_dest = invalid_idx, size_t idx_src_start = invalid_idx, size_t idx_src_end = invalid_idx);
-        void replace(const string& str, size_t idx_dest = invalid_idx, size_t idx_src_start = invalid_idx, size_t idx_src_end = invalid_idx);
+        void replace(const char_type* str, size_t idx_dest_start = invalid_idx, size_t idx_dest_end = invalid_idx, size_t idx_src_start = invalid_idx, size_t idx_src_end = invalid_idx);
+        void replace(const string& str, size_t idx_dest_start = invalid_idx, size_t idx_dest_end = invalid_idx, size_t idx_src_start = invalid_idx, size_t idx_src_end = invalid_idx);
         
+        bool find_and_replace(const char_type* str_to_find, const char_type* str_to_replace_it_with);
+        bool find_and_replace(const string& str_to_find, const string& str_to_replace_it_with);
+        bool find_and_replace(const string& str_to_find, const char_type* str_to_replace_it_with);
+        bool find_and_replace(const char_type* str_to_find, const string& str_to_replace_it_with);
+
         void swap(string& str);
 
-        string substring(size_t idx_start, size_t idx_end) const;
-        void make_substring(size_t idx_start, size_t idx_end);
+        void substring(size_t idx_start, size_t idx_end);
         void trim_front(size_t num_chars);
         void trim_end(size_t num_chars);
         void split(const char_type* split_on, array<string> out_strings) const;
@@ -110,9 +121,15 @@ namespace je { namespace data {
 
     private:
 
-        void create_from_str(const char_type* str);
+        inline void append_common(const char_type* str, size_t num_chars);
+        inline void insert_common(const char_type* str, size_t num_chars, size_t idx_dest, size_t idx_src_start, size_t idx_src_end);
+        inline void replace_common(const char_type* str, size_t num_chars, size_t idx_dest_start, size_t idx_dest_end, size_t idx_src_start, size_t idx_src_end);
+        inline bool find_and_replace_common(const char_type* str_to_find, size_t str_to_find_num_chars, const char_type* str_to_replace_it_with, size_t str_to_relace_it_with_num_chars);
+        inline size_t find_common(const char_type* str, size_t num_chars, size_t char_to_start_from = 0) const;
+        
+        inline void create_from_str(const char_type* str);
         void chars_have_changed();
-        void build_hash();
+        inline void build_hash();
 
         array<char_type> m_chars;
         hash m_hash;

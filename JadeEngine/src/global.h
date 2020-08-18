@@ -47,10 +47,14 @@
 // Assertions.
 
 #if JE_CONFIG_DEBUG
-#include <assert.h>
+#if JE_PLATFORM_WINDOWS
+#define JE_debugbreak __debugbreak
+#elif JE_PLATFORM_LINUX || JE_PLATFORM_ANDROID
+#define JE_debugbreak raise(SIGTRAP)
+#endif
 // TODO make message visible.
-#define JE_assert(_value_, ...) { if(!(_value_)) { JE_printf("ASSERT: "); JE_printf_ln(__VA_ARGS__); } assert(_value_); }
-#define JE_verify(_call_, ...) { const auto val = _call_; JE_assert(val, __VA_ARGS__); }
+#define JE_assert(_value_, ...) { auto __ret__ = (_value_); if(!(__ret__)) { JE_printf("ASSERT: "); JE_printf_ln(__VA_ARGS__); JE_debugbreak(); } }
+#define JE_verify(_call_, ...) { const auto __ret_val__ = _call_; JE_assert(__ret_val__, __VA_ARGS__); }
 #else
 #define JE_assert(_value_, ...)
 #define JE_verify(_call_, ...) _call_

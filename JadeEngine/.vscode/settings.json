@@ -45,6 +45,7 @@
         "deque": "cpp",
         "stack": "cpp",
         "unordered_set": "cpp",
-        "concepts": "cpp"
+        "concepts": "cpp",
+        "cstdarg": "cpp"
     }
 }

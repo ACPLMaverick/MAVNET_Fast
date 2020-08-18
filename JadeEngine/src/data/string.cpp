@@ -5,6 +5,9 @@
 
 namespace je { namespace data {
 
+#define JE_check_str_bailout_ret(_str_, _ret_val_) if(_str_ == nullptr || _str_[0] == char_end) return _ret_val_
+#define JE_check_str_bailout(_str_) if(_str_ == nullptr || _str_[0] == char_end) return
+
     string::hash::hash(const char_type* a_str)
     {
         build(a_str);
@@ -234,34 +237,69 @@ namespace je { namespace data {
         }
     }
 
-    int64_t string::parse_int64(const string& str)
+    int64_t string::parse_int64(const char_type* a_str)
     {
-        JE_todo();
-        return 0;
+        JE_assert(a_str != nullptr, "Passing a null c-string to parse function.");
+        int64_t val = std::strtoll(a_str, nullptr, 10);
+        JE_assert(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
+        return val;
     }
 
-    uint64_t string::parse_uint64(const string& str)
+    uint64_t string::parse_uint64(const char_type* a_str)
     {
-        JE_todo();
-        return 0;
+        JE_assert(a_str != nullptr, "Passing a null c-string to parse function.");
+        uint64_t val = std::strtoull(a_str, nullptr, 10);
+        JE_assert(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
+        return val;
     }
 
-    int32_t string::parse_int32(const string& str)
+    int32_t string::parse_int32(const char_type* a_str)
     {
-        JE_todo();
-        return 0;
+        JE_assert(a_str != nullptr, "Passing a null c-string to parse function.");
+        int32_t val = std::strtol(a_str, nullptr, 10);
+        JE_assert(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
+        return val;
     }
 
-    uint32_t string::parse_uint32(const string& str)
+    uint32_t string::parse_uint32(const char_type* a_str)
     {
-        JE_todo();
-        return 0;
+        JE_assert(a_str != nullptr, "Passing a null c-string to parse function.");
+        uint32_t val = std::strtoul(a_str, nullptr, 10);
+        JE_assert(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
+        return val;
     }
 
-    float string::parse_float(const string& str)
+    float string::parse_float(const char_type* a_str)
     {
-        JE_todo();
-        return 0.0f;
+        JE_assert(a_str != nullptr, "Passing a null c-string to parse function.");
+        float val = std::strtof(a_str, nullptr);
+        JE_assert(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
+        return val;
+    }
+
+    int64_t string::parse_int64(const string& a_str)
+    {
+        return parse_int64(a_str.get_data());
+    }
+
+    uint64_t string::parse_uint64(const string& a_str)
+    {
+        return parse_uint64(a_str.get_data());
+    }
+
+    int32_t string::parse_int32(const string& a_str)
+    {
+        return parse_int32(a_str.get_data());
+    }
+
+    uint32_t string::parse_uint32(const string& a_str)
+    {
+        return parse_uint32(a_str.get_data());
+    }
+
+    float string::parse_float(const string& a_str)
+    {
+        return parse_float(a_str.get_data());
     }
 
     void string::clear()
@@ -273,12 +311,15 @@ namespace je { namespace data {
     
     void string::resize(size_t a_num_chars, char_type a_char_to_fill/* = char_end*/)
     {
-        JE_todo();
+        m_chars.resize(a_num_chars + 1);
+        std::memset(m_chars.data(), static_cast<int>(a_char_to_fill), a_num_chars * sizeof(char_type));
+        m_chars[m_chars.size() - 1] = char_end;
+        chars_have_changed();
     }
     
     void string::reserve(size_t a_num_chars)
     {
-        JE_todo();
+        m_chars.reserve(a_num_chars + 1);
     }
     
 
@@ -296,26 +337,57 @@ namespace je { namespace data {
     
     bool string::is_starting_with(const char_type* a_str) const
     {
-        JE_todo();
-        return false;
+        JE_check_str_bailout_ret(a_str, false);
+
+        const size_t my_size = get_size();
+        size_t i = 0;
+        for(/**/; a_str[i] != char_end && i < my_size; ++i)
+        {
+            const char_type my_char = m_chars[i];
+            const char_type other_char = a_str[i];
+            if(my_char != other_char)
+            {
+                return false;
+            }
+        }
+
+        // If the iterator has exceeded MY string, it means that OTHER string has the same beginning but it's longer.
+        // Return false in this case.
+        return i < my_size || (i == my_size && a_str[i] == char_end);
     }
     
     bool string::is_starting_with(const string& a_str) const
     {
-        JE_todo();
-        return false;
+        return is_starting_with(a_str.get_data());
     }
     
     bool string::is_ending_with(const char_type* a_str) const
     {
-        JE_todo();
-        return false;
+        JE_check_str_bailout_ret(a_str, false);
+
+        const size_t other_size = std::strlen(a_str);
+        const size_t my_size = get_size();
+
+        size_t io = other_size - 1;
+        size_t im = my_size - 1;
+        for(/**/; io < other_size && im < my_size; --io, --im)
+        {
+            const char_type my_char = m_chars[im];
+            const char_type other_char = a_str[io];
+            if(my_char != other_char)
+            {
+                return false;
+            }
+        }
+
+        // If the iterator has reached 0 MY string, it means that OTHER string has the same ending but it's longer.
+        // Return false in this case.
+        return im < my_size || (im == std::numeric_limits<size_t>::max() && io == std::numeric_limits<size_t>::max());
     }
     
     bool string::is_ending_with(const string& a_str) const
     {
-        JE_todo();
-        return false;
+        return is_ending_with(a_str.get_data());
     }
     
 
@@ -351,55 +423,106 @@ namespace je { namespace data {
 
     void string::append(const char_type* a_str)
     {
-        JE_todo();
+        JE_check_str_bailout(a_str);
+        const size_t num_chars = std::strlen(a_str);
+        append_common(a_str, num_chars);
     }
     
     void string::append(const string& a_str)
     {
-        JE_todo();
+        if(a_str.is_empty())
+        {
+            return;
+        }
+
+        append_common(a_str.get_data(), a_str.get_size());
     }
     
     void string::operator+=(const char_type* a_str)
     {
-        JE_todo();
+        append(a_str);
     }
     
     void string::operator+=(const string& a_str)
     {
-        JE_todo();
+        append(a_str);
     }
     
     string string::operator+(const char_type* a_str)
     {
-        JE_todo();
-        return string();
+        JE_check_str_bailout_ret(a_str, string(*this));
+        string str(*this);
+        str.append(a_str);
+        return a_str;
     }
     
     string string::operator+(const string& a_str)
     {
-        JE_todo();
-        return string();
+        string str(*this);
+        str.append(a_str);
+        return a_str;
     }
     
     
-    void string::insert(const char_type* a_str, size_t a_idx_dest/* = invalid_idx*/, size_t a_idx_src_start/* = invalid_idx*/, size_t a_idx_src_end/* = invalid_idx*/)
+    void string::insert(const char_type* a_str, size_t a_idx_dest/* = invalid_idx*/,
+        size_t a_idx_src_start/* = invalid_idx*/, size_t a_idx_src_end/* = invalid_idx*/)
     {
-        JE_todo();
+        JE_check_str_bailout(a_str);
+        const size_t num_chars = std::strlen(a_str);
+        insert_common(a_str, num_chars, a_idx_dest, a_idx_src_start, a_idx_src_end);
     }
     
-    void string::insert(const string& a_str, size_t a_idx_dest/* = invalid_idx*/, size_t a_idx_src_start/* = invalid_idx*/, size_t a_idx_src_end/* = invalid_idx*/)
+    void string::insert(const string& a_str, size_t a_idx_dest/* = invalid_idx*/,
+        size_t a_idx_src_start/* = invalid_idx*/, size_t a_idx_src_end/* = invalid_idx*/)
     {
-        JE_todo();
+        insert_common(a_str.get_data(), a_str.get_size(), a_idx_dest, a_idx_src_start, a_idx_src_end);
     }
     
-    void string::replace(const char_type* a_str, size_t a_idx_dest/* = invalid_idx*/, size_t a_idx_src_start/* = invalid_idx*/, size_t a_idx_src_end/* = invalid_idx*/)
+    void string::replace(const char_type* a_str, size_t a_idx_dest_start/* = invalid_idx*/,
+        size_t a_idx_dest_end/* = invalid_idx*/, size_t a_idx_src_start/* = invalid_idx*/,
+        size_t a_idx_src_end/* = invalid_idx*/)
     {
-        JE_todo();
+        JE_check_str_bailout(a_str);
+        const size_t num_chars = std::strlen(a_str);
+        replace_common(a_str, num_chars, a_idx_dest_start, a_idx_dest_end, a_idx_src_start, a_idx_src_end);
+        chars_have_changed();
     }
     
-    void string::replace(const string& a_str, size_t a_idx_dest/* = invalid_idx*/, size_t a_idx_src_start/* = invalid_idx*/, size_t a_idx_src_end/* = invalid_idx*/)
+    void string::replace(const string& a_str, size_t a_idx_dest_start/* = invalid_idx*/,
+        size_t a_idx_dest_end/* = invalid_idx*/,
+        size_t a_idx_src_start/* = invalid_idx*/, size_t a_idx_src_end/* = invalid_idx*/)
     {
-        JE_todo();
+        replace_common(a_str.get_data(), a_str.get_size(), a_idx_dest_start, a_idx_dest_end, a_idx_src_start, a_idx_src_end);
+        chars_have_changed();
+    }
+
+
+    bool string::find_and_replace(const char_type* a_str_to_find, const char_type* a_str_to_replace_it_with)
+    {
+        JE_check_str_bailout_ret(a_str_to_find, false);
+        JE_check_str_bailout_ret(a_str_to_replace_it_with, false);
+        const size_t num_chars_to_find = std::strlen(a_str_to_find);
+        const size_t num_chars_to_replace = std::strlen(a_str_to_replace_it_with);
+        return find_and_replace_common(a_str_to_find, num_chars_to_find, a_str_to_replace_it_with, num_chars_to_replace);
+    }
+
+    bool string::find_and_replace(const string& a_str_to_find, const string& a_str_to_replace_it_with)
+    {
+        return find_and_replace_common(a_str_to_find.get_data(), a_str_to_find.get_size(), a_str_to_replace_it_with.get_data(), a_str_to_replace_it_with.get_size());
+    }
+
+    bool string::find_and_replace(const string& a_str_to_find, const char_type* a_str_to_replace_it_with)
+    {
+        JE_check_str_bailout_ret(a_str_to_replace_it_with, false);
+        const size_t num_chars_to_replace = std::strlen(a_str_to_replace_it_with);
+        return find_and_replace_common(a_str_to_find.get_data(), a_str_to_find.get_size(), a_str_to_replace_it_with, num_chars_to_replace);
+    }
+
+    bool string::find_and_replace(const char_type* a_str_to_find, const string& a_str_to_replace_it_with)
+    {
+        JE_check_str_bailout_ret(a_str_to_find, false);
+        const size_t num_chars_to_find = std::strlen(a_str_to_find);
+        return find_and_replace_common(a_str_to_find, num_chars_to_find, a_str_to_replace_it_with.get_data(), a_str_to_replace_it_with.get_size());
     }
     
     
@@ -407,15 +530,9 @@ namespace je { namespace data {
     {
         JE_todo();
     }
-    
 
-    string string::substring(size_t a_idx_start, size_t a_idx_end) const
-    {
-        JE_todo();
-        return string();
-    }
     
-    void string::make_substring(size_t a_idx_start, size_t a_idx_end)
+    void string::substring(size_t a_idx_start, size_t a_idx_end)
     {
         JE_todo();
     }
@@ -443,14 +560,14 @@ namespace je { namespace data {
 
     size_t string::find(const char_type* a_str) const
     {
-        JE_todo();
-        return invalid_idx;
+        JE_check_str_bailout_ret(a_str, invalid_idx);
+        const size_t num_chars = std::strlen(a_str);
+        return find_common(a_str, num_chars);
     }
     
     size_t string::find(const string& a_str) const
     {
-        JE_todo();
-        return invalid_idx;
+        return find_common(a_str.get_data(), a_str.get_size());
     }
     
     bool string::contains(const char_type* a_str) const
@@ -494,21 +611,168 @@ namespace je { namespace data {
     }
     
 
-    void string::create_from_str(const char_type* a_str)
+    inline void string::append_common(const char_type* a_str, size_t a_num_chars)
     {
-        // TODO Check what is faster: strlen and memcpy or adding chars one by one.
+        const size_t prev_zero_idx = get_size();
+        m_chars.resize(m_chars.size() + a_num_chars);
+        std::memcpy(&m_chars[prev_zero_idx], a_str, a_num_chars * sizeof(char_type));
+        m_chars[m_chars.size() - 1] = char_end;
+
+        chars_have_changed();
+    }
+
+    inline void string::create_from_str(const char_type* a_str)
+    {
         if(a_str == nullptr)
         {
             m_chars.push_back(char_end);
             return;
         }
 
+        // TODO Check what is faster: strlen and memcpy or adding chars one by one.
+        /*
         do
         {
             m_chars.push_back(*a_str);
         } while(*(++a_str) != char_end);
+        */
+        const int len = std::strlen(a_str);
+        if(len > 0)
+        {
+            m_chars.resize(len);
+            std::memcpy(m_chars.data(), a_str, len * sizeof(char_type));
+        }
         m_chars.push_back(char_end);
+
         chars_have_changed();
+    }
+
+    inline void string::insert_common(const char_type* a_str, size_t a_num_chars,
+        size_t a_idx_dest, size_t a_idx_src_start, size_t a_idx_src_end)
+    {
+        const size_t my_size = get_size();
+        if(a_idx_dest == invalid_idx)
+        {
+            a_idx_dest = my_size;
+        }
+        if(a_idx_src_start == invalid_idx)
+        {
+            a_idx_src_start = 0;
+        }
+        if(a_idx_src_end == invalid_idx)
+        {
+            a_idx_src_end = a_num_chars - 1;
+        }
+        JE_assert(a_idx_dest <= my_size
+            && a_idx_src_start < a_num_chars
+            && a_idx_src_end < a_num_chars
+            && a_idx_src_start < a_idx_src_end,
+            "Invalid indices for string operation.");
+
+        const size_t num_chars_to_insert = a_idx_src_end - a_idx_src_start + 1;
+
+        const size_t m_prev_size_with_end_char = m_chars.size();
+        m_chars.resize(m_chars.size() + num_chars_to_insert);
+        char_type* place_to_insert = &m_chars[a_idx_dest];
+        if(a_idx_dest != my_size)
+        {
+            // Want to insert chars in the middle of the string - need to move the remaining part first.
+            char_type* dst = place_to_insert + num_chars_to_insert;
+            const size_t num_chars_to_move = m_prev_size_with_end_char - a_idx_dest - 1;
+            std::memmove(dst, place_to_insert, num_chars_to_move * sizeof(char_type));
+        }
+
+        // Insert chars in empty space.
+        const char_type* src = a_str + a_idx_src_start;
+        std::memcpy(place_to_insert, src, num_chars_to_insert * sizeof(char_type));
+        m_chars[m_chars.size() - 1] = char_end;
+
+        chars_have_changed();
+    }
+    
+    inline void string::replace_common(const char_type* a_str, size_t a_num_chars, size_t a_idx_dest_start,
+        size_t a_idx_dest_end, size_t a_idx_src_start, size_t a_idx_src_end)
+    {
+        const size_t my_size = get_size();
+        if(a_idx_dest_start == invalid_idx)
+        {
+            a_idx_dest_start = 0;
+        }
+        if(a_idx_dest_end == invalid_idx)
+        {
+            a_idx_dest_end = my_size - 1;
+        }
+        if(a_idx_src_start == invalid_idx)
+        {
+            a_idx_src_start = 0;
+        }
+        if(a_idx_src_end == invalid_idx)
+        {
+            a_idx_src_end = a_num_chars - 1;
+        }
+        JE_assert(a_idx_dest_start < my_size, "Invalid indices for string operation.");
+        JE_assert(a_idx_dest_end < my_size, "Invalid indices for string operation.");
+        JE_assert(a_idx_dest_start <= a_idx_dest_end, "Invalid indices for string operation.");
+        JE_assert(a_idx_src_start < a_num_chars, "Invalid indices for string operation.");
+        JE_assert(a_idx_src_end < a_num_chars, "Invalid indices for string operation.");
+        JE_assert(a_idx_src_start <= a_idx_src_end, "Invalid indices for string operation.");
+
+        const size_t num_chars_src = a_idx_src_end - a_idx_src_start + 1;
+        const size_t num_chars_dst = a_idx_dest_end - a_idx_dest_start + 1;
+
+        if(num_chars_dst >= num_chars_src)
+        {
+            // In this case we can simply copy over the existing characters without resizing.
+
+            if(num_chars_dst > num_chars_src)
+            {
+                // We need to shrink the remaining characters.
+            }
+        }
+        else
+        {
+            // We need to enlarge array AFTER dst and then copy.
+        }
+        /*
+        const size_t total_chars_needed = a_idx_dest + num_chars_to_insert;
+        if(total_chars_needed > my_size)
+        {
+            m_chars.resize(total_chars_needed + 1);
+        }
+
+        const char_type* src = a_str + a_idx_src_start;
+        char_type* dst = m_chars.data() + a_idx_dest;
+        std::memcpy(dst, src, num_chars_to_insert * sizeof(char_type));
+        m_chars[m_chars.size() - 1] = char_end;
+        */
+    }
+
+    inline bool string::find_and_replace_common(const char_type* a_str_to_find, size_t a_str_to_find_num_chars,
+        const char_type* a_str_to_replace_it_with, size_t a_str_to_relace_it_with_num_chars)
+    {
+        size_t str_idx = 0;
+        while((str_idx = find_common(a_str_to_find, a_str_to_find_num_chars, str_idx)) != invalid_idx)
+        {
+            //const size_t str_idx_prev = str_idx;
+            //str_idx += a_str_to_find_num_chars;
+            //replace_common()
+        }
+
+        if(str_idx != 0)
+        {
+            chars_have_changed();
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    inline size_t string::find_common(const char_type* a_str, size_t a_num_chars, size_t char_to_start_from/* = 0*/) const
+    {
+        JE_todo();
+        return invalid_idx;
     }
 
     void string::chars_have_changed()
@@ -518,7 +782,7 @@ namespace je { namespace data {
         build_hash();
     }
 
-    void string::build_hash()
+    inline void string::build_hash()
     {
         m_hash.build(get_data());
     }
