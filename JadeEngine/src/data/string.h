@@ -124,7 +124,7 @@ namespace je { namespace data {
         inline void append_common(const char_type* str, size_t num_chars);
         inline void insert_common(const char_type* str, size_t num_chars, size_t idx_dest, size_t idx_src_start, size_t idx_src_end);
         inline void replace_common(const char_type* str, size_t num_chars, size_t idx_dest_start, size_t idx_dest_end, size_t idx_src_start, size_t idx_src_end);
-        inline bool find_and_replace_common(const char_type* str_to_find, size_t str_to_find_num_chars, const char_type* str_to_replace_it_with, size_t str_to_relace_it_with_num_chars);
+        inline bool find_and_replace_common(const char_type* str_to_find, size_t str_to_find_num_chars, const char_type* str_to_replace_it_with, size_t str_to_replace_it_with_num_chars);
         inline size_t find_common(const char_type* str, size_t num_chars, size_t char_to_start_from = 0) const;
         
         inline void create_from_str(const char_type* str);

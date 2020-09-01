@@ -264,8 +264,8 @@ namespace je { namespace tests {
 
     void tester::test_string()
     {
-        je::data::string fmtted_str(je::data::string::format("%s %s %d %d %d", "Dupa", "Blada", 1, 2, 3));
-        JE_assert(fmtted_str == "Dupa Blada 1 2 3", "String error.");
+        je::data::string fmtted_str(je::data::string::format("%s %s %d %d %d", "Hello", "World", 1, 2, 3));
+        JE_assert(fmtted_str == "Hello World 1 2 3", "String error.");
 
         je::data::string int_str(je::data::string::from_int64(-783246));
         JE_assert(int_str == "-783246", "String error.");
@@ -282,18 +282,18 @@ namespace je { namespace tests {
         const float flt_parsed = je::data::string::parse_float("0.321");
         JE_assert(flt_parsed == 0.321f, "String error.");
 
-        je::data::string starts = "Twoja Stara";
-        JE_assert(starts.is_starting_with("Two"), "String error.");
-        JE_assert(starts.is_starting_with("Twogrzyb") == false, "String error.");
-        JE_assert(starts.is_starting_with("Twoja Stara Zapier*ala") == false, "String error.");
-        JE_assert(starts.is_ending_with("Stara"), "String error.");
-        JE_assert(starts.is_ending_with("Star") == false, "String error.");
-        JE_assert(starts.is_ending_with("Zapier*ala Twoja Stara") == false, "String error.");
+        je::data::string starts = "Starts With";
+        JE_assert(starts.is_starting_with("Sta"), "String error.");
+        JE_assert(starts.is_starting_with("Stanope") == false, "String error.");
+        JE_assert(starts.is_starting_with("Starts With Something") == false, "String error.");
+        JE_assert(starts.is_ending_with("With"), "String error.");
+        JE_assert(starts.is_ending_with("Wit") == false, "String error.");
+        JE_assert(starts.is_ending_with("It Starts With") == false, "String error.");
 
-        je::data::string str("Janusz");
-        JE_assert(str == "Janusz", "String error.");
-        str.append("Wanusz");
-        JE_assert(str == "JanuszWanusz", "String error.");
+        je::data::string str("Jonah");
+        JE_assert(str == "Jonah", "String error.");
+        str.append("Smith");
+        JE_assert(str == "JonahSmith", "String error.");
 
         je::data::string zdz("Zdzislaw");
         zdz.insert("Stary");
@@ -303,6 +303,22 @@ namespace je { namespace tests {
         zdz.insert("Trzeci Wielki Pan", 8, 6, 13);
         JE_assert(zdz == "Zdzislaw Wielki BardzoStary", "String error.");
         JE_assert(zdz.get_data()[zdz.get_size()] == 0, "String error.");
+
+        je::data::string sna("Snakerton");
+        sna.replace("Eater", 5);
+        JE_assert(sna == "SnakeEater", "String error.");
+
+        je::data::string liq("LiquidExquisiteSnake");
+        liq.replace("RevolverOcelotHere", 6, 14, 8, 13);
+        JE_assert(liq == "LiquidOcelotSnake", "String error.");
+
+        je::data::string tof("Will The Replace The Strings From The Here");
+        tof.find_and_replace(" The ", " ");
+        JE_assert(tof == "Will Replace Strings From Here", "String error.");
+
+        je::data::string era("Erase Spaces Please ");
+        era.find_and_replace(" ", "");
+        JE_assert(era == "EraseSpacesPlease", "String error.");
 
         JE_printf_ln("String test passed.");
     }

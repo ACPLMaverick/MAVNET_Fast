@@ -500,7 +500,8 @@ namespace je { namespace data {
     bool string::find_and_replace(const char_type* a_str_to_find, const char_type* a_str_to_replace_it_with)
     {
         JE_check_str_bailout_ret(a_str_to_find, false);
-        JE_check_str_bailout_ret(a_str_to_replace_it_with, false);
+        // To_replace_it_with can be an empty string.
+        JE_assert_bailout(a_str_to_replace_it_with != nullptr, false, "Null argument.");
         const size_t num_chars_to_find = std::strlen(a_str_to_find);
         const size_t num_chars_to_replace = std::strlen(a_str_to_replace_it_with);
         return find_and_replace_common(a_str_to_find, num_chars_to_find, a_str_to_replace_it_with, num_chars_to_replace);
@@ -513,7 +514,8 @@ namespace je { namespace data {
 
     bool string::find_and_replace(const string& a_str_to_find, const char_type* a_str_to_replace_it_with)
     {
-        JE_check_str_bailout_ret(a_str_to_replace_it_with, false);
+        // To_replace_it_with can be an empty string.
+        JE_assert_bailout(a_str_to_replace_it_with != nullptr, false, "Null argument.");
         const size_t num_chars_to_replace = std::strlen(a_str_to_replace_it_with);
         return find_and_replace_common(a_str_to_find.get_data(), a_str_to_find.get_size(), a_str_to_replace_it_with, num_chars_to_replace);
     }
@@ -720,42 +722,47 @@ namespace je { namespace data {
         const size_t num_chars_src = a_idx_src_end - a_idx_src_start + 1;
         const size_t num_chars_dst = a_idx_dest_end - a_idx_dest_start + 1;
 
-        if(num_chars_dst >= num_chars_src)
+        if(num_chars_dst > num_chars_src)
         {
-            // In this case we can simply copy over the existing characters without resizing.
+            // We need to shrink the remaining characters.
+            const size_t diff = num_chars_dst - num_chars_src;
+            char_type* move_source = &m_chars[0] + a_idx_dest_end;
+            char_type* move_dest = move_source - diff;
+            std::memmove(move_dest, move_source, my_size - a_idx_dest_end + 1);
 
-            if(num_chars_dst > num_chars_src)
+            // When resizing downwards there should be no deallocation.
+            m_chars.resize(m_chars.size() - diff);
+            // Shrink to fit only in really heavy cases as it may cause a reallocation.
+            if(diff > get_size() / 2)
             {
-                // We need to shrink the remaining characters.
+                m_chars.shrink_to_fit();
             }
         }
         else
         {
             // We need to enlarge array AFTER dst and then copy.
-        }
-        /*
-        const size_t total_chars_needed = a_idx_dest + num_chars_to_insert;
-        if(total_chars_needed > my_size)
-        {
-            m_chars.resize(total_chars_needed + 1);
+            const size_t diff = num_chars_src - num_chars_dst;
+            m_chars.resize(m_chars.size() + diff);  // Possible reallocation.
+            char_type* move_source = &m_chars[0] + a_idx_dest_end + 1;
+            char_type* move_dest = move_source + diff;
+            std::memmove(move_dest, move_source, my_size - a_idx_dest_end + 1);
         }
 
-        const char_type* src = a_str + a_idx_src_start;
-        char_type* dst = m_chars.data() + a_idx_dest;
-        std::memcpy(dst, src, num_chars_to_insert * sizeof(char_type));
-        m_chars[m_chars.size() - 1] = char_end;
-        */
+        // After necessary moves, we can simply copy over the source.
+        char_type* dest = &m_chars[0] + a_idx_dest_start;
+        char_type* src = const_cast<char_type*>(a_str) + a_idx_src_start;
+        std::memcpy(dest, src, num_chars_src);
     }
 
     inline bool string::find_and_replace_common(const char_type* a_str_to_find, size_t a_str_to_find_num_chars,
-        const char_type* a_str_to_replace_it_with, size_t a_str_to_relace_it_with_num_chars)
+        const char_type* a_str_to_replace_it_with, size_t a_str_to_replace_it_with_num_chars)
     {
         size_t str_idx = 0;
         while((str_idx = find_common(a_str_to_find, a_str_to_find_num_chars, str_idx)) != invalid_idx)
         {
-            //const size_t str_idx_prev = str_idx;
-            //str_idx += a_str_to_find_num_chars;
-            //replace_common()
+            replace_common(a_str_to_replace_it_with, a_str_to_replace_it_with_num_chars,
+                str_idx, str_idx + a_str_to_find_num_chars - 1, 0, a_str_to_replace_it_with_num_chars - 1);
+            str_idx += a_str_to_replace_it_with_num_chars;
         }
 
         if(str_idx != 0)
@@ -769,9 +776,36 @@ namespace je { namespace data {
         }
     }
 
-    inline size_t string::find_common(const char_type* a_str, size_t a_num_chars, size_t char_to_start_from/* = 0*/) const
+    inline size_t string::find_common(const char_type* a_str, size_t a_num_chars, size_t a_char_to_start_from/* = 0*/) const
     {
-        JE_todo();
+        // Simple forward search for now.
+        size_t current_char_idx = a_char_to_start_from;
+        while(current_char_idx < (m_chars.size() - 1))
+        {
+            const char_type* ptr = &m_chars[current_char_idx];
+            JE_unused(ptr);
+            size_t num_traversed = 0;
+            bool is_find_failed = false;
+            while(num_traversed < a_num_chars)
+            {
+                is_find_failed = m_chars[current_char_idx + num_traversed] != a_str[num_traversed];
+                ++num_traversed;
+                if(is_find_failed)
+                {
+                    break;
+                }
+            }
+
+            // String has been found here.
+            if(is_find_failed == false)
+            {
+                return current_char_idx;
+            }
+            else
+            {
+                current_char_idx += num_traversed;
+            }
+        }
         return invalid_idx;
     }
 
