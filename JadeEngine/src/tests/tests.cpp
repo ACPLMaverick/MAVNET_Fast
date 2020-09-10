@@ -186,7 +186,7 @@ namespace je { namespace tests {
     {
         // Array test.
         {
-            je::data::static_array<int32_t, 16> small_array;
+            data::static_array<int32_t, 16> small_array;
             small_array[0] = 1;
             small_array[5] = 2;
             for(size_t i = 0; i < small_array.k_num_objects; ++i)
@@ -195,14 +195,14 @@ namespace je { namespace tests {
             }
             //small_array[32] = 8;
 
-            je::data::static_array<int32_t, 32> big_array(small_array, 0);
+            data::static_array<int32_t, 32> big_array(small_array, 0);
 
-            je::data::static_bit_array<6> static_bit_array;
+            data::static_bit_array<6> static_bit_array;
             static_bit_array.set(1, true);
             static_bit_array.set(4, true);
             JE_assert(static_bit_array.get(1) == true && static_bit_array.get(2) == false && static_bit_array.get(4) == true, "Assertion failed.");
 
-            je::data::static_bitfield_array<test_bitfield_enum> static_bitfield_array;
+            data::static_bitfield_array<test_bitfield_enum> static_bitfield_array;
             static_bitfield_array.set(test_bitfield_enum::k_val_1, true);
             static_bitfield_array.set(test_bitfield_enum::k_val_2, false);
             static_bitfield_array.set(test_bitfield_enum::k_val_1 | test_bitfield_enum::k_val_0, true);
@@ -211,7 +211,7 @@ namespace je { namespace tests {
 
         // Array test
         {
-            je::data::array<float> float_arr;
+            data::array<float> float_arr;
             float_arr.push_back(4.0f);
             float_arr.push_back(3.0f);
 
@@ -220,7 +220,7 @@ namespace je { namespace tests {
                 float_arr.push_back(static_cast<float>(i));
             }
 
-            je::data::array<float> float_arr_2(float_arr);
+            data::array<float> float_arr_2(float_arr);
 
             for(size_t i = 0; i < 512; ++i)
             {
@@ -264,25 +264,25 @@ namespace je { namespace tests {
 
     void tester::test_string()
     {
-        je::data::string fmtted_str(je::data::string::format("%s %s %d %d %d", "Hello", "World", 1, 2, 3));
+        data::string fmtted_str(data::string::format("%s %s %d %d %d", "Hello", "World", 1, 2, 3));
         JE_assert(fmtted_str == "Hello World 1 2 3", "String error.");
 
-        je::data::string int_str(je::data::string::from_int64(-783246));
+        data::string int_str(data::string::from_int64(-783246));
         JE_assert(int_str == "-783246", "String error.");
 
-        je::data::string flt_str(je::data::string::from_float(-783.123456, 2));
+        data::string flt_str(data::string::from_float(-783.123456, 2));
         JE_assert(flt_str == "-783.12", "String error.");
 
-        je::data::string flt_str_2(je::data::string::from_float(-783.123456));
+        data::string flt_str_2(data::string::from_float(-783.123456));
         //JE_assert(flt_str_2 == "-783.123456", "String error.");
 
-        const int32_t int_parsed = je::data::string::parse_int32("321");
+        const int32_t int_parsed = data::string::parse_int32("321");
         JE_assert(int_parsed == 321, "String error.");
 
-        const float flt_parsed = je::data::string::parse_float("0.321");
+        const float flt_parsed = data::string::parse_float("0.321");
         JE_assert(flt_parsed == 0.321f, "String error.");
 
-        je::data::string starts = "Starts With";
+        data::string starts = "Starts With";
         JE_assert(starts.is_starting_with("Sta"), "String error.");
         JE_assert(starts.is_starting_with("Stanope") == false, "String error.");
         JE_assert(starts.is_starting_with("Starts With Something") == false, "String error.");
@@ -290,12 +290,12 @@ namespace je { namespace tests {
         JE_assert(starts.is_ending_with("Wit") == false, "String error.");
         JE_assert(starts.is_ending_with("It Starts With") == false, "String error.");
 
-        je::data::string str("Jonah");
+        data::string str("Jonah");
         JE_assert(str == "Jonah", "String error.");
         str.append("Smith");
         JE_assert(str == "JonahSmith", "String error.");
 
-        je::data::string zdz("Zdzislaw");
+        data::string zdz("Zdzislaw");
         zdz.insert("Stary");
         JE_assert(zdz == "ZdzislawStary", "String error.");
         zdz.insert("Bardzo", 8);
@@ -304,21 +304,85 @@ namespace je { namespace tests {
         JE_assert(zdz == "Zdzislaw Wielki BardzoStary", "String error.");
         JE_assert(zdz.get_data()[zdz.get_size()] == 0, "String error.");
 
-        je::data::string sna("Snakerton");
+        data::string sna("Snakerton");
         sna.replace("Eater", 5);
         JE_assert(sna == "SnakeEater", "String error.");
 
-        je::data::string liq("LiquidExquisiteSnake");
+        data::string liq("LiquidExquisiteSnake");
         liq.replace("RevolverOcelotHere", 6, 14, 8, 13);
         JE_assert(liq == "LiquidOcelotSnake", "String error.");
 
-        je::data::string tof("Will The Replace The Strings From The Here");
+        data::string run("Run The Shop");
+        run.erase(3, 6);
+        JE_assert(run == "Run Shop", "String error.");
+        size_t run_size = run.get_size();
+        JE_assert(run_size == 8, "String error.");
+        run.erase(3);
+        JE_assert(run == "Run", "String error.");
+        run_size = run.get_size();
+        JE_assert(run_size == 3, "String error.");
+
+        data::string tof("Will The Replace The Strings From The Here");
         tof.find_and_replace(" The ", " ");
         JE_assert(tof == "Will Replace Strings From Here", "String error.");
 
-        je::data::string era("Erase Spaces Please ");
+        data::string era("Erase Spaces Please ");
         era.find_and_replace(" ", "");
         JE_assert(era == "EraseSpacesPlease", "String error.");
+
+        data::string swap_a("Toad");
+        data::string swap_b("Auld Lang Syne");
+        swap_a.swap(swap_b);
+        JE_assert(swap_a == "Auld Lang Syne", "String error.");
+        JE_assert(swap_b == "Toad", "String error.");
+
+        data::string sub("This Is Sparta");
+        sub.substring(5, 6);
+        JE_assert(sub == "Is", "String error.");
+
+        data::string trm("TrimMeHard");
+        trm.trim_front(4);
+        JE_assert(trm == "MeHard", "String error.");
+        trm.trim_end(4);
+        JE_assert(trm == "Me", "String error.");
+
+        data::string substr_construct = data::string::from_substring("YeahRightNow", 4, 8);
+        JE_assert(substr_construct == "Right", "String error.");
+
+        data::string splt(" This We Will Split On Spaces ");
+        data::array<data::string> splt_splt;
+        splt.split(" ", splt_splt);
+        JE_assert(splt_splt.size() == 6, "String error.");
+        JE_assert(splt_splt[0] == "This", "String error.");
+        JE_assert(splt_splt[1] == "We", "String error.");
+        JE_assert(splt_splt[2] == "Will", "String error.");
+        JE_assert(splt_splt[3] == "Split", "String error.");
+        JE_assert(splt_splt[4] == "On", "String error.");
+        JE_assert(splt_splt[5] == "Spaces", "String error.");
+        splt_splt.clear();
+        splt.split("Will", splt_splt);
+        JE_assert(splt_splt.size() == 2, "String error.");
+        JE_assert(splt_splt[0] == " This We ", "String error.");
+        JE_assert(splt_splt[1] == " Split On Spaces ", "String error.");
+
+        data::string case_test("this is sparta");
+        data::string case_upper(case_test);
+        case_upper.to_upper_case();
+        JE_assert(case_upper == "THIS IS SPARTA", "String error.");
+        JE_assert(case_upper.is_upper_case(), "String error.");
+        JE_assert(case_upper.is_lower_case() == false, "String error.");
+        case_upper.to_lower_case();
+        JE_assert(case_upper == case_test, "String error.");
+        
+        case_test = "43214this*()*Is122sparta";
+        case_test.to_capitalized_case();
+        JE_assert(case_test == "43214This*()*Is122Sparta", "String error.");
+
+        case_test = "a simple example";
+        case_test.to_capitalized_case();
+        JE_assert(case_test == "A Simple Example", "String error.");
+        JE_assert(case_test.is_upper_case() == false, "String error.");
+        JE_assert(case_test.is_lower_case() == false, "String error.");
 
         JE_printf_ln("String test passed.");
     }

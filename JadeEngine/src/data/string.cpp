@@ -8,6 +8,28 @@ namespace je { namespace data {
 #define JE_check_str_bailout_ret(_str_, _ret_val_) if(_str_ == nullptr || _str_[0] == char_end) return _ret_val_
 #define JE_check_str_bailout(_str_) if(_str_ == nullptr || _str_[0] == char_end) return
 
+    // Case support for "char" type.
+    template<> bool string::is_lower_case(char value)
+    {
+        return value > 0x60 && value < 0x7B;
+    }
+
+    template<> bool string::is_upper_case(char value)
+    {
+        return value > 0x40 && value < 0x5B;
+    }
+
+    template<> char string::to_upper_case(char value)
+    {
+        return value - 0x20;
+    }
+
+    template<> char string::to_lower_case(char value)
+    {
+        return value + 0x20;
+    }
+    // /////////////
+
     string::hash::hash(const char_type* a_str)
     {
         build(a_str);
@@ -63,7 +85,7 @@ namespace je { namespace data {
     string::string(const char_type* a_str)
         : m_hash(nullptr)
     {
-        create_from_str(a_str);
+        create_from_str(a_str, 0);
     }
 
     string::string(size_t a_num_chars_to_have)
@@ -91,7 +113,7 @@ namespace je { namespace data {
     
     string& string::operator=(const char_type* a_str)
     {
-        create_from_str(a_str);
+        create_from_str(a_str, 0);
         return *this;
     }
     
@@ -235,6 +257,16 @@ namespace je { namespace data {
             str.chars_have_changed();
             return str;
         }
+    }
+
+    string string::from_substring(const char_type* a_str, size_t a_idx_start, size_t a_idx_end)
+    {
+        return from_substring_common(a_str, std::strlen(a_str), a_idx_start, a_idx_end);
+    }
+
+    string string::from_substring(const string& a_str, size_t a_idx_start, size_t a_idx_end)
+    {
+        return from_substring_common(a_str.get_data(), a_str.get_size(), a_idx_start, a_idx_end);
     }
 
     int64_t string::parse_int64(const char_type* a_str)
@@ -497,6 +529,13 @@ namespace je { namespace data {
     }
 
 
+    void string::erase(size_t a_idx_start, size_t a_idx_end)
+    {
+        erase_common(a_idx_start, a_idx_end);
+        chars_have_changed();
+    }
+
+
     bool string::find_and_replace(const char_type* a_str_to_find, const char_type* a_str_to_replace_it_with)
     {
         JE_check_str_bailout_ret(a_str_to_find, false);
@@ -530,33 +569,76 @@ namespace je { namespace data {
     
     void string::swap(string& a_str)
     {
-        JE_todo();
+        if(*this == a_str)
+        {
+            return;
+        }
+
+        const size_t my_char_num = m_chars.size();
+        const size_t other_char_num = a_str.m_chars.size();
+
+        if(other_char_num > my_char_num)
+        {
+            m_chars.resize(other_char_num);
+        }
+        else if(my_char_num > other_char_num)
+        {
+            a_str.m_chars.resize(my_char_num);
+        }
+
+        {
+            string copy(*this);
+            std::memcpy(&m_chars[0], &a_str.m_chars[0], other_char_num * sizeof(char_type));
+            std::memcpy(&a_str.m_chars[0], &copy.m_chars[0], my_char_num * sizeof(char_type));
+        }
+
+        remove_excessive_chars_at_end(other_char_num);
+        a_str.remove_excessive_chars_at_end(my_char_num);
+        chars_have_changed();
+        a_str.chars_have_changed();
     }
 
     
     void string::substring(size_t a_idx_start, size_t a_idx_end)
     {
-        JE_todo();
+        JE_assert_bailout(a_idx_start < get_size(), , "Invalid argument.");
+        JE_assert_bailout(a_idx_end < get_size(), , "Invalid argument.");
+        JE_assert_bailout(a_idx_end >= a_idx_start, , "Invalid argument.");
+
+        const size_t new_size = a_idx_end - a_idx_start + 1;
+
+        // If necessary, move the substring block to the front, and then erase remaining chars.
+        if(a_idx_start > 0)
+        {
+            char_type* move_dest = &m_chars[0];
+            const char_type* move_src = &m_chars[a_idx_start];
+            std::memmove(move_dest, move_src, new_size * sizeof(char_type));
+        }
+
+        // Add a new trailing zero at the end.
+        m_chars[new_size] = char_end;
+        remove_excessive_chars_at_end(new_size + 1);
+        chars_have_changed();
     }
     
     void string::trim_front(size_t a_num_chars)
     {
-        JE_todo();
+        substring(a_num_chars, get_size() - 1);
     }
     
     void string::trim_end(size_t a_num_chars)
     {
-        JE_todo();
+        substring(0, get_size() - 1 - (a_num_chars + 1));
     }
     
-    void string::split(const char_type* a_split_on, array<string> a_out_strings) const
+    void string::split(const char_type* a_split_on, array<string>& a_out_strings) const
     {
-        JE_todo();
+        split_common(a_split_on, std::strlen(a_split_on), a_out_strings);
     }
     
-    void string::split(const string& a_split_on, array<string> a_out_strings) const
+    void string::split(const string& a_split_on, array<string>& a_out_strings) const
     {
-        JE_todo();
+        split_common(a_split_on.get_data(), a_split_on.get_size(), a_out_strings);
     }
     
 
@@ -574,44 +656,144 @@ namespace je { namespace data {
     
     bool string::contains(const char_type* a_str) const
     {
-        JE_todo();
-        return false;
+        return find(a_str) != invalid_idx;
     }
     
     bool string::contains(const string& a_str) const
     {
-        JE_todo();
-        return false;
+        return find(a_str) != invalid_idx;
     }
     
 
     void string::to_upper_case()
     {
-        JE_todo();
+        bool chars_changed = false;
+        const size_t my_size = get_size();
+
+        for(size_t i = 0; i < my_size; ++i)
+        {
+            if(is_lower_case(m_chars[i]))
+            {
+                m_chars[i] = to_upper_case(m_chars[i]);
+                chars_changed = true;
+            }
+        }
+
+        if(chars_changed)
+        {
+            chars_have_changed();
+        }
     }
     
     void string::to_lower_case()
     {
-        JE_todo();
+        bool chars_changed = false;
+        const size_t my_size = get_size();
+
+        for(size_t i = 0; i < my_size; ++i)
+        {
+            if(is_upper_case(m_chars[i]))
+            {
+                m_chars[i] = to_lower_case(m_chars[i]);
+                chars_changed = true;
+            }
+        }
+
+        if(chars_changed)
+        {
+            chars_have_changed();
+        }
     }
     
     void string::to_capitalized_case()
     {
-        JE_todo();
+        bool chars_changed = false;
+        const size_t my_size = get_size();
+        bool should_capitalize = true;
+
+        for(size_t i = 0; i < my_size; ++i)
+        {
+            const bool is_upper = is_upper_case(m_chars[i]);
+            const bool is_lower = is_lower_case(m_chars[i]);
+            const bool is_character = is_upper || is_lower;
+
+            if(is_character)
+            {
+                if(should_capitalize)
+                {
+                    if(is_lower)
+                    {
+                        m_chars[i] = to_upper_case(m_chars[i]);
+                        should_capitalize = false;
+                        chars_changed = true;
+                    }
+                    else if(is_upper)
+                    {
+                        should_capitalize = false;
+                    }
+                }
+                else
+                {
+                    if(is_upper)
+                    {
+                        m_chars[i] = to_lower_case(m_chars[i]);
+                        chars_changed = true;
+                    }
+                }
+            }
+            else
+            {
+                should_capitalize = true;
+            }
+        }
+
+        if(chars_changed)
+        {
+            chars_have_changed();
+        }
     }
     
     bool string::is_upper_case() const
     {
-        JE_todo();
-        return false;
+        const size_t my_size = get_size();
+        for(size_t i = 0; i < my_size; ++i)
+        {
+            if(is_lower_case(m_chars[i]))
+            {
+                return false;
+            }
+        }
+        return true;
     }
     
     bool string::is_lower_case() const
     {
-        JE_todo();
-        return false;
+        const size_t my_size = get_size();
+        for(size_t i = 0; i < my_size; ++i)
+        {
+            if(is_upper_case(m_chars[i]))
+            {
+                return false;
+            }
+        }
+        return true;
     }
-    
+
+
+    inline string string::from_substring_common(const char_type* a_str, size_t a_num_chars, size_t a_idx_start, size_t a_idx_end)
+    {
+        JE_assert_bailout(a_idx_start < a_num_chars, string(nullptr), "Invalid argument.");
+        JE_assert_bailout(a_idx_end < a_num_chars, string(nullptr), "Invalid argument.");
+        JE_assert_bailout(a_idx_end >= a_idx_start, string(nullptr), "Invalid argument.");
+
+        const size_t new_size = a_idx_end - a_idx_start + 1;
+        string new_string(new_size + 1);    // Adding 1 again for trailing zero.
+        std::memcpy(&new_string.m_chars[0], a_str + a_idx_start, new_size * sizeof(char_type));
+        new_string.m_chars[new_string.m_chars.size() - 1] = char_end;
+        new_string.chars_have_changed();
+
+        return new_string;
+    }
 
     inline void string::append_common(const char_type* a_str, size_t a_num_chars)
     {
@@ -619,32 +801,6 @@ namespace je { namespace data {
         m_chars.resize(m_chars.size() + a_num_chars);
         std::memcpy(&m_chars[prev_zero_idx], a_str, a_num_chars * sizeof(char_type));
         m_chars[m_chars.size() - 1] = char_end;
-
-        chars_have_changed();
-    }
-
-    inline void string::create_from_str(const char_type* a_str)
-    {
-        if(a_str == nullptr)
-        {
-            m_chars.push_back(char_end);
-            return;
-        }
-
-        // TODO Check what is faster: strlen and memcpy or adding chars one by one.
-        /*
-        do
-        {
-            m_chars.push_back(*a_str);
-        } while(*(++a_str) != char_end);
-        */
-        const int len = std::strlen(a_str);
-        if(len > 0)
-        {
-            m_chars.resize(len);
-            std::memcpy(m_chars.data(), a_str, len * sizeof(char_type));
-        }
-        m_chars.push_back(char_end);
 
         chars_have_changed();
     }
@@ -733,10 +889,7 @@ namespace je { namespace data {
             // When resizing downwards there should be no deallocation.
             m_chars.resize(m_chars.size() - diff);
             // Shrink to fit only in really heavy cases as it may cause a reallocation.
-            if(diff > get_size() / 2)
-            {
-                m_chars.shrink_to_fit();
-            }
+            shrink_if_necessary();
         }
         else
         {
@@ -754,15 +907,45 @@ namespace je { namespace data {
         std::memcpy(dest, src, num_chars_src);
     }
 
+    inline void string::erase_common(size_t a_idx_start, size_t a_idx_end)
+    {
+        const size_t my_size = get_size();
+        JE_assert_bailout(a_idx_start < my_size, , "Invalid argument.");
+        JE_assert_bailout(a_idx_end >= a_idx_start, , "Invalid argument.");
+
+        if(a_idx_end >= my_size)
+        {
+            a_idx_end = my_size - 1;
+        }
+
+        // We need basically to move the remainder and shrink the string by this number of chars.
+
+        const size_t move_amount = a_idx_end - a_idx_start + 1;
+        char_type* move_dest = &m_chars[a_idx_start];
+        const char_type* move_src = move_dest + move_amount;
+        const size_t chars_to_move = &(m_chars[m_chars.size() - 1]) - move_src + 1;
+        std::memmove(move_dest, move_src, chars_to_move * sizeof(char_type));
+
+        remove_excessive_chars_at_end(my_size - move_amount);
+    }
+
     inline bool string::find_and_replace_common(const char_type* a_str_to_find, size_t a_str_to_find_num_chars,
         const char_type* a_str_to_replace_it_with, size_t a_str_to_replace_it_with_num_chars)
     {
         size_t str_idx = 0;
         while((str_idx = find_common(a_str_to_find, a_str_to_find_num_chars, str_idx)) != invalid_idx)
         {
-            replace_common(a_str_to_replace_it_with, a_str_to_replace_it_with_num_chars,
-                str_idx, str_idx + a_str_to_find_num_chars - 1, 0, a_str_to_replace_it_with_num_chars - 1);
-            str_idx += a_str_to_replace_it_with_num_chars;
+            if(a_str_to_replace_it_with_num_chars > 0)
+            {
+                replace_common(a_str_to_replace_it_with, a_str_to_replace_it_with_num_chars,
+                    str_idx, str_idx + a_str_to_find_num_chars - 1, 0, a_str_to_replace_it_with_num_chars - 1);
+                str_idx += a_str_to_replace_it_with_num_chars;
+            }
+            else
+            {
+                // If replacing with an empty string, simply erase chars at this index.
+                erase_common(str_idx, str_idx + a_str_to_find_num_chars - 1);
+            }
         }
 
         if(str_idx != 0)
@@ -809,6 +992,70 @@ namespace je { namespace data {
         return invalid_idx;
     }
 
+    inline void string::split_common(const char_type* a_split_on, size_t a_split_on_num_chars, array<string>& a_out_strings) const
+    {
+        size_t prev_found_idx = invalid_idx;
+        size_t curr_found_idx = 0;
+        while((curr_found_idx = find_common(a_split_on, a_split_on_num_chars, curr_found_idx)) != invalid_idx)
+        {
+            // End-idx is exclusive here.
+            const size_t start_idx = (prev_found_idx != invalid_idx ? (prev_found_idx + a_split_on_num_chars) : 0);
+            const size_t end_idx = curr_found_idx;
+            const size_t part_num_chars = end_idx - start_idx;
+            if(part_num_chars > 0)
+            {
+                string new_str(from_substring_common(get_data(), get_size(), start_idx, end_idx - 1));
+                a_out_strings.push_back(new_str);
+            }
+            prev_found_idx = curr_found_idx;
+            curr_found_idx += a_split_on_num_chars;
+        }
+
+        if(prev_found_idx != 0)
+        {
+            // If this is different than zero, it means we need to add the last part - from this idx to the end.
+            const size_t end_idx = get_size();
+            if(end_idx > (prev_found_idx + a_split_on_num_chars))
+            {
+                const size_t last_part_num_chars = end_idx - (prev_found_idx + a_split_on_num_chars);
+                if(last_part_num_chars > 0)
+                {
+                    string new_str(from_substring_common(get_data(), get_size(), prev_found_idx + a_split_on_num_chars, end_idx - 1));
+                    a_out_strings.push_back(new_str);
+                }
+            }
+        }
+    }
+
+    inline void string::create_from_str(const char_type* a_str, size_t a_idx_start, size_t a_idx_end /*= invalid_idx*/)
+    {
+        JE_assert(a_idx_end >= a_idx_start, "Invalid argument.");
+        if(a_str == nullptr
+            || a_idx_end < a_idx_start)
+        {
+            m_chars.push_back(char_end);
+            return;
+        }
+
+        // TODO Check what is faster: strlen and memcpy or adding chars one by one.
+        /*
+        do
+        {
+            m_chars.push_back(*a_str);
+        } while(*(++a_str) != char_end);
+        */
+        const size_t len = (a_idx_end != invalid_idx ? a_idx_end : std::strlen(a_str)) - a_idx_start;
+        JE_assert(len > 0, "Invalid input string.");
+        if(len > 0)
+        {
+            m_chars.resize(len + 1);
+            std::memcpy(m_chars.data(), a_str + a_idx_start, len * sizeof(char_type));
+        }
+        m_chars[m_chars.size() - 1] = char_end;
+
+        chars_have_changed();
+    }
+
     void string::chars_have_changed()
     {
         // TODO In future: Check what is faster : recomputing hash every time chars have changed
@@ -819,6 +1066,23 @@ namespace je { namespace data {
     inline void string::build_hash()
     {
         m_hash.build(get_data());
+    }
+
+    inline void string::remove_excessive_chars_at_end(size_t a_new_char_num)
+    {
+        if(m_chars.size() > a_new_char_num)
+        {
+            m_chars.erase(m_chars.begin() + a_new_char_num + 1, m_chars.end());
+            shrink_if_necessary();
+        }
+    }
+
+    inline void string::shrink_if_necessary()
+    {
+        if(m_chars.capacity() > (m_chars.size() / 2))
+        {
+            m_chars.shrink_to_fit();
+        }
     }
     
 }}

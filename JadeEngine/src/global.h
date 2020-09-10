@@ -53,7 +53,7 @@
 #define JE_debugbreak raise(SIGTRAP)
 #endif
 // TODO make message visible.
-#define JE_assert(_value_, ...) { auto __ret__ = (_value_); if(!(__ret__)) { JE_printf("ASSERT: "); JE_printf_ln(__VA_ARGS__); JE_debugbreak(); } }
+#define JE_assert(_value_, ...) { auto __ret__ = (_value_); if(!(__ret__)) { JE_printf("ASSERT on expression [%s] : ", #_value_); JE_printf_ln(__VA_ARGS__); JE_debugbreak(); } }
 #define JE_verify(_call_, ...) { const auto __ret_val__ = _call_; JE_assert(__ret_val__, __VA_ARGS__); }
 #else
 #define JE_assert(_value_, ...)
