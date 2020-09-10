@@ -50,9 +50,6 @@ namespace je { namespace platf {
         static void init_symbols();
         static void cleanup_symbols();
 
-        // Does not allocate memory, returns pointer within the same string.
-        static const char* trim_file_name(const char* absolute_file_name);
-
         static void print_trace(stack_trace& trace);
 
         void init_symbol_ref();

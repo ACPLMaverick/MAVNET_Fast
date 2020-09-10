@@ -44,26 +44,6 @@
 #define JE_printf_ln(_text_, ...)
 #endif
 
-// Assertions.
-
-#if JE_CONFIG_DEBUG
-#if JE_PLATFORM_WINDOWS
-#define JE_debugbreak __debugbreak
-#elif JE_PLATFORM_LINUX || JE_PLATFORM_ANDROID
-#define JE_debugbreak raise(SIGTRAP)
-#endif
-// TODO make message visible.
-#define JE_assert(_value_, ...) { auto __ret__ = (_value_); if(!(__ret__)) { JE_printf("ASSERT on expression [%s] : ", #_value_); JE_printf_ln(__VA_ARGS__); JE_debugbreak(); } }
-#define JE_verify(_call_, ...) { const auto __ret_val__ = _call_; JE_assert(__ret_val__, __VA_ARGS__); }
-#else
-#define JE_assert(_value_, ...)
-#define JE_verify(_call_, ...) _call_
-#endif
-
-#define JE_fail(...) JE_assert(false, __VA_ARGS__)
-#define JE_assert_bailout(_value_, _return_type_, ...) { JE_assert(_value_, __VA_ARGS__); if(!(_value_)) { return _return_type_; } }
-#define JE_todo() JE_fail("Not implemented.")
-
 // ///////////////////////
 
 // Compile-time configurations.
@@ -84,6 +64,7 @@
 
 // Project-wide includes.
 
+#include "util/assertion.h"
 #include "data/data.h"
 // TODO: thread/thread.h
 

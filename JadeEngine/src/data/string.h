@@ -48,6 +48,7 @@ namespace je { namespace data {
         string& operator=(const string&& move);
 
         static string format(const char_type* format, ...);
+        static string format(const char_type* format, va_list args);
         static string from_int64(int64_t value);
         static string from_uint64(uint64_t value);
         static string from_int32(int32_t value);

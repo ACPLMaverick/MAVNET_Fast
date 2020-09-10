@@ -136,20 +136,24 @@ namespace je { namespace data {
     {
         va_list args;
         va_start(args, a_format);
+        string new_string = format(a_format, args);
+        va_end(args);
+        return new_string;
+    }
 
-        const int char_num = vsnprintf(nullptr, 0, a_format, args);
+    string string::format(const char_type* a_format, va_list a_args)
+    {
+        const int char_num = vsnprintf(nullptr, 0, a_format, a_args);
 
         JE_assert(char_num >= 0, "Failed to format a string.");
         if(char_num <= 0)
         {
-            va_end(args);
             return string(nullptr);
         }
         else
         {
             string str(char_num + 1);
-            vsprintf_s(str.m_chars.data(), char_num + 1, a_format, args);
-            va_end(args);
+            vsprintf_s(str.m_chars.data(), char_num + 1, a_format, a_args);
             str.chars_have_changed();
             return str;
         }

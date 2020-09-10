@@ -7,6 +7,7 @@ namespace je { namespace platf {
     namespace util
     {
         const char* get_file_separator();
+        void debugbreak();
     }
 
 }}

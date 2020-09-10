@@ -7,6 +7,7 @@ file(GLOB_RECURSE GENERAL_SOURCES
        draw/*.cpp
        mem/*.cpp
        tests/*.cpp
+       util/*.cpp
 )
 
 file(GLOB PLATFORM_SOURCES_A

@@ -92,22 +92,6 @@ namespace je { namespace platf {
         }
     }
 
-    const char* stack_tracer::trim_file_name(const char* a_absolute_file_name)
-    {
-        static const char* root_folder_name = "src";
-        static const size_t num_chars_to_advance = strlen(root_folder_name) + strlen(util::get_file_separator());
-        
-        const char* root_in_name = strstr(a_absolute_file_name, root_folder_name);
-        if(root_in_name != nullptr)
-        {
-            return root_in_name + num_chars_to_advance;
-        }
-        else 
-        {
-            return a_absolute_file_name;
-        }
-    }
-
     void stack_tracer::init_symbol_ref()
     {
         size_t prev_num_refs = s_symbol_reference_num++;

@@ -4,6 +4,7 @@
 #if JE_USE_STACK_TRACER
 
 #include "platf_windows.h"
+#include "util/misc.h"
 
 #include <DbgHelp.h>
 
@@ -78,7 +79,7 @@ namespace je { namespace platf {
                 if(SymGetLineFromAddr(g_symbol_data.process, reinterpret_cast<DWORD64>(a_trace.m_traces[i]), &disp, &line))
                 {
                     JE_printf_ln("[%p] : [%s] : [%s] : [%lu]",
-                        a_trace.m_traces[i], symbol->Name, trim_file_name(line.FileName), line.LineNumber);
+                        a_trace.m_traces[i], symbol->Name, je::util::misc::trim_file_name(line.FileName), line.LineNumber);
                 }
                 else
                 {

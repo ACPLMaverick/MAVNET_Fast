@@ -14,6 +14,11 @@ namespace util
         return "\\";
     }
 
+    void debugbreak()
+    {
+        __debugbreak();
+    }
+
     // Platform-specific implementations.
     void print_last_error()
     {
