@@ -39,9 +39,11 @@
 #if JE_CONFIG_DEBUG
 #define JE_printf(_text_, ...) printf(_text_, __VA_ARGS__)
 #define JE_printf_ln(_text_, ...) JE_printf(_text_, __VA_ARGS__); printf("\n")
+#define JE_flush_stdout() fflush(stdout)
 #else
 #define JE_printf(_text_, ...)
 #define JE_printf_ln(_text_, ...)
+#define JE_flush_stdout()
 #endif
 
 // ///////////////////////

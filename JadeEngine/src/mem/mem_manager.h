@@ -34,6 +34,10 @@ namespace je { namespace mem {
             find_allocator<caller_type>().free(a_memory);
         }
 
+#if JE_DEBUG_ALLOCATIONS
+        void print_memory_summary() const;
+#endif
+
     private:
 
         struct mem_budgets
@@ -70,7 +74,6 @@ namespace je { namespace mem {
             return m_collections_allocator;
         }
 #endif
-
 
         mem_budgets m_mem_budgets;
         

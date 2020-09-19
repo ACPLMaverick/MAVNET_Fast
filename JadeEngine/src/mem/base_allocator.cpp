@@ -2,13 +2,15 @@
 
 namespace je { namespace mem { 
 
-    base_allocator::base_allocator(allocator_debug_flags a_debug_flags /*= base_allocator::k_default_debug_flags*/)
+    base_allocator::base_allocator(const char* a_name/* = nullptr*/, allocator_debug_flags a_debug_flags /*= base_allocator::k_default_debug_flags*/)
         : m_allocator_from(nullptr)
         , m_memory(nullptr)
         , m_memory_num_bytes(0)
 #if JE_DEBUG_ALLOCATIONS
+        , m_child_allocators()
         , m_num_allocations(0)
         , m_used_num_bytes(0)
+        , m_name(a_name)
         , m_debug_flags(a_debug_flags)
 #endif
     {
@@ -19,19 +21,22 @@ namespace je { namespace mem {
     (
         base_allocator& a_allocator_from,
         size_t a_num_bytes,
-        alignment a_alignment, /*= k_default_alignment */
-        allocator_debug_flags debug_flags /*= base_allocator::k_default_debug_flags*/
+        alignment a_alignment /*= k_default_alignment */,
+        const char* a_name/* = nullptr*/,
+        allocator_debug_flags a_debug_flags /*= base_allocator::k_default_debug_flags*/
     )
         : m_allocator_from(&a_allocator_from)
         , m_memory(a_allocator_from.allocate(a_num_bytes, a_alignment))
         , m_memory_num_bytes(a_num_bytes)
 #if JE_DEBUG_ALLOCATIONS
+        , m_child_allocators()
         , m_num_allocations(0)
         , m_used_num_bytes(0)
-        , m_debug_flags(debug_flags)
+        , m_name(a_name)
+        , m_debug_flags(a_debug_flags)
 #endif
     {
-
+        m_allocator_from->m_child_allocators.push_back(this);
     }
 
     base_allocator::~base_allocator()
@@ -39,6 +44,14 @@ namespace je { namespace mem {
         if(m_allocator_from != nullptr)
         {
             m_allocator_from->free(m_memory);
+#if JE_DEBUG_ALLOCATIONS
+            JE_assert(m_child_allocators.size() == 0, "Destroying allocator which has child allocators!");
+
+            auto it = std::find(m_allocator_from->m_child_allocators.begin(),
+                m_allocator_from->m_child_allocators.end(), this);
+            JE_assert(it != m_allocator_from->m_child_allocators.end());
+            m_allocator_from->m_child_allocators.erase(it);
+#endif
             m_memory = nullptr;
             m_allocator_from = nullptr;
         }

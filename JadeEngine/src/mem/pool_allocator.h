@@ -13,6 +13,7 @@ namespace je { namespace mem {
             size_t object_num_bytes,
             size_t num_objects,
             alignment a_alignment = k_default_alignment,
+            const char* name = nullptr,
             allocator_debug_flags debug_flags = base_allocator::k_default_debug_flags);
         virtual ~pool_allocator();
 

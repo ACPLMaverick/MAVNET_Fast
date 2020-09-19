@@ -30,6 +30,8 @@ namespace je { namespace tests {
 
         test_collections();
         test_string();
+        test_allocator_state_print();
+        test_object_pool();
         test_math();
         test_thread();
 
@@ -385,6 +387,35 @@ namespace je { namespace tests {
         JE_assert(case_test.is_lower_case() == false, "String [%s] is lower case!", case_test.get_data());
 
         JE_printf_ln("String test passed.");
+    }
+
+    void tester::test_allocator_state_print()
+    {
+        {
+            data::string str_a("aaaaaaaa");
+            data::string str_b("bbbbbbbbbbbbbbbbbbbbbbbbb");
+            data::string str_c("c");
+
+            data::array<tester> testers(50);
+            data::queue<size_t> qu;
+            for(size_t i = 0; i < 100; ++i)
+            {
+                qu.push_back(i);
+            }
+            for(size_t i = 0; i < 22; ++i)
+            {
+                str_c += str_c;
+            }
+
+            engine::get_inst().get_mem_manager().print_memory_summary();
+        }
+        JE_printf_ln("After deallocation...");
+        engine::get_inst().get_mem_manager().print_memory_summary();
+    }
+
+    void tester::test_object_pool()
+    {
+        JE_todo();
     }
 
     void tester::test_math()

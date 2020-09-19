@@ -36,10 +36,6 @@ set(SOURCE_DIR src)
 
 set(EXE_NAME JadeEngine_${JE_PLATFORM}_${JE_CONFIGURATION})
 
-# Toolchain definitions
-set(CMAKE_C_COMPILER clang)
-set(CMAKE_CXX_COMPILER clang++)
-
 # Build system
 add_executable(${EXE_NAME} "")
 add_subdirectory (${SOURCE_DIR})

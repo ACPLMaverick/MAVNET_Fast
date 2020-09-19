@@ -21,6 +21,8 @@ namespace je { namespace tests {
         static void test_stack_tracer();
         static void test_collections();
         static void test_string();
+        static void test_allocator_state_print();
+        static void test_object_pool();
         static void test_math();
         static void test_thread();
 

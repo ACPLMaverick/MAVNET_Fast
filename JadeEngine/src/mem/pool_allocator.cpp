@@ -9,9 +9,10 @@
         size_t a_object_num_bytes,
         size_t a_num_objects,
         alignment a_alignment /*= k_default_alignment*/,
+        const char* a_name/* = nullptr*/,
         allocator_debug_flags a_debug_flags /*= base_allocator::k_default_debug_flags*/)
         : base_allocator(a_allocator_from, 
-            std::max(a_object_num_bytes, sizeof(free_block))  * a_num_objects, a_alignment, a_debug_flags)
+            std::max(a_object_num_bytes, sizeof(free_block))  * a_num_objects, a_alignment, a_name, a_debug_flags)
         , m_first_free_block(mem_ptr(m_memory).cast<free_block>())
         , m_object_num_bytes(std::max(a_object_num_bytes, sizeof(free_block)))
 #if JE_DEBUG_ALLOCATIONS

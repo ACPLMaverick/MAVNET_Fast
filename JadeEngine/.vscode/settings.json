@@ -46,6 +46,7 @@
         "stack": "cpp",
         "unordered_set": "cpp",
         "concepts": "cpp",
-        "cstdarg": "cpp"
+        "cstdarg": "cpp",
+        "string": "cpp"
     }
 }

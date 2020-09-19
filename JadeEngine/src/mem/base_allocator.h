@@ -3,6 +3,7 @@
 #include "global.h"
 
 #if JE_DEBUG_ALLOCATIONS
+#include <vector>
 #define JE_DEBUG_ALLOCATIONS_FILL_MEMORY_ON_ALLOC 1
 #include "platf/stack_tracer.h"
 #define JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER (JE_USE_STACK_TRACER) && 1
@@ -45,11 +46,12 @@ namespace je { namespace mem {
         static const alignment k_default_alignment = alignment::k_16;
         static const allocator_debug_flags k_default_debug_flags = allocator_debug_flags::k_all;
 
-        base_allocator(allocator_debug_flags debug_flags = base_allocator::k_default_debug_flags);
+        base_allocator(const char* name = nullptr, allocator_debug_flags debug_flags = base_allocator::k_default_debug_flags);
         base_allocator(
             base_allocator& allocator_from,
             size_t num_bytes,
             alignment a_alignment = k_default_alignment,
+            const char* name = nullptr,
             allocator_debug_flags debug_flags = base_allocator::k_default_debug_flags);
         virtual ~base_allocator();
 
@@ -61,6 +63,8 @@ namespace je { namespace mem {
         size_t get_total_memory() const { return m_memory_num_bytes; }
 
 #if JE_DEBUG_ALLOCATIONS
+        const std::vector<base_allocator*>& get_child_allocators() const { return m_child_allocators; }
+        const char* get_name() const { return m_name != nullptr ? m_name : "Unknown"; }
         size_t get_num_allocations() const { return m_num_allocations; }
         size_t get_used_memory() const { return m_used_num_bytes; }
         size_t get_memory_left() const { return get_total_memory() - get_used_memory(); }
@@ -152,8 +156,10 @@ namespace je { namespace mem {
         
     protected:
 #if JE_DEBUG_ALLOCATIONS
+        std::vector<base_allocator*> m_child_allocators;
         size_t m_num_allocations;
         size_t m_used_num_bytes;
+        const char* m_name;
         allocator_debug_flags m_debug_flags;
 #endif
 #if JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER

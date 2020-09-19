@@ -6,8 +6,9 @@ namespace je { namespace mem {
         base_allocator& a_allocator_from,
         size_t a_num_bytes,
         alignment a_alignment /*= k_default_alignment*/,
+        const char* a_name/* = nullptr*/,
         allocator_debug_flags a_debug_flags /*= base_allocator::k_default_debug_flags*/)
-        : base_allocator(a_allocator_from, a_num_bytes, a_alignment, a_debug_flags)
+        : base_allocator(a_allocator_from, a_num_bytes, a_alignment, a_name, a_debug_flags)
         , m_free_blocks(reinterpret_cast<free_block*>(m_memory))
     {
         JE_assert(m_memory_num_bytes >= sizeof(free_block), "Too little memory for general purpose allocator.");

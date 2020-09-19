@@ -12,6 +12,7 @@ namespace je { namespace mem {
             base_allocator& allocator_from,
             size_t num_bytes,
             alignment a_alignment = k_default_alignment,
+            const char* name = nullptr,
             allocator_debug_flags debug_flags = base_allocator::k_default_debug_flags);
         virtual ~linear_allocator();
 

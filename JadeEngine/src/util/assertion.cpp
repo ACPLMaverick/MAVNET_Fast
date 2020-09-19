@@ -28,6 +28,7 @@ namespace je { namespace util {
 
         static const char* separator = "######################################";
         JE_printf("\n%s\n%s\n%s\n\n", separator, message.get_data(), separator);
+        JE_flush_stdout();
 
 #if JE_ASSERTION_USES_MESSAGE_BOX
         {

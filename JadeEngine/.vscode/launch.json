@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "lldb",
+            "type": "cppvsdbg",
             "request": "launch",
             "name": "Debug",
             "program": "${workspaceFolder}/bin/JadeEngine_Windows_Debug",
@@ -13,7 +13,7 @@
             "cwd": "${workspaceFolder}/bin"
         },
         {
-            "type": "lldb",
+            "type": "cppvsdbg",
             "request": "launch",
             "name": "Profile",
             "program": "${workspaceFolder}/bin/JadeEngine_Windows_Profile",
@@ -21,7 +21,7 @@
             "cwd": "${workspaceFolder}/bin"
         },
         {
-            "type": "lldb",
+            "type": "cppvsdbg",
             "request": "launch",
             "name": "Release",
             "program": "${workspaceFolder}/bin/JadeEngine_Windows_Release",
