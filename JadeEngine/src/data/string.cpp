@@ -1,7 +1,8 @@
 #include "string.h"
 
 #include <cstring>
-#include <stdarg.h>
+#include <cstdarg>
+#include <cstdio>
 
 namespace je { namespace data {
 
@@ -92,7 +93,8 @@ namespace je { namespace data {
         : m_chars()
         , m_hash(nullptr)
     {
-        m_chars.resize(a_num_chars_to_have);
+        m_chars.resize(a_num_chars_to_have + 1);
+        m_chars[a_num_chars_to_have] = char_end;
     }
     
     string::string(const string& a_copy)
@@ -145,7 +147,7 @@ namespace je { namespace data {
     {
         const int char_num = vsnprintf(nullptr, 0, a_format, a_args);
 
-        JE_assert(char_num >= 0, "Failed to format a string.");
+        JE_assertf(char_num >= 0, "Failed to format a string.");
         if(char_num <= 0)
         {
             return string(nullptr);
@@ -153,7 +155,7 @@ namespace je { namespace data {
         else
         {
             string str(char_num + 1);
-            vsprintf_s(str.m_chars.data(), char_num + 1, a_format, a_args);
+            vsprintf(str.m_chars.data(), a_format, a_args);
             str.chars_have_changed();
             return str;
         }
@@ -170,7 +172,7 @@ namespace je { namespace data {
         }
         else
         {
-            string str(char_num + 1);
+            string str(char_num);
             std::snprintf(str.m_chars.data(), char_num + 1, k_fmt, a_value);
             str.chars_have_changed();
             return str;
@@ -188,7 +190,7 @@ namespace je { namespace data {
         }
         else
         {
-            string str(char_num + 1);
+            string str(char_num);
             std::snprintf(str.m_chars.data(), char_num + 1, k_fmt, a_value);
             str.chars_have_changed();
             return str;
@@ -206,7 +208,7 @@ namespace je { namespace data {
         }
         else
         {
-            string str(char_num + 1);
+            string str(char_num);
             std::snprintf(str.m_chars.data(), char_num + 1, k_fmt, a_value);
             str.chars_have_changed();
             return str;
@@ -224,7 +226,7 @@ namespace je { namespace data {
         }
         else
         {
-            string str(char_num + 1);
+            string str(char_num);
             std::snprintf(str.m_chars.data(), char_num + 1, k_fmt, a_value);
             str.chars_have_changed();
             return str;
@@ -256,7 +258,7 @@ namespace je { namespace data {
         }
         else
         {
-            string str(char_num + 1);
+            string str(char_num);
             std::snprintf(str.m_chars.data(), char_num + 1, fmt, a_value);
             str.chars_have_changed();
             return str;
@@ -275,41 +277,41 @@ namespace je { namespace data {
 
     int64_t string::parse_int64(const char_type* a_str)
     {
-        JE_assert(a_str != nullptr, "Passing a null c-string to parse function.");
+        JE_assertf(a_str != nullptr, "Passing a null c-string to parse function.");
         int64_t val = std::strtoll(a_str, nullptr, 10);
-        JE_assert(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
+        JE_assertf(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
         return val;
     }
 
     uint64_t string::parse_uint64(const char_type* a_str)
     {
-        JE_assert(a_str != nullptr, "Passing a null c-string to parse function.");
+        JE_assertf(a_str != nullptr, "Passing a null c-string to parse function.");
         uint64_t val = std::strtoull(a_str, nullptr, 10);
-        JE_assert(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
+        JE_assertf(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
         return val;
     }
 
     int32_t string::parse_int32(const char_type* a_str)
     {
-        JE_assert(a_str != nullptr, "Passing a null c-string to parse function.");
+        JE_assertf(a_str != nullptr, "Passing a null c-string to parse function.");
         int32_t val = std::strtol(a_str, nullptr, 10);
-        JE_assert(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
+        JE_assertf(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
         return val;
     }
 
     uint32_t string::parse_uint32(const char_type* a_str)
     {
-        JE_assert(a_str != nullptr, "Passing a null c-string to parse function.");
+        JE_assertf(a_str != nullptr, "Passing a null c-string to parse function.");
         uint32_t val = std::strtoul(a_str, nullptr, 10);
-        JE_assert(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
+        JE_assertf(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
         return val;
     }
 
     float string::parse_float(const char_type* a_str)
     {
-        JE_assert(a_str != nullptr, "Passing a null c-string to parse function.");
+        JE_assertf(a_str != nullptr, "Passing a null c-string to parse function.");
         float val = std::strtof(a_str, nullptr);
-        JE_assert(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
+        JE_assertf(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
         return val;
     }
 
@@ -341,7 +343,8 @@ namespace je { namespace data {
     void string::clear()
     {
         m_chars.clear();
-        m_chars.push_back(char_end);
+        const char val = string::char_end;
+        m_chars.push_back(val);
         chars_have_changed();
     }
     
@@ -362,7 +365,7 @@ namespace je { namespace data {
     size_t string::get_size() const
     {
         // TODO: Better idea to use strlen for this?
-        JE_assert(m_chars.size() > 0, "Bad chars array size.");
+        JE_assertf(m_chars.size() > 0, "Bad chars array size.");
         return m_chars.size() - 1;
     }
     
@@ -442,7 +445,7 @@ namespace je { namespace data {
 
     string::char_type string::operator[](size_t a_index) const
     {
-        JE_assert(a_index < get_size(), "Invalid index.");
+        JE_assertf(a_index < get_size(), "Invalid index.");
         return m_chars[a_index];
     }
     
@@ -544,7 +547,7 @@ namespace je { namespace data {
     {
         JE_check_str_bailout_ret(a_str_to_find, false);
         // To_replace_it_with can be an empty string.
-        JE_assert_bailout(a_str_to_replace_it_with != nullptr, false, "Null argument.");
+        JE_assertf_bailout(a_str_to_replace_it_with != nullptr, false, "Null argument.");
         const size_t num_chars_to_find = std::strlen(a_str_to_find);
         const size_t num_chars_to_replace = std::strlen(a_str_to_replace_it_with);
         return find_and_replace_common(a_str_to_find, num_chars_to_find, a_str_to_replace_it_with, num_chars_to_replace);
@@ -558,7 +561,7 @@ namespace je { namespace data {
     bool string::find_and_replace(const string& a_str_to_find, const char_type* a_str_to_replace_it_with)
     {
         // To_replace_it_with can be an empty string.
-        JE_assert_bailout(a_str_to_replace_it_with != nullptr, false, "Null argument.");
+        JE_assertf_bailout(a_str_to_replace_it_with != nullptr, false, "Null argument.");
         const size_t num_chars_to_replace = std::strlen(a_str_to_replace_it_with);
         return find_and_replace_common(a_str_to_find.get_data(), a_str_to_find.get_size(), a_str_to_replace_it_with, num_chars_to_replace);
     }
@@ -605,9 +608,9 @@ namespace je { namespace data {
     
     void string::substring(size_t a_idx_start, size_t a_idx_end)
     {
-        JE_assert_bailout(a_idx_start < get_size(), , "Invalid argument.");
-        JE_assert_bailout(a_idx_end < get_size(), , "Invalid argument.");
-        JE_assert_bailout(a_idx_end >= a_idx_start, , "Invalid argument.");
+        JE_assertf_bailout(a_idx_start < get_size(), , "Invalid argument.");
+        JE_assertf_bailout(a_idx_end < get_size(), , "Invalid argument.");
+        JE_assertf_bailout(a_idx_end >= a_idx_start, , "Invalid argument.");
 
         const size_t new_size = a_idx_end - a_idx_start + 1;
 
@@ -786,12 +789,12 @@ namespace je { namespace data {
 
     inline string string::from_substring_common(const char_type* a_str, size_t a_num_chars, size_t a_idx_start, size_t a_idx_end)
     {
-        JE_assert_bailout(a_idx_start < a_num_chars, string(nullptr), "Invalid argument.");
-        JE_assert_bailout(a_idx_end < a_num_chars, string(nullptr), "Invalid argument.");
-        JE_assert_bailout(a_idx_end >= a_idx_start, string(nullptr), "Invalid argument.");
+        JE_assertf_bailout(a_idx_start < a_num_chars, string(nullptr), "Invalid argument.");
+        JE_assertf_bailout(a_idx_end < a_num_chars, string(nullptr), "Invalid argument.");
+        JE_assertf_bailout(a_idx_end >= a_idx_start, string(nullptr), "Invalid argument.");
 
         const size_t new_size = a_idx_end - a_idx_start + 1;
-        string new_string(new_size + 1);    // Adding 1 again for trailing zero.
+        string new_string(new_size);
         std::memcpy(&new_string.m_chars[0], a_str + a_idx_start, new_size * sizeof(char_type));
         new_string.m_chars[new_string.m_chars.size() - 1] = char_end;
         new_string.chars_have_changed();
@@ -825,7 +828,7 @@ namespace je { namespace data {
         {
             a_idx_src_end = a_num_chars - 1;
         }
-        JE_assert(a_idx_dest <= my_size
+        JE_assertf(a_idx_dest <= my_size
             && a_idx_src_start < a_num_chars
             && a_idx_src_end < a_num_chars
             && a_idx_src_start < a_idx_src_end,
@@ -872,12 +875,12 @@ namespace je { namespace data {
         {
             a_idx_src_end = a_num_chars - 1;
         }
-        JE_assert(a_idx_dest_start < my_size, "Invalid indices for string operation.");
-        JE_assert(a_idx_dest_end < my_size, "Invalid indices for string operation.");
-        JE_assert(a_idx_dest_start <= a_idx_dest_end, "Invalid indices for string operation.");
-        JE_assert(a_idx_src_start < a_num_chars, "Invalid indices for string operation.");
-        JE_assert(a_idx_src_end < a_num_chars, "Invalid indices for string operation.");
-        JE_assert(a_idx_src_start <= a_idx_src_end, "Invalid indices for string operation.");
+        JE_assertf(a_idx_dest_start < my_size, "Invalid indices for string operation.");
+        JE_assertf(a_idx_dest_end < my_size, "Invalid indices for string operation.");
+        JE_assertf(a_idx_dest_start <= a_idx_dest_end, "Invalid indices for string operation.");
+        JE_assertf(a_idx_src_start < a_num_chars, "Invalid indices for string operation.");
+        JE_assertf(a_idx_src_end < a_num_chars, "Invalid indices for string operation.");
+        JE_assertf(a_idx_src_start <= a_idx_src_end, "Invalid indices for string operation.");
 
         const size_t num_chars_src = a_idx_src_end - a_idx_src_start + 1;
         const size_t num_chars_dst = a_idx_dest_end - a_idx_dest_start + 1;
@@ -914,8 +917,8 @@ namespace je { namespace data {
     inline void string::erase_common(size_t a_idx_start, size_t a_idx_end)
     {
         const size_t my_size = get_size();
-        JE_assert_bailout(a_idx_start < my_size, , "Invalid argument.");
-        JE_assert_bailout(a_idx_end >= a_idx_start, , "Invalid argument.");
+        JE_assertf_bailout(a_idx_start < my_size, , "Invalid argument.");
+        JE_assertf_bailout(a_idx_end >= a_idx_start, , "Invalid argument.");
 
         if(a_idx_end >= my_size)
         {
@@ -1033,11 +1036,12 @@ namespace je { namespace data {
 
     inline void string::create_from_str(const char_type* a_str, size_t a_idx_start, size_t a_idx_end /*= invalid_idx*/)
     {
-        JE_assert(a_idx_end >= a_idx_start, "Invalid argument.");
+        JE_assertf(a_idx_end >= a_idx_start, "Invalid argument.");
         if(a_str == nullptr
             || a_idx_end < a_idx_start)
         {
-            m_chars.push_back(char_end);
+            const char val = string::char_end;
+            m_chars.push_back(val);
             return;
         }
 
@@ -1049,7 +1053,7 @@ namespace je { namespace data {
         } while(*(++a_str) != char_end);
         */
         const size_t len = (a_idx_end != invalid_idx ? a_idx_end : std::strlen(a_str)) - a_idx_start;
-        JE_assert(len > 0, "Invalid input string.");
+        JE_assertf(len > 0, "Invalid input string.");
         if(len > 0)
         {
             m_chars.resize(len + 1);

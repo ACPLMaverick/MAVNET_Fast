@@ -2,6 +2,7 @@
 
 #if JE_CONFIG_DEBUG
 
+#include "global.h"
 #include "platf/platf.h"
 #include "platf/message_box.h"
 

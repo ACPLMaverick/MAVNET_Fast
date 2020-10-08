@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.17.2 FATAL_ERROR)
 
 set(PROJECT_NAME JadeEngine)
 project(${PROJECT_NAME} VERSION 1.0.0)
-message("Building ${PROJECT_NAME}.")
+message("Configuring ${PROJECT_NAME}.")
 
 # Argument parsing
 set(PLATFORM_NAME_WINDOWS Windows)
@@ -53,14 +53,15 @@ if(JE_PLATFORM STREQUAL ${PLATFORM_NAME_WINDOWS})
 		"C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.18362.0\\ucrt\\x64"
 		"C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.18362.0\\um\\x64"
 	)
-elseif(JE_PLATFORM STREQUAL {PLATFORM_NAME_LINUX})
+elseif(JE_PLATFORM STREQUAL ${PLATFORM_NAME_LINUX})
 	target_compile_definitions(${EXE_NAME} PUBLIC
 		JE_PLATFORM_WINDOWS=0
 		JE_PLATFORM_LINUX=1
 	)
 
-	message(FATAL_ERROR "TODO: Include directories for Linux not specified.")
-	message(FATAL_ERROR "TODO: Library directories for Linux not specified.")
+	target_link_libraries(${EXE_NAME} PUBLIC
+		X11
+	)
 endif()
 
 # Configuration-specific definitions, compiler flags, libs, etc.
@@ -107,9 +108,9 @@ target_compile_options(${EXE_NAME} PUBLIC
 	-Wall	# Enable warnings
 	-Wundef
 	-pedantic
-	-Wstrict-prototypes
 	-Werror
 	-Wfatal-errors
+	-Wno-variadic-macros
 )
 
 # Global libraries

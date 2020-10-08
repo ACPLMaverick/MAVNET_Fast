@@ -60,8 +60,8 @@ VulkanTutorialApp/VulkanTutorialApp/build/
 
 JadeEngine/bin
 JadeEngine/build
-JadeEngine/.vscode/c_cpp_properties.json
-JadeEngine/.vscode/settings.json
+JadeEngine/.vscode
+JadeEngine/tools/scripts/modules/__pycache__
 
 SimpleRenderer/SimpleRenderer/x64/
 SimpleRenderer/x64/

@@ -67,13 +67,6 @@ namespace je { namespace mem {
             return m_system_allocator;
         }
 
-#if JE_DATA_STRUCTS_STD_BACKEND
-        template<>
-        base_allocator& find_allocator<std_wrapper_allocator_helper>()
-        {
-            return m_collections_allocator;
-        }
-#endif
 
         mem_budgets m_mem_budgets;
         

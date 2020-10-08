@@ -10,7 +10,7 @@ buildType:
     profile:
       short: Profile
       long: CPU/GPU markers for profiling.
-      buildType: Release
+      buildType: Profile
       settings:
         JE_CONFIGURATION: Profile
     release:
@@ -19,9 +19,8 @@ buildType:
       buildType: Release
       settings:
         JE_CONFIGURATION: Release
-
 platform:
-  default: windows
+  default: linux
   choices:
     windows:
       short: Windows
@@ -32,4 +31,4 @@ platform:
       short: Linux
       long: Linux
       settings:
-        JE_PLAFTORM: Linux
+        JE_PLATFORM: Linux

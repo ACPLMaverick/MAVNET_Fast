@@ -2,6 +2,7 @@
 
 #include "engine.h"
 
+#include "mem/mem_manager.h"
 #include "mem/system_allocator.h"
 #include "mem/linear_allocator.h"
 #include "mem/stack_allocator.h"
@@ -20,23 +21,6 @@ namespace je { namespace tests {
         k_num_bits = 3,
         k_all = 0xFF
     };
-
-    void tester::run()
-    {
-        test_mem();
-        //test_stack_tracer();
-
-        m_engine = new engine();
-
-        test_collections();
-        test_string();
-        test_allocator_state_print();
-        test_object_pool();
-        test_math();
-        test_thread();
-
-        JE_safe_delete(m_engine);
-    }
 
     class mem_tester
     {
@@ -79,6 +63,18 @@ namespace je { namespace tests {
         size_t m_num_bytes;
         uint8_t m_byte_to_fill;
     };
+
+    void tester::run()
+    {
+        test_mem();
+        //test_stack_tracer();
+        test_collections();
+        test_string();
+        test_allocator_state_print();
+        test_object_pool();
+        test_math();
+        test_thread();
+    }
 
     void tester::test_mem()
     {
@@ -173,7 +169,7 @@ namespace je { namespace tests {
             }
         }
 
-        JE_printf_ln("Allocator test passed.");
+        JE_print_ln("Allocator test passed.");
     }
 
     void tester::test_stack_tracer()
@@ -202,13 +198,13 @@ namespace je { namespace tests {
             data::static_bit_array<6> static_bit_array;
             static_bit_array.set(1, true);
             static_bit_array.set(4, true);
-            JE_assert(static_bit_array.get(1) == true && static_bit_array.get(2) == false && static_bit_array.get(4) == true, "Assertion failed.");
+            JE_assert(static_bit_array.get(1) == true && static_bit_array.get(2) == false && static_bit_array.get(4) == true);
 
             data::static_bitfield_array<test_bitfield_enum> static_bitfield_array;
             static_bitfield_array.set(test_bitfield_enum::k_val_1, true);
             static_bitfield_array.set(test_bitfield_enum::k_val_2, false);
             static_bitfield_array.set(test_bitfield_enum::k_val_1 | test_bitfield_enum::k_val_0, true);
-            JE_assert(static_bitfield_array.get(test_bitfield_enum::k_val_1) == true && static_bitfield_array.get(test_bitfield_enum::k_val_2) == false, "Assertion failed.");
+            JE_assert(static_bitfield_array.get(test_bitfield_enum::k_val_1) == true && static_bitfield_array.get(test_bitfield_enum::k_val_2) == false);
         }
 
         // Array test
@@ -261,11 +257,13 @@ namespace je { namespace tests {
             JE_todo();
         }
         */
-        JE_printf_ln("Collection test passed.");
+        JE_print_ln("Collection test passed.");
     }
 
     void tester::test_string()
     {
+        JE_printf("%s %s %d %d %d", "Hello", "World", 1, 2, 3);
+        JE_flush_stdout();
         data::string fmtted_str(data::string::format("%s %s %d %d %d", "Hello", "World", 1, 2, 3));
         JE_assert(fmtted_str == "Hello World 1 2 3");
 
@@ -384,9 +382,9 @@ namespace je { namespace tests {
         case_test.to_capitalized_case();
         JE_assert(case_test == "A Simple Example");
         JE_assert(case_test.is_upper_case() == false);
-        JE_assert(case_test.is_lower_case() == false, "String [%s] is lower case!", case_test.get_data());
+        JE_assertf(case_test.is_lower_case() == false, "String [%s] is lower case!", case_test.get_data());
 
-        JE_printf_ln("String test passed.");
+        JE_print_ln("String test passed.");
     }
 
     void tester::test_allocator_state_print()
@@ -407,10 +405,10 @@ namespace je { namespace tests {
                 str_c += str_c;
             }
 
-            engine::get_inst().get_mem_manager().print_memory_summary();
+            engine::get_mem_manager().print_memory_summary();
         }
-        JE_printf_ln("After deallocation...");
-        engine::get_inst().get_mem_manager().print_memory_summary();
+        JE_print_ln("After deallocation...");
+        engine::get_mem_manager().print_memory_summary();
     }
 
     void tester::test_object_pool()
@@ -427,6 +425,4 @@ namespace je { namespace tests {
     {
         JE_todo();
     }
-
-    je::engine* tester::m_engine(nullptr);
 }}

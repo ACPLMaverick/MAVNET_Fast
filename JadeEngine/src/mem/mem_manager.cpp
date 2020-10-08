@@ -163,7 +163,7 @@ namespace je { namespace mem {
 
         JE_printf_ln(
             "######################################"
-            "\nTotal num allocations: [%llu]\n"
+            "\nTotal num allocations: [%zu]\n"
             "Total memory used: [%s]\n"
             "Total memory available [%s]\n%s"
             "######################################",
@@ -171,6 +171,14 @@ namespace je { namespace mem {
             byte_output(total_memory_used).as_string().c_str(),
             byte_output(total_memory_available).as_string().c_str(),
             summary.c_str());
+    }
+#endif
+
+#if JE_DATA_STRUCTS_STD_BACKEND
+    template<>
+    base_allocator& mem_manager::find_allocator<std_wrapper_allocator_helper>()
+    {
+        return m_collections_allocator;
     }
 #endif
 }}

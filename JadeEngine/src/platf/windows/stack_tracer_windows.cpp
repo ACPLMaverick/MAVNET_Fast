@@ -25,7 +25,7 @@ namespace je { namespace platf {
 
     void stack_tracer::init_symbols()
     {
-        JE_verify(DuplicateHandle(
+        JE_verifyf(DuplicateHandle(
             GetCurrentProcess(),
             GetCurrentProcess(),
             GetCurrentProcess(),
@@ -37,27 +37,27 @@ namespace je { namespace platf {
 
         TCHAR module_name[MAX_PATH];
 
-        JE_verify(GetModuleFileName(NULL, module_name, MAX_PATH), "GetModuleFilename failed.");
+        JE_verifyf(GetModuleFileName(NULL, module_name, MAX_PATH), "GetModuleFilename failed.");
 
-        JE_verify(SymInitialize(g_symbol_data.process, module_name, TRUE), "Symbol initialization failed.");
+        JE_verifyf(SymInitialize(g_symbol_data.process, module_name, TRUE), "Symbol initialization failed.");
         SymSetOptions(SYMOPT_LOAD_LINES);
 
         g_symbol_data.symbol_module = SymLoadModule64(g_symbol_data.process, NULL, module_name, NULL, 0, 0);
-        JE_assert(g_symbol_data.symbol_module != 0, "SymLoadModule64 failed.");
+        JE_assertf(g_symbol_data.symbol_module != 0, "SymLoadModule64 failed.");
     }
 
     void stack_tracer::cleanup_symbols()
     {
-        JE_assert(g_symbol_data.process != 0 && g_symbol_data.symbol_module != 0, "Cleaning up uninitialized symbols.");
-        JE_verify(SymUnloadModule64(g_symbol_data.process, g_symbol_data.symbol_module), "SymUnloadModule64 failed.");
-        JE_verify(SymCleanup(g_symbol_data.process), "Symbol cleanup failed.");
+        JE_assertf(g_symbol_data.process != 0 && g_symbol_data.symbol_module != 0, "Cleaning up uninitialized symbols.");
+        JE_verifyf(SymUnloadModule64(g_symbol_data.process, g_symbol_data.symbol_module), "SymUnloadModule64 failed.");
+        JE_verifyf(SymCleanup(g_symbol_data.process), "Symbol cleanup failed.");
 
         ZeroMemory(&g_symbol_data, sizeof(g_symbol_data));
     }
 
     void stack_tracer::print_trace(stack_trace& a_trace)
     {
-        JE_assert(g_symbol_data.process != 0, "Uninitialized symbols");
+        JE_assertf(g_symbol_data.process != 0, "Uninitialized symbols");
 
         static char symbol_buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
 

@@ -43,9 +43,9 @@
         size_t a_num_bytes, alignment a_alignment, size_t& a_out_num_bytes_allocated)
     {
 #if JE_DEBUG_ALLOCATIONS
-        JE_assert(a_num_bytes == m_object_num_bytes, "Passing wrong num_bytes to allocate function of a pool!")
-        JE_assert(a_alignment == get_alignment(m_memory), "Passing wrong alignment to allocate function of a pool!");
-        JE_assert_bailout(mem_ptr(m_first_free_block) <= mem_ptr(mem_ptr(m_memory) + m_memory_num_bytes),
+        JE_assertf(a_num_bytes == m_object_num_bytes, "Passing wrong num_bytes to allocate function of a pool!")
+        JE_assertf(a_alignment == get_alignment(m_memory), "Passing wrong alignment to allocate function of a pool!");
+        JE_assertf_bailout(mem_ptr(m_first_free_block) <= mem_ptr(mem_ptr(m_memory) + m_memory_num_bytes),
             nullptr, "Not enough memory in allocator.");
 #endif
 

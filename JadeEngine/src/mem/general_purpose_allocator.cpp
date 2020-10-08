@@ -11,7 +11,7 @@ namespace je { namespace mem {
         : base_allocator(a_allocator_from, a_num_bytes, a_alignment, a_name, a_debug_flags)
         , m_free_blocks(reinterpret_cast<free_block*>(m_memory))
     {
-        JE_assert(m_memory_num_bytes >= sizeof(free_block), "Too little memory for general purpose allocator.");
+        JE_assertf(m_memory_num_bytes >= sizeof(free_block), "Too little memory for general purpose allocator.");
         m_free_blocks->m_num_bytes = m_memory_num_bytes;
         m_free_blocks->m_next = nullptr;
     }
@@ -19,7 +19,7 @@ namespace je { namespace mem {
     general_purpose_allocator::~general_purpose_allocator()
     {
         conditionally_print_stack_trace();
-        JE_assert(m_free_blocks == m_memory
+        JE_assertf(m_free_blocks == m_memory
             && m_free_blocks->m_num_bytes == m_memory_num_bytes
             && m_free_blocks->m_next == nullptr, "Destroyed allocator is corrupted.");
     }
@@ -49,7 +49,7 @@ namespace je { namespace mem {
             // If allocations in the remaining memory will be impossible...
             if(curr_free_block->m_num_bytes - total_num_bytes <= sizeof(allocation_header))
             {
-                JE_assert(static_cast<int64_t>(curr_free_block->m_num_bytes) - static_cast<int64_t>(total_num_bytes) >= 0,
+                JE_assertf(static_cast<int64_t>(curr_free_block->m_num_bytes) - static_cast<int64_t>(total_num_bytes) >= 0,
                     "We would allocate less memory than needed.");
                 // ... increase allocation size instead of creating a new free_block.
                 total_num_bytes = curr_free_block->m_num_bytes;

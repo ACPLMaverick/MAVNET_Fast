@@ -19,7 +19,7 @@ namespace je { namespace mem {
     stack_allocator::~stack_allocator()
     {
         conditionally_print_stack_trace();
-        JE_assert(m_memory_head == m_memory, "Memory leak.");
+        JE_assertf(m_memory_head == m_memory, "Memory leak.");
     }
 
     stack_mem stack_allocator::allocate_stack_mem(size_t a_num_bytes,
@@ -81,9 +81,9 @@ namespace je { namespace mem {
 #endif
 
         control_block* cb = a_memory.get_struct_ptr_before<control_block>();
-        JE_assert(cb->m_alignment_num_bytes <= static_cast<uint8_t>(alignment::k_64), "Sanity check for control block failed.");
+        JE_assertf(cb->m_alignment_num_bytes <= static_cast<uint8_t>(alignment::k_64), "Sanity check for control block failed.");
 #if JE_DEBUG_ALLOCATIONS_STACK_CHECK_PREV
-        JE_assert(cb->m_prev_block_num_bytes != 0 && cb->m_prev_block_num_bytes < (8ULL * k_GB),
+        JE_assertf(cb->m_prev_block_num_bytes != 0 && cb->m_prev_block_num_bytes < (8ULL * k_GB),
             "Sanity check for control block failed.");
 #endif
 
@@ -97,11 +97,11 @@ namespace je { namespace mem {
         if(m_memory_head != m_memory)
         {
             // Check if this pointer is really aligned.
-            JE_assert(get_alignment(m_prev_head_aligned) != alignment::k_1, "Bad prev pointer alignment");
+            JE_assertf(get_alignment(m_prev_head_aligned) != alignment::k_1, "Bad prev pointer alignment");
             // Check previous control block.
             control_block* pcb = reinterpret_cast<control_block*>(mem_ptr(m_prev_head_aligned) - sizeof(control_block));
-        JE_assert(pcb->m_alignment_num_bytes <= static_cast<uint8_t>(alignment::k_64), "Sanity check for control block failed.");
-        JE_assert(pcb->m_prev_block_num_bytes != 0 && pcb->m_prev_block_num_bytes < (8ULL * k_GB),
+        JE_assertf(pcb->m_alignment_num_bytes <= static_cast<uint8_t>(alignment::k_64), "Sanity check for control block failed.");
+        JE_assertf(pcb->m_prev_block_num_bytes != 0 && pcb->m_prev_block_num_bytes < (8ULL * k_GB),
             "Sanity check for control block failed.");
         }
 #endif

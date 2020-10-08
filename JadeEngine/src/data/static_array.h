@@ -59,13 +59,13 @@ namespace je { namespace data {
 
         object_type& operator[](size_t a_index)
         {
-            JE_assert(a_index < k_num_objects, "Out-of-bounds index.");
+            //JE_assertf(a_index < k_num_objects, "Out-of-bounds index.");
             return m_array[a_index];
         }
 
         const object_type& operator[](size_t a_index) const
         {
-            JE_assert(a_index < k_num_objects, "Out-of-bounds index.");
+            //JE_assertf(a_index < k_num_objects, "Out-of-bounds index.");
             return m_array[a_index];
         }
 

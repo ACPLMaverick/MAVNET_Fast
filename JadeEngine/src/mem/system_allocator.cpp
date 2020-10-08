@@ -22,7 +22,7 @@ namespace je { namespace mem {
 #if JE_PLATFORM_WINDOWS
             _aligned_malloc(a_num_bytes, static_cast<size_t>(a_alignment));
 #elif JE_PLATFORM_LINUX || JE_PLATFORM_ANDROID
-            aligned_alloc(a_alignment, a_num_bytes);
+            aligned_alloc(static_cast<size_t>(a_alignment), a_num_bytes);
 #else
 #error "Implement allocate_internal."
             nullptr;
@@ -44,7 +44,7 @@ namespace je { namespace mem {
 #if JE_PLATFORM_WINDOWS
         _aligned_free(a_memory);
 #elif JE_PLATFORM_LINUX || JE_PLATFORM_ANDROID
-        free(a_memory);
+        ::free(a_memory);
 #else
         #error "Implement free_internal."
 #endif

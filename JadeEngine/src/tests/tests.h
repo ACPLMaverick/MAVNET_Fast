@@ -25,9 +25,6 @@ namespace je { namespace tests {
         static void test_object_pool();
         static void test_math();
         static void test_thread();
-
-        static engine* m_engine;
-
     };
 
 }}
