@@ -1,3 +1,4 @@
+#include "global.h"
 #include "assertion.h"
 
 #if JE_CONFIG_DEBUG
@@ -6,7 +7,7 @@
 #include "platf/platf.h"
 #include "platf/message_box.h"
 
-#include <stdarg.h>
+#include <cstdarg>
 
 namespace je { namespace util {
 
@@ -28,8 +29,8 @@ namespace je { namespace util {
         }
 
         static const char* separator = "######################################";
-        JE_printf("\n%s\n%s\n%s\n\n", separator, message.get_data(), separator);
-        JE_flush_stdout();
+        JE_print("\n%s\n%s\n%s\n\n", separator, message.get_data(), separator);
+        JE_print_flush();
 
 #if JE_ASSERTION_USES_MESSAGE_BOX
         {

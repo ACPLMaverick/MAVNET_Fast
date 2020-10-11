@@ -4,6 +4,9 @@
 
 // Global defines and utilities.
 
+// TODO: Make this compiler-agnostic:
+#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+
 #define JE_unused(_var_) (void)(_var_)
 #define JE_disallow_copy(_type_)			    \
     _type_(const _type_&) = delete;				\
@@ -35,17 +38,13 @@
 // Debug print.
 
 #if JE_CONFIG_DEBUG
-#define JE_print(_text_) printf(_text_)
-#define JE_print_ln(_text_) JE_print(_text_); JE_print("\n")
-#define JE_printf(_text_, ...) printf(_text_, __VA_ARGS__)
-#define JE_printf_ln(_text_, ...) JE_printf(_text_, __VA_ARGS__); JE_print("\n")
-#define JE_flush_stdout() fflush(stdout)
+#define JE_print(_text_, ...) printf(_text_, ##__VA_ARGS__)
+#define JE_print_ln(_text_, ...) JE_print(_text_, ##__VA_ARGS__); JE_print("\n")
+#define JE_print_flush() fflush(stdout)
 #else
-#define JE_print(_text_)
-#define JE_print_ln(_text_) 
-#define JE_printf(_text_, ...)
-#define JE_printf_ln(_text_, ...)
-#define JE_flush_stdout()
+#define JE_print(_text_, ...)
+#define JE_print_ln(_text_, ...)
+#define JE_print_flush()
 #endif
 
 // ///////////////////////

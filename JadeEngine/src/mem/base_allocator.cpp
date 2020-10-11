@@ -49,7 +49,7 @@ namespace je { namespace mem {
         {
             m_allocator_from->free(m_memory);
 #if JE_DEBUG_ALLOCATIONS
-            JE_assertf(m_child_allocators.size() == 0, "Destroying allocator which has child allocators!");
+            JE_assert(m_child_allocators.size() == 0, "Destroying allocator which has child allocators!");
 
             auto it = std::find(m_allocator_from->m_child_allocators.begin(),
                 m_allocator_from->m_child_allocators.end(), this);
@@ -61,7 +61,7 @@ namespace je { namespace mem {
         }
 
 #if JE_DEBUG_ALLOCATIONS
-        JE_assertf(m_num_allocations == 0 && m_used_num_bytes == 0, "Memory leak.");
+        JE_assert(m_num_allocations == 0 && m_used_num_bytes == 0, "Memory leak.");
 #endif
     }
 
@@ -95,15 +95,15 @@ namespace je { namespace mem {
 
     bool base_allocator::debug_process_before_allocate(size_t a_num_bytes, alignment a_alignment)
     {
-        JE_assertf_bailout(a_num_bytes > 0, false,
+        JE_assert_bailout(a_num_bytes > 0, false,
             "Zero allocation is not possible.");
-        JE_assertf_bailout(a_num_bytes <= m_memory_num_bytes, false,
+        JE_assert_bailout(a_num_bytes <= m_memory_num_bytes, false,
             "Allocation too big for an allocator. Alloc: [%lld], Space: [%lld]", a_num_bytes, m_memory_num_bytes);
 #if JE_DEBUG_ALLOCATIONS
-        JE_assertf(is_alignment_correct(a_alignment), "Non-supported alignment.");
+        JE_assert(is_alignment_correct(a_alignment), "Non-supported alignment.");
         if(m_debug_flags & allocator_debug_flags::k_count_allocations)
         {
-            JE_assertf(a_num_bytes <= (m_memory_num_bytes - m_used_num_bytes),
+            JE_assert(a_num_bytes <= (m_memory_num_bytes - m_used_num_bytes),
                 "Not enough memory in allocator. Has: [%lld], Needs: [%lld], Lacks: [%lld]", m_memory_num_bytes - m_used_num_bytes,
                     a_num_bytes, a_num_bytes - (m_memory_num_bytes - m_used_num_bytes));
         }
@@ -144,8 +144,8 @@ namespace je { namespace mem {
         }
 #endif
 
-        JE_assertf(a_memory != nullptr && a_bytes_allocated != 0, "Allocate failed.");
-        JE_assertf(mem_ptr(a_memory).is_aligned(a_alignment), "Pointer is not properly aligned. Is: [%p], Needs: [%p]",
+        JE_assert(a_memory != nullptr && a_bytes_allocated != 0, "Allocate failed.");
+        JE_assert(mem_ptr(a_memory).is_aligned(a_alignment), "Pointer is not properly aligned. Is: [%p], Needs: [%p]",
             a_memory, mem_ptr(a_memory, a_alignment).get());
     }
 
@@ -154,14 +154,14 @@ namespace je { namespace mem {
 #if JE_DEBUG_ALLOCATIONS
         if(m_debug_flags & allocator_debug_flags::k_count_allocations)
         {
-            JE_assertf_bailout(m_used_num_bytes > 0, false, "Trying to free from an empty allocator.");
+            JE_assert_bailout(m_used_num_bytes > 0, false, "Trying to free from an empty allocator.");
         }
 
         if(m_memory != nullptr)
         {
             const uintptr_t memory_uint = reinterpret_cast<uintptr_t>(a_memory);
             const mem_ptr m_memory_ptr(m_memory);
-            JE_assertf(memory_uint >= m_memory_ptr
+            JE_assert(memory_uint >= m_memory_ptr
                 && memory_uint < m_memory_ptr + m_memory_num_bytes,
                 "Freed memory does not belong to this allocator.");
         }
@@ -192,7 +192,7 @@ namespace je { namespace mem {
         }
 #endif
 
-        JE_assertf(a_free_succeeded, "Free failed.");
+        JE_assert(a_free_succeeded, "Free failed.");
     }
 
     void base_allocator::conditionally_print_stack_trace()

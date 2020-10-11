@@ -67,7 +67,7 @@ namespace je { namespace tests {
     void tester::run()
     {
         test_mem();
-        //test_stack_tracer();
+        test_stack_tracer();
         test_collections();
         test_string();
         test_allocator_state_print();
@@ -230,9 +230,9 @@ namespace je { namespace tests {
             /*
             for(const float& flt : float_arr)
             {
-                JE_printf_ln("%f ", flt);
+                JE_print_ln("%f ", flt);
             }
-            JE_printf("\n");
+            JE_print("\n");
             */
         }
 
@@ -262,8 +262,6 @@ namespace je { namespace tests {
 
     void tester::test_string()
     {
-        JE_printf("%s %s %d %d %d", "Hello", "World", 1, 2, 3);
-        JE_flush_stdout();
         data::string fmtted_str(data::string::format("%s %s %d %d %d", "Hello", "World", 1, 2, 3));
         JE_assert(fmtted_str == "Hello World 1 2 3");
 
@@ -382,7 +380,7 @@ namespace je { namespace tests {
         case_test.to_capitalized_case();
         JE_assert(case_test == "A Simple Example");
         JE_assert(case_test.is_upper_case() == false);
-        JE_assertf(case_test.is_lower_case() == false, "String [%s] is lower case!", case_test.get_data());
+        JE_assert(case_test.is_lower_case() == false, "String [%s] is lower case!", case_test.get_data());
 
         JE_print_ln("String test passed.");
     }

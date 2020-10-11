@@ -31,7 +31,7 @@ namespace je { namespace platf {
         }
         else
         {
-            JE_printf_ln("Error! Unsupported message box flag combination.");
+            JE_print_ln("Error! Unsupported message box flag combination.");
 #if JE_CONFIG_DEBUG
             je::platf::util::debugbreak();
 #endif
@@ -73,7 +73,7 @@ namespace je { namespace platf {
         case IDYES:
             return button_flag::k_yes;
         default:
-            JE_printf_ln("Error! Unsupported message box flag combination.");
+            JE_print_ln("Error! Unsupported message box flag combination.");
             return button_flag::k_cancel;
         }
     }

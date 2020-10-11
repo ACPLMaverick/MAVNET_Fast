@@ -61,7 +61,7 @@ namespace je { namespace data {
 
         void get_indices(size_t a_index, size_t& a_out_byte_index, size_t& a_out_bit_index) const
         {
-            JE_assertf(a_index < k_num_bits, "Out-of-bounds index.");
+            JE_assert(a_index < k_num_bits, "Out-of-bounds index.");
             a_out_bit_index = a_index % 8;
             a_out_byte_index = a_index / 8;
         }
@@ -121,7 +121,7 @@ namespace je { namespace data {
 
         static inline void check_enum(size_t a_enum)
         {
-            JE_assertf(a_enum < (1 << static_bit_array<num_bits>::k_num_bits), "Out-of-bounds index.");
+            JE_assert(a_enum < (1 << static_bit_array<num_bits>::k_num_bits), "Out-of-bounds index.");
         }
     };
 }}

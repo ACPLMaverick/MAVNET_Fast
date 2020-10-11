@@ -35,7 +35,7 @@ namespace util
             (LPTSTR) &msg_buf,
             0, NULL );
 
-        JE_printf("Windows error [%ld] : %s", error, reinterpret_cast<char*>(msg_buf));
+        JE_print("Windows error [%ld] : %s", error, reinterpret_cast<char*>(msg_buf));
 
         LocalFree(msg_buf);
     }

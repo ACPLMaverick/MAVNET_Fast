@@ -161,7 +161,7 @@ namespace je { namespace mem {
             }
         }
 
-        JE_printf_ln(
+        JE_print_ln(
             "######################################"
             "\nTotal num allocations: [%zu]\n"
             "Total memory used: [%s]\n"

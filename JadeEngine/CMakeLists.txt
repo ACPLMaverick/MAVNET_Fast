@@ -30,6 +30,18 @@ else()
 endif()
 message("Configuration: ${JE_CONFIGURATION}.")
 
+# Toolchain definitions
+if(JE_PLATFORM STREQUAL ${PLATFORM_NAME_WINDOWS} OR JE_PLATFORM STREQUAL ${PLATFORM_NAME_LINUX})
+	set(CMAKE_C_COMPILER clang)
+	set(CMAKE_CXX_COMPILER clang++)
+	set(CMAKE_C_COMPILER_NAMES clang)
+	set(CMAKE_CXX_COMPILER_NAMES clang++)
+	set(CC clang)
+	set(CXX clang++)
+else()
+	message(FATAL_ERROR "Compiler not set for this platform: [${JE_PLATFORM}].")
+endif()
+
 # Global definitions
 set(RUNTIME_WORK_DIR ../bin)	# Adding back here because this is relative to the build directory.
 set(SOURCE_DIR src)
@@ -62,6 +74,12 @@ elseif(JE_PLATFORM STREQUAL ${PLATFORM_NAME_LINUX})
 	target_link_libraries(${EXE_NAME} PUBLIC
 		X11
 	)
+
+	if(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_DEBUG})
+		target_link_libraries(${EXE_NAME} PUBLIC
+			dl
+		)
+	endif()
 endif()
 
 # Configuration-specific definitions, compiler flags, libs, etc.

@@ -53,13 +53,13 @@ namespace je { namespace platf {
         init_symbol_ref();
 
         JE_print_ln("###########################################");
-        JE_printf_ln("There are [%zu] existing traces in the stack tracker!", get_num_remaining_traces());
+        JE_print_ln("There are [%zu] existing traces in the stack tracker!", get_num_remaining_traces());
         JE_print("\n");
 
         size_t num = 1;
         for(auto it = m_traces.begin(); it != m_traces.end(); ++it)
         {
-            JE_printf("Trace #%zu:\n", num);
+            JE_print("Trace #%zu:\n", num);
             stack_trace trace = it->second;
             print_trace(trace);
             JE_print("\n");
