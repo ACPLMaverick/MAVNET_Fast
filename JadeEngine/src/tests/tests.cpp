@@ -67,7 +67,7 @@ namespace je { namespace tests {
     void tester::run()
     {
         test_mem();
-        test_stack_tracer();
+        //test_stack_tracer();
         test_collections();
         test_string();
         test_allocator_state_print();

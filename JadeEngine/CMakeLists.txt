@@ -53,6 +53,7 @@ add_executable(${EXE_NAME} "")
 add_subdirectory (${SOURCE_DIR})
 
 # Platform-specific definitions, compiler flags, libs, etc.
+# WINDOWS
 if(JE_PLATFORM STREQUAL ${PLATFORM_NAME_WINDOWS})
 	target_compile_definitions(${EXE_NAME} PUBLIC
 		JE_PLATFORM_WINDOWS=1
@@ -65,6 +66,8 @@ if(JE_PLATFORM STREQUAL ${PLATFORM_NAME_WINDOWS})
 		"C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.18362.0\\ucrt\\x64"
 		"C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.18362.0\\um\\x64"
 	)
+# ########
+# LINUX
 elseif(JE_PLATFORM STREQUAL ${PLATFORM_NAME_LINUX})
 	target_compile_definitions(${EXE_NAME} PUBLIC
 		JE_PLATFORM_WINDOWS=0
@@ -79,7 +82,12 @@ elseif(JE_PLATFORM STREQUAL ${PLATFORM_NAME_LINUX})
 		target_link_libraries(${EXE_NAME} PUBLIC
 			dl
 		)
+
+		target_link_options(${EXE_NAME} PUBLIC
+			-rdynamic
+		)
 	endif()
+# #######
 endif()
 
 # Configuration-specific definitions, compiler flags, libs, etc.

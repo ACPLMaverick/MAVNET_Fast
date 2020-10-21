@@ -78,9 +78,10 @@ namespace je { namespace data {
     }
 
     string::string()
-        : m_chars(char_end)
+        : m_chars(1)
         , m_hash(get_data())
     {
+        JE_assert(m_chars[0] == char_end);
     }
 
     string::string(const char_type* a_str)
@@ -645,7 +646,7 @@ namespace je { namespace data {
     
     void string::trim_end(size_t a_num_chars)
     {
-        substring(0, get_size() - 1 - (a_num_chars + 1));
+        substring(0, get_size() - (a_num_chars + 1));
     }
     
     void string::split(const char_type* a_split_on, array<string>& a_out_strings) const
@@ -943,7 +944,7 @@ namespace je { namespace data {
         const size_t chars_to_move = &(m_chars[m_chars.size() - 1]) - move_src + 1;
         std::memmove(move_dest, move_src, chars_to_move * sizeof(char_type));
 
-        remove_excessive_chars_at_end(my_size - move_amount);
+        remove_excessive_chars_at_end(my_size - move_amount + 1);
     }
 
     inline bool string::find_and_replace_common(const char_type* a_str_to_find, size_t a_str_to_find_num_chars,
@@ -1090,7 +1091,7 @@ namespace je { namespace data {
     {
         if(m_chars.size() > a_new_char_num)
         {
-            m_chars.erase(m_chars.begin() + a_new_char_num + 1, m_chars.end());
+            m_chars.erase(m_chars.begin() + a_new_char_num, m_chars.end());
             shrink_if_necessary();
         }
     }

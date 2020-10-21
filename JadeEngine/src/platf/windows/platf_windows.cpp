@@ -9,9 +9,15 @@ namespace je { namespace platf {
 namespace util
 {
     // Cross-platform implementations.
-    const char* get_file_separator()
+    data::string get_file_separator()
     {
-        return "\\";
+        return data::string("\\");
+    }
+
+    data::string call_system_command(const data::string& command)
+    {
+        JE_todo();
+        return data::string();
     }
 
     void debugbreak()

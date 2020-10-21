@@ -9,6 +9,7 @@ dir_vscode = ".vscode"
 file_name_launch = os.path.join(dir_vscode, "launch.json")
 file_name_settings = os.path.join(dir_vscode, "settings.json")
 file_name_variants = os.path.join(dir_vscode, "cmake-variants.yaml")
+file_name_properties = os.path.join(dir_vscode, "c_cpp_properties.json")
 
 
 def yaml_noop(self, *args, **kw):
@@ -29,15 +30,33 @@ def save_dict_json(dictionary, file_name):
 
 
 def create_launch_configuration(conf_name):
-    conf_name = conf_name.capitalize()
-    conf = dict()
-    conf["type"] = "cppvsdbg" if utils.platform == utils.platform_type.WINDOWS else "cppdbg"
-    conf["request"] = "launch"
-    conf["name"] = conf_name
-    conf["program"] = "${{workspaceFolder}}/bin/JadeEngine_{}_{}".format(utils.platform_str, conf_name)
-    conf["args"] = []
-    conf["cwd"] = "${workspaceFolder}/bin"
+    conf = {
+        "type": "cppvsdbg" if utils.platform == utils.platform_type.WINDOWS else "cppdbg",
+        "request": "launch",
+        "name": conf_name.capitalize(),
+        "program": "${{workspaceFolder}}/bin/JadeEngine_{}_{}".format(utils.platform_str, conf_name),
+        "args": [],
+        "cwd": "${workspaceFolder}/bin"
+    }
+
     return conf
+
+
+# It's for intellisense to work properly, it has no relation to build commands whatsoever.
+def create_properties():
+    props = {
+        "configurations": [
+            {
+                "name": utils.platform_str,
+                "cStandard": "c11",
+                "cppStandard": "c++17",
+                "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.16.27023/bin/Hostx64/x64/cl.exe" if utils.platform == utils.platform_type.WINDOWS else "/usr/bin/clang++",
+                "intelliSenseMode": "msvc-x64" if utils.platform == utils.platform_type.WINDOWS else "clang-x64",
+                "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            }
+        ]
+    }
+    return props
 
 
 class variant_buildType_choices:
@@ -89,6 +108,10 @@ def main():
     dict_variants = {"buildType": {"default": "debug", "choices": variant_buildType_choices()},
                      "platform": {"default": utils.platform_str.lower(), "choices": variant_platform_choices()}}
     save_dict_yaml(dict_variants, file_name_variants)
+
+    # It's for intellisense to work properly, it has no relation to build commands whatsoever.
+    dict_properties = create_properties()
+    save_dict_json(dict_properties, file_name_properties)
 
 
 if __name__ == "__main__":
