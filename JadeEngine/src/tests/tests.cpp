@@ -403,10 +403,10 @@ namespace je { namespace tests {
                 str_c += str_c;
             }
 
-            engine::get_mem_manager().print_memory_summary();
+            engine::get_inst().get_mem_manager().print_memory_summary();
         }
         JE_print_ln("After deallocation...");
-        engine::get_mem_manager().print_memory_summary();
+        engine::get_inst().get_mem_manager().print_memory_summary();
     }
 
     void tester::test_object_pool()

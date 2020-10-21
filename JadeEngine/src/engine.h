@@ -13,8 +13,14 @@ namespace je {
     {
     public:
 
-        static mem::mem_manager& get_mem_manager();
+        static engine& get_inst();
+        inline mem::mem_manager& get_mem_manager() { return JE_deref(m_mem_manager); }
 
+    private:
+        engine();
+        ~engine();
+
+        mem::mem_manager* m_mem_manager;
     };
 
 }

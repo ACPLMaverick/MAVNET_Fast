@@ -49,6 +49,7 @@ namespace je { namespace data {
         {
         }
 
+        object_type* get_data() { return m_array; }
         const object_type* get_data() const { return m_array; }
 
         static_array& operator=(const static_array& a_other)
