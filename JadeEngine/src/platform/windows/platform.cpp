@@ -1,32 +1,12 @@
-#include "platf_windows.h"
+#include "platform.h"
 
 #if JE_PLATFORM_WINDOWS
 
 #include "global.h"
 
-namespace je { namespace platf {
+namespace je { namespace windows {
 
-namespace util
-{
-    // Cross-platform implementations.
-    data::string get_file_separator()
-    {
-        return data::string("\\");
-    }
-
-    data::string call_system_command(const data::string& command)
-    {
-        JE_todo();
-        return data::string();
-    }
-
-    void debugbreak()
-    {
-        __debugbreak();
-    }
-
-    // Platform-specific implementations.
-    void print_last_error()
+    void misc::print_last_error()
     {
         LPVOID msg_buf;
         DWORD error = GetLastError(); 
@@ -45,7 +25,6 @@ namespace util
 
         LocalFree(msg_buf);
     }
-}
 
 }}
 

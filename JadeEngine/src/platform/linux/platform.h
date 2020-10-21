@@ -2,6 +2,6 @@
 
 #if JE_PLATFORM_LINUX
 
-#include <signal.h>
+// Nothing here for now.
 
 #endif

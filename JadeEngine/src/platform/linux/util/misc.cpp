@@ -1,21 +1,19 @@
-#include "platf/platf.h"
-#include "platf_linux.h"
+#include "util/misc.h"
 
 #if JE_PLATFORM_LINUX
 
 #include "global.h"
+#include <signal.h>
 
-namespace je { namespace platf {
+namespace je { namespace util {
 
-namespace util
-{
     // Cross-platform implementations.
-    data::string get_file_separator()
+    data::string misc::get_file_separator()
     {
         return data::string("/");
     }
 
-    data::string call_system_command(const data::string& command)
+    data::string misc::call_system_command(const data::string& command)
     {
         FILE* fp;
         char path[1035];
@@ -38,17 +36,10 @@ namespace util
         return ret;
     }
 
-    void debugbreak()
+    void misc::debugbreak()
     {
         raise(SIGTRAP);
     }
-
-    // Platform-specific implementations.
-    void print_last_error()
-    {
-        JE_todo();
-    }
-}
 
 }}
 

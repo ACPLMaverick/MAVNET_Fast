@@ -1,17 +1,15 @@
-#include "platf/stack_tracer.h"
+#include "util/stack_tracer.h"
 
 #if JE_PLATFORM_LINUX
 #if JE_USE_STACK_TRACER
 
-#include "platf_linux.h"
-#include "platf/platf.h"
 #include "util/misc.h"
 
 #include <execinfo.h>
 #include <dlfcn.h>
 #include <cxxabi.h>
 
-namespace je { namespace platf {
+namespace je { namespace util {
 
     void stack_tracer::generate_trace(stack_trace& a_out_trace)
     {
@@ -29,25 +27,7 @@ namespace je { namespace platf {
     }
 
     void stack_tracer::print_trace(stack_trace& a_trace)
-    {
-        /*
-        char** names = backtrace_symbols(a_trace.m_traces, a_trace.m_num_traces);
-
-        for(size_t i = 0; i < a_trace.m_num_traces; ++i)
-        {
-            JE_print
-            (
-                "[%p] : [%s] : [%s] : [%zd]\n",
-				static_cast<void*>(a_trace.m_traces[i]),
-                names[i],
-                "TODO",
-                0l
-            );
-        }
-
-        free(names);
-        */
-       
+    {      
         // Code for translating these symbols to something meaningful took from here:
         // https://gist.github.com/fmela/591333/c64f4eb86037bb237862a8283df70cdfc25f01d3
         for(size_t i = 0; i < a_trace.m_num_traces; ++i)
@@ -58,7 +38,7 @@ namespace je { namespace platf {
                 int status;
                 char* demangled = abi::__cxa_demangle(info.dli_sname, nullptr, 0, &status);
 
-                data::string addr2line = platf::util::call_system_command
+                data::string addr2line = misc::call_system_command
                 (
                     data::string::format("llvm-addr2line %p", a_trace.m_traces[i])
                 );

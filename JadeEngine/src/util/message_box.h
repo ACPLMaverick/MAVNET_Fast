@@ -2,7 +2,7 @@
 
 #include "global.h"
 
-namespace je { namespace platf {
+namespace je { namespace util {
 
     class message_box
     {

@@ -1,8 +1,7 @@
-#include "platf/message_box.h"
-#include "platf/windows/platf_windows.h"
-#include "platf/platf.h"
+#include "util/message_box.h"
+#include "platform/windows/platform.h"
 
-namespace je { namespace platf {
+namespace je { namespace platform {
 
     message_box::button_flag message_box::show(const char* a_message, info_level a_information_level, int a_buttons, bool a_is_blocking)
     {
@@ -33,7 +32,7 @@ namespace je { namespace platf {
         {
             JE_print_ln("Error! Unsupported message box flag combination.");
 #if JE_CONFIG_DEBUG
-            je::platf::util::debugbreak();
+            je::platform::util::debugbreak();
 #endif
         }
 

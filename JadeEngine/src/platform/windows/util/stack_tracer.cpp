@@ -1,16 +1,16 @@
-#include "platf/stack_tracer.h"
+#include "util/stack_tracer.h"
 
 #if JE_PLATFORM_WINDOWS
 #if JE_USE_STACK_TRACER
 
-#include "platf_windows.h"
+#include "platform/windows/platform.h"
 #include "util/misc.h"
 
 #include <DbgHelp.h>
 
 #pragma comment(lib, "DbgHelp")
 
-namespace je { namespace platf {
+namespace je { namespace platform {
 
     static struct
     {

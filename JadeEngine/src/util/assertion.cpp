@@ -4,8 +4,8 @@
 #if JE_CONFIG_DEBUG
 
 #include "global.h"
-#include "platf/platf.h"
-#include "platf/message_box.h"
+#include "util/message_box.h"
+#include "util/misc.h"
 
 #include <cstdarg>
 
@@ -38,7 +38,7 @@ namespace je { namespace util {
 
 #if JE_ASSERTION_USES_MESSAGE_BOX
         {
-            using namespace je::platf;
+            using namespace je::platform;
             const message_box::button_flag flags = 
             message_box::show(
                 message.get_data(), 
@@ -47,7 +47,7 @@ namespace je { namespace util {
                 true);
             if(flags & message_box::button_flag::k_retry)
             {
-                je::platf::util::debugbreak();
+                je::platform::util::debugbreak();
             }
             else if(flags & message_box::button_flag::k_cancel)
             {
@@ -55,7 +55,7 @@ namespace je { namespace util {
             }
         }
 #else
-    je::platf::util::debugbreak();
+    je::util::misc::debugbreak();
 #endif
     }
 
