@@ -16,6 +16,7 @@ namespace je { namespace math {
         static constexpr const float k_inv_2_pi = 1.0f / k_2_pi;
 
         static constexpr const float k_epsilon = 1.e-4f;
+        static constexpr const float k_float_non_fractional = 8388608.0f;
 
     };
 

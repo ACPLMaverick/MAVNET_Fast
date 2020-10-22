@@ -28,6 +28,8 @@ namespace je { namespace math {
     template<>
     float rand::generate_internal(float min, float max)
     {
+        JE_math_check_val(min);
+        JE_math_check_val(max);
         static random_float_distribution_type<float> distribution;
         using prm_type = decltype(distribution)::param_type;
         return distribution(get_engine(), prm_type{min, max});
@@ -36,6 +38,8 @@ namespace je { namespace math {
     template<>
     double rand::generate_internal(double min, double max)
     {
+        JE_math_check_val(min);
+        JE_math_check_val(max);
         static random_float_distribution_type<double> distribution;
         using prm_type = decltype(distribution)::param_type;
         return distribution(get_engine(), prm_type{min, max});
