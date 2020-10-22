@@ -38,12 +38,12 @@
 // Debug print.
 
 #if JE_CONFIG_DEBUG
-#define JE_print(_text_, ...) printf(_text_, ##__VA_ARGS__)
-#define JE_print_ln(_text_, ...) JE_print(_text_, ##__VA_ARGS__); JE_print("\n")
+#define JE_print_inl(_text_, ...) printf(_text_, ##__VA_ARGS__)
+#define JE_print(_text_, ...) JE_print_inl(_text_, ##__VA_ARGS__); JE_print_inl("\n")
 #define JE_print_flush() fflush(stdout)
 #else
+#define JE_print_inl(_text_, ...)
 #define JE_print(_text_, ...)
-#define JE_print_ln(_text_, ...)
 #define JE_print_flush()
 #endif
 

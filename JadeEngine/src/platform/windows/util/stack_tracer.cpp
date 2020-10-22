@@ -78,19 +78,19 @@ namespace je { namespace platform {
                 DWORD disp(displacement);
                 if(SymGetLineFromAddr(g_symbol_data.process, reinterpret_cast<DWORD64>(a_trace.m_traces[i]), &disp, &line))
                 {
-                    JE_print_ln("[%p] : [%s] : [%s] : [%lu]",
+                    JE_print("[%p] : [%s] : [%s] : [%lu]",
                         a_trace.m_traces[i], symbol->Name, je::util::misc::trim_file_name(line.FileName), line.LineNumber);
                 }
                 else
                 {
                     util::print_last_error();
-                    JE_print_ln("[%p] : [%s] : Unknown file", a_trace.m_traces[i], symbol->Name);
+                    JE_print("[%p] : [%s] : Unknown file", a_trace.m_traces[i], symbol->Name);
                 }
             }
             else
             {
                 util::print_last_error();
-                JE_print_ln("[%p] : Unknown function", a_trace.m_traces[i]);
+                JE_print("[%p] : Unknown function", a_trace.m_traces[i]);
             }
         }
     }

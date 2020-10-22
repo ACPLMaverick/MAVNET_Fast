@@ -11,6 +11,11 @@
 
 #include "data/data.h"
 
+#include "math/rand.h"
+#include "math/constants.h"
+#include "math/scalar.h"
+#include "math/rand.h"
+
 namespace je { namespace tests {
 
     JE_bitfield test_bitfield_enum
@@ -71,9 +76,9 @@ namespace je { namespace tests {
         test_collections();
         test_string();
         test_allocator_state_print();
-        test_object_pool();
         test_math();
         test_thread();
+        test_object_pool();
     }
 
     void tester::test_mem()
@@ -169,7 +174,7 @@ namespace je { namespace tests {
             }
         }
 
-        JE_print_ln("Allocator test passed.");
+        JE_print("Allocator test passed.");
     }
 
     void tester::test_stack_tracer()
@@ -230,7 +235,7 @@ namespace je { namespace tests {
             /*
             for(const float& flt : float_arr)
             {
-                JE_print_ln("%f ", flt);
+                JE_print("%f ", flt);
             }
             JE_print("\n");
             */
@@ -257,7 +262,7 @@ namespace je { namespace tests {
             JE_todo();
         }
         */
-        JE_print_ln("Collection test passed.");
+        JE_print("Collection test passed.");
     }
 
     void tester::test_string()
@@ -382,7 +387,7 @@ namespace je { namespace tests {
         JE_assert(case_test.is_upper_case() == false);
         JE_assert(case_test.is_lower_case() == false, "String [%s] is lower case!", case_test.get_data());
 
-        JE_print_ln("String test passed.");
+        JE_print("String test passed.");
     }
 
     void tester::test_allocator_state_print()
@@ -405,21 +410,37 @@ namespace je { namespace tests {
 
             engine::get_inst().get_mem_manager().print_memory_summary();
         }
-        JE_print_ln("After deallocation...");
+        JE_print("After deallocation...");
         engine::get_inst().get_mem_manager().print_memory_summary();
-    }
-
-    void tester::test_object_pool()
-    {
-        JE_todo();
     }
 
     void tester::test_math()
     {
-        JE_todo();
+        // Rands
+        JE_print("Rand test begin.");
+        for(size_t i = 0; i < 32; ++i)
+        {
+            uint64_t rand_uint64 = math::rand::generate(1, 10);
+            int64_t rand_int64 = math::rand::generate(-10, 10);
+            uint32_t rand_uint32 = math::rand::generate(1, 10);
+            int32_t rand_int32 = math::rand::generate(-21, 16);
+            uint8_t rand_uint8 = math::rand::generate(0, 1);
+            float rand_float = math::rand::generate_0_1<float>();
+            float rand_float2 = math::rand::generate(-math::constants::k_pi, math::constants::k_pi);
+
+            JE_print("[%zd] [%zd] [%u] [%d] [%d] [%f] [%f]",
+                rand_uint64, rand_int64, rand_uint32, rand_int32, rand_uint8,
+                rand_float, rand_float2);
+        }
+        JE_print("Rand test end. Please review if these values are correct.");
     }
 
     void tester::test_thread()
+    {
+        JE_todo();
+    }
+
+    void tester::test_object_pool()
     {
         JE_todo();
     }

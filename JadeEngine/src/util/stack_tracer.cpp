@@ -52,8 +52,8 @@ namespace je { namespace util {
     {
         init_symbol_ref();
 
-        JE_print_ln("###########################################");
-        JE_print_ln("There are [%zu] existing traces in the stack tracker!", get_num_remaining_traces());
+        JE_print("###########################################");
+        JE_print("There are [%zu] existing traces in the stack tracker!", get_num_remaining_traces());
         JE_print("\n");
 
         size_t num = 1;
@@ -67,7 +67,7 @@ namespace je { namespace util {
             ++num;
         }
 
-        JE_print_ln("###########################################");
+        JE_print("###########################################");
 
         cleanup_symbol_ref();
     }
@@ -81,10 +81,10 @@ namespace je { namespace util {
 
         if(trace.m_num_traces > 0)
         {
-            JE_print_ln("###########################################");
-            JE_print_ln("Printing current stack trace: \n");
+            JE_print("###########################################");
+            JE_print("Printing current stack trace: \n");
             print_trace(trace);
-            JE_print_ln("###########################################");
+            JE_print("###########################################");
         }
         else
         {

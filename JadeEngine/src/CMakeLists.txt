@@ -5,6 +5,7 @@ file(GLOB HERE_SOURCES
 file(GLOB_RECURSE GENERAL_SOURCES
        data/*.cpp
        draw/*.cpp
+       math/*.cpp
        mem/*.cpp
        tests/*.cpp
        util/*.cpp

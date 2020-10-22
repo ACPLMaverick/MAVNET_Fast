@@ -30,7 +30,7 @@ namespace je { namespace platform {
         }
         else
         {
-            JE_print_ln("Error! Unsupported message box flag combination.");
+            JE_print("Error! Unsupported message box flag combination.");
 #if JE_CONFIG_DEBUG
             je::platform::util::debugbreak();
 #endif
@@ -72,7 +72,7 @@ namespace je { namespace platform {
         case IDYES:
             return button_flag::k_yes;
         default:
-            JE_print_ln("Error! Unsupported message box flag combination.");
+            JE_print("Error! Unsupported message box flag combination.");
             return button_flag::k_cancel;
         }
     }
