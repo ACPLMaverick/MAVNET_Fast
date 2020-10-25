@@ -2,20 +2,17 @@
 
 #include "global.h"
 #include "constants.h"
+#include "check.h"
+#include "interp.h"
 
 #include <cmath>
 
-#define JE_MATH_CHECK_NAN 1 && (JE_CONFIG_DEBUG)
-
-#if JE_MATH_CHECK_NAN
-#define JE_math_check_val(_val_) je::math::scalar::check_val(_val_)
-#else
-#define JE_math_check_val(_val_)
-#endif
-
 namespace je { namespace math {
 
-    class scalar
+    /**
+     * Scalar math.
+     */
+    class sc : public interp<float>
     {
     public:
 
@@ -96,23 +93,6 @@ namespace je { namespace math {
         static inline bool is_almost_equal(float a, float b);
         static inline bool is_almost_zero(float a);
 
-        static inline bool is_nan(float a)
-        {
-            return std::isnan(a);
-        }
-
-        static inline bool is_inf(float a)
-        {
-            return std::isinf(a);
-        }
-
-        template<typename num_type>
-        static inline bool check_val(num_type a)
-        {
-            // Do not check anything by default.
-            return true;
-        }
-
         // /////////////////////////
 
         // Common math functions
@@ -155,12 +135,15 @@ namespace je { namespace math {
             return sign(a) * (abs(a) + b);
         }
 
+        /**
+         * Returns the fractional part of the number without sign.
+         */
         static inline float fractional(float a)
         {
             JE_math_check_val(a);
             const float abs_a = fabsf(a);
             const float rounded = floor(abs_a);
-            return sign(a) * (abs_a - rounded);
+            return (abs_a - rounded);
         }
 
         /**
@@ -168,12 +151,13 @@ namespace je { namespace math {
          * Breaks the given value into an integral and a fractional part.
          * @param a	Floating point value to convert
          * @param out_int_part Floating point value that receives the integral part of the number.
-         * @return			The fractional part of the number.
+         * @return			The fractional part of the number. This is without sign.
          */
-        static inline float break_integral_and_fractional(float a, float& out_int_part)
+        static inline float integral_and_fractional(float a, float& out_int_part)
         {
             JE_math_check_val(a);
-            return modff(a, &out_int_part);
+            const float fractional = modff(a, &out_int_part);
+            return abs(fractional);
         }
 
         static inline float pow(float a, float n)
@@ -248,7 +232,7 @@ namespace je { namespace math {
          *			So for example modf(2.8f, 2) gives .8f as you would expect, however, modf(-2.8f, 2) gives -.8f, NOT 1.2f 
          * Use Floor instead when snapping positions that can be negative to a grid
          *
-         * This is forced to *NOT* inline so that divisions by constant Y does not get optimized in to an inverse scalar multiply,
+         * This is forced to *NOT* inline so that divisions by constant Y does not get optimized in to an inverse sc multiply,
          * which is not consistent with the intent nor with the vectorized version.
          */
         static float modf(float a, float b);
@@ -332,7 +316,7 @@ namespace je { namespace math {
         
         static inline float asin(float a)
         {
-            return asinf( (a<-1.f) ? -1.f : ((a<1.f) ? a : 1.f) );
+            return asinf( (a<-1.0f) ? -1.0f : ((a<1.0f) ? a : 1.0f) );
         }
 
         /**
@@ -454,6 +438,9 @@ namespace je { namespace math {
             return deg * (constants::k_pi / 180.0f);
         }
 
+        /**
+         * Keep the angle in degrees between -180, 180.
+         */
         static float unwind_deg(float deg)
         {
             while(deg > 180.0f)
@@ -469,6 +456,9 @@ namespace je { namespace math {
             return deg;
         }
 
+        /**
+         * Keep the angle in radians between -pi/2, .
+         */
         static float unwind_rad(float rad)
         {
             while(rad > constants::k_pi)
@@ -505,43 +495,10 @@ namespace je { namespace math {
         }
 
         // /////////////////////////
-
-        // Interpolation
-
-        /** 
-         * Borrowed from UE4.
-         * Returns a smooth Hermite interpolation between 0 and 1 for the value a (where a ranges between min and max)
-         * Clamped between 0-1.
-         */
-        static float smoothstep(float a, float min, float max)
-        {
-            if (a < min)
-            {
-                return 0.0f;
-            }
-            else if (a >= max)
-            {
-                return 1.0f;
-            }
-            else
-            {
-                const float interp = (a - min) / (max - min);
-                return interp * interp * (3.0f - 2.0f * interp);
-            }
-        }
-
-#if JE_MATH_CHECK_NAN
-        static inline float check_val(float a)
-        {
-            const bool val = (is_nan(a) || is_inf(a)) == false;
-            JE_assert(val, "Floating-point value is invalid: [%f]", a);
-            return val;
-        }
-#endif
     };
 
     template<>
-    inline bool scalar::is_within(float a, float min, float max)
+    inline bool sc::is_within(float a, float min, float max)
     {
         JE_math_check_val(a);
         JE_math_check_val(min);
@@ -550,7 +507,7 @@ namespace je { namespace math {
     }
 
     template<>
-    inline bool scalar::is_within_exclusive(float a, float min, float max)
+    inline bool sc::is_within_exclusive(float a, float min, float max)
     {
         JE_math_check_val(a);
         JE_math_check_val(min);
@@ -558,14 +515,14 @@ namespace je { namespace math {
         return a > min && a < max;
     }
 
-    inline bool scalar::is_almost_equal(float a, float b)
+    inline bool sc::is_almost_equal(float a, float b)
     {
         JE_math_check_val(a);
         JE_math_check_val(b);
         return abs(a - b) <= constants::k_epsilon;
     }
 
-    inline bool scalar::is_almost_zero(float a)
+    inline bool sc::is_almost_zero(float a)
     {
         JE_math_check_val(a);
         return abs(a) <= constants::k_epsilon;

@@ -1,5 +1,6 @@
 #include "rand.h"
 #include "constants.h"
+#include "sc.h"
 #include "limits.h"
 
 #include <random>
@@ -18,31 +19,31 @@ namespace je { namespace math {
     }
 
     template<typename num_type>
-    num_type rand::generate_internal(num_type min, num_type max)
+    num_type rand::generate_internal(num_type a_min, num_type a_max)
     {
         static random_int_distribution_type<num_type> distribution;
         using prm_type = typename decltype(distribution)::param_type;
-        return distribution(get_engine(), prm_type{min, max});
+        return distribution(get_engine(), prm_type{a_min, a_max});
     }
 
     template<>
-    float rand::generate_internal(float min, float max)
+    float rand::generate_internal(float a_min, float a_max)
     {
-        JE_math_check_val(min);
-        JE_math_check_val(max);
+        JE_math_check_val(a_min);
+        JE_math_check_val(a_max);
         static random_float_distribution_type<float> distribution;
         using prm_type = decltype(distribution)::param_type;
-        return distribution(get_engine(), prm_type{min, max});
+        return distribution(get_engine(), prm_type{a_min, a_max});
     }
 
     template<>
-    double rand::generate_internal(double min, double max)
+    double rand::generate_internal(double a_min, double a_max)
     {
-        JE_math_check_val(min);
-        JE_math_check_val(max);
+        JE_math_check_val(a_min);
+        JE_math_check_val(a_max);
         static random_float_distribution_type<double> distribution;
         using prm_type = decltype(distribution)::param_type;
-        return distribution(get_engine(), prm_type{min, max});
+        return distribution(get_engine(), prm_type{a_min, a_max});
     }
 
 #define JE_MATH_RAND_GENERATE_DECL(_type_) template _type_ rand::generate_internal(_type_, _type_)

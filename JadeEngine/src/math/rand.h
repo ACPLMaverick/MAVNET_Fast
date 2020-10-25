@@ -1,7 +1,6 @@
 #pragma once
 
 #include "global.h"
-#include "scalar.h"
 #include "limits.h"
 
 namespace je { namespace math {

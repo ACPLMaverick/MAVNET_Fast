@@ -23,8 +23,8 @@ namespace je { namespace util {
 #endif
 
 #if JE_ASSERTIONS
-#define JE_assert(_expr_, ...) { auto __ret__ = (_expr_); if(!(__ret__)) { je::util::assertion::create(#_expr_, __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__); } }
-#define JE_verify(_call_, ...) { const auto __ret_val__ = _call_; JE_assert(__ret_val__, __VA_ARGS__); }
+#define JE_assert(_expr_, ...) { if(!(_expr_)) { je::util::assertion::create(#_expr_, __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__); } }
+#define JE_verify(_expr_, ...) JE_assert(_expr_, ##__VA_ARGS__)
 #define JE_check(_ptr_) je::util::assertion::check_ptr(_ptr_)
 #else
 #define JE_assert(_value_, ...)

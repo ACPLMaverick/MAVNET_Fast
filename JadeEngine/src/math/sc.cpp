@@ -1,8 +1,8 @@
-#include "scalar.h"
+#include "sc.h"
 
 namespace je { namespace math {
 
-    float scalar::modf(float a, float b)
+    float sc::modf(float a, float b)
     {
         JE_math_check_val(a);
         JE_math_check_val(b);
@@ -31,7 +31,7 @@ namespace je { namespace math {
         return clamp(result, -abs_y, abs_y);
     }
 
-    float scalar::atan2(float y, float x)
+    float sc::atan2(float y, float x)
     {
         // return atan2f(y,x);
         // atan2f occasionally returns NaN with perfectly valid input (possibly due to a compiler or library bug).
