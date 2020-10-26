@@ -1,16 +1,16 @@
-#include "platf/stack_tracer.h"
+#include "util/stack_tracer.h"
 
 #if JE_PLATFORM_WINDOWS
 #if JE_USE_STACK_TRACER
 
-#include "platf_windows.h"
+#include "platform/windows/platform.h"
 #include "util/misc.h"
 
 #include <DbgHelp.h>
 
 #pragma comment(lib, "DbgHelp")
 
-namespace je { namespace platf {
+namespace je { namespace platform {
 
     static struct
     {
@@ -78,19 +78,19 @@ namespace je { namespace platf {
                 DWORD disp(displacement);
                 if(SymGetLineFromAddr(g_symbol_data.process, reinterpret_cast<DWORD64>(a_trace.m_traces[i]), &disp, &line))
                 {
-                    JE_printf_ln("[%p] : [%s] : [%s] : [%lu]",
+                    JE_print("[%p] : [%s] : [%s] : [%lu]",
                         a_trace.m_traces[i], symbol->Name, je::util::misc::trim_file_name(line.FileName), line.LineNumber);
                 }
                 else
                 {
                     util::print_last_error();
-                    JE_printf_ln("[%p] : [%s] : Unknown file", a_trace.m_traces[i], symbol->Name);
+                    JE_print("[%p] : [%s] : Unknown file", a_trace.m_traces[i], symbol->Name);
                 }
             }
             else
             {
                 util::print_last_error();
-                JE_printf_ln("[%p] : Unknown function", a_trace.m_traces[i]);
+                JE_print("[%p] : Unknown function", a_trace.m_traces[i]);
             }
         }
     }

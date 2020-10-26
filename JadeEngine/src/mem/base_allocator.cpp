@@ -1,5 +1,7 @@
 #include "base_allocator.h"
 
+#include <algorithm>
+
 namespace je { namespace mem { 
 
     base_allocator::base_allocator(const char* a_name/* = nullptr*/, allocator_debug_flags a_debug_flags /*= base_allocator::k_default_debug_flags*/)
@@ -36,7 +38,9 @@ namespace je { namespace mem {
         , m_debug_flags(a_debug_flags)
 #endif
     {
+#if JE_DEBUG_ALLOCATIONS
         m_allocator_from->m_child_allocators.push_back(this);
+#endif
     }
 
     base_allocator::~base_allocator()

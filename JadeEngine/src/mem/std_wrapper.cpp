@@ -5,6 +5,7 @@
 #if JE_DATA_STRUCTS_STD_BACKEND
 
 #include "engine.h"
+#include "mem/mem_manager.h"
 
 namespace je { namespace mem {
 

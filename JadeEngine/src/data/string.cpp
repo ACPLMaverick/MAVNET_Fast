@@ -1,7 +1,8 @@
 #include "string.h"
 
 #include <cstring>
-#include <stdarg.h>
+#include <cstdarg>
+#include <cstdio>
 
 namespace je { namespace data {
 
@@ -77,9 +78,10 @@ namespace je { namespace data {
     }
 
     string::string()
-        : m_chars(char_end)
+        : m_chars(1)
         , m_hash(get_data())
     {
+        JE_assert(m_chars[0] == char_end);
     }
 
     string::string(const char_type* a_str)
@@ -92,7 +94,8 @@ namespace je { namespace data {
         : m_chars()
         , m_hash(nullptr)
     {
-        m_chars.resize(a_num_chars_to_have);
+        m_chars.resize(a_num_chars_to_have + 1);
+        m_chars[a_num_chars_to_have] = char_end;
     }
     
     string::string(const string& a_copy)
@@ -143,20 +146,30 @@ namespace je { namespace data {
 
     string string::format(const char_type* a_format, va_list a_args)
     {
+#if JE_PLATFORM_LINUX // va_list seems to be one-use-only on Linux.
+        va_list args_copy;
+        va_copy(args_copy, a_args);
+#endif
         const int char_num = vsnprintf(nullptr, 0, a_format, a_args);
 
         JE_assert(char_num >= 0, "Failed to format a string.");
-        if(char_num <= 0)
+        string str = char_num > 0 ? string(char_num) : string(nullptr);
+        if(char_num > 0)
         {
-            return string(nullptr);
-        }
-        else
-        {
-            string str(char_num + 1);
-            vsprintf_s(str.m_chars.data(), char_num + 1, a_format, a_args);
+            vsnprintf(str.m_chars.data(), char_num + 1, a_format, 
+#if JE_PLATFORM_LINUX
+                args_copy
+#else
+                a_args
+#endif
+                );
             str.chars_have_changed();
-            return str;
         }
+
+#if JE_PLATFORM_LINUX
+        va_end(args_copy);
+#endif
+        return str;
     }
     
     string string::from_int64(int64_t a_value)
@@ -170,7 +183,7 @@ namespace je { namespace data {
         }
         else
         {
-            string str(char_num + 1);
+            string str(char_num);
             std::snprintf(str.m_chars.data(), char_num + 1, k_fmt, a_value);
             str.chars_have_changed();
             return str;
@@ -188,7 +201,7 @@ namespace je { namespace data {
         }
         else
         {
-            string str(char_num + 1);
+            string str(char_num);
             std::snprintf(str.m_chars.data(), char_num + 1, k_fmt, a_value);
             str.chars_have_changed();
             return str;
@@ -206,7 +219,7 @@ namespace je { namespace data {
         }
         else
         {
-            string str(char_num + 1);
+            string str(char_num);
             std::snprintf(str.m_chars.data(), char_num + 1, k_fmt, a_value);
             str.chars_have_changed();
             return str;
@@ -224,7 +237,7 @@ namespace je { namespace data {
         }
         else
         {
-            string str(char_num + 1);
+            string str(char_num);
             std::snprintf(str.m_chars.data(), char_num + 1, k_fmt, a_value);
             str.chars_have_changed();
             return str;
@@ -256,7 +269,7 @@ namespace je { namespace data {
         }
         else
         {
-            string str(char_num + 1);
+            string str(char_num);
             std::snprintf(str.m_chars.data(), char_num + 1, fmt, a_value);
             str.chars_have_changed();
             return str;
@@ -341,7 +354,8 @@ namespace je { namespace data {
     void string::clear()
     {
         m_chars.clear();
-        m_chars.push_back(char_end);
+        const char val = string::char_end;
+        m_chars.push_back(val);
         chars_have_changed();
     }
     
@@ -632,7 +646,7 @@ namespace je { namespace data {
     
     void string::trim_end(size_t a_num_chars)
     {
-        substring(0, get_size() - 1 - (a_num_chars + 1));
+        substring(0, get_size() - (a_num_chars + 1));
     }
     
     void string::split(const char_type* a_split_on, array<string>& a_out_strings) const
@@ -791,7 +805,7 @@ namespace je { namespace data {
         JE_assert_bailout(a_idx_end >= a_idx_start, string(nullptr), "Invalid argument.");
 
         const size_t new_size = a_idx_end - a_idx_start + 1;
-        string new_string(new_size + 1);    // Adding 1 again for trailing zero.
+        string new_string(new_size);
         std::memcpy(&new_string.m_chars[0], a_str + a_idx_start, new_size * sizeof(char_type));
         new_string.m_chars[new_string.m_chars.size() - 1] = char_end;
         new_string.chars_have_changed();
@@ -930,7 +944,7 @@ namespace je { namespace data {
         const size_t chars_to_move = &(m_chars[m_chars.size() - 1]) - move_src + 1;
         std::memmove(move_dest, move_src, chars_to_move * sizeof(char_type));
 
-        remove_excessive_chars_at_end(my_size - move_amount);
+        remove_excessive_chars_at_end(my_size - move_amount + 1);
     }
 
     inline bool string::find_and_replace_common(const char_type* a_str_to_find, size_t a_str_to_find_num_chars,
@@ -1037,7 +1051,8 @@ namespace je { namespace data {
         if(a_str == nullptr
             || a_idx_end < a_idx_start)
         {
-            m_chars.push_back(char_end);
+            const char val = string::char_end;
+            m_chars.push_back(val);
             return;
         }
 
@@ -1076,7 +1091,7 @@ namespace je { namespace data {
     {
         if(m_chars.size() > a_new_char_num)
         {
-            m_chars.erase(m_chars.begin() + a_new_char_num + 1, m_chars.end());
+            m_chars.erase(m_chars.begin() + a_new_char_num, m_chars.end());
             shrink_if_necessary();
         }
     }

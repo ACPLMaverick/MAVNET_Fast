@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.17.2 FATAL_ERROR)
 
 set(PROJECT_NAME JadeEngine)
 project(${PROJECT_NAME} VERSION 1.0.0)
-message("Building ${PROJECT_NAME}.")
+message("Configuring ${PROJECT_NAME}.")
 
 # Argument parsing
 set(PLATFORM_NAME_WINDOWS Windows)
@@ -30,6 +30,18 @@ else()
 endif()
 message("Configuration: ${JE_CONFIGURATION}.")
 
+# Toolchain definitions
+if(JE_PLATFORM STREQUAL ${PLATFORM_NAME_WINDOWS} OR JE_PLATFORM STREQUAL ${PLATFORM_NAME_LINUX})
+	set(CMAKE_C_COMPILER clang)
+	set(CMAKE_CXX_COMPILER clang++)
+	set(CMAKE_C_COMPILER_NAMES clang)
+	set(CMAKE_CXX_COMPILER_NAMES clang++)
+	set(CC clang)
+	set(CXX clang++)
+else()
+	message(FATAL_ERROR "Compiler not set for this platform: [${JE_PLATFORM}].")
+endif()
+
 # Global definitions
 set(RUNTIME_WORK_DIR ../bin)	# Adding back here because this is relative to the build directory.
 set(SOURCE_DIR src)
@@ -41,6 +53,7 @@ add_executable(${EXE_NAME} "")
 add_subdirectory (${SOURCE_DIR})
 
 # Platform-specific definitions, compiler flags, libs, etc.
+# WINDOWS
 if(JE_PLATFORM STREQUAL ${PLATFORM_NAME_WINDOWS})
 	target_compile_definitions(${EXE_NAME} PUBLIC
 		JE_PLATFORM_WINDOWS=1
@@ -53,14 +66,28 @@ if(JE_PLATFORM STREQUAL ${PLATFORM_NAME_WINDOWS})
 		"C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.18362.0\\ucrt\\x64"
 		"C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.18362.0\\um\\x64"
 	)
-elseif(JE_PLATFORM STREQUAL {PLATFORM_NAME_LINUX})
+# ########
+# LINUX
+elseif(JE_PLATFORM STREQUAL ${PLATFORM_NAME_LINUX})
 	target_compile_definitions(${EXE_NAME} PUBLIC
 		JE_PLATFORM_WINDOWS=0
 		JE_PLATFORM_LINUX=1
 	)
 
-	message(FATAL_ERROR "TODO: Include directories for Linux not specified.")
-	message(FATAL_ERROR "TODO: Library directories for Linux not specified.")
+	target_link_libraries(${EXE_NAME} PUBLIC
+		X11
+	)
+
+	if(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_DEBUG})
+		target_link_libraries(${EXE_NAME} PUBLIC
+			dl
+		)
+
+		target_link_options(${EXE_NAME} PUBLIC
+			-rdynamic
+		)
+	endif()
+# #######
 endif()
 
 # Configuration-specific definitions, compiler flags, libs, etc.
@@ -107,9 +134,9 @@ target_compile_options(${EXE_NAME} PUBLIC
 	-Wall	# Enable warnings
 	-Wundef
 	-pedantic
-	-Wstrict-prototypes
 	-Werror
 	-Wfatal-errors
+	-Wno-variadic-macros
 )
 
 # Global libraries

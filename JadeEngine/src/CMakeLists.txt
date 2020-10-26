@@ -5,22 +5,23 @@ file(GLOB HERE_SOURCES
 file(GLOB_RECURSE GENERAL_SOURCES
        data/*.cpp
        draw/*.cpp
+       math/*.cpp
        mem/*.cpp
        tests/*.cpp
        util/*.cpp
 )
 
 file(GLOB PLATFORM_SOURCES_A
-       platf/*.cpp
+       platform/*.cpp
 )
 
 if(JE_PLATFORM STREQUAL ${PLATFORM_NAME_WINDOWS})
        file(GLOB_RECURSE PLATFORM_SOURCES_B
-              platf/windows/*.cpp
+              platform/windows/*.cpp
        )
 elseif(JE_PLATFORM STREQUAL ${PLATFORM_NAME_LINUX})
        file(GLOB_RECURSE PLATFORM_SOURCES_B
-              platf/linux/*.cpp
+              platform/linux/*.cpp
        )
 else()
 	message(FATAL_ERROR "Wrong platform [${JE_PLATFORM}] or no platform specified. Cannot proceed further.")

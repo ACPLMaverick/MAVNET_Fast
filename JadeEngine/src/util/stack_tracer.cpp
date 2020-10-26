@@ -2,9 +2,9 @@
 
 #if JE_USE_STACK_TRACER
 
-#include "platf/platf.h"
+#include "misc.h"
 
-namespace je { namespace platf {
+namespace je { namespace util {
 
     stack_tracer::stack_tracer()
     {
@@ -52,22 +52,22 @@ namespace je { namespace platf {
     {
         init_symbol_ref();
 
-        JE_printf_ln("###########################################");
-        JE_printf_ln("There are [%lld] existing traces in the stack tracker!", get_num_remaining_traces());
-        JE_printf("\n");
+        JE_print("###########################################");
+        JE_print("There are [%zu] existing traces in the stack tracker!", get_num_remaining_traces());
+        JE_print("\n");
 
         size_t num = 1;
         for(auto it = m_traces.begin(); it != m_traces.end(); ++it)
         {
-            JE_printf("Trace #%lld:\n", num);
+            JE_print("Trace #%zu:\n", num);
             stack_trace trace = it->second;
             print_trace(trace);
-            JE_printf("\n");
+            JE_print("\n");
 
             ++num;
         }
 
-        JE_printf_ln("###########################################");
+        JE_print("###########################################");
 
         cleanup_symbol_ref();
     }
@@ -81,10 +81,10 @@ namespace je { namespace platf {
 
         if(trace.m_num_traces > 0)
         {
-            JE_printf_ln("###########################################");
-            JE_printf_ln("Printing current stack trace: \n");
+            JE_print("###########################################");
+            JE_print("Printing current stack trace: \n");
             print_trace(trace);
-            JE_printf_ln("###########################################");
+            JE_print("###########################################");
         }
         else
         {

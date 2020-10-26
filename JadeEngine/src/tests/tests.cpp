@@ -2,6 +2,7 @@
 
 #include "engine.h"
 
+#include "mem/mem_manager.h"
 #include "mem/system_allocator.h"
 #include "mem/linear_allocator.h"
 #include "mem/stack_allocator.h"
@@ -9,6 +10,12 @@
 #include "mem/pool_allocator.h"
 
 #include "data/data.h"
+
+#include "math/rand.h"
+#include "math/constants.h"
+#include "math/sc.h"
+#include "math/rand.h"
+#include "math/vec.h"
 
 namespace je { namespace tests {
 
@@ -20,23 +27,6 @@ namespace je { namespace tests {
         k_num_bits = 3,
         k_all = 0xFF
     };
-
-    void tester::run()
-    {
-        test_mem();
-        //test_stack_tracer();
-
-        m_engine = new engine();
-
-        test_collections();
-        test_string();
-        test_allocator_state_print();
-        test_object_pool();
-        test_math();
-        test_thread();
-
-        JE_safe_delete(m_engine);
-    }
 
     class mem_tester
     {
@@ -79,6 +69,18 @@ namespace je { namespace tests {
         size_t m_num_bytes;
         uint8_t m_byte_to_fill;
     };
+
+    void tester::run()
+    {
+        test_mem();
+        //test_stack_tracer();
+        test_collections();
+        test_string();
+        test_allocator_state_print();
+        test_math();
+        //test_thread();
+        //test_object_pool();
+    }
 
     void tester::test_mem()
     {
@@ -173,7 +175,7 @@ namespace je { namespace tests {
             }
         }
 
-        JE_printf_ln("Allocator test passed.");
+        JE_print("Allocator test passed.");
     }
 
     void tester::test_stack_tracer()
@@ -202,13 +204,13 @@ namespace je { namespace tests {
             data::static_bit_array<6> static_bit_array;
             static_bit_array.set(1, true);
             static_bit_array.set(4, true);
-            JE_assert(static_bit_array.get(1) == true && static_bit_array.get(2) == false && static_bit_array.get(4) == true, "Assertion failed.");
+            JE_assert(static_bit_array.get(1) == true && static_bit_array.get(2) == false && static_bit_array.get(4) == true);
 
             data::static_bitfield_array<test_bitfield_enum> static_bitfield_array;
             static_bitfield_array.set(test_bitfield_enum::k_val_1, true);
             static_bitfield_array.set(test_bitfield_enum::k_val_2, false);
             static_bitfield_array.set(test_bitfield_enum::k_val_1 | test_bitfield_enum::k_val_0, true);
-            JE_assert(static_bitfield_array.get(test_bitfield_enum::k_val_1) == true && static_bitfield_array.get(test_bitfield_enum::k_val_2) == false, "Assertion failed.");
+            JE_assert(static_bitfield_array.get(test_bitfield_enum::k_val_1) == true && static_bitfield_array.get(test_bitfield_enum::k_val_2) == false);
         }
 
         // Array test
@@ -234,9 +236,9 @@ namespace je { namespace tests {
             /*
             for(const float& flt : float_arr)
             {
-                JE_printf_ln("%f ", flt);
+                JE_print("%f ", flt);
             }
-            JE_printf("\n");
+            JE_print("\n");
             */
         }
 
@@ -261,7 +263,7 @@ namespace je { namespace tests {
             JE_todo();
         }
         */
-        JE_printf_ln("Collection test passed.");
+        JE_print("Collection test passed.");
     }
 
     void tester::test_string()
@@ -386,7 +388,7 @@ namespace je { namespace tests {
         JE_assert(case_test.is_upper_case() == false);
         JE_assert(case_test.is_lower_case() == false, "String [%s] is lower case!", case_test.get_data());
 
-        JE_printf_ln("String test passed.");
+        JE_print("String test passed.");
     }
 
     void tester::test_allocator_state_print()
@@ -409,18 +411,111 @@ namespace je { namespace tests {
 
             engine::get_inst().get_mem_manager().print_memory_summary();
         }
-        JE_printf_ln("After deallocation...");
+        JE_print("After deallocation...");
         engine::get_inst().get_mem_manager().print_memory_summary();
-    }
 
-    void tester::test_object_pool()
-    {
-        JE_todo();
+        JE_print("Allocator state print test passed.");
     }
 
     void tester::test_math()
     {
-        JE_todo();
+        using namespace math;
+
+        // Rands
+        JE_print("Rand test begin.");
+        for(size_t i = 0; i < 32; ++i)
+        {
+            uint64_t rand_uint64 = rand::generate(1, 10);
+            int64_t rand_int64 = rand::generate(-10, 10);
+            uint32_t rand_uint32 = rand::generate(1, 10);
+            int32_t rand_int32 = rand::generate(-21, 16);
+            uint8_t rand_uint8 = rand::generate(0, 1);
+            float rand_float = rand::generate_0_1<float>();
+            float rand_float2 = rand::generate(-constants::k_pi, constants::k_pi);
+
+            JE_print("[%zd] [%zd] [%u] [%d] [%d] [%f] [%f]",
+                rand_uint64, rand_int64, rand_uint32, rand_int32, rand_uint8,
+                rand_float, rand_float2);
+        }
+        JE_print("Rand test end. Please review if these values are correct.");
+
+        // Scalar math.
+        JE_verify(sc::min(-2, 3) == -2);
+        JE_verify(sc::min(-2.1f, 3.3f) == -2.1f);
+        JE_verify(sc::max(-2.1f, 3.3f) == 3.3f);
+        JE_verify(sc::min3(-2.1f, 1.1f, 3.3f) == -2.1f);
+        JE_verify(sc::max3(-2.1f, 1.1f, 3.3f) == 3.3f);
+        JE_verify(sc::clamp(-1.0f, 1.0f, 2.0f) == 1.0f);
+        JE_verify(sc::is_within(0.5f, 1.0f, 2.0f) == false);
+        JE_verify(sc::is_almost_zero(0.0f));
+        JE_verify(sc::abs(-5) == 5);
+        JE_verify(sc::enlarge(-2.0f, 0.5f) == -2.5f);
+        JE_verify(sc::is_almost_equal(sc::fractional(-5.35f), 0.35f));
+
+        float int_part;
+        float frac_part = sc::integral_and_fractional(-5.35f, int_part);
+        JE_assert(sc::is_almost_equal(frac_part, 0.35f) && sc::is_almost_equal(int_part, -5.0f));
+
+        JE_verify(sc::pow2(4.0f) == 16.0f);
+        JE_verify(sc::is_almost_equal(sc::exp(2), 7.389056f));
+        JE_verify(sc::is_almost_equal(sc::ln(2), 0.693147180f));
+        JE_verify(sc::is_almost_equal(sc::log(3, 7), 1.771243749f));
+        JE_verify(sc::is_almost_equal(sc::log2(2), 1.0f));
+        JE_verify(sc::is_almost_equal(sc::log10(2), 0.3010299956639f));
+        JE_verify(sc::is_almost_equal(sc::sqrt(4), 2.0f));
+        JE_verify(sc::is_almost_equal(sc::modf(2.8f, 2.0f), 0.8f));
+
+        JE_verify(sc::divide_ceil(5, 2) == 3);
+        JE_verify(sc::divide_floor(5, 2) == 2);
+        JE_verify(sc::divide_round(16, 10) == 2);
+        JE_verify(sc::ceil(5.3f) == 6.0f);
+        JE_verify(sc::floor(5.3f) == 5.0f);
+        JE_verify(sc::round(-5.3f) == -5.0f);
+
+        JE_verify(sc::is_almost_equal(sc::sin(constants::k_pi_2), 1.0f));
+        JE_verify(sc::is_almost_equal(sc::asin(1.0f), constants::k_pi_2));
+        JE_verify(sc::is_almost_equal(sc::asin_fast(1.0f), constants::k_pi_2));
+        JE_verify(sc::is_almost_equal(sc::sinh(constants::k_pi_2), 2.3012989f));
+        JE_verify(sc::is_almost_equal(sc::cos(0.0f), 1.0f));
+        JE_verify(sc::is_almost_equal(sc::acos(1.0f), 0.0f));
+
+        auto sc = sc::sin_cos(constants::k_pi_2);
+        JE_assert(sc::is_almost_equal(sc.sin, 1.0f) && sc::is_almost_equal(sc.cos, 0.0f));
+
+        JE_verify(sc::is_almost_equal(sc::atan2(0.5f, 0.3f), 1.03038f));
+        
+        JE_verify(sc::is_almost_equal(sc::rad_to_deg(constants::k_pi_4), 45.0f));
+        JE_verify(sc::is_almost_equal(sc::deg_to_rad(45.0f), constants::k_pi_4));
+        JE_verify(sc::is_almost_equal(sc::unwind_rad(5.0f), -1.2831853071795f));
+        JE_verify(sc::is_almost_equal(sc::unwind_deg(400.0f), 40.0f));
+
+        // Interpolations for scalar math.
+        JE_verify(sc::is_almost_equal(sc::lerp(0.0f, 2.0f, 0.5f), 1.0f));
+
+
+        // Vectors.
+        JE_assert(sizeof(vec2) == 2 * sizeof(float));
+        JE_assert(sizeof(vec3) == 3 * sizeof(float));
+        JE_assert(sizeof(vec4) == 4 * sizeof(float));
+
+        vec2 test_vec(1.0f, -2.0f);
+        JE_assert(test_vec.x == 1.0f && test_vec.y == -2.0f);
+        JE_assert(test_vec.r == 1.0f && test_vec.g == -2.0f);
+        JE_assert(test_vec[0] == 1.0f && test_vec[1] == -2.0f);
+
+        test_vec = vec2(3.0f, -5.0f);
+        test_vec *= 2.0f;
+        JE_assert(sc::is_almost_equal(test_vec.x, 6.0f));
+        JE_assert(sc::is_almost_equal(test_vec.y, -10.0f));
+
+        JE_assert(sc::is_almost_equal(test_vec.get_length_squared(), 136.0f));
+        JE_assert(sc::is_almost_equal(test_vec.get_length(), 11.6619));
+
+        test_vec.normalize();
+        JE_assert(sc::is_almost_equal(test_vec.x, 0.514496f));
+        JE_assert(sc::is_almost_equal(test_vec.y, -0.857493f));
+
+        JE_print("Math test passed.");
     }
 
     void tester::test_thread()
@@ -428,5 +523,8 @@ namespace je { namespace tests {
         JE_todo();
     }
 
-    je::engine* tester::m_engine(nullptr);
+    void tester::test_object_pool()
+    {
+        JE_todo();
+    }
 }}

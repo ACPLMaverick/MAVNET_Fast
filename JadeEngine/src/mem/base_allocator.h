@@ -5,8 +5,8 @@
 #if JE_DEBUG_ALLOCATIONS
 #include <vector>
 #define JE_DEBUG_ALLOCATIONS_FILL_MEMORY_ON_ALLOC 1
-#include "platf/stack_tracer.h"
-#define JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER (JE_USE_STACK_TRACER) && 1
+#include "util/stack_tracer.h"
+#define JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER 1 && (JE_USE_STACK_TRACER)
 #else
 #define JE_DEBUG_ALLOCATIONS_FILL_MEMORY_ON_ALLOC 0
 #define JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER 0
@@ -163,7 +163,7 @@ namespace je { namespace mem {
         allocator_debug_flags m_debug_flags;
 #endif
 #if JE_DEBUG_ALLOCATIONS_USE_STACK_TRACER
-        platf::stack_tracer m_stack_tracer;
+        util::stack_tracer m_stack_tracer;
 #endif
     };
 

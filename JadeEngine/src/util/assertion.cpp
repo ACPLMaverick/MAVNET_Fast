@@ -1,38 +1,44 @@
+#include "global.h"
 #include "assertion.h"
 
 #if JE_CONFIG_DEBUG
 
-#include "platf/platf.h"
-#include "platf/message_box.h"
+#include "global.h"
+#include "util/message_box.h"
+#include "util/misc.h"
 
-#include <stdarg.h>
+#include <cstdarg>
 
 namespace je { namespace util {
 
     void assertion::create(const char* a_expression, const char* a_file, const char* a_function, size_t a_line, const char* a_message, ...)
     {
-        data::string message = data::string::format(
-            "Assertion failed!\n\nExpression: [%s]\nFile: [%s]\nFunction: [%s]\nLine: [%lld]",
+        // I don't use data::string here to avoid circular dependency when some assertion
+        // fires during engine initialization.
+
+        static data::static_array<char, 1024> format_buf;
+        size_t num_chars = snprintf(format_buf.get_data(), format_buf.k_num_objects, 
+            "Assertion failed!\n\nExpression: [%s]\nFile: [%s]\nFunction: [%s]\nLine: [%zd]",
             a_expression, a_file, a_function, a_line);
-        if(a_message != nullptr && a_message[0] != '\0')
+
+        static const char* newline = "\n\n";
+        if(a_message != nullptr && a_message[0] != '\0' && (num_chars + strlen(newline)) < format_buf.k_num_objects)
         {
+            num_chars += snprintf(&format_buf[num_chars], format_buf.k_num_objects - num_chars, "\n\n");
+            
             va_list args;
             va_start(args, a_message);
-            data::string appended_message = data::string::format(
-                a_message, args
-            );
+            vsnprintf(&format_buf[num_chars], format_buf.k_num_objects - num_chars, a_message, args);
             va_end(args);
-            message += "\n\n";
-            message += appended_message;
         }
 
         static const char* separator = "######################################";
-        JE_printf("\n%s\n%s\n%s\n\n", separator, message.get_data(), separator);
-        JE_flush_stdout();
+        JE_print("\n%s\n%s\n%s\n\n", separator, format_buf.get_data(), separator);
+        JE_print_flush();
 
 #if JE_ASSERTION_USES_MESSAGE_BOX
         {
-            using namespace je::platf;
+            using namespace je::platform;
             const message_box::button_flag flags = 
             message_box::show(
                 message.get_data(), 
@@ -41,7 +47,7 @@ namespace je { namespace util {
                 true);
             if(flags & message_box::button_flag::k_retry)
             {
-                je::platf::util::debugbreak();
+                je::platform::util::debugbreak();
             }
             else if(flags & message_box::button_flag::k_cancel)
             {
@@ -49,7 +55,7 @@ namespace je { namespace util {
             }
         }
 #else
-    je::platf::util::debugbreak();
+    je::util::misc::debugbreak();
 #endif
     }
 

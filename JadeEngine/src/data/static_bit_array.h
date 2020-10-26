@@ -32,6 +32,7 @@ namespace je { namespace data {
             return *this;
         }
 
+        uint8_t* get_data() { return m_data; }
         const uint8_t* get_data() const { return m_data; }
 
         bool get(size_t a_index) const
@@ -56,8 +57,6 @@ namespace je { namespace data {
         }
 
     protected:
-
-        uint8_t* get_data() { return m_data; }
 
         void get_indices(size_t a_index, size_t& a_out_byte_index, size_t& a_out_bit_index) const
         {
