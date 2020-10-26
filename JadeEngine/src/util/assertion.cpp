@@ -38,16 +38,16 @@ namespace je { namespace util {
 
 #if JE_ASSERTION_USES_MESSAGE_BOX
         {
-            using namespace je::platform;
+            using namespace je::util;
             const message_box::button_flag flags = 
             message_box::show(
-                message.get_data(), 
+                a_message, 
                 message_box::info_level::k_error,
                 message_box::button_flag::k_continue | message_box::button_flag::k_retry | message_box::button_flag::k_cancel,
                 true);
             if(flags & message_box::button_flag::k_retry)
             {
-                je::platform::util::debugbreak();
+                je::util::misc::debugbreak();
             }
             else if(flags & message_box::button_flag::k_cancel)
             {

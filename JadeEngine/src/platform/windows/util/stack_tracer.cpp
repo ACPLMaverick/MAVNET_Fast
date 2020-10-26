@@ -10,7 +10,7 @@
 
 #pragma comment(lib, "DbgHelp")
 
-namespace je { namespace platform {
+namespace je { namespace util {
 
     static struct
     {
@@ -83,13 +83,13 @@ namespace je { namespace platform {
                 }
                 else
                 {
-                    util::print_last_error();
+                    windows::misc::print_last_error();
                     JE_print("[%p] : [%s] : Unknown file", a_trace.m_traces[i], symbol->Name);
                 }
             }
             else
             {
-                util::print_last_error();
+                windows::misc::print_last_error();
                 JE_print("[%p] : Unknown function", a_trace.m_traces[i]);
             }
         }

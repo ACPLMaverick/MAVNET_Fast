@@ -1,7 +1,9 @@
 #include "util/message_box.h"
 #include "platform/windows/platform.h"
 
-namespace je { namespace platform {
+#include "util/misc.h"
+
+namespace je { namespace util {
 
     message_box::button_flag message_box::show(const char* a_message, info_level a_information_level, int a_buttons, bool a_is_blocking)
     {
@@ -32,7 +34,7 @@ namespace je { namespace platform {
         {
             JE_print("Error! Unsupported message box flag combination.");
 #if JE_CONFIG_DEBUG
-            je::platform::util::debugbreak();
+            je::util::misc::debugbreak();
 #endif
         }
 

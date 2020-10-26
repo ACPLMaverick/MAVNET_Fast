@@ -77,7 +77,7 @@
 
 // Platform-specific project-wide includes.
 
-#include "platform/linux/global.h"
-#include "platform/windows/global.h"
+#include "platform/linux/global_linux.h"
+#include "platform/windows/global_windows.h"
 
 // ///////////////////////

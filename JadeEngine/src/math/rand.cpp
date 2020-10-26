@@ -54,8 +54,8 @@ namespace je { namespace math {
     JE_MATH_RAND_GENERATE_DECL(int32_t);
     JE_MATH_RAND_GENERATE_DECL(uint16_t);
     JE_MATH_RAND_GENERATE_DECL(int16_t);
-    JE_MATH_RAND_GENERATE_DECL(uint8_t);
-    JE_MATH_RAND_GENERATE_DECL(int8_t);
+    //JE_MATH_RAND_GENERATE_DECL(uint8_t);
+    //JE_MATH_RAND_GENERATE_DECL(int8_t);
 
 #undef JE_MATH_RAND_GENERATE_DECL
 }}

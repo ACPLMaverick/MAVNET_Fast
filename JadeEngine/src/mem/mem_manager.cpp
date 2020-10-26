@@ -173,12 +173,4 @@ namespace je { namespace mem {
             summary.c_str());
     }
 #endif
-
-#if JE_DATA_STRUCTS_STD_BACKEND
-    template<>
-    base_allocator& mem_manager::find_allocator<std_wrapper_allocator_helper>()
-    {
-        return m_collections_allocator;
-    }
-#endif
 }}
