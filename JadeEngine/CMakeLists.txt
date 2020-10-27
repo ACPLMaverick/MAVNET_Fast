@@ -100,6 +100,7 @@ if(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_DEBUG})
 
 	target_compile_options(${EXE_NAME} PUBLIC
 		-O0
+		-g
 	)
 elseif(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_PROFILE})
 	target_compile_definitions(${EXE_NAME} PUBLIC
@@ -110,6 +111,7 @@ elseif(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_PROFILE})
 
 	target_compile_options(${EXE_NAME} PUBLIC
 		-O2
+		-g
 	)
 elseif(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_RELEASE})
 	target_compile_definitions(${EXE_NAME} PUBLIC
@@ -137,6 +139,7 @@ target_compile_options(${EXE_NAME} PUBLIC
 	-Werror
 	-Wfatal-errors
 	-Wno-variadic-macros
+	-save-temps # For Disassembly Explorer.
 )
 
 # Global libraries

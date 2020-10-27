@@ -515,6 +515,12 @@ namespace je { namespace tests {
         JE_assert(sc::is_almost_equal(test_vec.x, 0.514496f));
         JE_assert(sc::is_almost_equal(test_vec.y, -0.857493f));
 
+        float test_dot(vec3::dot(vec3(1.0f, 2.0f, 3.0f), vec3(-1.0f, 2.0f, -3.0f)));
+        JE_assert(sc::is_almost_equal(test_dot, -6.0f));
+
+        vec3 test_vec_2(vec3::cross(vec3(1.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f)));
+        JE_assert(vec3::is_almost_equal(test_vec_2, vec3(0.0f, 0.0f, -1.0f)));
+
         JE_print("Math test passed.");
     }
 

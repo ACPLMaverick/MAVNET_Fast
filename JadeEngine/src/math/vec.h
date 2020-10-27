@@ -39,13 +39,6 @@ namespace je { namespace math {
         {
         }
 
-        vec_base& operator=(const vec_base& other)
-        {
-            x = other.x;
-            y = other.y;
-            return *this;
-        }
-
         static float cross(const vec_base& a, const vec_base& b)
         {
             return a.x * b.y - a.y * b.x;
@@ -93,14 +86,6 @@ namespace je { namespace math {
             , y(other.y)
             , z(other.z)
         {
-        }
-
-        vec_base& operator=(const vec_base& other)
-        {
-            x = other.x;
-            y = other.y;
-            z = other.z;
-            return *this;
         }
 
         static vec_base cross(const vec_base& a, const vec_base& b)
@@ -162,15 +147,6 @@ namespace je { namespace math {
         {
         }
 
-        vec_base& operator=(const vec_base& other)
-        {
-            x = other.x;
-            y = other.y;
-            z = other.z;
-            w = other.w;
-            return *this;
-        }
-
     public:
 
         union
@@ -200,6 +176,14 @@ namespace je { namespace math {
         static const constexpr size_t k_num_components = num_components;
 
         using vec_base<num_components>::vec_base;
+
+        vec(const vec_base<num_components>& upper)
+        {
+            // Hacky but I'll let it stay for a while.
+            float* my_ptr = get_components();
+            const float* data_ptr = reinterpret_cast<const float*>(&upper);
+            std::memcpy(my_ptr, data_ptr, sizeof(vec));
+        }
 
         inline float& operator[](size_t index)
         {
@@ -252,6 +236,34 @@ namespace je { namespace math {
             return vec;
         }
 
+        bool operator==(const vec& other) const
+        {
+            #pragma unroll
+            for(size_t i = 0; i < k_num_components; ++i)
+            {
+                if(get_components()[i] != other.get_components()[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        static bool is_almost_equal(const vec& a, const vec& b)
+        {
+            #pragma unroll
+            for(size_t i = 0; i < k_num_components; ++i)
+            {
+                if(sc::is_almost_equal(a.get_components()[i], b.get_components()[i]) == false)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         // TODO get_rotation_from_axis
 
         static float dot(const vec& a, const vec& b)
@@ -262,6 +274,7 @@ namespace je { namespace math {
             {
                 value += a.get_components()[i] * b.get_components()[i];
             }
+            return value;
         }
 
         vec operator+(const vec& other) const
