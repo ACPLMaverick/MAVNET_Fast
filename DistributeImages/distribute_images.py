@@ -1,9 +1,10 @@
 #!/usr/bin/python
 
 import sys
+import time
 from enum import Enum
 import os
-from pptx import Presentation
+import pptx
 import tkinter
 import tkinter.filedialog
 import tkinter.messagebox
@@ -16,22 +17,36 @@ from tkinter import ttk
 
 # ###### LOGIC
 
-class word_orientation(Enum):
+class enum_enhanced(Enum):
+    def __str__(self):
+        return self.name.replace("_", " ").capitalize()
+
+    def get_names(enum_class):
+        return [str(e) for e in enum_class]
+
+
+class word_orientation(enum_enhanced):
     TOP_LEFT = 0,
     TOP_RIGHT = 1,
     BOTTOM_RIGHT = 2,
     BOTTOM_LEFT = 3
 
 
-class distributor_mode(Enum):
+class distributor_mode(enum_enhanced):
     ALL_IN_ONE_SLIDE = 0,
     MULTIPLE_SLIDES = 1
 
 
-class dimensions:
+class dimensions(tkinter.StringVar):
     def __init__(self, x, y):
-        self.x = x
-        self.y = y
+        self.x = tkinter.IntVar(value=x)
+        self.x.trace("w", lambda var, index, mode: self.set(self._get_str()))
+        self.y = tkinter.IntVar(value=y)
+        self.y.trace("w", lambda var, index, mode: self.set(self._get_str()))
+        super().__init__(value=self._get_str())
+
+    def _get_str(self):
+        return "{} x {}".format(self.x.get(), self.y.get())
 
 
 # slide_image's anchor is CENTER
@@ -68,21 +83,19 @@ class pdf_jpg_extractor:
 
 class distributor:
     def __init__(self):
-        self.pres_file = None
-        self.pdf_file = None
-        self.image_dir = None
-        self.is_image_dir_temp = False
+        self.pres = None
+        self.input_dir = None
 
-        self.num_images = 0
+        self.num_images = tkinter.IntVar(value=0)
         self.image_grid_dims = dimensions(0, 0)
         self.image_dims = dimensions(0, 0)
         self.image_scaled_dims = dimensions(0, 0)
 
-        self.source_slide = None
-        self.word_font = "Impact"
-        self.word_size = 24
-        self.word_position = word_orientation.TOP_LEFT
-        self.mode = distributor_mode.ALL_IN_ONE_SLIDE
+        self.source_slide_name = tkinter.StringVar(value="(no slides)")
+        self.word_font = tkinter.StringVar(value="Impact")
+        self.word_size = tkinter.IntVar(value=24)
+        self.word_position = tkinter.IntVar(value=word_orientation.TOP_LEFT)
+        self.mode = tkinter.IntVar(value=distributor_mode.ALL_IN_ONE_SLIDE)
         self.screen_dims = dimensions(1920, 1080)
         self.image_padding = dimensions(32, 32)
 
@@ -91,16 +104,15 @@ class distributor:
         return ""
 
     def _create_internal(self):
-        prs = Presentation(self.pres_file)
-        title_slide_layout = prs.slide_layouts[0]
-        slide = prs.slides.add_slide(title_slide_layout)
+        title_slide_layout = self.pres.slide_layouts[0]
+        slide = self.pres.slides.add_slide(title_slide_layout)
         title = slide.shapes.title
         subtitle = slide.placeholders[1]
 
         title.text = "Hello, World!"
         subtitle.text = "python-pptx was here!"
 
-        prs.save(self.pres_file)
+        self.pres.save(self.pres_file)
 
         return True
 
@@ -109,7 +121,7 @@ class distributor:
 
     def set_pres(self, path):
         if path.lower().endswith(".pptx") or path.lower().endswith(".pptm"):
-            self.pres_file = path
+            self.pres = pptx.Presentation(path)
 
     def set_input(self, path):
         print("File or dir:", path)
@@ -118,15 +130,25 @@ class distributor:
         elif path.lower().endswith(".pdf"):
             self.pdf_file = path
 
+    def get_slide_names(self):
+        slide_names = []
+        if self.pres is None:
+            return slide_names
+        ctr = 1
+        for slide in self.pres.slides:
+            name = slide.name
+            if name is None or len(name) == 0:
+                slide_names.append("Slide {}".format(ctr))
+            else:
+                slide_names.append(name)
+            ctr += 1
+        return slide_names
+
     def create(self):
-        if self.pres_file is None:
+        if self.pres is None:
             return False
 
-        if self.pdf_file is not None:
-            self.is_image_dir_temp = True
-            self.image_dir = self._extract_from_pdf()
-
-        if self.image_dir is None:
+        if self.input_dir is None:
             return False
 
         return self._create_internal()
@@ -172,10 +194,22 @@ class window:
     _color_bg = "#fafafa"
     _color_canvas_bg = "#ffffff"
 
-    def __init__(self, distrib):
-        self.distrib = distrib
+    def __init__(self):
+        self._create_top()
+        self.distrib = distributor()
         self._create_widgets()
-        self._lock_edit()
+        # self._lock_edit()
+
+    def _create_top(self):
+        self.width = 770
+        self.height = 650
+
+        self.top = tkinter.Tk()
+        self.top.title("Distribute Images Tool")
+        self.top.resizable(False, False)
+        self.top.geometry("{}x{}".format(self.width, self.height))
+        self.top.configure(bg=window._color_bg)
+        # self.top.columnconfigure(0, minsize=width)
 
     def _create_widgets(self):
         # Directory with images (TODO: PDF file for automatic extraction)
@@ -189,16 +223,6 @@ class window:
         # # Slide background
         # # Preview window? Display preview using simple rectangle shapes
         # # Create button
-
-        width = 770
-        height = 650
-
-        self.top = tkinter.Tk()
-        self.top.title("Distribute Images Tool")
-        self.top.resizable(False, False)
-        self.top.geometry("{}x{}".format(width, height))
-        self.top.configure(bg=window._color_bg)
-        # self.top.columnconfigure(0, minsize=width)
 
         #####################
 
@@ -233,7 +257,7 @@ class window:
 
         canvas_size_mul = 0.95
         self.canvas = tkinter.Canvas(self.top, bg=window._color_canvas_bg,
-                                     width=width * canvas_size_mul, height=(width * (9 / 16)) * canvas_size_mul)
+                                     width=self.width * canvas_size_mul, height=(self.width * (9 / 16)) * canvas_size_mul)
         window._w_place_in_grid(self.canvas, 0, 1, w=2)
 
         #####################
@@ -250,16 +274,19 @@ class window:
         # Word positioning
         # Word font and size (latter adjusts automatically to distrib. mode)
 
-        self.edit_source_slide = window._w_create_pair_combobox(self.frame_edit, "Source slide:", [], 0, 0)
+        self.edit_source_slide = window._w_create_pair_combobox(self.frame_edit, "Source slide:", [self.distrib.source_slide_name.get()],
+                                                                self.distrib.source_slide_name, 0, 0)
         # TODO Add more font support. For now let's support just one.
-        self.edit_word_font = window._w_create_pair_combobox(self.frame_edit, "Word font:", ["Impact"], 0, 1)
-        self.edit_word_font_size = window._w_create_pair_num_edit(self.frame_edit, "Word size:", 24, 0, 2)
+        self.edit_word_font = window._w_create_pair_combobox(self.frame_edit, "Word font:", [self.distrib.word_font.get()],
+                                                             self.distrib.word_font, 0, 1)
+        self.edit_word_font_size = window._w_create_pair_num_edit(self.frame_edit, "Word size:", self.distrib.word_size, 0, 2)
         self.edit_word_positioning = window._w_create_pair_combobox(self.frame_edit, "Word position:",
-                                                                    ["Top-left", "Top-right", "Bottom-right", "Bottom-left"],
+                                                                    enum_enhanced.get_names(word_orientation), self.distrib.word_position,
                                                                     0, 3)
-        self.edit_mode = window._w_create_pair_combobox(self.frame_edit, "Mode:", ["All in one slide", "Multiple slides"], 2, 0)
-        self.edit_ssize = window._w_create_pair_dim_edit(self.frame_edit, "Screen dimensions:", 1920, 1080, 2, 1)
-        self.edit_padding = window._w_create_pair_dim_edit(self.frame_edit, "Image padding:", 32, 32, 2, 2)
+        self.edit_mode = window._w_create_pair_combobox(self.frame_edit, "Mode:", enum_enhanced.get_names(distributor_mode),
+                                                        self.distrib.mode, 2, 0)
+        self.edit_ssize = window._w_create_pair_dim_edit(self.frame_edit, "Screen dimensions:", self.distrib.screen_dims, 2, 1)
+        self.edit_padding = window._w_create_pair_dim_edit(self.frame_edit, "Image padding:", self.distrib.image_padding, 2, 2)
         self.btn_edit_words = tkinter.Button(self.frame_edit, text="Edit words", width=34, command=self._cmd_edit_words)
         window._w_place_in_grid(self.btn_edit_words, 2, 3, w=2)
 
@@ -270,10 +297,10 @@ class window:
         self.frame_info = labelframe_disableable(self.top, bg=window._color_bg)
         window._w_place_in_grid(self.frame_info, 1, 2)
 
-        self.label_number = window._w_create_pair_label(self.frame_info, "Number of images:", "0000", 0, 0)
-        self.label_number_nxn = window._w_create_pair_label(self.frame_info, "Grid dimensions (WxH):", "0000 x 0000", 0, 1)
-        self.label_dimensions_ori = window._w_create_pair_label(self.frame_info, "Original image dimensions:", "0000 x 0000", 0, 2)
-        self.label_dimensions_rec = window._w_create_pair_label(self.frame_info, "Scaled image dimensions:", "0000 x 0000", 0, 3)
+        self.label_number = window._w_create_pair_label(self.frame_info, "Number of images:", self.distrib.num_images, 0, 0)
+        self.label_number_nxn = window._w_create_pair_label(self.frame_info, "Grid dimensions (WxH):", self.distrib.image_grid_dims, 0, 1)
+        self.label_dimensions_ori = window._w_create_pair_label(self.frame_info, "Original image dimensions:", self.distrib.image_dims, 0, 2)
+        self.label_dimensions_rec = window._w_create_pair_label(self.frame_info, "Scaled image dimensions:", self.distrib.image_scaled_dims, 0, 3)
 
         #####################
 
@@ -305,30 +332,26 @@ class window:
         window._w_place_in_grid(element, base_x + 1, base_y, orientation=tkinter.E)
         return element
 
-    def _w_create_pair_label(root, text_name, text_value, base_x, base_y):
-        var = tkinter.StringVar(value=text_value)
-        return window._w_create_pair(root, tkinter.Label(root, textvariable=var, bg=window._color_bg),
+    def _w_create_pair_label(root, text_name, var_value, base_x, base_y):
+        return window._w_create_pair(root, tkinter.Label(root, textvariable=var_value, bg=window._color_bg),
                                      text_name, base_x, base_y)
 
-    def _w_create_pair_num_edit(root, text_name, init, base_x, base_y):
-        var = tkinter.IntVar(value=init)
-        dim = tkinter.Spinbox(root, textvariable=var, width=5, from_=1, to=100)
+    def _w_create_pair_num_edit(root, text_name, var_value, base_x, base_y):
+        dim = tkinter.Spinbox(root, textvariable=var_value, width=5, from_=1, to=100)
         return window._w_create_pair(root, dim, text_name, base_x, base_y)
 
-    def _w_create_pair_dim_edit(root, text_name, init_a, init_b, base_x, base_y):
+    def _w_create_pair_dim_edit(root, text_name, var_dim, base_x, base_y):
         inter_frame = tkinter.Frame(root, bg=window._color_bg)
-        var_x = tkinter.IntVar(value=init_a)
-        var_y = tkinter.IntVar(value=init_b)
-        dim_x = tkinter.Spinbox(inter_frame, textvariable=var_x, width=5, from_=1, to=3840)
-        dim_y = tkinter.Spinbox(inter_frame, textvariable=var_y, width=5, from_=1, to=2160)
+        dim_x = tkinter.Spinbox(inter_frame, textvariable=var_dim.x, width=5, from_=1, to=3840)
+        dim_y = tkinter.Spinbox(inter_frame, textvariable=var_dim.y, width=5, from_=1, to=2160)
         sep = tkinter.Label(inter_frame, text="x", bg=window._color_bg)
         window._w_place_in_grid(dim_x, 0, 0, nopadding=True)
         window._w_place_in_grid(sep, 1, 0, nopadding=True)
         window._w_place_in_grid(dim_y, 2, 0, nopadding=True)
         return window._w_create_pair(root, inter_frame, text_name, base_x, base_y)
 
-    def _w_create_pair_combobox(root, text_name, options, base_x, base_y):
-        combo_box = ttk.Combobox(root, values=options)
+    def _w_create_pair_combobox(root, text_name, options, var_value, base_x, base_y):
+        combo_box = ttk.Combobox(root, values=options, textvariable=var_value)
         if(len(options) > 0):
             combo_box.current(0)
         return window._w_create_pair(root, combo_box, text_name, base_x, base_y)
@@ -336,30 +359,41 @@ class window:
     def _check_file_name(file_name):
         return file_name is not None and len(file_name) > 0
 
-    def _update_file_or_dir_name(self, path):
-        self.label_dir["text"] = path
+    def _update_pres_data(self):
+        pass
 
-    def _select_file(self, func, label, ftypes):
-        file_name = tkinter.filedialog.askopenfilename(filetypes=ftypes)
-        if window._check_file_name(file_name):
-            func(file_name)
-            label["text"] = file_name
+    def _update_input_data(self):
+        pass
+
+    def _display_not_implemented():
+        tkinter.messagebox.showerror("Error", "This function is not yet implemented.")
 
     def _cmd_select_file_pptx(self):
-        self._select_file(self.distrib.set_pres, self.label_pres, [("PowerPoint files", "*.pptx *.pptm")])
+        file_name = tkinter.filedialog.askopenfilename(filetypes=[("PowerPoint files", "*.pptx *.pptm")])
+        if window._check_file_name(file_name):
+            self.distrib.set_pres(file_name)
+            self.label_pres["text"] = file_name
+            self._update_pres_data()
 
     def _cmd_select_file_pdf(self):
-        self._select_file(self.distrib.set_input, self.label_dir, [("PDF files", "*.pdf")])
+        # TODO
+        window._display_not_implemented()
+
+        # file_name = tkinter.filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
+        # if window._check_file_name(file_name):
+        # self.distrib.set_input(file_name)
+        # self.label_dir["text"] = file_name
 
     def _cmd_select_dir(self):
         file_name = tkinter.filedialog.askdirectory()
         if window._check_file_name(file_name):
             self.distrib.set_input(file_name)
             self.label_dir["text"] = file_name
+            self._update_input_data()
 
     def _cmd_edit_words(self):
         # TODO
-        tkinter.messagebox.showerror("Error", "This function is not yet implemented.")
+        window._display_not_implemented()
 
     def _cmd_create(self):
         success = self.distrib.create()
@@ -370,10 +404,14 @@ class window:
 
     def loop(self):
         self.top.mainloop()
+        # while True:
+        # self.top.update_idletasks()
+        # self.top.update()
+        # time.sleep(0.016)
 
 
 def main():
-    wnd = window(distributor())
+    wnd = window()
     wnd.loop()
 
 
