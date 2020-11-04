@@ -14,6 +14,8 @@ from tkinter import ttk
 # Add option for overwriting or not output files.
 # Make program remember last used paths
 
+# ###### LOGIC
+
 class word_orientation(Enum):
     TOP_LEFT = 0,
     TOP_RIGHT = 1,
@@ -50,6 +52,16 @@ class slide_visualizer:
         self.images = ()
 
     def draw(self, canvas):
+        # TODO
+        pass
+
+
+class pdf_jpg_extractor:
+    def __init__(self, file):
+        self.file = file
+        # TODO
+
+    def extract(idx_start, idx_end):
         # TODO
         pass
 
@@ -120,6 +132,42 @@ class distributor:
         return self._create_internal()
 
 
+# ####### UI
+
+# https://stackoverflow.com/questions/51902451/how-to-enable-and-disable-frame-instead-of-individual-widgets-in-python-tkinter/52152773
+class labelframe_disableable(tkinter.LabelFrame):
+    def enable(self, status="normal"):
+        def cstate(widget):
+            # Is this widget a container?
+            if widget.winfo_children:
+                # It's a container, so iterate through its children
+                for w in widget.winfo_children():
+                    if len(w.winfo_children()) == 0:
+                        w.configure(state=status)
+                    else:
+                        cstate(w)
+        cstate(self)
+
+    def disable(self):
+        self.enable(status="disabled")
+
+
+class panel_extract_jpgs:
+    def __init__(self, extractor):
+        # TODO
+        pass
+
+
+class panel_edit_words:
+    def __init__(self, root, current_words):
+        self.words = current_words
+        self._create_widgets(root)
+
+    def _create_widgets(self, root):
+        # TODO
+        pass
+
+
 class window:
     _color_bg = "#fafafa"
     _color_canvas_bg = "#ffffff"
@@ -127,7 +175,7 @@ class window:
     def __init__(self, distrib):
         self.distrib = distrib
         self._create_widgets()
-        self._set_initial_state()
+        self._lock_edit()
 
     def _create_widgets(self):
         # Directory with images (TODO: PDF file for automatic extraction)
@@ -142,8 +190,8 @@ class window:
         # # Preview window? Display preview using simple rectangle shapes
         # # Create button
 
-        width = 800
-        height = 700
+        width = 770
+        height = 650
 
         self.top = tkinter.Tk()
         self.top.title("Distribute Images Tool")
@@ -156,14 +204,14 @@ class window:
 
         # File picker
 
-        frame_pick_files = tkinter.LabelFrame(self.top, bg=window._color_bg)
+        frame_pick_files = labelframe_disableable(self.top, bg=window._color_bg)
         window._w_place_in_grid(frame_pick_files, 0, 0, w=2)
 
         self.label_pres = tkinter.Label(frame_pick_files, width=92, text="Please select a presentation file.",
                                         anchor=tkinter.W, bg=window._color_bg)
         window._w_place_in_grid(self.label_pres, 0, 0)
 
-        self.btn_select_pres = tkinter.Button(frame_pick_files, width=12, text="Presentation", command=self._select_file_pptx)
+        self.btn_select_pres = tkinter.Button(frame_pick_files, width=12, text="Presentation", command=self._cmd_select_file_pptx)
         window._w_place_in_grid(self.btn_select_pres, 1, 0, orientation=tkinter.E)
 
         self.label_dir = tkinter.Label(frame_pick_files, width=92, text="Please select a PDF file or an image directory.",
@@ -173,10 +221,10 @@ class window:
         frame_two_button = tkinter.Frame(frame_pick_files, bg=window._color_bg)
         window._w_place_in_grid(frame_two_button, 1, 1, orientation=tkinter.E)
 
-        self.btn_select_file = tkinter.Button(frame_two_button, text="PDF", width=5, command=self._select_file_pdf)
+        self.btn_select_file = tkinter.Button(frame_two_button, text="PDF", width=5, command=self._cmd_select_file_pdf)
         window._w_place_in_grid(self.btn_select_file, 0, 0, orientation=tkinter.W, nopadding=True)
 
-        self.btn_select_dir = tkinter.Button(frame_two_button, text="Images", command=self._select_dir)
+        self.btn_select_dir = tkinter.Button(frame_two_button, text="Images", command=self._cmd_select_dir)
         window._w_place_in_grid(self.btn_select_dir, 1, 0, orientation=tkinter.E, nopadding=True)
 
         #####################
@@ -192,7 +240,7 @@ class window:
 
         # Editing
 
-        self.frame_edit = tkinter.LabelFrame(self.top, bg=window._color_bg)
+        self.frame_edit = labelframe_disableable(self.top, bg=window._color_bg)
         window._w_place_in_grid(self.frame_edit, 0, 2)
 
         # Distribution mode
@@ -212,12 +260,14 @@ class window:
         self.edit_mode = window._w_create_pair_combobox(self.frame_edit, "Mode:", ["All in one slide", "Multiple slides"], 2, 0)
         self.edit_ssize = window._w_create_pair_dim_edit(self.frame_edit, "Screen dimensions:", 1920, 1080, 2, 1)
         self.edit_padding = window._w_create_pair_dim_edit(self.frame_edit, "Image padding:", 32, 32, 2, 2)
+        self.btn_edit_words = tkinter.Button(self.frame_edit, text="Edit words", width=34, command=self._cmd_edit_words)
+        window._w_place_in_grid(self.btn_edit_words, 2, 3, w=2)
 
         # #####################
 
         # Informations
 
-        self.frame_info = tkinter.LabelFrame(self.top, bg=window._color_bg)
+        self.frame_info = labelframe_disableable(self.top, bg=window._color_bg)
         window._w_place_in_grid(self.frame_info, 1, 2)
 
         self.label_number = window._w_create_pair_label(self.frame_info, "Number of images:", "0000", 0, 0)
@@ -229,8 +279,18 @@ class window:
 
         # Create button at the very end.
 
-        self.btn_create = tkinter.Button(self.top, text="Create", width=20, command=self._run_create)
+        self.btn_create = tkinter.Button(self.top, text="Create", width=34, command=self._cmd_create)
         window._w_place_in_grid(self.btn_create, 0, 3, 2)
+
+    def _lock_edit(self):
+        self.frame_edit.disable()
+        self.frame_info.disable()
+        self.btn_create.configure(state="disabled")
+
+    def _unlock_edit(self):
+        self.frame_edit.enable()
+        self.frame_info.enable()
+        self.btn_create.configure(state="normal")
 
     def _w_place_in_grid(widget, x, y, w=1, h=1, weight_w=1, weight_h=0, orientation="", nopadding=False):
         root = widget._root()
@@ -273,20 +333,11 @@ class window:
             combo_box.current(0)
         return window._w_create_pair(root, combo_box, text_name, base_x, base_y)
 
-    def _set_initial_state(self):
-        pass
-
     def _check_file_name(file_name):
         return file_name is not None and len(file_name) > 0
 
     def _update_file_or_dir_name(self, path):
         self.label_dir["text"] = path
-
-    def _select_file_pptx(self):
-        self._select_file(self.distrib.set_pres, self.label_pres, [("PowerPoint files", "*.pptx *.pptm")])
-
-    def _select_file_pdf(self):
-        self._select_file(self.distrib.set_input, self.label_dir, [("PDF files", "*.pdf")])
 
     def _select_file(self, func, label, ftypes):
         file_name = tkinter.filedialog.askopenfilename(filetypes=ftypes)
@@ -294,13 +345,23 @@ class window:
             func(file_name)
             label["text"] = file_name
 
-    def _select_dir(self):
+    def _cmd_select_file_pptx(self):
+        self._select_file(self.distrib.set_pres, self.label_pres, [("PowerPoint files", "*.pptx *.pptm")])
+
+    def _cmd_select_file_pdf(self):
+        self._select_file(self.distrib.set_input, self.label_dir, [("PDF files", "*.pdf")])
+
+    def _cmd_select_dir(self):
         file_name = tkinter.filedialog.askdirectory()
         if window._check_file_name(file_name):
             self.distrib.set_input(file_name)
             self.label_dir["text"] = file_name
 
-    def _run_create(self):
+    def _cmd_edit_words(self):
+        # TODO
+        tkinter.messagebox.showerror("Error", "This function is not yet implemented.")
+
+    def _cmd_create(self):
         success = self.distrib.create()
         if success:
             tkinter.messagebox.showinfo("Success", "Image distribution succeeded.")

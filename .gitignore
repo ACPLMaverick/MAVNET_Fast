@@ -70,3 +70,5 @@ FTPSync/build/
 
 AC/build/
 avrlib/build/
+
+__pycache__
