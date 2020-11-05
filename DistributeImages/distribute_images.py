@@ -5,6 +5,7 @@ import time
 from enum import Enum
 import os
 import pptx
+import pptx.util
 import tkinter
 import tkinter.filedialog
 import tkinter.messagebox
@@ -23,6 +24,9 @@ class enum_enhanced(Enum):
 
     def get_names(enum_class):
         return [str(e) for e in enum_class]
+
+    def reconvert_name(name):
+        return name.upper().replace(" ", "_")
 
 
 class word_orientation(enum_enhanced):
@@ -47,6 +51,15 @@ class dimensions(tkinter.StringVar):
 
     def _get_str(self):
         return "{} x {}".format(self.x.get(), self.y.get())
+
+
+class enum_var(tkinter.StringVar):
+    def __init__(self, enum_class, *args, **kwargs):
+        self.enum_class = enum_class
+        super().__init__(*args, **kwargs)
+
+    def get_enum(self):
+        return self.enum_class[self.enum_class.reconvert_name(self.get())]
 
 
 # slide_image's anchor is CENTER
@@ -86,22 +99,45 @@ class distributor:
         self.pres = None
         self.input_dir = None
 
+        self.slide_names = ["(no slides)"]
+
         self.num_images = tkinter.IntVar(value=0)
         self.image_grid_dims = dimensions(0, 0)
         self.image_dims = dimensions(0, 0)
         self.image_scaled_dims = dimensions(0, 0)
 
-        self.source_slide_name = tkinter.StringVar(value="(no slides)")
+        self.source_slide_name = tkinter.StringVar(value=self.slide_names[0])
+        self.source_slide_name.trace("w", lambda name, index, mode, self=self: self._on_source_slide_name_changed())
         self.word_font = tkinter.StringVar(value="Impact")
         self.word_size = tkinter.IntVar(value=24)
-        self.word_position = tkinter.IntVar(value=word_orientation.TOP_LEFT)
-        self.mode = tkinter.IntVar(value=distributor_mode.ALL_IN_ONE_SLIDE)
+        self.word_position = enum_var(enum_class=word_orientation, value=word_orientation.TOP_LEFT)
+        self.mode = enum_var(enum_class=distributor_mode, value=distributor_mode.ALL_IN_ONE_SLIDE)
         self.screen_dims = dimensions(1920, 1080)
         self.image_padding = dimensions(32, 32)
+
+        self._source_slide_idx = 0
 
     def _extract_from_pdf(self):
         print("TODO Implement.")
         return ""
+
+    def _load_pres_data(self):
+        if len(self.pres.slides) > 0:
+            self.slide_names.clear()
+            ctr = 0
+            for slide in self.pres.slides:
+                name = slide.name
+                if name is None or len(name) == 0:
+                    self.slide_names.append("Slide {}".format(ctr))
+                else:
+                    self.slide_names.append(name)
+                ctr += 1
+            self.source_slide_name.set(self.slide_names[0])
+
+        slide_width = pptx.util.Emu(self.pres.slide_width)
+        slide_height = pptx.util.Emu(self.pres.slide_height)
+        self.screen_dims.x.set(int(slide_width.pt))
+        self.screen_dims.y.set(int(slide_height.pt))
 
     def _create_internal(self):
         title_slide_layout = self.pres.slide_layouts[0]
@@ -116,35 +152,47 @@ class distributor:
 
         return True
 
+    def _on_source_slide_name_changed(self):
+        # Update the idx.
+        slide_name = self.source_slide_name.get()
+        try:
+            self._source_slide_idx = self.slide_names.index(slide_name)
+        except ValueError as e:
+            print(e)
+            print("Not found slide name. Not setting the slide idx.")
+
+    def _debug_print_options(self):
+        print("distributor:")
+        print("\tpres:", self.pres)
+        print("\tinput_dir:", self.input_dir)
+        print("\tnum_images:", self.num_images.get())
+        print("\timage_grid_dims:", self.image_grid_dims._get_str())
+        print("\timage_dims:", self.image_dims._get_str())
+        print("\timage_scaled_dims:", self.image_scaled_dims._get_str())
+        print("\tsource_slide_name:", self.source_slide_name.get())
+        print("\tword_font:", self.word_font.get())
+        print("\tword_size:", self.word_size.get())
+        print("\tword_position:", self.word_position.get_enum())
+        print("\tmode:", self.mode.get_enum())
+        print("\tscreen_dims:", self.screen_dims._get_str())
+        print("\timage_padding:", self.image_padding._get_str())
+        print("\t_source_slide_idx:", self._source_slide_idx)
+
     def recalculate(self):
         pass
 
     def set_pres(self, path):
         if path.lower().endswith(".pptx") or path.lower().endswith(".pptm"):
             self.pres = pptx.Presentation(path)
+            self._load_pres_data()
 
     def set_input(self, path):
-        print("File or dir:", path)
         if os.path.isdir(path):
-            self.image_dir = path
-        elif path.lower().endswith(".pdf"):
-            self.pdf_file = path
-
-    def get_slide_names(self):
-        slide_names = []
-        if self.pres is None:
-            return slide_names
-        ctr = 1
-        for slide in self.pres.slides:
-            name = slide.name
-            if name is None or len(name) == 0:
-                slide_names.append("Slide {}".format(ctr))
-            else:
-                slide_names.append(name)
-            ctr += 1
-        return slide_names
+            self.input_dir = path
 
     def create(self):
+        self._debug_print_options()
+
         if self.pres is None:
             return False
 
@@ -198,7 +246,7 @@ class window:
         self._create_top()
         self.distrib = distributor()
         self._create_widgets()
-        # self._lock_edit()
+        self._lock_edit()
 
     def _create_top(self):
         self.width = 770
@@ -326,6 +374,19 @@ class window:
         root.columnconfigure(x, weight=weight_w)
         root.rowconfigure(y, weight=weight_h)
 
+    def _w_create_num_input(root, var_value):
+        def validate_num_input(val):
+            int_val = 0
+            try:
+                int_val = int(val)
+            except Exception:
+                return False
+            return int_val >= 1 and int_val <= 9999
+        cmd = root.register(validate_num_input)
+        return tkinter.Spinbox(root, textvariable=var_value, width=5,
+                               from_=1, to=9999, validate="all",
+                               validatecommand=(cmd, "%P"))
+
     def _w_create_pair(root, element, text_name, base_x, base_y):
         label_name = tkinter.Label(root, text=text_name, bg=window._color_bg)
         window._w_place_in_grid(label_name, base_x, base_y, orientation=tkinter.W)
@@ -337,13 +398,13 @@ class window:
                                      text_name, base_x, base_y)
 
     def _w_create_pair_num_edit(root, text_name, var_value, base_x, base_y):
-        dim = tkinter.Spinbox(root, textvariable=var_value, width=5, from_=1, to=100)
+        dim = window._w_create_num_input(root, var_value)
         return window._w_create_pair(root, dim, text_name, base_x, base_y)
 
     def _w_create_pair_dim_edit(root, text_name, var_dim, base_x, base_y):
         inter_frame = tkinter.Frame(root, bg=window._color_bg)
-        dim_x = tkinter.Spinbox(inter_frame, textvariable=var_dim.x, width=5, from_=1, to=3840)
-        dim_y = tkinter.Spinbox(inter_frame, textvariable=var_dim.y, width=5, from_=1, to=2160)
+        dim_x = window._w_create_num_input(inter_frame, var_dim.x)
+        dim_y = window._w_create_num_input(inter_frame, var_dim.y)
         sep = tkinter.Label(inter_frame, text="x", bg=window._color_bg)
         window._w_place_in_grid(dim_x, 0, 0, nopadding=True)
         window._w_place_in_grid(sep, 1, 0, nopadding=True)
@@ -351,7 +412,11 @@ class window:
         return window._w_create_pair(root, inter_frame, text_name, base_x, base_y)
 
     def _w_create_pair_combobox(root, text_name, options, var_value, base_x, base_y):
-        combo_box = ttk.Combobox(root, values=options, textvariable=var_value)
+        def func_validate():
+            return False
+        cmd = root.register(func_validate)
+        combo_box = ttk.Combobox(root, values=options, textvariable=var_value,
+                                 validate="key", validatecommand=cmd)
         if(len(options) > 0):
             combo_box.current(0)
         return window._w_create_pair(root, combo_box, text_name, base_x, base_y)
@@ -360,10 +425,13 @@ class window:
         return file_name is not None and len(file_name) > 0
 
     def _update_pres_data(self):
-        pass
+        if self.distrib.input_dir is not None:
+            self._unlock_edit()
+        self.edit_source_slide["values"] = self.distrib.slide_names
 
     def _update_input_data(self):
-        pass
+        if self.distrib.pres is not None:
+            self._unlock_edit()
 
     def _display_not_implemented():
         tkinter.messagebox.showerror("Error", "This function is not yet implemented.")
