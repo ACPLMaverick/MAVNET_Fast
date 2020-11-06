@@ -2,6 +2,7 @@
 
 import sys
 import time
+import glob
 from enum import Enum
 import os
 import pptx
@@ -9,6 +10,7 @@ import pptx.util
 import tkinter
 import tkinter.filedialog
 import tkinter.messagebox
+from PIL import ImageTk, Image
 from tkinter import ttk
 
 
@@ -41,6 +43,12 @@ class distributor_mode(enum_enhanced):
     MULTIPLE_SLIDES = 1
 
 
+class input_data_load_result(Enum):
+    FAILURE = 0,
+    OK = 1,
+    OK_NON_UNIFORM_DIMENSIONS = 2
+
+
 class dimensions(tkinter.StringVar):
     def __init__(self, x, y):
         self.x = tkinter.IntVar(value=x)
@@ -51,6 +59,10 @@ class dimensions(tkinter.StringVar):
 
     def _get_str(self):
         return "{} x {}".format(self.x.get(), self.y.get())
+
+    def set_dims(self, new_x, new_y):
+        self.x.set(new_x)
+        self.y.set(new_y)
 
 
 class enum_var(tkinter.StringVar):
@@ -115,7 +127,9 @@ class distributor:
         self.screen_dims = dimensions(1920, 1080)
         self.image_padding = dimensions(32, 32)
 
+        self._pres_file_path = None
         self._source_slide_idx = 0
+        self._images = []
 
     def _extract_from_pdf(self):
         print("TODO Implement.")
@@ -133,14 +147,53 @@ class distributor:
                     self.slide_names.append(name)
                 ctr += 1
             self.source_slide_name.set(self.slide_names[0])
+        else:
+            return False
 
         slide_width = pptx.util.Emu(self.pres.slide_width)
         slide_height = pptx.util.Emu(self.pres.slide_height)
         self.screen_dims.x.set(int(slide_width.pt))
         self.screen_dims.y.set(int(slide_height.pt))
 
+        return True
+
+    def _load_input_data(self):
+        files = glob.glob(os.path.join(self.input_dir, "*.jpg"))
+        files.extend(glob.glob(os.path.join(self.input_dir, "*.png")))
+        files.extend(glob.glob(os.path.join(self.input_dir, "*.svg")))
+        files.extend(glob.glob(os.path.join(self.input_dir, "*.tga")))
+        files.extend(glob.glob(os.path.join(self.input_dir, "*.gif")))
+
+        self._images.clear()
+
+        self.num_images.set(len(files))
+
+        if(self.num_images.get() == 0):
+            self.image_grid_dims.set_dims(0, 0)
+            self.image_dims.set_dims(0, 0)
+            self.image_scaled_dims.set_dims(0, 0)
+            return input_data_load_result.FAILURE
+
+        return_code = input_data_load_result.OK
+        average_width = 0
+        average_height = 0
+        for image_file in files:
+            image = ImageTk.PhotoImage(Image.open(image_file))
+            self._images.append(image)
+            image_width = image.width()
+            image_height = image.height()
+            if (average_width != 0 and average_width != image_width) or (average_height != 0 and average_height != image_height):
+                return_code = input_data_load_result.OK_NON_UNIFORM_DIMENSIONS
+            average_width += image_width
+            average_height += image_height
+        average_width = average_width / self.num_images.get()
+        average_height = average_height / self.num_images.get()
+        self.image_dims.set_dims(average_width, average_height)
+
+        return return_code
+
     def _create_internal(self):
-        title_slide_layout = self.pres.slide_layouts[0]
+        title_slide_layout = self.pres.slides[self._source_slide_idx].slide_layout
         slide = self.pres.slides.add_slide(title_slide_layout)
         title = slide.shapes.title
         subtitle = slide.placeholders[1]
@@ -148,8 +201,11 @@ class distributor:
         title.text = "Hello, World!"
         subtitle.text = "python-pptx was here!"
 
-        self.pres.save(self.pres_file)
+        self.pres.save(self._pres_file_path)
 
+        return True
+
+    def __create_internal(self):
         return True
 
     def _on_source_slide_name_changed(self):
@@ -176,6 +232,7 @@ class distributor:
         print("\tmode:", self.mode.get_enum())
         print("\tscreen_dims:", self.screen_dims._get_str())
         print("\timage_padding:", self.image_padding._get_str())
+        print("\t_pres_file_path:", self._pres_file_path)
         print("\t_source_slide_idx:", self._source_slide_idx)
 
     def recalculate(self):
@@ -183,12 +240,18 @@ class distributor:
 
     def set_pres(self, path):
         if path.lower().endswith(".pptx") or path.lower().endswith(".pptm"):
+            self._pres_file_path = path
             self.pres = pptx.Presentation(path)
-            self._load_pres_data()
+            return self._load_pres_data()
+        else:
+            return False
 
     def set_input(self, path):
         if os.path.isdir(path):
             self.input_dir = path
+            return self._load_input_data()
+        else:
+            return input_data_load_result.FAILURE
 
     def create(self):
         self._debug_print_options()
@@ -241,6 +304,8 @@ class panel_edit_words:
 class window:
     _color_bg = "#fafafa"
     _color_canvas_bg = "#ffffff"
+    _str_select_pres = "Please select a presentation file."
+    _str_select_input = "Please select a PDF file or an image directory."
 
     def __init__(self):
         self._create_top()
@@ -279,14 +344,14 @@ class window:
         frame_pick_files = labelframe_disableable(self.top, bg=window._color_bg)
         window._w_place_in_grid(frame_pick_files, 0, 0, w=2)
 
-        self.label_pres = tkinter.Label(frame_pick_files, width=92, text="Please select a presentation file.",
+        self.label_pres = tkinter.Label(frame_pick_files, width=92, text=window._str_select_pres,
                                         anchor=tkinter.W, bg=window._color_bg)
         window._w_place_in_grid(self.label_pres, 0, 0)
 
         self.btn_select_pres = tkinter.Button(frame_pick_files, width=12, text="Presentation", command=self._cmd_select_file_pptx)
         window._w_place_in_grid(self.btn_select_pres, 1, 0, orientation=tkinter.E)
 
-        self.label_dir = tkinter.Label(frame_pick_files, width=92, text="Please select a PDF file or an image directory.",
+        self.label_dir = tkinter.Label(frame_pick_files, width=92, text=window._str_select_input,
                                        anchor=tkinter.W, bg=window._color_bg)
         window._w_place_in_grid(self.label_dir, 0, 1)
 
@@ -436,12 +501,19 @@ class window:
     def _display_not_implemented():
         tkinter.messagebox.showerror("Error", "This function is not yet implemented.")
 
+    def _mark_as_loading(label):
+        label["text"] = "Loading..."
+
     def _cmd_select_file_pptx(self):
         file_name = tkinter.filedialog.askopenfilename(filetypes=[("PowerPoint files", "*.pptx *.pptm")])
         if window._check_file_name(file_name):
-            self.distrib.set_pres(file_name)
-            self.label_pres["text"] = file_name
-            self._update_pres_data()
+            window._mark_as_loading(self.label_pres)
+            res = self.distrib.set_pres(file_name)
+            if res is True:
+                self.label_pres["text"] = file_name
+                self._update_pres_data()
+            else:
+                self.label_pres["text"] = window._str_select_input
 
     def _cmd_select_file_pdf(self):
         # TODO
@@ -455,9 +527,16 @@ class window:
     def _cmd_select_dir(self):
         file_name = tkinter.filedialog.askdirectory()
         if window._check_file_name(file_name):
-            self.distrib.set_input(file_name)
-            self.label_dir["text"] = file_name
-            self._update_input_data()
+            window._mark_as_loading(self.label_dir)
+            res = self.distrib.set_input(file_name)
+            if res is not input_data_load_result.FAILURE:
+                if res is input_data_load_result.OK_NON_UNIFORM_DIMENSIONS:
+                    tkinter.messagebox.showwarning("Warning", "Some images have different dimensions than others.\n"
+                                                              "Will average the dimensions to provide an uniform grid.")
+                self.label_dir["text"] = file_name
+                self._update_input_data()
+            else:
+                self.label_dir["text"] = window._str_select_input
 
     def _cmd_edit_words(self):
         # TODO
