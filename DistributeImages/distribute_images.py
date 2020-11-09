@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sys
+import math
 import time
 import glob
 from enum import Enum
@@ -74,22 +75,92 @@ class enum_var(tkinter.StringVar):
         return self.enum_class[self.enum_class.reconvert_name(self.get())]
 
 
+class distribution_result:
+    def __init__(self, grid_size_x, grid_size_y, scaled_dims_x, scaled_dims_y):
+        self.grid_size_x = grid_size_x
+        self.grid_size_y = grid_size_y
+        self.scaled_dims_x = scaled_dims_x
+        self.scaled_dims_y = scaled_dims_y
+
+
 # slide_image's anchor is CENTER
 class slide_image:
-    def __init__(self, x, y, width, height):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+    def __init__(self, file_path):
+        self._file_path = file_path
+        self._img = ImageTk.PhotoImage(Image.open(file_path))
+        self.original_width = self._img.width()
+        self.original_height = self._img.height()
+        self.scaled_width = 0
+        self.scaled_height = 0
+        self.x = 0
+        self.y = 0
+        self.name = "(no name)"  # TODO
 
-    def draw(self, canvas):
-        # TODO
+    def distribute(images, screen_width, screen_height, image_width, image_height, padding_width, padding_height):
+        # So at this point we have both presentation loaded, slide dimensions available (in points)
+        # And also images loaded with their dimensions (in pixels).
+        # Scaled image dimensions will be in POINTS, so they can be easily integrated in pptx.
+
+        # ratio_screen = screen_width / screen_height
+        # ratio_image = image_width / image_height
+
+        # ratio_screen_to_image = ratio_screen / ratio_image
+
+        # If ratio_screen_to_image > 1 there should be more images in width and less in height.
+        # If ratio_screen_to_image < 1 there should be less images in width and more in height.
+
+        # For now let's try to create an uniform grid, we'll worry about text later.
+
+        num_images = len(images)
+        if num_images == 0:
+            return False
+
+        num_rows = 1
+        scale_factor = 1.0
+        while(True):
+            # Scale one image to fit exactly num_rows
+            scale_factor = ((screen_height - (num_rows + 1) * padding_height) / image_height) / num_rows
+            image_scaled_width = image_width * scale_factor
+            # Check if all images will fit in this one row. If not, we'll try to fit them in two rows.
+            total_images_width = (image_scaled_width + padding_width) * (num_images // num_rows)
+            if total_images_width > screen_width:
+                num_rows += 1
+            else:
+                break
+
+        image_scaled_width = math.floor(image_width * scale_factor)
+        image_scaled_height = math.floor(image_height * scale_factor)
+
+        num_cols = math.ceil(num_images / num_rows)
+
+        # print(scale_factor, num_rows, num_cols, image_scaled_width, image_scaled_height)
+
+        # Now distribute the images
+        for row in range(num_rows):
+            for col in range(num_cols):
+                image_idx = row * num_cols + col
+                if image_idx >= num_images:
+                    break
+                img = images[image_idx]
+                img.scaled_width = image_scaled_width
+                img.scaled_height = image_scaled_height
+                img.x = padding_width + col * (image_scaled_width + padding_width)
+                img.y = padding_height + row * (image_scaled_height + padding_height)
+                # print(image_idx, img.x, img.y, img.scaled_width, img.scaled_height)
+                assert(img.x >= 0 and (img.x + img.scaled_width) < screen_width)
+                assert(img.y >= 0 and (img.y + img.scaled_height) < screen_height)
+
+        return distribution_result(num_cols, num_rows, image_scaled_width, image_scaled_height)
+
+    def add_to_slide(self, slide):
+        slide.shapes.add_picture(self._file_path,
+                                 pptx.util.Pt(self.x),
+                                 pptx.util.Pt(self.y),
+                                 width=pptx.util.Pt(self.scaled_width),
+                                 height=pptx.util.Pt(self.scaled_height))
+
+    def init_draw(self, canvas):
         pass
-
-
-class slide_visualizer:
-    def __init__(self):
-        self.images = ()
 
     def draw(self, canvas):
         # TODO
@@ -155,6 +226,10 @@ class distributor:
         self.screen_dims.x.set(int(slide_width.pt))
         self.screen_dims.y.set(int(slide_height.pt))
 
+        if self.is_all_set():
+            if self._setup_images() is False:
+                return False
+
         return True
 
     def _load_input_data(self):
@@ -177,12 +252,18 @@ class distributor:
         return_code = input_data_load_result.OK
         average_width = 0
         average_height = 0
+        reference_width = 0
+        reference_height = 0
         for image_file in files:
-            image = ImageTk.PhotoImage(Image.open(image_file))
+            image = slide_image(image_file)
             self._images.append(image)
-            image_width = image.width()
-            image_height = image.height()
-            if (average_width != 0 and average_width != image_width) or (average_height != 0 and average_height != image_height):
+            image_width = image.original_width
+            image_height = image.original_height
+            if reference_width == 0:
+                reference_width = image_width
+            if reference_height == 0:
+                reference_height = image_height
+            if image_width != reference_width or image_height != reference_height:
                 return_code = input_data_load_result.OK_NON_UNIFORM_DIMENSIONS
             average_width += image_width
             average_height += image_height
@@ -190,9 +271,34 @@ class distributor:
         average_height = average_height / self.num_images.get()
         self.image_dims.set_dims(average_width, average_height)
 
+        if self.is_all_set():
+            setup_result = self._setup_images()
+            if setup_result is False:
+                return_code = input_data_load_result.FAILURE
+
         return return_code
 
-    def _create_internal(self):
+    def _setup_images(self):
+        screen_width = self.screen_dims.x.get()
+        screen_height = self.screen_dims.y.get()
+
+        image_width = self.image_dims.x.get()
+        image_height = self.image_dims.y.get()
+
+        padding_width = self.image_padding.x.get()
+        padding_height = self.image_padding.y.get()
+
+        result = slide_image.distribute(self._images, screen_width, screen_height, image_width, image_height, padding_width, padding_height)
+
+        if result is False:
+            return False
+
+        # Otherwise, result is distribution_result
+        self.image_grid_dims.set_dims(result.grid_size_x, result.grid_size_y)
+        self.image_scaled_dims.set_dims(result.scaled_dims_x, result.scaled_dims_y)
+        return True
+
+    def _test_create_internal(self):
         title_slide_layout = self.pres.slides[self._source_slide_idx].slide_layout
         slide = self.pres.slides.add_slide(title_slide_layout)
         title = slide.shapes.title
@@ -205,7 +311,19 @@ class distributor:
 
         return True
 
-    def __create_internal(self):
+    def _create_internal(self):
+        source_slide_layout = self.pres.slides[self._source_slide_idx].slide_layout
+        # source_slide_fill = self.pres.slides[self._source_slide_idx].background.fill # TODO Not supported.
+
+        # For now just mode 1:
+        slide = self.pres.slides.add_slide(source_slide_layout)
+        # slide.background.fill = source_slide_fill # TODO Not supported.
+
+        for img in self._images:
+            img.add_to_slide(slide)
+
+        self.pres.save(self._pres_file_path)
+
         return True
 
     def _on_source_slide_name_changed(self):
@@ -235,6 +353,9 @@ class distributor:
         print("\t_pres_file_path:", self._pres_file_path)
         print("\t_source_slide_idx:", self._source_slide_idx)
 
+    def is_all_set(self):
+        return self.pres is not None and self.input_dir is not None and len(self._images) > 0
+
     def recalculate(self):
         pass
 
@@ -254,7 +375,7 @@ class distributor:
             return input_data_load_result.FAILURE
 
     def create(self):
-        self._debug_print_options()
+        # self._debug_print_options()
 
         if self.pres is None:
             return False
@@ -263,6 +384,14 @@ class distributor:
             return False
 
         return self._create_internal()
+
+    def init_draw(self, canvas):
+        for img in self._images:
+            img.init_draw(canvas)
+
+    def draw(self, canvas):
+        for img in self._images:
+            img.draw(canvas)
 
 
 # ####### UI
@@ -328,6 +457,7 @@ class window:
         # Directory with images (TODO: PDF file for automatic extraction)
 
         # After load:
+        # # Either update selected slide or create a new one based on selected slide
         # # Total number of images and number n x n
         # # Spacing size between them (recalculates size and n x n)
         # # Recalculated (display warning when they are different and take average)
@@ -398,8 +528,8 @@ class window:
                                                                     0, 3)
         self.edit_mode = window._w_create_pair_combobox(self.frame_edit, "Mode:", enum_enhanced.get_names(distributor_mode),
                                                         self.distrib.mode, 2, 0)
-        self.edit_ssize = window._w_create_pair_dim_edit(self.frame_edit, "Screen dimensions:", self.distrib.screen_dims, 2, 1)
-        self.edit_padding = window._w_create_pair_dim_edit(self.frame_edit, "Image padding:", self.distrib.image_padding, 2, 2)
+        self.edit_ssize = window._w_create_pair_dim_edit(self.frame_edit, "Screen dimensions (pt):", self.distrib.screen_dims, 2, 1)
+        self.edit_padding = window._w_create_pair_dim_edit(self.frame_edit, "Image padding (pt):", self.distrib.image_padding, 2, 2)
         self.btn_edit_words = tkinter.Button(self.frame_edit, text="Edit words", width=34, command=self._cmd_edit_words)
         window._w_place_in_grid(self.btn_edit_words, 2, 3, w=2)
 
@@ -412,8 +542,8 @@ class window:
 
         self.label_number = window._w_create_pair_label(self.frame_info, "Number of images:", self.distrib.num_images, 0, 0)
         self.label_number_nxn = window._w_create_pair_label(self.frame_info, "Grid dimensions (WxH):", self.distrib.image_grid_dims, 0, 1)
-        self.label_dimensions_ori = window._w_create_pair_label(self.frame_info, "Original image dimensions:", self.distrib.image_dims, 0, 2)
-        self.label_dimensions_rec = window._w_create_pair_label(self.frame_info, "Scaled image dimensions:", self.distrib.image_scaled_dims, 0, 3)
+        self.label_dimensions_ori = window._w_create_pair_label(self.frame_info, "Ori. image dimensions (px):", self.distrib.image_dims, 0, 2)
+        self.label_dimensions_rec = window._w_create_pair_label(self.frame_info, "Scl. image dimensions (pt):", self.distrib.image_scaled_dims, 0, 3)
 
         #####################
 
@@ -431,6 +561,10 @@ class window:
         self.frame_edit.enable()
         self.frame_info.enable()
         self.btn_create.configure(state="normal")
+
+    def _all_set(self):
+        self._unlock_edit()
+        self.distrib.init_draw(self.canvas)
 
     def _w_place_in_grid(widget, x, y, w=1, h=1, weight_w=1, weight_h=0, orientation="", nopadding=False):
         root = widget._root()
@@ -491,12 +625,13 @@ class window:
 
     def _update_pres_data(self):
         if self.distrib.input_dir is not None:
-            self._unlock_edit()
+            self._all_set()
         self.edit_source_slide["values"] = self.distrib.slide_names
+        self.distrib.source_slide_name.set(self.distrib.slide_names[-1])  # Set the last one as default.
 
     def _update_input_data(self):
         if self.distrib.pres is not None:
-            self._unlock_edit()
+            self._all_set()
 
     def _display_not_implemented():
         tkinter.messagebox.showerror("Error", "This function is not yet implemented.")
