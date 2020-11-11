@@ -1,19 +1,22 @@
 #!/usr/bin/python
 
-import sys
 import math
-import time
 import glob
 from enum import Enum
 import os
 import pptx
 import pptx.util
+import pptx.dml.color
 import tkinter
 import tkinter.filedialog
 import tkinter.messagebox
 from PIL import ImageTk, Image
 from tkinter import ttk
+from tkinter import colorchooser
 
+
+# Known bugs:
+# - Spinboxes don't allow changing the most-significant digit of a number
 
 # Add possibility to drag-drop files.
 # Add option for overwriting or not output files.
@@ -39,9 +42,14 @@ class word_orientation(enum_enhanced):
     BOTTOM_LEFT = 3
 
 
-class distributor_mode(enum_enhanced):
+class mode_distribution(enum_enhanced):
     ALL_IN_ONE_SLIDE = 0,
     MULTIPLE_SLIDES = 1
+
+
+class mode_operation(enum_enhanced):
+    CREATE_NEW_SLIDE = 0,
+    OVERWRITE_SELECTED = 1
 
 
 class input_data_load_result(Enum):
@@ -75,6 +83,29 @@ class enum_var(tkinter.StringVar):
         return self.enum_class[self.enum_class.reconvert_name(self.get())]
 
 
+class color_picker(tkinter.Frame):
+    def __init__(self, master, var_color, width=144, height=20, command=None):
+        super().__init__(master, width=width, height=height)
+        self.btn = tkinter.Button(self, command=self._on_clicked, bg=var_color.get(), fg=var_color.get())
+        self.btn.place(x=0, y=0, width=width, height=height)
+        self.var_color = var_color
+        self.var_color.trace("w", lambda name, index, mode, self=self: self._on_color_changed())
+        self.command = command
+
+    def _on_clicked(self):
+        new_color_tuple = tkinter.colorchooser.askcolor(self.var_color.get(), title="Pick a color")
+        if len(new_color_tuple) > 1:
+            new_color = new_color_tuple[1]
+            if new_color is not None and new_color != self.var_color.get():
+                self.var_color.set(new_color)
+                if self.command is not None:
+                    self.command(new_color)
+
+    def _on_color_changed(self):
+        self.btn["bg"] = self.var_color.get()
+        self.btn["fg"] = self.var_color.get()
+
+
 class distribution_result:
     def __init__(self, grid_size_x, grid_size_y, scaled_dims_x, scaled_dims_y):
         self.grid_size_x = grid_size_x
@@ -87,7 +118,9 @@ class distribution_result:
 class slide_image:
     def __init__(self, file_path):
         self._file_path = file_path
-        self._img = ImageTk.PhotoImage(Image.open(file_path))
+        self._raw_img = Image.open(file_path)
+        self._img = ImageTk.PhotoImage(self._raw_img)
+        self._canvas_id = 0
         self.original_width = self._img.width()
         self.original_height = self._img.height()
         self.scaled_width = 0
@@ -152,6 +185,11 @@ class slide_image:
 
         return distribution_result(num_cols, num_rows, image_scaled_width, image_scaled_height)
 
+    def _resize_img(self, canvas, new_width, new_height):
+        self._raw_img = self._raw_img.resize((new_width, new_height), Image.ANTIALIAS)
+        self._img = ImageTk.PhotoImage(self._raw_img)
+        canvas.itemconfig(self._canvas_id, image=self._img)
+
     def add_to_slide(self, slide):
         slide.shapes.add_picture(self._file_path,
                                  pptx.util.Pt(self.x),
@@ -159,12 +197,21 @@ class slide_image:
                                  width=pptx.util.Pt(self.scaled_width),
                                  height=pptx.util.Pt(self.scaled_height))
 
-    def init_draw(self, canvas):
-        pass
+    def init_draw(self, canvas, reference_width, reference_height):
+        self._canvas_id = canvas.create_image(0, 0, image=self._img, anchor=tkinter.NW)
+        self.draw(canvas, reference_width, reference_height)
 
-    def draw(self, canvas):
-        # TODO
-        pass
+    def draw(self, canvas, reference_width, reference_height):
+        scale_x = canvas.winfo_width() / reference_width
+        scale_y = canvas.winfo_height() / reference_height
+
+        canv_x = int(self.x * scale_x)
+        canv_y = int(self.y * scale_y)
+        canv_w = int(self.scaled_width * scale_x)
+        canv_h = int(self.scaled_height * scale_y)
+        canvas.coords(self._canvas_id, canv_x, canv_y)
+
+        self._resize_img(canvas, canv_w, canv_h)
 
 
 class pdf_jpg_extractor:
@@ -194,10 +241,12 @@ class distributor:
         self.word_font = tkinter.StringVar(value="Impact")
         self.word_size = tkinter.IntVar(value=24)
         self.word_position = enum_var(enum_class=word_orientation, value=word_orientation.TOP_LEFT)
-        self.mode = enum_var(enum_class=distributor_mode, value=distributor_mode.ALL_IN_ONE_SLIDE)
-        self.screen_dims = dimensions(1920, 1080)
+        self.operation = enum_var(enum_class=mode_operation, value=mode_operation.CREATE_NEW_SLIDE)
+        self.mode = enum_var(enum_class=mode_distribution, value=mode_distribution.ALL_IN_ONE_SLIDE)
+        self.slide_background_color = tkinter.StringVar(value="#ffffff")
         self.image_padding = dimensions(32, 32)
 
+        self._screen_dims = dimensions(960, 540)
         self._pres_file_path = None
         self._source_slide_idx = 0
         self._images = []
@@ -217,14 +266,25 @@ class distributor:
                 else:
                     self.slide_names.append(name)
                 ctr += 1
-            self.source_slide_name.set(self.slide_names[0])
+            self.source_slide_name.set(self.slide_names[-1])
         else:
             return False
 
         slide_width = pptx.util.Emu(self.pres.slide_width)
         slide_height = pptx.util.Emu(self.pres.slide_height)
-        self.screen_dims.x.set(int(slide_width.pt))
-        self.screen_dims.y.set(int(slide_height.pt))
+        self._screen_dims.x.set(int(slide_width.pt))
+        self._screen_dims.y.set(int(slide_height.pt))
+
+        # last_slide = self.pres.slides[-1]
+        # if last_slide.background is not None:
+        #    if last_slide.background.fill is not None:
+        #        if last_slide.background.fill.fore_color is not None:
+        #            color = last_slide.background.fill.fore_color
+        #            print(color.rgb)
+        #            if hasattr(color, "rgb"):
+        #                rgb = color.rgb
+        #                if rgb is not None:
+        #                    print(str(rgb))
 
         if self.is_all_set():
             if self._setup_images() is False:
@@ -279,8 +339,8 @@ class distributor:
         return return_code
 
     def _setup_images(self):
-        screen_width = self.screen_dims.x.get()
-        screen_height = self.screen_dims.y.get()
+        screen_width = self._screen_dims.x.get()
+        screen_height = self._screen_dims.y.get()
 
         image_width = self.image_dims.x.get()
         image_height = self.image_dims.y.get()
@@ -298,19 +358,6 @@ class distributor:
         self.image_scaled_dims.set_dims(result.scaled_dims_x, result.scaled_dims_y)
         return True
 
-    def _test_create_internal(self):
-        title_slide_layout = self.pres.slides[self._source_slide_idx].slide_layout
-        slide = self.pres.slides.add_slide(title_slide_layout)
-        title = slide.shapes.title
-        subtitle = slide.placeholders[1]
-
-        title.text = "Hello, World!"
-        subtitle.text = "python-pptx was here!"
-
-        self.pres.save(self._pres_file_path)
-
-        return True
-
     def _create_internal(self):
         source_slide_layout = self.pres.slides[self._source_slide_idx].slide_layout
         # source_slide_fill = self.pres.slides[self._source_slide_idx].background.fill # TODO Not supported.
@@ -321,6 +368,9 @@ class distributor:
 
         for img in self._images:
             img.add_to_slide(slide)
+
+        slide.background.fill.solid()
+        slide.background.fill.fore_color.rgb = pptx.dml.color.RGBColor.from_string(self.slide_background_color.get()[1:])
 
         self.pres.save(self._pres_file_path)
 
@@ -348,7 +398,7 @@ class distributor:
         print("\tword_size:", self.word_size.get())
         print("\tword_position:", self.word_position.get_enum())
         print("\tmode:", self.mode.get_enum())
-        print("\tscreen_dims:", self.screen_dims._get_str())
+        print("\t_screen_dims:", self._screen_dims._get_str())
         print("\timage_padding:", self.image_padding._get_str())
         print("\t_pres_file_path:", self._pres_file_path)
         print("\t_source_slide_idx:", self._source_slide_idx)
@@ -387,11 +437,11 @@ class distributor:
 
     def init_draw(self, canvas):
         for img in self._images:
-            img.init_draw(canvas)
+            img.init_draw(canvas, self._screen_dims.x.get(), self._screen_dims.y.get())
 
     def draw(self, canvas):
         for img in self._images:
-            img.draw(canvas)
+            img.draw(canvas, self._screen_dims.x.get(), self._screen_dims.y.get())
 
 
 # ####### UI
@@ -432,7 +482,6 @@ class panel_edit_words:
 
 class window:
     _color_bg = "#fafafa"
-    _color_canvas_bg = "#ffffff"
     _str_select_pres = "Please select a presentation file."
     _str_select_input = "Please select a PDF file or an image directory."
 
@@ -499,9 +548,10 @@ class window:
         # Visual editor
 
         canvas_size_mul = 0.95
-        self.canvas = tkinter.Canvas(self.top, bg=window._color_canvas_bg,
+        self.canvas = tkinter.Canvas(self.top, bg=self.distrib.slide_background_color.get(),
                                      width=self.width * canvas_size_mul, height=(self.width * (9 / 16)) * canvas_size_mul)
         window._w_place_in_grid(self.canvas, 0, 1, w=2)
+        self.distrib.slide_background_color.trace("w", lambda name, index, mode, self=self: self._on_slide_background_color_changed())
 
         #####################
 
@@ -526,12 +576,12 @@ class window:
         self.edit_word_positioning = window._w_create_pair_combobox(self.frame_edit, "Word position:",
                                                                     enum_enhanced.get_names(word_orientation), self.distrib.word_position,
                                                                     0, 3)
-        self.edit_mode = window._w_create_pair_combobox(self.frame_edit, "Mode:", enum_enhanced.get_names(distributor_mode),
-                                                        self.distrib.mode, 2, 0)
-        self.edit_ssize = window._w_create_pair_dim_edit(self.frame_edit, "Screen dimensions (pt):", self.distrib.screen_dims, 2, 1)
-        self.edit_padding = window._w_create_pair_dim_edit(self.frame_edit, "Image padding (pt):", self.distrib.image_padding, 2, 2)
-        self.btn_edit_words = tkinter.Button(self.frame_edit, text="Edit words", width=34, command=self._cmd_edit_words)
-        window._w_place_in_grid(self.btn_edit_words, 2, 3, w=2)
+        self.edit_operation = window._w_create_pair_combobox(self.frame_edit, "Operation:", enum_enhanced.get_names(mode_operation),
+                                                             self.distrib.operation, 2, 0)
+        self.edit_mode = window._w_create_pair_combobox(self.frame_edit, "Distribution:", enum_enhanced.get_names(mode_distribution),
+                                                        self.distrib.mode, 2, 1)
+        self.edit_bg_color = window._w_create_pair_color_picker(self.frame_edit, "Background color:", self.distrib.slide_background_color, 2, 2)
+        self.edit_padding = window._w_create_pair_dim_edit(self.frame_edit, "Image padding (pt):", self.distrib.image_padding, 2, 3)
 
         # #####################
 
@@ -565,6 +615,9 @@ class window:
     def _all_set(self):
         self._unlock_edit()
         self.distrib.init_draw(self.canvas)
+
+    def _on_slide_background_color_changed(self):
+        self.canvas["bg"] = self.distrib.slide_background_color.get()
 
     def _w_place_in_grid(widget, x, y, w=1, h=1, weight_w=1, weight_h=0, orientation="", nopadding=False):
         root = widget._root()
@@ -620,6 +673,10 @@ class window:
             combo_box.current(0)
         return window._w_create_pair(root, combo_box, text_name, base_x, base_y)
 
+    def _w_create_pair_color_picker(root, text_name, var_value, base_x, base_y):
+        picker = color_picker(root, var_value)
+        return window._w_create_pair(root, picker, text_name, base_x, base_y)
+
     def _check_file_name(file_name):
         return file_name is not None and len(file_name) > 0
 
@@ -627,7 +684,6 @@ class window:
         if self.distrib.input_dir is not None:
             self._all_set()
         self.edit_source_slide["values"] = self.distrib.slide_names
-        self.distrib.source_slide_name.set(self.distrib.slide_names[-1])  # Set the last one as default.
 
     def _update_input_data(self):
         if self.distrib.pres is not None:
@@ -672,10 +728,6 @@ class window:
                 self._update_input_data()
             else:
                 self.label_dir["text"] = window._str_select_input
-
-    def _cmd_edit_words(self):
-        # TODO
-        window._display_not_implemented()
 
     def _cmd_create(self):
         success = self.distrib.create()
