@@ -10,14 +10,15 @@ import pptx.dml.color
 import tkinter
 import tkinter.filedialog
 import tkinter.messagebox
+import tkinter.colorchooser
 from PIL import ImageTk, Image
 from tkinter import ttk
-from tkinter import colorchooser
 
 
 # Known bugs:
 # - Spinboxes don't allow changing the most-significant digit of a number
 # - Hang when loading images
+# - Reload presentation state after slide creation.
 
 # Add possibility to drag-drop files.
 # Add option for overwriting or not output files.
@@ -48,9 +49,9 @@ class mode_distribution(enum_enhanced):
     MULTIPLE_SLIDES = 1
 
 
-class mode_operation(enum_enhanced):
-    CREATE_NEW_SLIDE = 0,
-    OVERWRITE_SELECTED = 1
+class mode_work_slide(enum_enhanced):
+    NEW_SLIDE = 0,
+    SOURCE_SLIDE = 1
 
 
 class input_data_load_result(Enum):
@@ -133,15 +134,16 @@ class distribution_result:
         self.scaled_dims_y = scaled_dims_y
 
 
-# slide_image's anchor is CENTER
+# slide_image's anchor is NW
 class slide_image:
     def __init__(self, file_path):
         self._file_path = file_path
-        self._raw_img = Image.open(file_path)
-        self._img = ImageTk.PhotoImage(self._raw_img)
+        self._img_ori = Image.open(file_path)
+        self._img_scaled_init = None
+        self._img = None
         self._canvas_id = 0
-        self.original_width = self._img.width()
-        self.original_height = self._img.height()
+        self.original_width = self._img_ori.width
+        self.original_height = self._img_ori.height
         self.scaled_width = 0
         self.scaled_height = 0
         self.x = 0
@@ -199,14 +201,22 @@ class slide_image:
                 img.x = padding_width + col * (image_scaled_width + padding_width)
                 img.y = padding_height + row * (image_scaled_height + padding_height)
                 # print(image_idx, img.x, img.y, img.scaled_width, img.scaled_height)
-                assert(img.x >= 0 and (img.x + img.scaled_width) < screen_width)
-                assert(img.y >= 0 and (img.y + img.scaled_height) < screen_height)
+                if not (img.x >= 0 and (img.x + img.scaled_width) < screen_width):
+                    print("Image distribution exceeds X bounds:", screen_width, img.x, img.scaled_width)
+                if not (img.y >= 0 and (img.y + img.scaled_height) < screen_height):
+                    print("Image distribution exceeds Y bounds:", screen_height, img.y, img.scaled_height)
 
         return distribution_result(num_cols, num_rows, image_scaled_width, image_scaled_height)
 
     def _resize_img(self, canvas, new_width, new_height):
-        self._raw_img = self._raw_img.resize((new_width, new_height), Image.ANTIALIAS)
-        self._img = ImageTk.PhotoImage(self._raw_img)
+        img = None
+        if self._img_scaled_init is None:
+            # This is an optimization to prevent re-scaling the original big image on any parameter change.
+            self._img_scaled_init = self._img_ori.resize((new_width, new_height), Image.ANTIALIAS)
+            img = self._img_scaled_init
+        else:
+            img = self._img_scaled_init.resize((new_width, new_height), Image.ANTIALIAS)
+        self._img = ImageTk.PhotoImage(img)
         canvas.itemconfig(self._canvas_id, image=self._img)
 
     def add_to_slide(self, slide):
@@ -247,6 +257,7 @@ class distributor:
     def __init__(self):
         self.pres = None
         self.input_dir = None
+        self.canvas = None
 
         self.slide_names = ["(no slides)"]
 
@@ -260,7 +271,7 @@ class distributor:
         self.word_font = tkinter.StringVar(value="Impact")
         self.word_size = tkinter.IntVar(value=24)
         self.word_position = enum_var(enum_class=word_orientation, value=word_orientation.TOP_LEFT)
-        self.operation = enum_var(enum_class=mode_operation, value=mode_operation.CREATE_NEW_SLIDE)
+        self.operation = enum_var(enum_class=mode_work_slide, value=mode_work_slide.NEW_SLIDE)
         self.mode = enum_var(enum_class=mode_distribution, value=mode_distribution.ALL_IN_ONE_SLIDE)
         self.slide_background_color = tkinter.StringVar(value="#ffffff")
         self.image_padding = dimensions(32, 32)
@@ -270,11 +281,19 @@ class distributor:
         self._source_slide_idx = 0
         self._images = []
 
+        self._trace_image_padding = None
+        self._trace_mode = None
+        self._trace_word_position = None
+        self._trace_word_size = None
+        self._trace_word_font = None
+
     def _extract_from_pdf(self):
         print("TODO Implement.")
         return ""
 
     def _load_pres_data(self):
+        self._disable_param_traces()
+
         if len(self.pres.slides) > 0:
             self.slide_names.clear()
             ctr = 0
@@ -291,8 +310,7 @@ class distributor:
 
         slide_width = pptx.util.Emu(self.pres.slide_width)
         slide_height = pptx.util.Emu(self.pres.slide_height)
-        self._screen_dims.x.set(int(slide_width.pt))
-        self._screen_dims.y.set(int(slide_height.pt))
+        self._screen_dims.set_dims(int(slide_width.pt), int(slide_height.pt))
 
         # last_slide = self.pres.slides[-1]
         # if last_slide.background is not None:
@@ -312,6 +330,8 @@ class distributor:
         return True
 
     def _load_input_data(self):
+        self._disable_param_traces()
+
         files = glob.glob(os.path.join(self.input_dir, "*.jpg"))
         files.extend(glob.glob(os.path.join(self.input_dir, "*.png")))
         files.extend(glob.glob(os.path.join(self.input_dir, "*.svg")))
@@ -358,6 +378,8 @@ class distributor:
         return return_code
 
     def _setup_images(self):
+        self._disable_param_traces()
+
         screen_width = self._screen_dims.x.get()
         screen_height = self._screen_dims.y.get()
 
@@ -375,15 +397,57 @@ class distributor:
         # Otherwise, result is distribution_result
         self.image_grid_dims.set_dims(result.grid_size_x, result.grid_size_y)
         self.image_scaled_dims.set_dims(result.scaled_dims_x, result.scaled_dims_y)
+
+        self._enable_param_traces()
+
         return True
 
-    def _create_internal(self, use_background):
-        source_slide_layout = self.pres.slides[self._source_slide_idx].slide_layout
-        # source_slide_fill = self.pres.slides[self._source_slide_idx].background.fill # TODO Not supported.
+    def _enable_param_traces(self):
+        self._trace_image_padding = self.image_padding.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
+        self._trace_mode = self.mode.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
+        self._trace_word_position = self.word_position.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
+        self._trace_word_size = self.word_size.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
+        self._trace_word_font = self.word_font.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
 
-        # For now just mode 1:
-        slide = self.pres.slides.add_slide(source_slide_layout)
-        # slide.background.fill = source_slide_fill # TODO Not supported.
+    def _disable_param_traces(self):
+        if self._trace_image_padding is not None:
+            self.image_padding.trace_vdelete("w", self._trace_image_padding)
+            self._trace_image_padding = None
+        if self._trace_mode is not None:
+            self.mode.trace_vdelete("w", self._trace_mode)
+            self._trace_mode = None
+        if self._trace_word_position is not None:
+            self.word_position.trace_vdelete("w", self._trace_word_position)
+            self._trace_word_position = None
+        if self._trace_word_size is not None:
+            self.word_size.trace_vdelete("w", self._trace_word_size)
+            self._trace_word_size = None
+        if self._trace_word_font is not None:
+            self.word_font.trace_vdelete("w", self._trace_word_font)
+            self._trace_word_font = None
+
+    def _on_edit_traced(self):
+        self._setup_images()
+        self.draw(self.canvas)
+
+    def _acquire_slide(self):
+        op = self.operation.get_enum()
+        if op == mode_work_slide.NEW_SLIDE:
+            source_slide_layout = self.pres.slides[self._source_slide_idx].slide_layout
+            return self.pres.slides.add_slide(source_slide_layout)
+        elif op == mode_work_slide.SOURCE_SLIDE:
+            slide = self.pres.slides[self._source_slide_idx]
+            # slide.shapes.clear()          # Not supported.
+            # slide.placeholders.clear()    # Not supported.
+            return slide
+        else:
+            print("Error:", "Unknown mode operation.")
+            return None
+
+    def _create_internal(self, use_background):
+        slide = self._acquire_slide()
+        if slide is None:
+            return False
 
         for img in self._images:
             img.add_to_slide(slide)
@@ -426,9 +490,6 @@ class distributor:
     def is_all_set(self):
         return self.pres is not None and self.input_dir is not None and len(self._images) > 0
 
-    def recalculate(self):
-        pass
-
     def set_pres(self, path):
         if path.lower().endswith(".pptx") or path.lower().endswith(".pptm"):
             self._pres_file_path = path
@@ -456,10 +517,13 @@ class distributor:
         return self._create_internal(use_background)
 
     def init_draw(self, canvas):
+        self.canvas = canvas
         for img in self._images:
             img.init_draw(canvas, self._screen_dims.x.get(), self._screen_dims.y.get())
 
     def draw(self, canvas):
+        if canvas is None:
+            return
         for img in self._images:
             img.draw(canvas, self._screen_dims.x.get(), self._screen_dims.y.get())
 
@@ -596,7 +660,7 @@ class window:
         self.edit_word_positioning = window._w_create_pair_combobox(self.frame_edit, "Word position:",
                                                                     enum_enhanced.get_names(word_orientation), self.distrib.word_position,
                                                                     0, 3)
-        self.edit_operation = window._w_create_pair_combobox(self.frame_edit, "Operation:", enum_enhanced.get_names(mode_operation),
+        self.edit_operation = window._w_create_pair_combobox(self.frame_edit, "Work slide:", enum_enhanced.get_names(mode_work_slide),
                                                              self.distrib.operation, 2, 0)
         self.edit_mode = window._w_create_pair_combobox(self.frame_edit, "Distribution:", enum_enhanced.get_names(mode_distribution),
                                                         self.distrib.mode, 2, 1)
