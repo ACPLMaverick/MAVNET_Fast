@@ -16,13 +16,11 @@ from tkinter import ttk
 
 
 # Known bugs:
-# - Spinboxes don't allow changing the most-significant digit of a number
 # - Hang when loading images
 # - Reload presentation state after slide creation.
 
 # Add possibility to drag-drop files.
-# Add option for overwriting or not output files.
-# Make program remember last used paths
+# Make program remember last used paths and parameters
 
 # ###### LOGIC
 
@@ -99,47 +97,6 @@ class enum_var(tkinter.StringVar):
         return self.enum_class[self.enum_class.reconvert_name(self.get())]
 
 
-class color_picker(tkinter.Frame):
-    def __init__(self, master, var_color, bg_color, width=144, height=20, command=None):
-        super().__init__(master, width=width, height=height, bg=bg_color)
-        width_btn = int(0.8 * width)
-        width_cb = width - width_btn
-        self._var_check = tkinter.IntVar(value=0)
-        self.cb = tkinter.Checkbutton(self, variable=self._var_check, width=width_cb, height=height,
-                                      bg=bg_color, highlightcolor=bg_color, activebackground=bg_color)
-        self.btn = tkinter.Button(self, command=self._on_clicked, bg=var_color.get(), fg=var_color.get())
-        self.cb.place(x=0, y=0, width=width_cb, height=height)
-        self.btn.place(x=width_cb, y=0, width=width_btn, height=height)
-        self.var_color = var_color
-        self.var_color.trace("w", lambda name, index, mode, self=self: self._on_color_changed())
-        self._var_check.trace("w", lambda name, index, mode, self=self: self._on_checkbox_changed())
-        self.command = command
-        self._var_color_init_val = self.var_color.get()
-
-    def is_enabled(self):
-        return self._var_check.get() == 1
-
-    def _on_clicked(self):
-        new_color_tuple = tkinter.colorchooser.askcolor(self.var_color.get(), title="Pick a color")
-        if len(new_color_tuple) > 1:
-            new_color = new_color_tuple[1]
-            if new_color is not None and new_color != self.var_color.get():
-                self.var_color.set(new_color)
-                if self.command is not None:
-                    self.command(new_color)
-                if self._var_check.get() == 0:
-                    self._var_check.set(1)
-
-    def _on_color_changed(self):
-        self.btn["bg"] = self.var_color.get()
-        self.btn["fg"] = self.var_color.get()
-
-    def _on_checkbox_changed(self):
-        if self.is_enabled() is False:
-            # Reset to default.
-            self.var_color.set(self._var_color_init_val)
-
-
 class distribution_result:
     def __init__(self, grid_size_x, grid_size_y, scaled_dims_x, scaled_dims_y):
         self.grid_size_x = grid_size_x
@@ -155,29 +112,27 @@ class slide_image:
         self._img_ori = Image.open(file_path)
         self._img_scaled_init = None
         self._img = None
-        self._canvas_id = 0
+        self._canvas_img = 0
+        self._canvas_text = 0
         self.original_width = self._img_ori.width
         self.original_height = self._img_ori.height
         self.scaled_width = 0
         self.scaled_height = 0
         self.x = 0
         self.y = 0
-        self.name = "(no name)"  # TODO
+        self.is_draw_name = False
+        self.name = "(no name)"
+        self.name_font = None
+        self.name_size = 0
+        self.name_color = "#000000"
 
-    def distribute(images, screen_width, screen_height, image_width, image_height, padding_width, padding_height):
+    def distribute(images, screen_width, screen_height,
+                   image_width, image_height,
+                   padding_width, padding_height,
+                   mode, text_height, text_font, text_color, is_fill_x):
         # So at this point we have both presentation loaded, slide dimensions available (in points)
         # And also images loaded with their dimensions (in pixels).
         # Scaled image dimensions will be in POINTS, so they can be easily integrated in pptx.
-
-        # ratio_screen = screen_width / screen_height
-        # ratio_image = image_width / image_height
-
-        # ratio_screen_to_image = ratio_screen / ratio_image
-
-        # If ratio_screen_to_image > 1 there should be more images in width and less in height.
-        # If ratio_screen_to_image < 1 there should be less images in width and more in height.
-
-        # For now let's try to create an uniform grid, we'll worry about text later.
 
         num_images = len(images)
         if num_images == 0:
@@ -185,9 +140,10 @@ class slide_image:
 
         num_rows = 1
         scale_factor = 1.0
+        text_height_per_row = text_height if mode == mode_distribution.ALL_IN_ONE_SLIDE else 0
         while(True):
             # Scale one image to fit exactly num_rows
-            scale_factor = ((screen_height - (num_rows + 1) * padding_height) / image_height) / num_rows
+            scale_factor = ((screen_height - (num_rows + 1) * padding_height - (num_rows * text_height_per_row)) / image_height) / num_rows
             image_scaled_width = image_width * scale_factor
             # Check if all images will fit in this one row. If not, we'll try to fit them in two rows.
             total_images_width = (image_scaled_width + padding_width) * (num_images // num_rows)
@@ -202,6 +158,7 @@ class slide_image:
         num_cols = math.ceil(num_images / num_rows)
 
         # print(scale_factor, num_rows, num_cols, image_scaled_width, image_scaled_height)
+        width_per_image = screen_width / num_cols
 
         # Now distribute the images
         for row in range(num_rows):
@@ -212,13 +169,21 @@ class slide_image:
                 img = images[image_idx]
                 img.scaled_width = image_scaled_width
                 img.scaled_height = image_scaled_height
-                img.x = padding_width + col * (image_scaled_width + padding_width)
-                img.y = padding_height + row * (image_scaled_height + padding_height)
+                img.x = padding_width
+                if is_fill_x:
+                    img.x += col * width_per_image
+                else:
+                    img.x += col * (image_scaled_width + padding_width)
+                img.y = padding_height + row * (image_scaled_height + padding_height + text_height_per_row)
                 # print(image_idx, img.x, img.y, img.scaled_width, img.scaled_height)
                 if not (img.x >= 0 and (img.x + img.scaled_width) < screen_width):
                     print("Image distribution exceeds X bounds:", screen_width, img.x, img.scaled_width)
                 if not (img.y >= 0 and (img.y + img.scaled_height) < screen_height):
                     print("Image distribution exceeds Y bounds:", screen_height, img.y, img.scaled_height)
+                img.is_draw_name = mode == mode_distribution.ALL_IN_ONE_SLIDE
+                img.name_font = text_font
+                img.name_size = text_height
+                img.name_color = text_color
 
         return distribution_result(num_cols, num_rows, image_scaled_width, image_scaled_height)
 
@@ -231,7 +196,7 @@ class slide_image:
         else:
             img = self._img_scaled_init.resize((new_width, new_height), Image.ANTIALIAS)
         self._img = ImageTk.PhotoImage(img)
-        canvas.itemconfig(self._canvas_id, image=self._img)
+        canvas.itemconfig(self._canvas_img, image=self._img)
 
     def add_to_slide(self, slide):
         slide.shapes.add_picture(self._file_path,
@@ -241,7 +206,8 @@ class slide_image:
                                  height=pptx.util.Pt(self.scaled_height))
 
     def init_draw(self, canvas, reference_width, reference_height):
-        self._canvas_id = canvas.create_image(0, 0, image=self._img, anchor=tkinter.NW)
+        self._canvas_img = canvas.create_image(0, 0, image=self._img, anchor=tkinter.NW)
+        self._canvas_text = canvas.create_text(0, 0, text="", anchor=tkinter.N)
         self.draw(canvas, reference_width, reference_height)
 
     def draw(self, canvas, reference_width, reference_height):
@@ -252,9 +218,18 @@ class slide_image:
         canv_y = int(self.y * scale_y)
         canv_w = int(self.scaled_width * scale_x)
         canv_h = int(self.scaled_height * scale_y)
-        canvas.coords(self._canvas_id, canv_x, canv_y)
+        canvas.coords(self._canvas_img, canv_x, canv_y)
 
         self._resize_img(canvas, canv_w, canv_h)
+
+        if self.is_draw_name:
+            font_tuple = (self.name_font, str(self.name_size))
+            canvas.itemconfigure(self._canvas_text, text=self.name, font=font_tuple, fill=self.name_color)
+            text_x = canv_x + (canv_w / 2)
+            text_y = canv_y + canv_h
+            canvas.coords(self._canvas_text, text_x, text_y)
+        else:
+            canvas.itemconfigure(self._canvas_text, "")
 
 
 class pdf_jpg_extractor:
@@ -283,7 +258,8 @@ class distributor:
         self.source_slide_name = tkinter.StringVar(value=self.slide_names[0])
         self.source_slide_name.trace("w", lambda name, index, mode, self=self: self._on_source_slide_name_changed())
         self.word_font = tkinter.StringVar(value="Impact")
-        self.word_size = tkinter.IntVar(value=24)
+        self.word_size = tkinter.IntVar(value=16)
+        self.is_fill_x = tkinter.IntVar(value=1)
         self.word_position = enum_var(enum_class=word_orientation, value=word_orientation.TOP_LEFT)
         self.operation = enum_var(enum_class=mode_work_slide, value=mode_work_slide.NEW_SLIDE)
         self.mode = enum_var(enum_class=mode_distribution, value=mode_distribution.ALL_IN_ONE_SLIDE)
@@ -299,6 +275,7 @@ class distributor:
         self._trace_mode = None
         self._trace_word_position = None
         self._trace_word_size = None
+        self._trace_is_fill_x = None
         self._trace_word_font = None
 
     def _extract_from_pdf(self):
@@ -407,7 +384,11 @@ class distributor:
         padding_width = self.image_padding.x.get()
         padding_height = self.image_padding.y.get()
 
-        result = slide_image.distribute(self._images, screen_width, screen_height, image_width, image_height, padding_width, padding_height)
+        # TODO Font color.
+        result = slide_image.distribute(self._images, screen_width, screen_height, image_width, image_height,
+                                        padding_width, padding_height, self.mode.get_enum(),
+                                        self.word_size.get(), self.word_font.get(), "#000000",
+                                        self.is_fill_x.get() == 1)
 
         if result is False:
             self._enable_param_traces()
@@ -426,6 +407,7 @@ class distributor:
         self._trace_mode = self.mode.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
         self._trace_word_position = self.word_position.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
         self._trace_word_size = self.word_size.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
+        self._trace_is_fill_x = self.is_fill_x.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
         self._trace_word_font = self.word_font.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
 
     def _disable_param_traces(self):
@@ -441,6 +423,9 @@ class distributor:
         if self._trace_word_size is not None:
             self.word_size.trace_vdelete("w", self._trace_word_size)
             self._trace_word_size = None
+        if self._trace_is_fill_x is not None:
+            self.is_fill_x.trace_vdelete("w", self._trace_is_fill_x)
+            self._trace_is_fill_x = None
         if self._trace_word_font is not None:
             self.word_font.trace_vdelete("w", self._trace_word_font)
             self._trace_word_font = None
@@ -585,20 +570,80 @@ class labelframe_disableable(tkinter.LabelFrame):
         self.enable(status="disabled")
 
 
+class color_picker(tkinter.Frame):
+    def __init__(self, master, var_color, bg_color, width=144, height=20, command=None, can_be_disabled=True):
+        super().__init__(master, width=width, height=height, bg=bg_color)
+        self._can_be_disabled = can_be_disabled
+        width_btn = int(0.8 * width) if can_be_disabled else width
+        width_cb = width - width_btn
+        if can_be_disabled:
+            self._var_check = tkinter.IntVar(value=0)
+            self.cb = tkinter.Checkbutton(self, variable=self._var_check, width=width_cb, height=height,
+                                          bg=bg_color, highlightcolor=bg_color, activebackground=bg_color)
+        self.btn = tkinter.Button(self, command=self._on_clicked, bg=var_color.get(), fg=var_color.get())
+        if can_be_disabled:
+            self.cb.place(x=0, y=0, width=width_cb, height=height)
+        self.btn.place(x=width_cb, y=0, width=width_btn, height=height)
+        self.var_color = var_color
+        self.var_color.trace("w", lambda name, index, mode, self=self: self._on_color_changed())
+        if can_be_disabled:
+            self._var_check.trace("w", lambda name, index, mode, self=self: self._on_checkbox_changed())
+        self.command = command
+        self._var_color_init_val = self.var_color.get()
+
+    def is_enabled(self):
+        if self._can_be_disabled:
+            return self._var_check.get() == 1
+        else:
+            return True
+
+    def _on_clicked(self):
+        new_color_tuple = tkinter.colorchooser.askcolor(self.var_color.get(), title="Pick a color")
+        if len(new_color_tuple) > 1:
+            new_color = new_color_tuple[1]
+            if new_color is not None and new_color != self.var_color.get():
+                self.var_color.set(new_color)
+                if self.command is not None:
+                    self.command(new_color)
+                if self._can_be_disabled:
+                    if self._var_check.get() == 0:
+                        self._var_check.set(1)
+
+    def _on_color_changed(self):
+        self.btn["bg"] = self.var_color.get()
+        self.btn["fg"] = self.var_color.get()
+
+    def _on_checkbox_changed(self):
+        if self.is_enabled() is False:
+            # Reset to default.
+            self.var_color.set(self._var_color_init_val)
+
+
 class panel_extract_jpgs:
     def __init__(self, extractor):
         # TODO
         pass
 
 
-class panel_edit_words:
-    def __init__(self, root, current_words):
-        self.words = current_words
-        self._create_widgets(root)
+class panel_edit_words(tkinter.Toplevel):
+    def __init__(self, color_bg, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.title = "Word editor"
+        self.width = 400
+        self.height = 200
+        self.color_bg = color_bg
+        self.resizable(False, False)
+        self.geometry("{}x{}".format(self.width, self.height))
+        self.configure(bg=color_bg)
+        self._create_widgets()
 
-    def _create_widgets(self, root):
-        # TODO
-        pass
+    def _create_widgets(self):
+        self.msg = tkinter.Message(self, text="Dupa")
+        self.msg.pack()
+        self.btn_ok = tkinter.Button(self, text="OK")
+        self.btn_ok.pack()
+        self.btn_cancel = tkinter.Button(self, text="Cancel")
+        self.btn_cancel.pack()
 
 
 class window:
@@ -672,7 +717,7 @@ class window:
         self.canvas = tkinter.Canvas(self.top, bg=self.distrib.slide_background_color.get(),
                                      width=self.width * canvas_size_mul, height=(self.width * (9 / 16)) * canvas_size_mul)
         window._w_place_in_grid(self.canvas, 0, 1, w=2)
-        self.distrib.slide_background_color.trace("w", lambda name, index, mode, self=self: self._on_slide_background_color_changed())
+        self._configure_canvas()
 
         #####################
 
@@ -693,7 +738,11 @@ class window:
         # TODO Add more font support. For now let's support just one.
         self.edit_word_font = window._w_create_pair_combobox(self.frame_edit, "Word font:", [self.distrib.word_font.get()],
                                                              self.distrib.word_font, 0, 1)
-        self.edit_word_font_size = window._w_create_pair_num_edit(self.frame_edit, "Word size:", self.distrib.word_size, 0, 2)
+        frame_size_and_fill_x = tkinter.Frame(self.frame_edit, bg=window._color_bg)
+        self.edit_word_font_size = window._w_create_pair_num_edit(frame_size_and_fill_x, "Word size:", self.distrib.word_size, 0, 0)
+        self.edit_is_fill_x = window._w_create_pair_checkbox(frame_size_and_fill_x, "Uniform width:", self.distrib.is_fill_x, 2, 0)
+        window._w_place_in_grid(frame_size_and_fill_x, 0, 2, w=2, orientation=tkinter.W, nopadding=True)
+
         self.edit_word_positioning = window._w_create_pair_combobox(self.frame_edit, "Word position:",
                                                                     enum_enhanced.get_names(word_orientation), self.distrib.word_position,
                                                                     0, 3)
@@ -737,7 +786,31 @@ class window:
         self._unlock_edit()
         self.distrib.init_draw(self.canvas)
 
-    def _on_slide_background_color_changed(self):
+    def _configure_canvas(self):
+        self.canvas.bind("<Double-Button-1>", self._canv_on_left_double_clicked)
+        self.distrib.slide_background_color.trace("w", lambda name, index, mode, self=self: self._canv_on_slide_background_color_changed())
+
+        # Right-click menu
+        m = tkinter.Menu(self.canvas, tearoff=0)
+        m.add_command(label="Edit words", command=self._canv_open_edit_words)
+
+        def do_popup(event):
+            if self.distrib.is_all_set() is False:
+                return
+            try:
+                m.tk_popup(event.x_root, event.y_root)
+            finally:
+                m.grab_release()
+        self.canvas.bind("<Button-3>", do_popup)
+
+    def _canv_on_left_double_clicked(self, event):
+        pass
+
+    def _canv_open_edit_words(self):
+        edit_words = panel_edit_words(window._color_bg, self.top)
+        edit_words.grab_set()
+
+    def _canv_on_slide_background_color_changed(self):
         self.canvas["bg"] = self.distrib.slide_background_color.get()
 
     def _w_place_in_grid(widget, x, y, w=1, h=1, weight_w=1, weight_h=0, orientation="", nopadding=False):
@@ -798,6 +871,11 @@ class window:
         if(len(options) > 0):
             combo_box.current(0)
         return window._w_create_pair(root, combo_box, text_name, base_x, base_y)
+
+    def _w_create_pair_checkbox(root, text_name, var_value, base_x, base_y):
+        cb = tkinter.Checkbutton(root, variable=var_value,
+                                 bg=window._color_bg, highlightcolor=window._color_bg, activebackground=window._color_bg)
+        return window._w_create_pair(root, cb, text_name, base_x, base_y)
 
     def _w_create_pair_color_picker(root, text_name, var_value, base_x, base_y):
         picker = color_picker(root, var_value, window._color_bg)
