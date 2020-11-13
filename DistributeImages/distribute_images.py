@@ -60,6 +60,15 @@ class input_data_load_result(Enum):
     OK_NON_UNIFORM_DIMENSIONS = 2
 
 
+class var_helper:
+    def is_var_valid(var):
+        try:
+            var.get()
+            return True
+        except Exception:
+            return False
+
+
 class dimensions(tkinter.StringVar):
     def __init__(self, x, y):
         self.x = tkinter.IntVar(value=x)
@@ -68,8 +77,13 @@ class dimensions(tkinter.StringVar):
         self.y.trace("w", lambda var, index, mode: self.set(self._get_str()))
         super().__init__(value=self._get_str())
 
+    def is_valid(self):
+        return var_helper.is_var_valid(self.x) and var_helper.is_var_valid(self.y)
+
     def _get_str(self):
-        return "{} x {}".format(self.x.get(), self.y.get())
+        val_x = self.x.get() if var_helper.is_var_valid(self.x) else "???"
+        val_y = self.y.get() if var_helper.is_var_valid(self.y) else "???"
+        return "{} x {}".format(val_x, val_y)
 
     def set_dims(self, new_x, new_y):
         self.x.set(new_x)
@@ -380,6 +394,10 @@ class distributor:
     def _setup_images(self):
         self._disable_param_traces()
 
+        if not self._validate_vars():
+            self._enable_param_traces()
+            return False
+
         screen_width = self._screen_dims.x.get()
         screen_height = self._screen_dims.y.get()
 
@@ -392,6 +410,7 @@ class distributor:
         result = slide_image.distribute(self._images, screen_width, screen_height, image_width, image_height, padding_width, padding_height)
 
         if result is False:
+            self._enable_param_traces()
             return False
 
         # Otherwise, result is distribution_result
@@ -427,8 +446,8 @@ class distributor:
             self._trace_word_font = None
 
     def _on_edit_traced(self):
-        self._setup_images()
-        self.draw(self.canvas)
+        if self._setup_images():
+            self.draw(self.canvas)
 
     def _acquire_slide(self):
         op = self.operation.get_enum()
@@ -443,6 +462,21 @@ class distributor:
         else:
             print("Error:", "Unknown mode operation.")
             return None
+
+    def _validate_vars(self):
+        if not self._screen_dims.is_valid():
+            return False
+        if not self.image_dims.is_valid():
+            return False
+        if not self.image_padding.is_valid():
+            return False
+        if not var_helper.is_var_valid(self.word_size):
+            return False
+        if not var_helper.is_var_valid(self.word_position):
+            return False
+        if not var_helper.is_var_valid(self.word_font):
+            return False
+        return True
 
     def _create_internal(self, use_background):
         slide = self._acquire_slide()
@@ -512,6 +546,9 @@ class distributor:
             return False
 
         if self.input_dir is None:
+            return False
+
+        if self._validate_vars() is False:
             return False
 
         return self._create_internal(use_background)
@@ -716,6 +753,11 @@ class window:
             try:
                 int_val = int(val)
             except Exception:
+                try:
+                    is_zero_length_string = len(val) == 0
+                    return is_zero_length_string
+                except Exception:
+                    return False
                 return False
             return int_val >= 1 and int_val <= 9999
         cmd = root.register(validate_num_input)
