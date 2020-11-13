@@ -17,6 +17,7 @@ from tkinter import colorchooser
 
 # Known bugs:
 # - Spinboxes don't allow changing the most-significant digit of a number
+# - Hang when loading images
 
 # Add possibility to drag-drop files.
 # Add option for overwriting or not output files.
@@ -84,13 +85,24 @@ class enum_var(tkinter.StringVar):
 
 
 class color_picker(tkinter.Frame):
-    def __init__(self, master, var_color, width=144, height=20, command=None):
-        super().__init__(master, width=width, height=height)
+    def __init__(self, master, var_color, bg_color, width=144, height=20, command=None):
+        super().__init__(master, width=width, height=height, bg=bg_color)
+        width_btn = int(0.8 * width)
+        width_cb = width - width_btn
+        self._var_check = tkinter.IntVar(value=0)
+        self.cb = tkinter.Checkbutton(self, variable=self._var_check, width=width_cb, height=height,
+                                      bg=bg_color, highlightcolor=bg_color, activebackground=bg_color)
         self.btn = tkinter.Button(self, command=self._on_clicked, bg=var_color.get(), fg=var_color.get())
-        self.btn.place(x=0, y=0, width=width, height=height)
+        self.cb.place(x=0, y=0, width=width_cb, height=height)
+        self.btn.place(x=width_cb, y=0, width=width_btn, height=height)
         self.var_color = var_color
         self.var_color.trace("w", lambda name, index, mode, self=self: self._on_color_changed())
+        self._var_check.trace("w", lambda name, index, mode, self=self: self._on_checkbox_changed())
         self.command = command
+        self._var_color_init_val = self.var_color.get()
+
+    def is_enabled(self):
+        return self._var_check.get() == 1
 
     def _on_clicked(self):
         new_color_tuple = tkinter.colorchooser.askcolor(self.var_color.get(), title="Pick a color")
@@ -100,10 +112,17 @@ class color_picker(tkinter.Frame):
                 self.var_color.set(new_color)
                 if self.command is not None:
                     self.command(new_color)
+                if self._var_check.get() == 0:
+                    self._var_check.set(1)
 
     def _on_color_changed(self):
         self.btn["bg"] = self.var_color.get()
         self.btn["fg"] = self.var_color.get()
+
+    def _on_checkbox_changed(self):
+        if self.is_enabled() is False:
+            # Reset to default.
+            self.var_color.set(self._var_color_init_val)
 
 
 class distribution_result:
@@ -358,7 +377,7 @@ class distributor:
         self.image_scaled_dims.set_dims(result.scaled_dims_x, result.scaled_dims_y)
         return True
 
-    def _create_internal(self):
+    def _create_internal(self, use_background):
         source_slide_layout = self.pres.slides[self._source_slide_idx].slide_layout
         # source_slide_fill = self.pres.slides[self._source_slide_idx].background.fill # TODO Not supported.
 
@@ -369,8 +388,9 @@ class distributor:
         for img in self._images:
             img.add_to_slide(slide)
 
-        slide.background.fill.solid()
-        slide.background.fill.fore_color.rgb = pptx.dml.color.RGBColor.from_string(self.slide_background_color.get()[1:])
+        if use_background:
+            slide.background.fill.solid()
+            slide.background.fill.fore_color.rgb = pptx.dml.color.RGBColor.from_string(self.slide_background_color.get()[1:])
 
         self.pres.save(self._pres_file_path)
 
@@ -424,7 +444,7 @@ class distributor:
         else:
             return input_data_load_result.FAILURE
 
-    def create(self):
+    def create(self, use_background):
         # self._debug_print_options()
 
         if self.pres is None:
@@ -433,7 +453,7 @@ class distributor:
         if self.input_dir is None:
             return False
 
-        return self._create_internal()
+        return self._create_internal(use_background)
 
     def init_draw(self, canvas):
         for img in self._images:
@@ -674,7 +694,7 @@ class window:
         return window._w_create_pair(root, combo_box, text_name, base_x, base_y)
 
     def _w_create_pair_color_picker(root, text_name, var_value, base_x, base_y):
-        picker = color_picker(root, var_value)
+        picker = color_picker(root, var_value, window._color_bg)
         return window._w_create_pair(root, picker, text_name, base_x, base_y)
 
     def _check_file_name(file_name):
@@ -730,7 +750,8 @@ class window:
                 self.label_dir["text"] = window._str_select_input
 
     def _cmd_create(self):
-        success = self.distrib.create()
+        use_bg = self.edit_bg_color.is_enabled()
+        success = self.distrib.create(use_bg)
         if success:
             tkinter.messagebox.showinfo("Success", "Image distribution succeeded.")
         else:
