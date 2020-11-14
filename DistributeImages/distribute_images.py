@@ -265,6 +265,7 @@ class distributor:
         self.mode = enum_var(enum_class=mode_distribution, value=mode_distribution.ALL_IN_ONE_SLIDE)
         self.slide_background_color = tkinter.StringVar(value="#ffffff")
         self.image_padding = dimensions(32, 32)
+        self.word_color = tkinter.StringVar(value="#000000")
 
         self._screen_dims = dimensions(960, 540)
         self._pres_file_path = None
@@ -387,7 +388,7 @@ class distributor:
         # TODO Font color.
         result = slide_image.distribute(self._images, screen_width, screen_height, image_width, image_height,
                                         padding_width, padding_height, self.mode.get_enum(),
-                                        self.word_size.get(), self.word_font.get(), "#000000",
+                                        self.word_size.get(), self.word_font.get(), self.word_color.get(),
                                         self.is_fill_x.get() == 1)
 
         if result is False:
@@ -488,23 +489,8 @@ class distributor:
             print(e)
             print("Not found slide name. Not setting the slide idx.")
 
-    def _debug_print_options(self):
-        print("distributor:")
-        print("\tpres:", self.pres)
-        print("\tinput_dir:", self.input_dir)
-        print("\tnum_images:", self.num_images.get())
-        print("\timage_grid_dims:", self.image_grid_dims._get_str())
-        print("\timage_dims:", self.image_dims._get_str())
-        print("\timage_scaled_dims:", self.image_scaled_dims._get_str())
-        print("\tsource_slide_name:", self.source_slide_name.get())
-        print("\tword_font:", self.word_font.get())
-        print("\tword_size:", self.word_size.get())
-        print("\tword_position:", self.word_position.get_enum())
-        print("\tmode:", self.mode.get_enum())
-        print("\t_screen_dims:", self._screen_dims._get_str())
-        print("\timage_padding:", self.image_padding._get_str())
-        print("\t_pres_file_path:", self._pres_file_path)
-        print("\t_source_slide_idx:", self._source_slide_idx)
+    def get_images(self):
+        return self._images
 
     def is_all_set(self):
         return self.pres is not None and self.input_dir is not None and len(self._images) > 0
@@ -525,8 +511,6 @@ class distributor:
             return input_data_load_result.FAILURE
 
     def create(self, use_background):
-        # self._debug_print_options()
-
         if self.pres is None:
             return False
 
@@ -553,6 +537,21 @@ class distributor:
 # ####### UI
 
 # https://stackoverflow.com/questions/51902451/how-to-enable-and-disable-frame-instead-of-individual-widgets-in-python-tkinter/52152773
+class tk_util:
+    def place_in_grid(widget, x, y, w=1, h=1, weight_w=1, weight_h=0, orientation="", nopadding=False):
+        root = widget._root()
+        padding = 3 if nopadding is False else 0
+        widget.grid(row=y, column=x, rowspan=h, columnspan=w, padx=padding, pady=padding, sticky=orientation)
+        root.columnconfigure(x, weight=weight_w)
+        root.rowconfigure(y, weight=weight_h)
+
+    def window_set_on_cursor(window):
+        rt = window._root()
+        x = rt.winfo_pointerx()
+        y = rt.winfo_pointery()
+        window.geometry("+{}+{}".format(x, y))
+
+
 class labelframe_disableable(tkinter.LabelFrame):
     def enable(self, status="normal"):
         def cstate(widget):
@@ -625,25 +624,100 @@ class panel_extract_jpgs:
         pass
 
 
-class panel_edit_words(tkinter.Toplevel):
-    def __init__(self, color_bg, *args, **kwargs):
+class panel_edit_single_word(tkinter.Toplevel):
+    def __init__(self, color_bg, text, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.title = "Word editor"
-        self.width = 400
-        self.height = 200
         self.color_bg = color_bg
+        self.text = text
+        self.title = "Edit a word"
+        self.is_ok = False
         self.resizable(False, False)
-        self.geometry("{}x{}".format(self.width, self.height))
+        self.configure(bg=self.color_bg)
+
+        self._text_var = tkinter.StringVar(value=self.text)
+
+        self._edit = tkinter.Entry(self, width=20, textvariable=self._text_var)
+        self._edit.focus_set()
+        self._edit.selection_range(0, tkinter.END)
+        self._edit.pack(padx=3, pady=3)
+
+        frame_btns = tkinter.Frame(self, bg=self.color_bg)
+        frame_btns.pack()
+        self.btn_ok = tkinter.Button(frame_btns, text="OK", width=8, command=self._on_ok_clicked)
+        self.btn_ok.pack(side=tkinter.LEFT, padx=3, pady=3)
+        self.btn_cancel = tkinter.Button(frame_btns, text="Cancel", width=8, command=self._on_cancel_clicked)
+        self.btn_cancel.pack(side=tkinter.LEFT, padx=3, pady=3)
+
+        tk_util.window_set_on_cursor(self)
+
+    def _on_ok_clicked(self):
+        self.text = self._text_var.get()
+        self.is_ok = True
+        self.destroy()
+
+    def _on_cancel_clicked(self):
+        self.destroy()
+
+
+class panel_edit_words(tkinter.Toplevel):
+    def __init__(self, color_bg, var_color, objects, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.var_color = var_color
+        self._inter_var_color = tkinter.StringVar(value=self.var_color.get())
+        self.objects = objects
+        self.edited_names = dict()
+        self.title = "Word editor"
+        self.color_bg = color_bg
+        self.is_ok = False
+        self.resizable(False, False)
         self.configure(bg=color_bg)
         self._create_widgets()
+        tk_util.window_set_on_cursor(self)
 
     def _create_widgets(self):
-        self.msg = tkinter.Message(self, text="Dupa")
-        self.msg.pack()
-        self.btn_ok = tkinter.Button(self, text="OK")
-        self.btn_ok.pack()
-        self.btn_cancel = tkinter.Button(self, text="Cancel")
-        self.btn_cancel.pack()
+        lbl_color = tkinter.Label(self, text="Font color:", bg=self.color_bg)
+        tk_util.place_in_grid(lbl_color, 0, 0)
+        self.color_picker = color_picker(self, self._inter_var_color, self.color_bg, width=120, height=16, can_be_disabled=False)
+        tk_util.place_in_grid(self.color_picker, 1, 0)
+        self.btn_edit = tkinter.Button(self, text="Edit", width=8, command=self._on_edit_clicked)
+        tk_util.place_in_grid(self.btn_edit, 0, 1, orientation=tkinter.NW)
+        self.list_box = tkinter.Listbox(self, selectmode=tkinter.SINGLE, height=len(self.objects))
+        self.list_box.bind("<Double-Button-1>", lambda event, self=self: self._on_edit_clicked())
+        tk_util.place_in_grid(self.list_box, 1, 1, orientation=tkinter.NW)
+
+        for obj in self.objects:
+            word = obj.name
+            self.list_box.insert(tkinter.END, word)
+
+        frame_btns = tkinter.Frame(self, bg=self.color_bg)
+        tk_util.place_in_grid(frame_btns, 0, 2, w=2, nopadding=True)
+        self.btn_ok = tkinter.Button(frame_btns, text="OK", width=8, command=self._on_ok_clicked)
+        self.btn_ok.pack(side=tkinter.LEFT, padx=3, pady=3)
+        self.btn_cancel = tkinter.Button(frame_btns, text="Cancel", width=8, command=self._on_cancel_clicked)
+        self.btn_cancel.pack(side=tkinter.LEFT, padx=3, pady=3)
+
+    def _on_edit_clicked(self):
+        if len(self.list_box.curselection()) < 1:
+            return
+        selected_idx = self.list_box.curselection()[0]
+        text = self.edited_names[selected_idx] if selected_idx in self.edited_names else self.objects[selected_idx].name
+        edit_panel = panel_edit_single_word(self.color_bg, text, self)
+        edit_panel.grab_set()
+        self.wait_window(edit_panel)
+        if edit_panel.is_ok:
+            self.edited_names[selected_idx] = edit_panel.text
+            self.list_box.delete(selected_idx)
+            self.list_box.insert(selected_idx, edit_panel.text)
+
+    def _on_ok_clicked(self):
+        for key, value in self.edited_names.items():
+            self.objects[key].name = value
+        self.var_color.set(self._inter_var_color.get())
+        self.is_ok = True
+        self.destroy()
+
+    def _on_cancel_clicked(self):
+        self.destroy()
 
 
 class window:
@@ -687,27 +761,27 @@ class window:
         # File picker
 
         frame_pick_files = labelframe_disableable(self.top, bg=window._color_bg)
-        window._w_place_in_grid(frame_pick_files, 0, 0, w=2)
+        tk_util.place_in_grid(frame_pick_files, 0, 0, w=2)
 
         self.label_pres = tkinter.Label(frame_pick_files, width=92, text=window._str_select_pres,
                                         anchor=tkinter.W, bg=window._color_bg)
-        window._w_place_in_grid(self.label_pres, 0, 0)
+        tk_util.place_in_grid(self.label_pres, 0, 0)
 
         self.btn_select_pres = tkinter.Button(frame_pick_files, width=12, text="Presentation", command=self._cmd_select_file_pptx)
-        window._w_place_in_grid(self.btn_select_pres, 1, 0, orientation=tkinter.E)
+        tk_util.place_in_grid(self.btn_select_pres, 1, 0, orientation=tkinter.E)
 
         self.label_dir = tkinter.Label(frame_pick_files, width=92, text=window._str_select_input,
                                        anchor=tkinter.W, bg=window._color_bg)
-        window._w_place_in_grid(self.label_dir, 0, 1)
+        tk_util.place_in_grid(self.label_dir, 0, 1)
 
         frame_two_button = tkinter.Frame(frame_pick_files, bg=window._color_bg)
-        window._w_place_in_grid(frame_two_button, 1, 1, orientation=tkinter.E)
+        tk_util.place_in_grid(frame_two_button, 1, 1, orientation=tkinter.E)
 
         self.btn_select_file = tkinter.Button(frame_two_button, text="PDF", width=5, command=self._cmd_select_file_pdf)
-        window._w_place_in_grid(self.btn_select_file, 0, 0, orientation=tkinter.W, nopadding=True)
+        tk_util.place_in_grid(self.btn_select_file, 0, 0, orientation=tkinter.W, nopadding=True)
 
         self.btn_select_dir = tkinter.Button(frame_two_button, text="Images", command=self._cmd_select_dir)
-        window._w_place_in_grid(self.btn_select_dir, 1, 0, orientation=tkinter.E, nopadding=True)
+        tk_util.place_in_grid(self.btn_select_dir, 1, 0, orientation=tkinter.E, nopadding=True)
 
         #####################
 
@@ -716,7 +790,7 @@ class window:
         canvas_size_mul = 0.95
         self.canvas = tkinter.Canvas(self.top, bg=self.distrib.slide_background_color.get(),
                                      width=self.width * canvas_size_mul, height=(self.width * (9 / 16)) * canvas_size_mul)
-        window._w_place_in_grid(self.canvas, 0, 1, w=2)
+        tk_util.place_in_grid(self.canvas, 0, 1, w=2)
         self._configure_canvas()
 
         #####################
@@ -724,7 +798,7 @@ class window:
         # Editing
 
         self.frame_edit = labelframe_disableable(self.top, bg=window._color_bg)
-        window._w_place_in_grid(self.frame_edit, 0, 2)
+        tk_util.place_in_grid(self.frame_edit, 0, 2)
 
         # Distribution mode
         # Source slide
@@ -741,7 +815,7 @@ class window:
         frame_size_and_fill_x = tkinter.Frame(self.frame_edit, bg=window._color_bg)
         self.edit_word_font_size = window._w_create_pair_num_edit(frame_size_and_fill_x, "Word size:", self.distrib.word_size, 0, 0)
         self.edit_is_fill_x = window._w_create_pair_checkbox(frame_size_and_fill_x, "Uniform width:", self.distrib.is_fill_x, 2, 0)
-        window._w_place_in_grid(frame_size_and_fill_x, 0, 2, w=2, orientation=tkinter.W, nopadding=True)
+        tk_util.place_in_grid(frame_size_and_fill_x, 0, 2, w=2, orientation=tkinter.W, nopadding=True)
 
         self.edit_word_positioning = window._w_create_pair_combobox(self.frame_edit, "Word position:",
                                                                     enum_enhanced.get_names(word_orientation), self.distrib.word_position,
@@ -758,7 +832,7 @@ class window:
         # Informations
 
         self.frame_info = labelframe_disableable(self.top, bg=window._color_bg)
-        window._w_place_in_grid(self.frame_info, 1, 2)
+        tk_util.place_in_grid(self.frame_info, 1, 2)
 
         self.label_number = window._w_create_pair_label(self.frame_info, "Number of images:", self.distrib.num_images, 0, 0)
         self.label_number_nxn = window._w_create_pair_label(self.frame_info, "Grid dimensions (WxH):", self.distrib.image_grid_dims, 0, 1)
@@ -770,7 +844,7 @@ class window:
         # Create button at the very end.
 
         self.btn_create = tkinter.Button(self.top, text="Create", width=34, command=self._cmd_create)
-        window._w_place_in_grid(self.btn_create, 0, 3, 2)
+        tk_util.place_in_grid(self.btn_create, 0, 3, 2)
 
     def _lock_edit(self):
         self.frame_edit.disable()
@@ -787,7 +861,7 @@ class window:
         self.distrib.init_draw(self.canvas)
 
     def _configure_canvas(self):
-        self.canvas.bind("<Double-Button-1>", self._canv_on_left_double_clicked)
+        self.canvas.bind("<Double-Button-1>", lambda event, self=self: self._canv_on_left_double_clicked())
         self.distrib.slide_background_color.trace("w", lambda name, index, mode, self=self: self._canv_on_slide_background_color_changed())
 
         # Right-click menu
@@ -803,22 +877,20 @@ class window:
                 m.grab_release()
         self.canvas.bind("<Button-3>", do_popup)
 
-    def _canv_on_left_double_clicked(self, event):
+    def _canv_on_left_double_clicked(self):
         pass
 
     def _canv_open_edit_words(self):
-        edit_words = panel_edit_words(window._color_bg, self.top)
+        objects = self.distrib.get_images()
+        edit_words = panel_edit_words(window._color_bg, self.distrib.word_color, objects, self.top)
         edit_words.grab_set()
+        self.top.wait_window(edit_words)
+        if edit_words.is_ok:
+            self.distrib._setup_images()
+            self.distrib.draw(self.canvas)
 
     def _canv_on_slide_background_color_changed(self):
         self.canvas["bg"] = self.distrib.slide_background_color.get()
-
-    def _w_place_in_grid(widget, x, y, w=1, h=1, weight_w=1, weight_h=0, orientation="", nopadding=False):
-        root = widget._root()
-        padding = 3 if nopadding is False else 0
-        widget.grid(row=y, column=x, rowspan=h, columnspan=w, padx=padding, pady=padding, sticky=orientation)
-        root.columnconfigure(x, weight=weight_w)
-        root.rowconfigure(y, weight=weight_h)
 
     def _w_create_num_input(root, var_value):
         def validate_num_input(val):
@@ -840,8 +912,8 @@ class window:
 
     def _w_create_pair(root, element, text_name, base_x, base_y):
         label_name = tkinter.Label(root, text=text_name, bg=window._color_bg)
-        window._w_place_in_grid(label_name, base_x, base_y, orientation=tkinter.W)
-        window._w_place_in_grid(element, base_x + 1, base_y, orientation=tkinter.E)
+        tk_util.place_in_grid(label_name, base_x, base_y, orientation=tkinter.W)
+        tk_util.place_in_grid(element, base_x + 1, base_y, orientation=tkinter.E)
         return element
 
     def _w_create_pair_label(root, text_name, var_value, base_x, base_y):
@@ -857,9 +929,9 @@ class window:
         dim_x = window._w_create_num_input(inter_frame, var_dim.x)
         dim_y = window._w_create_num_input(inter_frame, var_dim.y)
         sep = tkinter.Label(inter_frame, text="x", bg=window._color_bg)
-        window._w_place_in_grid(dim_x, 0, 0, nopadding=True)
-        window._w_place_in_grid(sep, 1, 0, nopadding=True)
-        window._w_place_in_grid(dim_y, 2, 0, nopadding=True)
+        tk_util.place_in_grid(dim_x, 0, 0, nopadding=True)
+        tk_util.place_in_grid(sep, 1, 0, nopadding=True)
+        tk_util.place_in_grid(dim_y, 2, 0, nopadding=True)
         return window._w_create_pair(root, inter_frame, text_name, base_x, base_y)
 
     def _w_create_pair_combobox(root, text_name, options, var_value, base_x, base_y):
@@ -896,19 +968,13 @@ class window:
     def _display_not_implemented():
         tkinter.messagebox.showerror("Error", "This function is not yet implemented.")
 
-    def _mark_as_loading(label):
-        label["text"] = "Loading..."
-
     def _cmd_select_file_pptx(self):
         file_name = tkinter.filedialog.askopenfilename(filetypes=[("PowerPoint files", "*.pptx *.pptm")])
         if window._check_file_name(file_name):
-            window._mark_as_loading(self.label_pres)
             res = self.distrib.set_pres(file_name)
             if res is True:
                 self.label_pres["text"] = file_name
                 self._update_pres_data()
-            else:
-                self.label_pres["text"] = window._str_select_input
 
     def _cmd_select_file_pdf(self):
         # TODO
@@ -922,7 +988,6 @@ class window:
     def _cmd_select_dir(self):
         file_name = tkinter.filedialog.askdirectory()
         if window._check_file_name(file_name):
-            window._mark_as_loading(self.label_dir)
             res = self.distrib.set_input(file_name)
             if res is not input_data_load_result.FAILURE:
                 if res is input_data_load_result.OK_NON_UNIFORM_DIMENSIONS:
@@ -930,8 +995,6 @@ class window:
                                                               "Will average the dimensions to provide an uniform grid.")
                 self.label_dir["text"] = file_name
                 self._update_input_data()
-            else:
-                self.label_dir["text"] = window._str_select_input
 
     def _cmd_create(self):
         use_bg = self.edit_bg_color.is_enabled()
