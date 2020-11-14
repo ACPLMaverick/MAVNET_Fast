@@ -198,6 +198,27 @@ class slide_image:
         self._img = ImageTk.PhotoImage(img)
         canvas.itemconfig(self._canvas_img, image=self._img)
 
+    def _get_canvas_coords(self, canvas, reference_width, reference_height):
+        scale_x = canvas.winfo_width() / reference_width
+        scale_y = canvas.winfo_height() / reference_height
+
+        canv_x = int(self.x * scale_x)
+        canv_y = int(self.y * scale_y)
+        canv_w = int(self.scaled_width * scale_x)
+        canv_h = int(self.scaled_height * scale_y)
+
+        return (canv_x, canv_y, canv_w, canv_h)
+
+    def is_under_cursor(self, canvas, mouse_x, mouse_y, reference_width, reference_height):
+        coords = self._get_canvas_coords(canvas, reference_width, reference_height)
+        canv_x = coords[0]
+        canv_y = coords[1]
+        canv_x2 = coords[0] + coords[2]
+        canv_y2 = coords[1] + coords[3]
+        if self.is_draw_name:
+            canv_y2 += 2 * int(self.name_size * (canvas.winfo_height() / reference_height))
+        return mouse_x > canv_x and mouse_x < canv_x2 and mouse_y > canv_y and mouse_y < canv_y2
+
     def add_to_slide(self, slide):
         slide.shapes.add_picture(self._file_path,
                                  pptx.util.Pt(self.x),
@@ -211,13 +232,12 @@ class slide_image:
         self.draw(canvas, reference_width, reference_height)
 
     def draw(self, canvas, reference_width, reference_height):
-        scale_x = canvas.winfo_width() / reference_width
-        scale_y = canvas.winfo_height() / reference_height
+        coords = self._get_canvas_coords(canvas, reference_width, reference_height)
+        canv_x = coords[0]
+        canv_y = coords[1]
+        canv_w = coords[2]
+        canv_h = coords[3]
 
-        canv_x = int(self.x * scale_x)
-        canv_y = int(self.y * scale_y)
-        canv_w = int(self.scaled_width * scale_x)
-        canv_h = int(self.scaled_height * scale_y)
         canvas.coords(self._canvas_img, canv_x, canv_y)
 
         self._resize_img(canvas, canv_w, canv_h)
@@ -491,6 +511,12 @@ class distributor:
 
     def get_images(self):
         return self._images
+
+    def get_image_under_cursor(self, canvas, mouse_x, mouse_y):
+        for img in self._images:
+            if img.is_under_cursor(canvas, mouse_x, mouse_y, self._screen_dims.x.get(), self._screen_dims.y.get()):
+                return img
+        return None
 
     def is_all_set(self):
         return self.pres is not None and self.input_dir is not None and len(self._images) > 0
@@ -861,7 +887,7 @@ class window:
         self.distrib.init_draw(self.canvas)
 
     def _configure_canvas(self):
-        self.canvas.bind("<Double-Button-1>", lambda event, self=self: self._canv_on_left_double_clicked())
+        self.canvas.bind("<Double-Button-1>", self._canv_on_left_double_clicked)
         self.distrib.slide_background_color.trace("w", lambda name, index, mode, self=self: self._canv_on_slide_background_color_changed())
 
         # Right-click menu
@@ -877,8 +903,18 @@ class window:
                 m.grab_release()
         self.canvas.bind("<Button-3>", do_popup)
 
-    def _canv_on_left_double_clicked(self):
-        pass
+    def _canv_on_left_double_clicked(self, event):
+        if self.distrib.is_all_set() is False:
+            return
+        slide_clicked = self.distrib.get_image_under_cursor(self.canvas, event.x, event.y)
+        if slide_clicked is None:
+            return
+        edit_panel = panel_edit_single_word(self._color_bg, slide_clicked.name, self.top)
+        edit_panel.grab_set()
+        self.top.wait_window(edit_panel)
+        if edit_panel.is_ok:
+            slide_clicked.name = edit_panel.text
+            self.distrib.draw(self.canvas)
 
     def _canv_open_edit_words(self):
         objects = self.distrib.get_images()
