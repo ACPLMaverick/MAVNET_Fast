@@ -7,6 +7,7 @@ import os
 import pptx
 import pptx.util
 import pptx.dml.color
+import pptx.enum.text
 import tkinter
 import tkinter.filedialog
 import tkinter.messagebox
@@ -225,6 +226,22 @@ class slide_image:
                                  pptx.util.Pt(self.y),
                                  width=pptx.util.Pt(self.scaled_width),
                                  height=pptx.util.Pt(self.scaled_height))
+        if self.is_draw_name:
+            text_x = self.x - self.scaled_width // 2
+            text_y = self.y + self.scaled_height
+            text_w = self.scaled_width * 2          # How to calculate real width?
+            text_h = self.name_size * 2
+
+            text_box = slide.shapes.add_textbox(pptx.util.Pt(text_x),
+                                                pptx.util.Pt(text_y),
+                                                pptx.util.Pt(text_w),
+                                                pptx.util.Pt(text_h))
+            paragraph = text_box.text_frame.paragraphs[0]
+            paragraph.text = self.name
+            paragraph.alignment = pptx.enum.text.PP_ALIGN.CENTER
+            paragraph.font.size = pptx.util.Pt(self.name_size)
+            paragraph.font.color.rgb = pptx.dml.color.RGBColor.from_string(self.name_color[1:])
+            paragraph.font.name = self.name_font
 
     def init_draw(self, canvas, reference_width, reference_height):
         self._canvas_img = canvas.create_image(0, 0, image=self._img, anchor=tkinter.NW)
@@ -249,7 +266,7 @@ class slide_image:
             text_y = canv_y + canv_h
             canvas.coords(self._canvas_text, text_x, text_y)
         else:
-            canvas.itemconfigure(self._canvas_text, "")
+            canvas.itemconfigure(self._canvas_text, text="")
 
 
 class pdf_jpg_extractor:
