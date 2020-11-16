@@ -44,8 +44,10 @@ class word_orientation(enum_enhanced):
 
 
 class mode_distribution(enum_enhanced):
-    ALL_IN_ONE_SLIDE = 0,
-    MULTIPLE_SLIDES = 1
+    NO_WORDS = 0
+    ALL_WORDS = 1,
+    ONE_WORD_PER_SLIDE = 2,
+    ALL_MODES_COMBINED = 3
 
 
 class mode_work_slide(enum_enhanced):
@@ -89,6 +91,36 @@ class dimensions(tkinter.StringVar):
         self.y.set(new_y)
 
 
+# Top-left anchor.
+class rect:
+    def __init__(self, x=0, y=0, width=0, height=0):
+        self.x = int(x)
+        self.y = int(y)
+        self.width = int(width)
+        self.height = int(height)
+        self.area = width * height
+
+    def is_zero(self):
+        return self.width == 0 or self.height == 0
+
+    def is_intersecting_me(self, other):
+        if self.is_zero():
+            return False
+        self_x2 = self.x + self.width
+        self_y2 = self.y + self.height
+        other_x2 = other.x + other.width
+        other_y2 = other.y + other.height
+        return other_x2 >= self.x and other.x <= self_x2 and other_y2 >= self.y and other.y <= self_y2
+
+    def is_inside_me(self, other):
+        if self.is_zero():
+            return False
+        return other.x >= self.x and (other.x + other.width) <= (self.x + self.width) and other.y >= self.y and (other.y + other.height) <= (self.y + self.height)
+
+    def __str__(self):
+        return "x: {}, y: {}, width: {}, height: {}, area: {}".format(self.x, self.y, self.width, self.height, self.area)
+
+
 class enum_var(tkinter.StringVar):
     def __init__(self, enum_class, *args, **kwargs):
         self.enum_class = enum_class
@@ -127,10 +159,23 @@ class slide_image:
         self.name_size = 0
         self.name_color = "#000000"
 
+    def compute_text_rect(screen_width, screen_height, text_height, padding_height, text_orientation, mode):
+        if mode is not mode_distribution.ONE_WORD_PER_SLIDE:
+            return rect()
+        height = 2 * padding_height + text_height
+        width = screen_width / 2
+        x = 0
+        y = 0
+        if text_orientation is word_orientation.TOP_RIGHT or text_orientation is word_orientation.BOTTOM_RIGHT:
+            x = screen_width - width
+        if text_orientation is word_orientation.BOTTOM_LEFT or text_orientation is word_orientation.BOTTOM_RIGHT:
+            y = screen_height - height
+        return rect(x, y, width, height)
+
     def distribute(images, screen_width, screen_height,
                    image_width, image_height,
                    padding_width, padding_height,
-                   mode, text_height, text_font, text_color, is_fill_x):
+                   mode, text_orientation, text_height, text_font, text_color, is_fill_x):
         # So at this point we have both presentation loaded, slide dimensions available (in points)
         # And also images loaded with their dimensions (in pixels).
         # Scaled image dimensions will be in POINTS, so they can be easily integrated in pptx.
@@ -139,14 +184,20 @@ class slide_image:
         if num_images == 0:
             return False
 
+        screen_rect = rect(0, 0, screen_width, screen_height)
+        text_rect = slide_image.compute_text_rect(screen_width, screen_height, text_height, padding_height, text_orientation, mode)
+        # text_rect = rect()
+        print("text_rect", text_rect)
+
         num_rows = 1
         scale_factor = 1.0
-        text_height_per_row = text_height if mode == mode_distribution.ALL_IN_ONE_SLIDE else 0
+        text_height_per_row = text_height if mode == mode_distribution.ALL_WORDS else 0
         while(True):
             # Scale one image to fit exactly num_rows
             scale_factor = ((screen_height - (num_rows + 1) * padding_height - (num_rows * text_height_per_row)) / image_height) / num_rows
             image_scaled_width = image_width * scale_factor
             # Check if all images will fit in this one row. If not, we'll try to fit them in two rows.
+            # We need to do this for all rows to take text_rect into account.
             total_images_width = (image_scaled_width + padding_width) * (num_images // num_rows)
             if total_images_width > screen_width:
                 num_rows += 1
@@ -162,29 +213,53 @@ class slide_image:
         width_per_image = screen_width / num_cols
 
         # Now distribute the images
-        for row in range(num_rows):
-            for col in range(num_cols):
-                image_idx = row * num_cols + col
-                if image_idx >= num_images:
-                    break
-                img = images[image_idx]
-                img.scaled_width = image_scaled_width
-                img.scaled_height = image_scaled_height
-                img.x = padding_width
+        ori_num_rows = num_rows
+        row = 0
+        col = 0
+        for image_idx in range(num_images):
+            img_rect = rect(0, 0, image_scaled_width, image_scaled_height)
+            while True:
+                img_rect.x = padding_width
                 if is_fill_x:
-                    img.x += col * width_per_image
+                    img_rect.x += col * width_per_image
                 else:
-                    img.x += col * (image_scaled_width + padding_width)
-                img.y = padding_height + row * (image_scaled_height + padding_height + text_height_per_row)
-                # print(image_idx, img.x, img.y, img.scaled_width, img.scaled_height)
-                if not (img.x >= 0 and (img.x + img.scaled_width) < screen_width):
-                    print("Image distribution exceeds X bounds:", screen_width, img.x, img.scaled_width)
-                if not (img.y >= 0 and (img.y + img.scaled_height) < screen_height):
-                    print("Image distribution exceeds Y bounds:", screen_height, img.y, img.scaled_height)
-                img.is_draw_name = mode == mode_distribution.ALL_IN_ONE_SLIDE
-                img.name_font = text_font
-                img.name_size = text_height
-                img.name_color = text_color
+                    img_rect.x += col * (image_scaled_width + padding_width)
+                img_rect.x = int(img_rect.x)
+                img_rect.y = padding_height + row * (image_scaled_height + padding_height + text_height_per_row)
+
+                col += 1
+                num_cols = max(col - 1, num_cols)
+                if not screen_rect.is_inside_me(img_rect):
+                    if num_rows > ori_num_rows:
+                        print("Could not distribute image", image_idx, "of rect:", img_rect)
+                        break
+                    else:
+                        col = 0
+                        row += 1
+                        num_cols = max(col - 1, num_cols)
+                        num_rows = max(row, num_rows)
+                else:
+                    if not text_rect.is_intersecting_me(img_rect):
+                        break
+                    else:
+                        print("Image:", image_idx, "| Col:", col, "| Row:", row, "| Rect:", img_rect)
+            # print(image_idx, img.x, img.y, img.scaled_width, img.scaled_height)
+            if not (img_rect.x >= 0 and (img_rect.x + img_rect.width) < screen_width):
+                print("Image distribution exceeds X bounds:", screen_width, img_rect.x, img_rect.width)
+            if not (img_rect.y >= 0 and (img_rect.y + img_rect.height) < screen_height):
+                print("Image distribution exceeds Y bounds:", screen_height, img_rect.y, img_rect.height)
+
+            print("Image:", image_idx, "Rect:", img_rect)
+
+            img = images[image_idx]
+            img.x = img_rect.x
+            img.y = img_rect.y
+            img.scaled_width = img_rect.width
+            img.scaled_height = img_rect.height
+            img.is_draw_name = mode == mode_distribution.ALL_WORDS
+            img.name_font = text_font
+            img.name_size = text_height
+            img.name_color = text_color
 
         return distribution_result(num_cols, num_rows, image_scaled_width, image_scaled_height)
 
@@ -299,7 +374,7 @@ class distributor:
         self.is_fill_x = tkinter.IntVar(value=1)
         self.word_position = enum_var(enum_class=word_orientation, value=word_orientation.TOP_LEFT)
         self.operation = enum_var(enum_class=mode_work_slide, value=mode_work_slide.NEW_SLIDE)
-        self.mode = enum_var(enum_class=mode_distribution, value=mode_distribution.ALL_IN_ONE_SLIDE)
+        self.mode = enum_var(enum_class=mode_distribution, value=mode_distribution.ONE_WORD_PER_SLIDE)
         self.slide_background_color = tkinter.StringVar(value="#ffffff")
         self.image_padding = dimensions(32, 32)
         self.word_color = tkinter.StringVar(value="#000000")
@@ -424,7 +499,7 @@ class distributor:
 
         # TODO Font color.
         result = slide_image.distribute(self._images, screen_width, screen_height, image_width, image_height,
-                                        padding_width, padding_height, self.mode.get_enum(),
+                                        padding_width, padding_height, self.mode.get_enum(), self.word_position.get_enum(),
                                         self.word_size.get(), self.word_font.get(), self.word_color.get(),
                                         self.is_fill_x.get() == 1)
 
@@ -994,7 +1069,10 @@ class window:
         combo_box = ttk.Combobox(root, values=options, textvariable=var_value,
                                  validate="key", validatecommand=cmd)
         if(len(options) > 0):
-            combo_box.current(0)
+            if isinstance(var_value, enum_var):
+                combo_box.current(var_value.get_enum().value)
+            else:
+                combo_box.current(0)
         return window._w_create_pair(root, combo_box, text_name, base_x, base_y)
 
     def _w_create_pair_checkbox(root, text_name, var_value, base_x, base_y):
