@@ -100,6 +100,17 @@ class rect:
         self.height = int(height)
         self.area = width * height
 
+    def create_scaled_with_canvas(in_rect, canvas, reference_width, reference_height):
+        scale_x = canvas.winfo_width() / reference_width
+        scale_y = canvas.winfo_height() / reference_height
+
+        canv_x = (in_rect.x * scale_x)
+        canv_y = (in_rect.y * scale_y)
+        canv_w = (in_rect.width * scale_x)
+        canv_h = (in_rect.height * scale_y)
+
+        return rect(canv_x, canv_y, canv_w, canv_h)
+
     def is_zero(self):
         return self.width == 0 or self.height == 0
 
@@ -146,7 +157,7 @@ class distribution_result:
 
 # slide_image's anchor is NW
 class slide_image:
-    def __init__(self, file_path):
+    def __init__(self, file_path, idx):
         self._file_path = file_path
         self._img_ori = Image.open(file_path)
         self._img_scaled_init = None
@@ -160,7 +171,7 @@ class slide_image:
         self.x = 0
         self.y = 0
         self.is_draw_name = False
-        self.name = "(no name)"
+        self.name = "(no name {})".format(idx)
         self.name_font = None
         self.name_size = 0
         self.name_color = "#000000"
@@ -186,6 +197,10 @@ class slide_image:
         # And also images loaded with their dimensions (in pixels).
         # Scaled image dimensions will be in POINTS, so they can be easily integrated in pptx.
 
+        # TODO HACK Disable uniform X distribution if the mode is one slide per word
+        is_fill_x &= mode != mode_distribution.ONE_WORD_PER_SLIDE
+        # ~TODO HACK
+
         num_images = len(images)
         if num_images == 0:
             return False
@@ -200,7 +215,7 @@ class slide_image:
 
         num_rows = 1
         scale_factor = 1.0
-        text_height_per_row = text_height if mode == mode_distribution.ALL_WORDS else 0
+        text_height_per_row = 2 * text_height if mode == mode_distribution.ALL_WORDS else 0
         while(True):
             # Scale one image to fit exactly num_rows
             scale_factor = compute_scale_factor(num_rows)
@@ -258,10 +273,10 @@ class slide_image:
                         if not text_rect.is_intersecting_me(img_rect):
                             break
                         # else continue moving img_rect until we fit.
-                if not (img_rect.x >= 0 and (img_rect.x + img_rect.width) < screen_width):
-                    print("Image", image_idx, "exceeds X bounds:", screen_width, img_rect.x, img_rect.width)
-                if not (img_rect.y >= 0 and (img_rect.y + img_rect.height) < screen_height):
-                    print("Image", image_idx, "exceeds Y bounds:", screen_height, img_rect.y, img_rect.height)
+                # if not (img_rect.x >= 0 and (img_rect.x + img_rect.width) < screen_width):
+                #     print("Image", image_idx, "exceeds X bounds:", screen_width, img_rect.x, img_rect.width)
+                # if not (img_rect.y >= 0 and (img_rect.y + img_rect.height) < screen_height):
+                #     print("Image", image_idx, "exceeds Y bounds:", screen_height, img_rect.y, img_rect.height)
 
                 if current_num_rows == num_rows and need_another_pass:
                     break
@@ -295,26 +310,14 @@ class slide_image:
         self._img = ImageTk.PhotoImage(img)
         canvas.itemconfig(self._canvas_img, image=self._img)
 
-    def _get_canvas_coords(self, canvas, reference_width, reference_height):
-        scale_x = canvas.winfo_width() / reference_width
-        scale_y = canvas.winfo_height() / reference_height
-
-        canv_x = int(self.x * scale_x)
-        canv_y = int(self.y * scale_y)
-        canv_w = int(self.scaled_width * scale_x)
-        canv_h = int(self.scaled_height * scale_y)
-
-        return (canv_x, canv_y, canv_w, canv_h)
-
     def is_under_cursor(self, canvas, mouse_x, mouse_y, reference_width, reference_height):
-        coords = self._get_canvas_coords(canvas, reference_width, reference_height)
-        canv_x = coords[0]
-        canv_y = coords[1]
-        canv_x2 = coords[0] + coords[2]
-        canv_y2 = coords[1] + coords[3]
+        canv = rect.create_scaled_with_canvas(rect(self.x, self.y, self.scaled_width, self.scaled_height),
+                                              canvas, reference_width, reference_height)
+        canv_x2 = canv.x + canv.width
+        canv_y2 = canv.y + canv.height
         if self.is_draw_name:
             canv_y2 += 2 * int(self.name_size * (canvas.winfo_height() / reference_height))
-        return mouse_x > canv_x and mouse_x < canv_x2 and mouse_y > canv_y and mouse_y < canv_y2
+        return mouse_x > canv.x and mouse_x < canv_x2 and mouse_y > canv.y and mouse_y < canv_y2
 
     def add_to_slide(self, slide):
         slide.shapes.add_picture(self._file_path,
@@ -345,21 +348,18 @@ class slide_image:
         self.draw(canvas, reference_width, reference_height)
 
     def draw(self, canvas, reference_width, reference_height):
-        coords = self._get_canvas_coords(canvas, reference_width, reference_height)
-        canv_x = coords[0]
-        canv_y = coords[1]
-        canv_w = coords[2]
-        canv_h = coords[3]
+        canv = rect.create_scaled_with_canvas(rect(self.x, self.y, self.scaled_width, self.scaled_height),
+                                              canvas, reference_width, reference_height)
 
-        canvas.coords(self._canvas_img, canv_x, canv_y)
+        canvas.coords(self._canvas_img, canv.x, canv.y)
 
-        self._resize_img(canvas, canv_w, canv_h)
+        self._resize_img(canvas, canv.width, canv.height)
 
         if self.is_draw_name:
             font_tuple = (self.name_font, str(self.name_size))
             canvas.itemconfigure(self._canvas_text, text=self.name, font=font_tuple, fill=self.name_color)
-            text_x = canv_x + (canv_w / 2)
-            text_y = canv_y + canv_h
+            text_x = canv.x + (canv.width / 2)
+            text_y = canv.y + canv.height
             canvas.coords(self._canvas_text, text_x, text_y)
         else:
             canvas.itemconfigure(self._canvas_text, text="")
@@ -393,17 +393,23 @@ class distributor:
         self.word_font = tkinter.StringVar(value="Impact")
         self.word_size = tkinter.IntVar(value=16)
         self.is_fill_x = tkinter.IntVar(value=1)
-        self.word_position = enum_var(enum_class=word_orientation, value=word_orientation.TOP_LEFT)
+        self.word_position = enum_var(enum_class=word_orientation, value=word_orientation.BOTTOM_LEFT)
         self.operation = enum_var(enum_class=mode_work_slide, value=mode_work_slide.NEW_SLIDE)
-        self.mode = enum_var(enum_class=mode_distribution, value=mode_distribution.ONE_WORD_PER_SLIDE)
+        self.mode = enum_var(enum_class=mode_distribution, value=mode_distribution.NO_WORDS)
         self.slide_background_color = tkinter.StringVar(value="#ffffff")
         self.image_padding = dimensions(32, 32)
-        self.word_color = tkinter.StringVar(value="#000000")
 
-        self._screen_dims = dimensions(960, 540)
+        self.word_color = tkinter.StringVar(value="#000000")
+        self.oneslide_word_size = tkinter.IntVar(value=32)
+        self.oneslide_word_padding = dimensions(32, 32)
+        self.oneslide_word_active_index = tkinter.IntVar(value=0)
+
+        self.screen_dims = dimensions(0, 0)
         self._pres_file_path = None
         self._source_slide_idx = 0
         self._images = []
+
+        self._canvas_word_id = 0
 
         self._trace_image_padding = None
         self._trace_mode = None
@@ -411,6 +417,10 @@ class distributor:
         self._trace_word_size = None
         self._trace_is_fill_x = None
         self._trace_word_font = None
+        self._trace_word_color = None
+        self._trace_oneslide_word_size = None
+        self._trace_oneslide_word_padding = None
+        self._trace_oneslide_word_active_index = None
 
     def _extract_from_pdf(self):
         print("TODO Implement.")
@@ -435,7 +445,7 @@ class distributor:
 
         slide_width = pptx.util.Emu(self.pres.slide_width)
         slide_height = pptx.util.Emu(self.pres.slide_height)
-        self._screen_dims.set_dims(int(slide_width.pt), int(slide_height.pt))
+        self.screen_dims.set_dims(int(slide_width.pt), int(slide_height.pt))
 
         # last_slide = self.pres.slides[-1]
         # if last_slide.background is not None:
@@ -478,8 +488,9 @@ class distributor:
         average_height = 0
         reference_width = 0
         reference_height = 0
+        image_idx = 1
         for image_file in files:
-            image = slide_image(image_file)
+            image = slide_image(image_file, image_idx)
             self._images.append(image)
             image_width = image.original_width
             image_height = image.original_height
@@ -491,6 +502,7 @@ class distributor:
                 return_code = input_data_load_result.OK_NON_UNIFORM_DIMENSIONS
             average_width += image_width
             average_height += image_height
+            image_idx += 1
         average_width = average_width / self.num_images.get()
         average_height = average_height / self.num_images.get()
         self.image_dims.set_dims(average_width, average_height)
@@ -509,8 +521,8 @@ class distributor:
             self._enable_param_traces()
             return False
 
-        screen_width = self._screen_dims.x.get()
-        screen_height = self._screen_dims.y.get()
+        screen_width = self.screen_dims.x.get()
+        screen_height = self.screen_dims.y.get()
 
         image_width = self.image_dims.x.get()
         image_height = self.image_dims.y.get()
@@ -543,6 +555,10 @@ class distributor:
         self._trace_word_size = self.word_size.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
         self._trace_is_fill_x = self.is_fill_x.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
         self._trace_word_font = self.word_font.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
+        self._trace_word_color = self.word_color.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
+        self._trace_oneslide_word_size = self.oneslide_word_size.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
+        self._trace_oneslide_word_padding = self.oneslide_word_padding.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
+        self._trace_oneslide_word_active_index = self.oneslide_word_active_index.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
 
     def _disable_param_traces(self):
         if self._trace_image_padding is not None:
@@ -563,6 +579,18 @@ class distributor:
         if self._trace_word_font is not None:
             self.word_font.trace_vdelete("w", self._trace_word_font)
             self._trace_word_font = None
+        if self._trace_word_color is not None:
+            self.word_color.trace_vdelete("w", self._trace_word_color)
+            self._trace_word_color = None
+        if self._trace_oneslide_word_size is not None:
+            self.oneslide_word_size.trace_vdelete("w", self._trace_oneslide_word_size)
+            self._trace_oneslide_word_size = None
+        if self._trace_oneslide_word_padding is not None:
+            self.oneslide_word_padding.trace_vdelete("w", self._trace_oneslide_word_padding)
+            self._trace_oneslide_word_padding = None
+        if self._trace_oneslide_word_active_index is not None:
+            self.oneslide_word_active_index.trace_vdelete("w", self._trace_oneslide_word_active_index)
+            self._trace_oneslide_word_active_index = None
 
     def _on_edit_traced(self):
         if self._setup_images():
@@ -583,7 +611,7 @@ class distributor:
             return None
 
     def _validate_vars(self):
-        if not self._screen_dims.is_valid():
+        if not self.screen_dims.is_valid():
             return False
         if not self.image_dims.is_valid():
             return False
@@ -627,7 +655,7 @@ class distributor:
 
     def get_image_under_cursor(self, canvas, mouse_x, mouse_y):
         for img in self._images:
-            if img.is_under_cursor(canvas, mouse_x, mouse_y, self._screen_dims.x.get(), self._screen_dims.y.get()):
+            if img.is_under_cursor(canvas, mouse_x, mouse_y, self.screen_dims.x.get(), self.screen_dims.y.get()):
                 return img
         return None
 
@@ -661,16 +689,53 @@ class distributor:
 
         return self._create_internal(use_background)
 
+    def _draw_word(self, canvas):
+        if self.mode.get_enum() == mode_distribution.ONE_WORD_PER_SLIDE:
+            font_tuple = (self.word_font.get(), str(self.oneslide_word_size.get()))
+            word_padding_x = self.oneslide_word_padding.x.get()
+            word_padding_y = self.oneslide_word_padding.y.get()
+            word_anchor = tkinter.NW
+            word_x = word_padding_x
+            word_y = word_padding_y
+            if self.word_position.get_enum() == word_orientation.TOP_RIGHT:
+                word_anchor = tkinter.NE
+                word_x = self.screen_dims.x.get() - word_padding_x
+                word_y = word_padding_y
+            elif self.word_position.get_enum() == word_orientation.BOTTOM_RIGHT:
+                word_anchor = tkinter.SE
+                word_x = self.screen_dims.x.get() - word_padding_x
+                word_y = self.screen_dims.y.get() - word_padding_y
+            elif self.word_position.get_enum() == word_orientation.BOTTOM_LEFT:
+                word_anchor = tkinter.SW
+                word_x = word_padding_x
+                word_y = self.screen_dims.y.get() - word_padding_y
+            elif self.word_position.get_enum() == word_orientation.TOP_LEFT:
+                word_anchor = tkinter.NW
+                word_x = word_padding_x
+                word_y = word_padding_y
+            else:
+                print("Not supported word orientation.")
+            word_rect = rect.create_scaled_with_canvas(rect(word_x, word_y, 1, 1),
+                                                       canvas, self.screen_dims.x.get(), self.screen_dims.y.get())
+            image_idx = int(self.oneslide_word_active_index.get()) if var_helper.is_var_valid(self.oneslide_word_active_index) else 1
+            canvas.itemconfigure(self._canvas_word_id, text=self._images[image_idx - 1].name, font=font_tuple,
+                                 fill=self.word_color.get(), anchor=word_anchor)
+            canvas.coords(self._canvas_word_id, word_rect.x, word_rect.y)
+        else:
+            canvas.itemconfigure(self._canvas_word_id, text="")
+
     def init_draw(self, canvas):
         self.canvas = canvas
         for img in self._images:
-            img.init_draw(canvas, self._screen_dims.x.get(), self._screen_dims.y.get())
+            img.init_draw(canvas, self.screen_dims.x.get(), self.screen_dims.y.get())
+        self._canvas_word_id = canvas.create_text(0, 0, text="", anchor=tkinter.NW)
 
     def draw(self, canvas):
         if canvas is None:
             return
         for img in self._images:
-            img.draw(canvas, self._screen_dims.x.get(), self._screen_dims.y.get())
+            img.draw(canvas, self.screen_dims.x.get(), self.screen_dims.y.get())
+        self._draw_word(canvas)
 
 
 # ####### UI
@@ -688,6 +753,12 @@ class tk_util:
         rt = window._root()
         x = rt.winfo_pointerx()
         y = rt.winfo_pointery()
+        window.geometry("+{}+{}".format(x, y))
+
+    def window_set_on_root(window):
+        rt = window._root()
+        x = int(rt.winfo_x() + rt.winfo_width() / 2)
+        y = int(rt.winfo_y() + rt.winfo_height() / 2)
         window.geometry("+{}+{}".format(x, y))
 
 
@@ -709,7 +780,7 @@ class labelframe_disableable(tkinter.LabelFrame):
 
 
 class color_picker(tkinter.Frame):
-    def __init__(self, master, var_color, bg_color, width=144, height=20, command=None, can_be_disabled=True):
+    def __init__(self, master, var_color, bg_color, width=144, height=21, command=None, can_be_disabled=True):
         super().__init__(master, width=width, height=height, bg=bg_color)
         self._can_be_disabled = can_be_disabled
         width_btn = int(0.8 * width) if can_be_disabled else width
@@ -798,31 +869,28 @@ class panel_edit_single_word(tkinter.Toplevel):
         self.destroy()
 
 
-class panel_edit_words(tkinter.Toplevel):
-    def __init__(self, color_bg, var_color, objects, *args, **kwargs):
+class panel_word_settings(tkinter.Toplevel):
+    def __init__(self, color_bg, objects, is_appear_under_cursor=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.var_color = var_color
-        self._inter_var_color = tkinter.StringVar(value=self.var_color.get())
         self.objects = objects
         self.edited_names = dict()
-        self.title = "Word editor"
+        self.title = "Word settings"
         self.color_bg = color_bg
         self.is_ok = False
         self.resizable(False, False)
         self.configure(bg=color_bg)
         self._create_widgets()
-        tk_util.window_set_on_cursor(self)
+        if is_appear_under_cursor:
+            tk_util.window_set_on_cursor(self)
+        else:
+            tk_util.window_set_on_root(self)
 
     def _create_widgets(self):
-        lbl_color = tkinter.Label(self, text="Font color:", bg=self.color_bg)
-        tk_util.place_in_grid(lbl_color, 0, 0)
-        self.color_picker = color_picker(self, self._inter_var_color, self.color_bg, width=120, height=16, can_be_disabled=False)
-        tk_util.place_in_grid(self.color_picker, 1, 0)
         self.btn_edit = tkinter.Button(self, text="Edit", width=8, command=self._on_edit_clicked)
-        tk_util.place_in_grid(self.btn_edit, 0, 1, orientation=tkinter.NW)
+        tk_util.place_in_grid(self.btn_edit, 0, 0, orientation=tkinter.NW)
         self.list_box = tkinter.Listbox(self, selectmode=tkinter.SINGLE, height=len(self.objects))
         self.list_box.bind("<Double-Button-1>", lambda event, self=self: self._on_edit_clicked())
-        tk_util.place_in_grid(self.list_box, 1, 1, orientation=tkinter.NW)
+        tk_util.place_in_grid(self.list_box, 1, 0, orientation=tkinter.NW)
 
         for obj in self.objects:
             word = obj.name
@@ -851,7 +919,6 @@ class panel_edit_words(tkinter.Toplevel):
     def _on_ok_clicked(self):
         for key, value in self.edited_names.items():
             self.objects[key].name = value
-        self.var_color.set(self._inter_var_color.get())
         self.is_ok = True
         self.destroy()
 
@@ -872,7 +939,7 @@ class window:
 
     def _create_top(self):
         self.width = 770
-        self.height = 650
+        self.height = 705
 
         self.top = tkinter.Tk()
         self.top.title("Distribute Images Tool")
@@ -952,8 +1019,8 @@ class window:
         self.edit_word_font = window._w_create_pair_combobox(self.frame_edit, "Word font:", [self.distrib.word_font.get()],
                                                              self.distrib.word_font, 0, 1)
         frame_size_and_fill_x = tkinter.Frame(self.frame_edit, bg=window._color_bg)
-        self.edit_word_font_size = window._w_create_pair_num_edit(frame_size_and_fill_x, "Word size:", self.distrib.word_size, 0, 0)
-        self.edit_is_fill_x = window._w_create_pair_checkbox(frame_size_and_fill_x, "Uniform width:", self.distrib.is_fill_x, 2, 0)
+        self.edit_word_font_size = window._w_create_pair_num_edit(frame_size_and_fill_x, "Small text:", self.distrib.word_size, 0, 0, 1, 64)
+        self.edit_word_large_size = window._w_create_pair_num_edit(frame_size_and_fill_x, "Large text:", self.distrib.oneslide_word_size, 2, 0, 1, 110)
         tk_util.place_in_grid(frame_size_and_fill_x, 0, 2, w=2, orientation=tkinter.W, nopadding=True)
 
         self.edit_word_positioning = window._w_create_pair_combobox(self.frame_edit, "Word position:",
@@ -964,7 +1031,15 @@ class window:
         self.edit_mode = window._w_create_pair_combobox(self.frame_edit, "Distribution:", enum_enhanced.get_names(mode_distribution),
                                                         self.distrib.mode, 2, 1)
         self.edit_bg_color = window._w_create_pair_color_picker(self.frame_edit, "Background color:", self.distrib.slide_background_color, 2, 2)
-        self.edit_padding = window._w_create_pair_dim_edit(self.frame_edit, "Image padding (pt):", self.distrib.image_padding, 2, 3)
+        self.edit_font_color = window._w_create_pair_color_picker(self.frame_edit, "Font color:", self.distrib.word_color, 2, 3, False)
+
+        self.edit_is_fill_x = window._w_create_pair_checkbox(self.frame_edit, "Uniform width:", self.distrib.is_fill_x, 0, 4)
+        self.edit_padding = window._w_create_pair_dim_edit(self.frame_edit, "Image padding (pt):", self.distrib.image_padding, 2, 4, 1, 128)
+
+        self.edit_active_word = window._w_create_pair_num_edit(self.frame_edit, "Active word:",
+                                                               self.distrib.oneslide_word_active_index, 0, 5)
+        self.edit_word_padding = window._w_create_pair_dim_edit(self.frame_edit, "Word padding (pt):", self.distrib.oneslide_word_padding,
+                                                                2, 5, 1, 128)
 
         # #####################
 
@@ -975,8 +1050,12 @@ class window:
 
         self.label_number = window._w_create_pair_label(self.frame_info, "Number of images:", self.distrib.num_images, 0, 0)
         self.label_number_nxn = window._w_create_pair_label(self.frame_info, "Grid dimensions (WxH):", self.distrib.image_grid_dims, 0, 1)
-        self.label_dimensions_ori = window._w_create_pair_label(self.frame_info, "Ori. image dimensions (px):", self.distrib.image_dims, 0, 2)
-        self.label_dimensions_rec = window._w_create_pair_label(self.frame_info, "Scl. image dimensions (pt):", self.distrib.image_scaled_dims, 0, 3)
+        self.label_dimensions_screen = window._w_create_pair_label(self.frame_info, "Screen dimensions (pt):", self.distrib.screen_dims, 0, 2)
+        self.label_dimensions_ori = window._w_create_pair_label(self.frame_info, "Ori. image dimensions (px):", self.distrib.image_dims, 0, 3)
+        self.label_dimensions_rec = window._w_create_pair_label(self.frame_info, "Scl. image dimensions (pt):", self.distrib.image_scaled_dims, 0, 4)
+
+        self.btn_word_settings = tkinter.Button(self.frame_info, text="Word settings", width=25, command=lambda: self._canv_open_edit_words(False))
+        tk_util.place_in_grid(self.btn_word_settings, 0, 5, w=2)
 
         #####################
 
@@ -996,6 +1075,7 @@ class window:
         self.btn_create.configure(state="normal")
 
     def _all_set(self):
+        self.edit_active_word.configure(to=len(self.distrib.get_images()))
         self._unlock_edit()
         self.distrib.init_draw(self.canvas)
 
@@ -1005,7 +1085,7 @@ class window:
 
         # Right-click menu
         m = tkinter.Menu(self.canvas, tearoff=0)
-        m.add_command(label="Edit words", command=self._canv_open_edit_words)
+        m.add_command(label="Word settings", command=lambda: self._canv_open_edit_words(True))
 
         def do_popup(event):
             if self.distrib.is_all_set() is False:
@@ -1029,9 +1109,9 @@ class window:
             slide_clicked.name = edit_panel.text
             self.distrib.draw(self.canvas)
 
-    def _canv_open_edit_words(self):
+    def _canv_open_edit_words(self, is_appear_under_cursor):
         objects = self.distrib.get_images()
-        edit_words = panel_edit_words(window._color_bg, self.distrib.word_color, objects, self.top)
+        edit_words = panel_word_settings(window._color_bg, objects, is_appear_under_cursor, self.top)
         edit_words.grab_set()
         self.top.wait_window(edit_words)
         if edit_words.is_ok:
@@ -1041,8 +1121,8 @@ class window:
     def _canv_on_slide_background_color_changed(self):
         self.canvas["bg"] = self.distrib.slide_background_color.get()
 
-    def _w_create_num_input(root, var_value):
-        def validate_num_input(val):
+    def _w_create_num_input(root, var_value, min_val, max_val):
+        def validate_num_input(val, widget):
             int_val = 0
             try:
                 int_val = int(val)
@@ -1053,11 +1133,12 @@ class window:
                 except Exception:
                     return False
                 return False
-            return int_val >= 1 and int_val <= 9999
-        cmd = root.register(validate_num_input)
-        return tkinter.Spinbox(root, textvariable=var_value, width=5,
-                               from_=1, to=9999, validate="all",
-                               validatecommand=(cmd, "%P"))
+            return int_val >= widget["from"] and int_val <= widget["to"]
+        sb = tkinter.Spinbox(root, textvariable=var_value, width=5,
+                             from_=min_val, to=max_val, validate="all")
+        cmd = root.register(lambda val: validate_num_input(val, sb))
+        sb.configure(validatecommand=(cmd, "%P"))
+        return sb
 
     def _w_create_pair(root, element, text_name, base_x, base_y):
         label_name = tkinter.Label(root, text=text_name, bg=window._color_bg)
@@ -1069,14 +1150,14 @@ class window:
         return window._w_create_pair(root, tkinter.Label(root, textvariable=var_value, bg=window._color_bg),
                                      text_name, base_x, base_y)
 
-    def _w_create_pair_num_edit(root, text_name, var_value, base_x, base_y):
-        dim = window._w_create_num_input(root, var_value)
+    def _w_create_pair_num_edit(root, text_name, var_value, base_x, base_y, min_val=1, max_val=9999):
+        dim = window._w_create_num_input(root, var_value, min_val, max_val)
         return window._w_create_pair(root, dim, text_name, base_x, base_y)
 
-    def _w_create_pair_dim_edit(root, text_name, var_dim, base_x, base_y):
+    def _w_create_pair_dim_edit(root, text_name, var_dim, base_x, base_y, min_val=1, max_val=9999):
         inter_frame = tkinter.Frame(root, bg=window._color_bg)
-        dim_x = window._w_create_num_input(inter_frame, var_dim.x)
-        dim_y = window._w_create_num_input(inter_frame, var_dim.y)
+        dim_x = window._w_create_num_input(inter_frame, var_dim.x, min_val, max_val)
+        dim_y = window._w_create_num_input(inter_frame, var_dim.y, min_val, max_val)
         sep = tkinter.Label(inter_frame, text="x", bg=window._color_bg)
         tk_util.place_in_grid(dim_x, 0, 0, nopadding=True)
         tk_util.place_in_grid(sep, 1, 0, nopadding=True)
@@ -1101,8 +1182,8 @@ class window:
                                  bg=window._color_bg, highlightcolor=window._color_bg, activebackground=window._color_bg)
         return window._w_create_pair(root, cb, text_name, base_x, base_y)
 
-    def _w_create_pair_color_picker(root, text_name, var_value, base_x, base_y):
-        picker = color_picker(root, var_value, window._color_bg)
+    def _w_create_pair_color_picker(root, text_name, var_value, base_x, base_y, can_be_disabled=True):
+        picker = color_picker(root, var_value, window._color_bg, can_be_disabled=can_be_disabled)
         return window._w_create_pair(root, picker, text_name, base_x, base_y)
 
     def _check_file_name(file_name):
