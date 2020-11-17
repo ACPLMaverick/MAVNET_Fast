@@ -117,6 +117,12 @@ class rect:
             return False
         return other.x >= self.x and (other.x + other.width) <= (self.x + self.width) and other.y >= self.y and (other.y + other.height) <= (self.y + self.height)
 
+    def is_exceeding_me_right(self, other):
+        return (other.x + other.width) > (self.x + self.width)
+
+    def is_exceeding_me_down(self, other):
+        return (other.y + other.height) > (self.y + self.height)
+
     def __str__(self):
         return "x: {}, y: {}, width: {}, height: {}, area: {}".format(self.x, self.y, self.width, self.height, self.area)
 
@@ -163,7 +169,7 @@ class slide_image:
         if mode is not mode_distribution.ONE_WORD_PER_SLIDE:
             return rect()
         height = 2 * padding_height + text_height
-        width = screen_width / 2
+        width = screen_width * 0.4
         x = 0
         y = 0
         if text_orientation is word_orientation.TOP_RIGHT or text_orientation is word_orientation.BOTTOM_RIGHT:
@@ -187,80 +193,95 @@ class slide_image:
         screen_rect = rect(0, 0, screen_width, screen_height)
         text_rect = slide_image.compute_text_rect(screen_width, screen_height, text_height, padding_height, text_orientation, mode)
         # text_rect = rect()
-        print("text_rect", text_rect)
+        # print("text_rect", text_rect)
+
+        def compute_scale_factor(a_num_rows):
+            return ((screen_height - (a_num_rows + 1) * padding_height - (a_num_rows * text_height_per_row)) / image_height) / a_num_rows
 
         num_rows = 1
         scale_factor = 1.0
         text_height_per_row = text_height if mode == mode_distribution.ALL_WORDS else 0
         while(True):
             # Scale one image to fit exactly num_rows
-            scale_factor = ((screen_height - (num_rows + 1) * padding_height - (num_rows * text_height_per_row)) / image_height) / num_rows
+            scale_factor = compute_scale_factor(num_rows)
             image_scaled_width = image_width * scale_factor
-            # Check if all images will fit in this one row. If not, we'll try to fit them in two rows.
-            # We need to do this for all rows to take text_rect into account.
+            # Check if all images will fit in this one row. If not, we'll try to fit them in more rows.
             total_images_width = (image_scaled_width + padding_width) * (num_images // num_rows)
             if total_images_width > screen_width:
                 num_rows += 1
             else:
                 break
 
-        image_scaled_width = math.floor(image_width * scale_factor)
-        image_scaled_height = math.floor(image_height * scale_factor)
-
         num_cols = math.ceil(num_images / num_rows)
 
-        # print(scale_factor, num_rows, num_cols, image_scaled_width, image_scaled_height)
-        width_per_image = screen_width / num_cols
+        need_another_pass = False
+        pass_num = 1
+        for current_num_rows in range(num_rows, num_rows + 2):
+            # print("Distribution pass", pass_num, "NumRows:", current_num_rows)
+            scale_factor = compute_scale_factor(current_num_rows)
+            image_scaled_width = math.floor(image_width * scale_factor)
+            image_scaled_height = math.floor(image_height * scale_factor)
 
-        # Now distribute the images
-        ori_num_rows = num_rows
-        row = 0
-        col = 0
-        for image_idx in range(num_images):
-            img_rect = rect(0, 0, image_scaled_width, image_scaled_height)
-            while True:
-                img_rect.x = padding_width
-                if is_fill_x:
-                    img_rect.x += col * width_per_image
-                else:
-                    img_rect.x += col * (image_scaled_width + padding_width)
-                img_rect.x = int(img_rect.x)
-                img_rect.y = padding_height + row * (image_scaled_height + padding_height + text_height_per_row)
+            width_per_image = screen_width / num_cols
 
-                col += 1
-                num_cols = max(col - 1, num_cols)
-                if not screen_rect.is_inside_me(img_rect):
-                    if num_rows > ori_num_rows:
-                        print("Could not distribute image", image_idx, "of rect:", img_rect)
-                        break
+            # Now distribute the images
+            row = 0
+            col = 0
+            for image_idx in range(num_images):
+                img_rect = rect(0, 0, image_scaled_width, image_scaled_height)
+                while True:
+                    img_rect.x = padding_width
+                    if is_fill_x:
+                        img_rect.x += col * width_per_image
                     else:
+                        img_rect.x += col * (image_scaled_width + padding_width)
+                    img_rect.x = int(img_rect.x)
+                    img_rect.y = padding_height + row * (image_scaled_height + padding_height + text_height_per_row)
+
+                    col += 1
+                    num_cols = max(col - 1, num_cols)
+                    if screen_rect.is_exceeding_me_right(img_rect):
+                        # Exceeded to the right, so we have to jump to lower row.
                         col = 0
                         row += 1
                         num_cols = max(col - 1, num_cols)
-                        num_rows = max(row, num_rows)
-                else:
-                    if not text_rect.is_intersecting_me(img_rect):
+                        current_num_rows = max(row, current_num_rows)
+                    elif screen_rect.is_exceeding_me_down(img_rect):
+                        # Exceeded down - reached the end of the screen. Distribution failed
+                        if need_another_pass is False:
+                            need_another_pass = True
+                        else:
+                            print("Could not distribute image", image_idx, "of rect:", img_rect)
                         break
                     else:
-                        print("Image:", image_idx, "| Col:", col, "| Row:", row, "| Rect:", img_rect)
-            # print(image_idx, img.x, img.y, img.scaled_width, img.scaled_height)
-            if not (img_rect.x >= 0 and (img_rect.x + img_rect.width) < screen_width):
-                print("Image distribution exceeds X bounds:", screen_width, img_rect.x, img_rect.width)
-            if not (img_rect.y >= 0 and (img_rect.y + img_rect.height) < screen_height):
-                print("Image distribution exceeds Y bounds:", screen_height, img_rect.y, img_rect.height)
+                        # All good? Check if we don't intersect text rect.
+                        if not text_rect.is_intersecting_me(img_rect):
+                            break
+                        # else continue moving img_rect until we fit.
+                if not (img_rect.x >= 0 and (img_rect.x + img_rect.width) < screen_width):
+                    print("Image", image_idx, "exceeds X bounds:", screen_width, img_rect.x, img_rect.width)
+                if not (img_rect.y >= 0 and (img_rect.y + img_rect.height) < screen_height):
+                    print("Image", image_idx, "exceeds Y bounds:", screen_height, img_rect.y, img_rect.height)
 
-            print("Image:", image_idx, "Rect:", img_rect)
+                if current_num_rows == num_rows and need_another_pass:
+                    break
 
-            img = images[image_idx]
-            img.x = img_rect.x
-            img.y = img_rect.y
-            img.scaled_width = img_rect.width
-            img.scaled_height = img_rect.height
-            img.is_draw_name = mode == mode_distribution.ALL_WORDS
-            img.name_font = text_font
-            img.name_size = text_height
-            img.name_color = text_color
+                # print("Image:", image_idx, "Rect:", img_rect)
 
+                img = images[image_idx]
+                img.x = img_rect.x
+                img.y = img_rect.y
+                img.scaled_width = img_rect.width
+                img.scaled_height = img_rect.height
+                img.is_draw_name = mode == mode_distribution.ALL_WORDS
+                img.name_font = text_font
+                img.name_size = text_height
+                img.name_color = text_color
+            if need_another_pass is False:
+                break
+            pass_num += 1
+
+        num_rows = current_num_rows
         return distribution_result(num_cols, num_rows, image_scaled_width, image_scaled_height)
 
     def _resize_img(self, canvas, new_width, new_height):
