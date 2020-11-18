@@ -215,7 +215,7 @@ class slide_image:
 
         num_rows = 1
         scale_factor = 1.0
-        text_height_per_row = 2 * text_height if mode == mode_distribution.ALL_WORDS else 0
+        text_height_per_row = text_height if mode == mode_distribution.ALL_WORDS else 0
         while(True):
             # Scale one image to fit exactly num_rows
             scale_factor = compute_scale_factor(num_rows)
@@ -316,7 +316,7 @@ class slide_image:
         canv_x2 = canv.x + canv.width
         canv_y2 = canv.y + canv.height
         if self.is_draw_name:
-            canv_y2 += 2 * int(self.name_size * (canvas.winfo_height() / reference_height))
+            canv_y2 += int(self.name_size * (canvas.winfo_height() / reference_height))
         return mouse_x > canv.x and mouse_x < canv_x2 and mouse_y > canv.y and mouse_y < canv_y2
 
     def add_to_slide(self, slide):
@@ -338,7 +338,7 @@ class slide_image:
             paragraph = text_box.text_frame.paragraphs[0]
             paragraph.text = self.name
             paragraph.alignment = pptx.enum.text.PP_ALIGN.CENTER
-            paragraph.font.size = pptx.util.Pt(self.name_size)
+            paragraph.font.size = pptx.util.Pt(int(self.name_size * 1.2))
             paragraph.font.color.rgb = pptx.dml.color.RGBColor.from_string(self.name_color[1:])
             paragraph.font.name = self.name_font
 
@@ -356,7 +356,8 @@ class slide_image:
         self._resize_img(canvas, canv.width, canv.height)
 
         if self.is_draw_name:
-            font_tuple = (self.name_font, str(self.name_size))
+            text_size_scale = canvas.winfo_height() / reference_height
+            font_tuple = (self.name_font, str(int(self.name_size * text_size_scale)))
             canvas.itemconfigure(self._canvas_text, text=self.name, font=font_tuple, fill=self.name_color)
             text_x = canv.x + (canv.width / 2)
             text_y = canv.y + canv.height
@@ -391,7 +392,7 @@ class distributor:
         self.source_slide_name = tkinter.StringVar(value=self.slide_names[0])
         self.source_slide_name.trace("w", lambda name, index, mode, self=self: self._on_source_slide_name_changed())
         self.word_font = tkinter.StringVar(value="Impact")
-        self.word_size = tkinter.IntVar(value=16)
+        self.word_size = tkinter.IntVar(value=18)
         self.is_fill_x = tkinter.IntVar(value=1)
         self.word_position = enum_var(enum_class=word_orientation, value=word_orientation.BOTTOM_LEFT)
         self.operation = enum_var(enum_class=mode_work_slide, value=mode_work_slide.NEW_SLIDE)
@@ -596,20 +597,6 @@ class distributor:
         if self._setup_images():
             self.draw(self.canvas)
 
-    def _acquire_slide(self):
-        op = self.operation.get_enum()
-        if op == mode_work_slide.NEW_SLIDE:
-            source_slide_layout = self.pres.slides[self._source_slide_idx].slide_layout
-            return self.pres.slides.add_slide(source_slide_layout)
-        elif op == mode_work_slide.SOURCE_SLIDE:
-            slide = self.pres.slides[self._source_slide_idx]
-            # slide.shapes.clear()          # Not supported.
-            # slide.placeholders.clear()    # Not supported.
-            return slide
-        else:
-            print("Error:", "Unknown mode operation.")
-            return None
-
     def _validate_vars(self):
         if not self.screen_dims.is_valid():
             return False
@@ -623,10 +610,102 @@ class distributor:
             return False
         if not var_helper.is_var_valid(self.word_font):
             return False
+        if not var_helper.is_var_valid(self.word_color):
+            return False
+        if not var_helper.is_var_valid(self.oneslide_word_size):
+            return False
+        if not self.oneslide_word_padding.is_valid():
+            return False
+        if not var_helper.is_var_valid(self.oneslide_word_active_index):
+            return False
         return True
 
-    def _create_internal(self, use_background):
-        slide = self._acquire_slide()
+    def _create_new_slide(self):
+        source_slide_layout = self.pres.slides[self._source_slide_idx].slide_layout
+        return self.pres.slides.add_slide(source_slide_layout)
+
+    def _acquire_first_slide(self):
+        op = self.operation.get_enum()
+        if op == mode_work_slide.NEW_SLIDE:
+            return self._create_new_slide()
+        elif op == mode_work_slide.SOURCE_SLIDE:
+            slide = self.pres.slides[self._source_slide_idx]
+            # slide.shapes.clear()          # Not supported.
+            # slide.placeholders.clear()    # Not supported.
+            return slide
+        else:
+            print("Error:", "Unknown mode operation.")
+            return None
+
+    def _add_word_to_slide(self, slide, word_idx):
+        screen_width = self.screen_dims.x.get()
+        screen_height = self.screen_dims.y.get()
+        word_size = self.oneslide_word_size.get()
+        word_padding_x = self.oneslide_word_padding.x.get()
+        word_padding_y = self.oneslide_word_padding.y.get()
+        word_alignment = pptx.enum.text.PP_ALIGN.LEFT
+        word_x = word_padding_x
+        word_y = word_padding_y
+        word_w = screen_width // 2
+        word_h = word_size * 2
+
+        if self.word_position.get_enum() == word_orientation.TOP_RIGHT:
+            word_alignment = pptx.enum.text.PP_ALIGN.RIGHT
+            word_x = screen_width - word_padding_x - word_w
+            word_y = word_padding_y
+        elif self.word_position.get_enum() == word_orientation.BOTTOM_RIGHT:
+            word_alignment = pptx.enum.text.PP_ALIGN.RIGHT
+            word_x = screen_width - word_padding_x - word_w
+            word_y = screen_height - word_padding_y - word_h
+        elif self.word_position.get_enum() == word_orientation.BOTTOM_LEFT:
+            word_alignment = pptx.enum.text.PP_ALIGN.LEFT
+            word_x = word_padding_x
+            word_y = screen_height - word_padding_y - word_h
+        elif self.word_position.get_enum() == word_orientation.TOP_LEFT:
+            word_alignment = pptx.enum.text.PP_ALIGN.LEFT
+            word_x = word_padding_x
+            word_y = word_padding_y
+        else:
+            print("Not supported word orientation.")
+
+        text_box = slide.shapes.add_textbox(pptx.util.Pt(word_x),
+                                            pptx.util.Pt(word_y),
+                                            pptx.util.Pt(word_w),
+                                            pptx.util.Pt(word_h))
+        paragraph = text_box.text_frame.paragraphs[0]
+        paragraph.text = self._images[word_idx].name
+        paragraph.alignment = word_alignment
+        paragraph.font.size = pptx.util.Pt(int(word_size * 1.2))
+        paragraph.font.color.rgb = pptx.dml.color.RGBColor.from_string(self.word_color.get()[1:])
+        paragraph.font.name = self.word_font.get()
+
+    def _create_all(self, first_slide, use_background):
+        last_mode = self.mode.get_enum()
+
+        self.mode.set(mode_distribution.NO_WORDS)   # This should trigger the setup_images call.
+        result = self._create_one_mode(first_slide, self.mode.get_enum(), use_background)
+        if result is False:
+            self.mode.set(last_mode)
+            return False
+
+        next_slide = self._create_new_slide()
+        self.mode.set(mode_distribution.ONE_WORD_PER_SLIDE)
+        result = self._create_one_mode(next_slide, self.mode.get_enum(), use_background)
+        if result is False:
+            self.mode.set(last_mode)
+            return False
+
+        next_slide = self._create_new_slide()
+        self.mode.set(mode_distribution.ALL_WORDS)
+        result = self._create_one_mode(next_slide, self.mode.get_enum(), use_background)
+        if result is False:
+            self.mode.set(last_mode)
+            return False
+
+        self.mode.set(last_mode)
+        return True
+
+    def _create_one_mode(self, slide, mode, use_background):
         if slide is None:
             return False
 
@@ -634,10 +713,21 @@ class distributor:
             img.add_to_slide(slide)
 
         if use_background:
+            rgb_color = pptx.dml.color.RGBColor.from_string(self.slide_background_color.get()[1:])
             slide.background.fill.solid()
-            slide.background.fill.fore_color.rgb = pptx.dml.color.RGBColor.from_string(self.slide_background_color.get()[1:])
+            slide.background.fill.fore_color.rgb = rgb_color
 
-        self.pres.save(self._pres_file_path)
+        if mode == mode_distribution.ONE_WORD_PER_SLIDE:
+            self._add_word_to_slide(slide, 0)
+            num_images = len(self._images)
+            for word_idx in range(1, num_images):
+                new_slide = self._create_new_slide()
+                for img in self._images:
+                    img.add_to_slide(new_slide)
+                if use_background:
+                    new_slide.background.fill.solid()
+                    new_slide.background.fill.fore_color.rgb = rgb_color
+                self._add_word_to_slide(new_slide, word_idx)
 
         return True
 
@@ -687,11 +777,23 @@ class distributor:
         if self._validate_vars() is False:
             return False
 
-        return self._create_internal(use_background)
+        if len(self._images) <= 0:
+            return False
+
+        result = False
+        if self.mode.get_enum() == mode_distribution.ALL_MODES_COMBINED:
+            result = self._create_all(self._acquire_first_slide(), use_background)
+        else:
+            result = self._create_one_mode(self._acquire_first_slide(), self.mode.get_enum(), use_background)
+
+        if result:
+            self.pres.save(self._pres_file_path)
+        return result
 
     def _draw_word(self, canvas):
         if self.mode.get_enum() == mode_distribution.ONE_WORD_PER_SLIDE:
-            font_tuple = (self.word_font.get(), str(self.oneslide_word_size.get()))
+            text_size_scale = canvas.winfo_height() / self.screen_dims.y.get()
+            font_tuple = (self.word_font.get(), str(int(self.oneslide_word_size.get() * text_size_scale)))
             word_padding_x = self.oneslide_word_padding.x.get()
             word_padding_y = self.oneslide_word_padding.y.get()
             word_anchor = tkinter.NW
