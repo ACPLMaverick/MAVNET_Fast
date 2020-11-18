@@ -393,7 +393,7 @@ class pdf_extractor:
                         file_path = os.path.join(self.output_directory, "image_{}_{}.png".format(i, xref))
                         if os.path.isfile(file_path) is False:
                             pix = fitz.Pixmap(doc, xref)
-                            if pix.n >= 5:
+                            if pix.n >= 4:
                                 pix = fitz.Pixmap(fitz.csRGB, pix)
                             pix.writePNG(file_path)
                             pix = None
