@@ -38,10 +38,11 @@ class enum_enhanced(Enum):
 
 
 class word_orientation(enum_enhanced):
-    TOP_LEFT = 0,
-    TOP_RIGHT = 1,
+    BOTTOM = 0,
+    BOTTOM_LEFT = 1
     BOTTOM_RIGHT = 2,
-    BOTTOM_LEFT = 3
+    TOP_LEFT = 3,
+    TOP_RIGHT = 4
 
 
 class mode_distribution(enum_enhanced):
@@ -181,12 +182,14 @@ class slide_image:
         if mode is not mode_distribution.ONE_WORD_PER_SLIDE:
             return rect()
         height = 2 * padding_height + text_height
-        width = screen_width * 0.4
+        width = screen_width * 0.2
         x = 0
         y = 0
+        if text_orientation is word_orientation.BOTTOM:
+            x = screen_width // 2 - width // 2
         if text_orientation is word_orientation.TOP_RIGHT or text_orientation is word_orientation.BOTTOM_RIGHT:
             x = screen_width - width
-        if text_orientation is word_orientation.BOTTOM_LEFT or text_orientation is word_orientation.BOTTOM_RIGHT:
+        if text_orientation is word_orientation.BOTTOM or text_orientation is word_orientation.BOTTOM_LEFT or text_orientation is word_orientation.BOTTOM_RIGHT:
             y = screen_height - height
         return rect(x, y, width, height)
 
@@ -418,7 +421,7 @@ class distributor:
         self.word_font = tkinter.StringVar(value="Impact")
         self.word_size = tkinter.IntVar(value=18)
         self.is_fill_x = tkinter.IntVar(value=1)
-        self.word_position = enum_var(enum_class=word_orientation, value=word_orientation.BOTTOM_RIGHT)
+        self.word_position = enum_var(enum_class=word_orientation, value=word_orientation.BOTTOM)
         self.operation = enum_var(enum_class=mode_work_slide, value=mode_work_slide.NEW_SLIDE)
         self.mode = enum_var(enum_class=mode_distribution, value=mode_distribution.ALL_MODES_COMBINED)
         self.slide_background_color = tkinter.StringVar(value="#ffffff")
@@ -689,6 +692,10 @@ class distributor:
             word_alignment = pptx.enum.text.PP_ALIGN.LEFT
             word_x = word_padding_x
             word_y = word_padding_y
+        elif self.word_position.get_enum() == word_orientation.BOTTOM:
+            word_alignment = pptx.enum.text.PP_ALIGN.CENTER
+            word_x = screen_width // 2 - word_w // 2
+            word_y = screen_height - word_padding_y - word_h
         else:
             print("Not supported word orientation.")
 
@@ -842,6 +849,10 @@ class distributor:
                 word_anchor = tkinter.NW
                 word_x = word_padding_x
                 word_y = word_padding_y
+            elif self.word_position.get_enum() == word_orientation.BOTTOM:
+                word_anchor = tkinter.S
+                word_x = self.screen_dims.x.get() // 2
+                word_y = self.screen_dims.y.get() - word_padding_y
             else:
                 print("Not supported word orientation.")
             word_rect = rect.create_scaled_with_canvas(rect(word_x, word_y, 1, 1),
