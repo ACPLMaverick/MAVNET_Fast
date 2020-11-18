@@ -393,7 +393,7 @@ class pdf_extractor:
                 for img in doc.getPageImageList(i):
                     if img_idx >= idx_start and img_idx <= idx_end:
                         xref = img[0]
-                        file_path = os.path.join(self.output_directory, "image_{}_{}.png".format(i, xref))
+                        file_path = os.path.join(self.output_directory, "image_{:03d}_{:04d}.png".format(i, xref))
                         if os.path.isfile(file_path) is False:
                             pix = fitz.Pixmap(doc, xref)
                             if pix.n >= 4:
