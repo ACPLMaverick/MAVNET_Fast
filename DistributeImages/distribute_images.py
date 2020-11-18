@@ -379,7 +379,7 @@ class pdf_jpg_extractor:
 class distributor:
     def __init__(self):
         self.pres = None
-        self.input_dir = None
+        self.input_file_paths = None
         self.canvas = None
 
         self.slide_names = ["(no slides)"]
@@ -468,15 +468,9 @@ class distributor:
     def _load_input_data(self):
         self._disable_param_traces()
 
-        files = glob.glob(os.path.join(self.input_dir, "*.jpg"))
-        files.extend(glob.glob(os.path.join(self.input_dir, "*.png")))
-        files.extend(glob.glob(os.path.join(self.input_dir, "*.svg")))
-        files.extend(glob.glob(os.path.join(self.input_dir, "*.tga")))
-        files.extend(glob.glob(os.path.join(self.input_dir, "*.gif")))
-
         self._images.clear()
 
-        self.num_images.set(len(files))
+        self.num_images.set(len(self.input_file_paths))
 
         if(self.num_images.get() == 0):
             self.image_grid_dims.set_dims(0, 0)
@@ -490,7 +484,7 @@ class distributor:
         reference_width = 0
         reference_height = 0
         image_idx = 1
-        for image_file in files:
+        for image_file in self.input_file_paths:
             image = slide_image(image_file, image_idx)
             self._images.append(image)
             image_width = image.original_width
@@ -750,7 +744,7 @@ class distributor:
         return None
 
     def is_all_set(self):
-        return self.pres is not None and self.input_dir is not None and len(self._images) > 0
+        return self.pres is not None and self.input_file_paths is not None and len(self._images) > 0
 
     def set_pres(self, path):
         if path.lower().endswith(".pptx") or path.lower().endswith(".pptm"):
@@ -760,18 +754,18 @@ class distributor:
         else:
             return False
 
-    def set_input(self, path):
-        if os.path.isdir(path):
-            self.input_dir = path
-            return self._load_input_data()
-        else:
-            return input_data_load_result.FAILURE
+    def set_input(self, input_file_paths):
+        for file_path in input_file_paths:
+            if os.path.isfile(file_path) is False:
+                return input_data_load_result.FAILURE
+        self.input_file_paths = input_file_paths
+        return self._load_input_data()
 
     def create(self, use_background):
         if self.pres is None:
             return False
 
-        if self.input_dir is None:
+        if self.input_file_paths is None:
             return False
 
         if self._validate_vars() is False:
@@ -859,10 +853,13 @@ class tk_util:
         y = rt.winfo_pointery()
         window.geometry("+{}+{}".format(x, y))
 
-    def window_set_on_root(window):
+    def window_set_on_root(window, orientation=tkinter.CENTER, offset_x=0, offset_y=0):
         rt = window._root()
-        x = int(rt.winfo_x() + rt.winfo_width() / 2)
-        y = int(rt.winfo_y() + rt.winfo_height() / 2)
+        x = int(rt.winfo_x()) + offset_x
+        y = int(rt.winfo_y()) + offset_y
+        if orientation == tkinter.CENTER:
+            x += int(rt.winfo_width() / 2)
+            y += int(rt.winfo_height() / 2)
         window.geometry("+{}+{}".format(x, y))
 
 
@@ -1023,6 +1020,73 @@ class panel_word_settings(tkinter.Toplevel):
     def _on_ok_clicked(self):
         for key, value in self.edited_names.items():
             self.objects[key].name = value
+        self.is_ok = True
+        self.destroy()
+
+    def _on_cancel_clicked(self):
+        self.destroy()
+
+
+class panel_pick_images(tkinter.Toplevel):
+    def __init__(self, color_bg, directory, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._all_image_files = None
+        self.selected_image_files = None
+        self.title = "Select images"
+        self.is_ok = False
+        self._gather_image_files(directory)
+        self._create_widgets(color_bg, directory)
+        self.resizable(False, False)
+        self.configure(bg=color_bg)
+        tk_util.window_set_on_root(self, orientation=tkinter.NW, offset_x=32, offset_y=32)
+
+    def _gather_image_files(self, directory):
+        self._all_image_files = glob.glob(os.path.join(directory, "*.jpg"))
+        self._all_image_files.extend(glob.glob(os.path.join(directory, "*.png")))
+        self._all_image_files.extend(glob.glob(os.path.join(directory, "*.svg")))
+        self._all_image_files.extend(glob.glob(os.path.join(directory, "*.tga")))
+        self._all_image_files.extend(glob.glob(os.path.join(directory, "*.gif")))
+
+    def _create_widgets(self, color_bg, directory):
+        num_image_files = len(self._all_image_files)
+        is_have_any_images = num_image_files > 0
+        if is_have_any_images:
+            self.list_box = tkinter.Listbox(self, selectmode=tkinter.EXTENDED, height=num_image_files)
+            tk_util.place_in_grid(self.list_box, 0, 0, w=2)
+            width = 0
+            for img_file in self._all_image_files:
+                path_in_listbox = os.path.relpath(img_file, directory)
+                path_in_listbox_num_chars = len(path_in_listbox)
+                if path_in_listbox_num_chars > width:
+                    width = path_in_listbox_num_chars
+                self.list_box.insert(tkinter.END, path_in_listbox)
+            self.list_box.configure(width=width)
+            self.list_box.bind("<<ListboxSelect>>", lambda event, self=self: self._on_selection_changed())
+            self.list_box.selection_set(0, tkinter.END)
+
+            self.btn_ok = tkinter.Button(self, text="OK", width=8, command=self._on_ok_clicked)
+            tk_util.place_in_grid(self.btn_ok, 0, 1, orientation=tkinter.E)
+            self.btn_cancel = tkinter.Button(self, text="Cancel", width=8, command=self._on_cancel_clicked)
+            tk_util.place_in_grid(self.btn_cancel, 1, 1, orientation=tkinter.W)
+        else:
+            self.label = tkinter.Label(self, text="There are no images in this directory.\nPlease select a different one.", bg=color_bg)
+            tk_util.place_in_grid(self.label, 0, 0)
+            self.btn_ok = tkinter.Button(self, text="OK", width=8, command=self._on_cancel_clicked)
+            tk_util.place_in_grid(self.btn_ok, 0, 1)
+
+    def _on_selection_changed(self):
+        curr_selection_len = len(self.list_box.curselection())
+        btn_ok_state = self.btn_ok["state"]
+        if curr_selection_len == 0 and btn_ok_state != "disabled":
+            self.btn_ok.configure(state="disabled")
+        elif curr_selection_len != 0 and btn_ok_state == "disabled":
+            self.btn_ok.configure(state="normal")
+
+    def _on_ok_clicked(self):
+        selection = self.list_box.curselection()
+        self.selected_image_files = []
+        for index in selection:
+            self.selected_image_files.append(self._all_image_files[index])
         self.is_ok = True
         self.destroy()
 
@@ -1294,7 +1358,7 @@ class window:
         return file_name is not None and len(file_name) > 0
 
     def _update_pres_data(self):
-        if self.distrib.input_dir is not None:
+        if self.distrib.input_file_paths is not None:
             self._all_set()
         self.edit_source_slide["values"] = self.distrib.slide_names
 
@@ -1325,13 +1389,17 @@ class window:
     def _cmd_select_dir(self):
         file_name = tkinter.filedialog.askdirectory()
         if window._check_file_name(file_name):
-            res = self.distrib.set_input(file_name)
-            if res is not input_data_load_result.FAILURE:
-                if res is input_data_load_result.OK_NON_UNIFORM_DIMENSIONS:
-                    tkinter.messagebox.showwarning("Warning", "Some images have different dimensions than others.\n"
-                                                              "Will average the dimensions to provide an uniform grid.")
-                self.label_dir["text"] = file_name
-                self._update_input_data()
+            file_selector = panel_pick_images(window._color_bg, file_name)
+            file_selector.grab_set()
+            self.top.wait_window(file_selector)
+            if file_selector.is_ok:
+                res = self.distrib.set_input(file_selector.selected_image_files)
+                if res is not input_data_load_result.FAILURE:
+                    if res is input_data_load_result.OK_NON_UNIFORM_DIMENSIONS:
+                        tkinter.messagebox.showwarning("Warning", "Some images have different dimensions than others.\n"
+                                                                  "Will average the dimensions to provide an uniform grid.")
+                    self.label_dir["text"] = file_name
+                    self._update_input_data()
 
     def _cmd_create(self):
         use_bg = self.edit_bg_color.is_enabled()
