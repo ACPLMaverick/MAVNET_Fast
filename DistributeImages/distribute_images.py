@@ -15,6 +15,7 @@ import tkinter.messagebox
 import tkinter.colorchooser
 from PIL import ImageTk, Image
 from tkinter import ttk
+import fitz
 
 
 # Known bugs:
@@ -367,14 +368,37 @@ class slide_image:
             canvas.itemconfigure(self._canvas_text, text="")
 
 
-class pdf_jpg_extractor:
+class pdf_extractor:
     def __init__(self, file):
         self.file = file
-        # TODO
+        mtime = os.path.getmtime(self.file)
+        self.output_directory = os.path.join(".distribute_images", os.path.splitext(os.path.basename(self.file))[0] + "_{}".format(mtime))
 
-    def extract(idx_start, idx_end):
-        # TODO
-        pass
+    def obtain_num_images(self):
+        num_images = 0
+        with fitz.open(self.file) as doc:
+            for i in range(len(doc)):
+                for img in doc.getPageImageList(i):
+                    num_images += 1
+        return num_images
+
+    def extract(self, idx_start, idx_end):
+        if os.path.isdir(self.output_directory) is False:
+            os.makedirs(self.output_directory)
+        img_idx = 0
+        with fitz.open(self.file) as doc:
+            for i in range(len(doc)):
+                for img in doc.getPageImageList(i):
+                    if img_idx >= idx_start and img_idx <= idx_end:
+                        xref = img[0]
+                        file_path = os.path.join(self.output_directory, "image_{}_{}.png".format(i, xref))
+                        if os.path.isfile(file_path) is False:
+                            pix = fitz.Pixmap(doc, xref)
+                            if pix.n >= 5:
+                                pix = fitz.Pixmap(fitz.csRGB, pix)
+                            pix.writePNG(file_path)
+                            pix = None
+                    img_idx += 1
 
 
 class distributor:
@@ -848,6 +872,25 @@ class distributor:
 
 # https://stackoverflow.com/questions/51902451/how-to-enable-and-disable-frame-instead-of-individual-widgets-in-python-tkinter/52152773
 class tk_util:
+    def create_num_input(root, var_value, min_val, max_val):
+        def validate_num_input(val, widget):
+            int_val = 0
+            try:
+                int_val = int(val)
+            except Exception:
+                try:
+                    is_zero_length_string = len(val) == 0
+                    return is_zero_length_string
+                except Exception:
+                    return False
+                return False
+            return int_val >= widget["from"] and int_val <= widget["to"]
+        sb = tkinter.Spinbox(root, textvariable=var_value, width=5,
+                             from_=min_val, to=max_val, validate="all")
+        cmd = root.register(lambda val: validate_num_input(val, sb))
+        sb.configure(validatecommand=(cmd, "%P"))
+        return sb
+
     def place_in_grid(widget, x, y, w=1, h=1, weight_w=1, weight_h=0, orientation="", nopadding=False):
         root = widget._root()
         padding = 3 if nopadding is False else 0
@@ -1035,6 +1078,45 @@ class panel_word_settings(tkinter.Toplevel):
         self.destroy()
 
 
+class panel_extract_pdf_options(tkinter.Toplevel):
+    def __init__(self, color_bg, num_images, var_from, var_to, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.title = "Extract PDF"
+        self.is_ok = False
+        self.label = tkinter.Label(self,
+                                   text="There are {} images in this PDF.\nPlease provide an image range for PDF extraction.".format(num_images),
+                                   bg=color_bg)
+        tk_util.place_in_grid(self.label, 0, 0, w=4)
+
+        var_from.set(1)
+        var_to.set(num_images)
+
+        self.label_from = tkinter.Label(self, text="From:", bg=color_bg)
+        tk_util.place_in_grid(self.label_from, 0, 1, orientation=tkinter.E)
+        self.edit_from = tk_util.create_num_input(self, var_from, 1, num_images)
+        tk_util.place_in_grid(self.edit_from, 1, 1, orientation=tkinter.W)
+        self.label_to = tkinter.Label(self, text="To:", bg=color_bg)
+        tk_util.place_in_grid(self.label_to, 2, 1, orientation=tkinter.E)
+        self.edit_to = tk_util.create_num_input(self, var_to, 1, num_images)
+        tk_util.place_in_grid(self.edit_to, 3, 1, orientation=tkinter.W)
+
+        self.btn_ok = tkinter.Button(self, text="OK", width=8, command=self._on_ok_clicked)
+        tk_util.place_in_grid(self.btn_ok, 0, 2, orientation=tkinter.E, w=2)
+        self.btn_cancel = tkinter.Button(self, text="Cancel", width=8, command=self._on_cancel_clicked)
+        tk_util.place_in_grid(self.btn_cancel, 2, 2, orientation=tkinter.W, w=2)
+
+        self.resizable(False, False)
+        self.configure(bg=color_bg)
+        tk_util.window_set_on_cursor(self)
+
+    def _on_ok_clicked(self):
+        self.is_ok = True
+        self.destroy()
+
+    def _on_cancel_clicked(self):
+        self.destroy()
+
+
 class panel_pick_images(tkinter.Toplevel):
     def __init__(self, color_bg, directory, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1068,6 +1150,7 @@ class panel_pick_images(tkinter.Toplevel):
                 if path_in_listbox_num_chars > width:
                     width = path_in_listbox_num_chars
                 self.list_box.insert(tkinter.END, path_in_listbox)
+            width = max(width, 40)
             self.list_box.configure(width=width)
             self.list_box.bind("<<ListboxSelect>>", lambda event, self=self: self._on_selection_changed())
             self.list_box.selection_set(0, tkinter.END)
@@ -1297,25 +1380,6 @@ class window:
     def _canv_on_slide_background_color_changed(self):
         self.canvas["bg"] = self.distrib.slide_background_color.get()
 
-    def _w_create_num_input(root, var_value, min_val, max_val):
-        def validate_num_input(val, widget):
-            int_val = 0
-            try:
-                int_val = int(val)
-            except Exception:
-                try:
-                    is_zero_length_string = len(val) == 0
-                    return is_zero_length_string
-                except Exception:
-                    return False
-                return False
-            return int_val >= widget["from"] and int_val <= widget["to"]
-        sb = tkinter.Spinbox(root, textvariable=var_value, width=5,
-                             from_=min_val, to=max_val, validate="all")
-        cmd = root.register(lambda val: validate_num_input(val, sb))
-        sb.configure(validatecommand=(cmd, "%P"))
-        return sb
-
     def _w_create_pair(root, element, text_name, base_x, base_y):
         label_name = tkinter.Label(root, text=text_name, bg=window._color_bg)
         tk_util.place_in_grid(label_name, base_x, base_y, orientation=tkinter.W)
@@ -1327,13 +1391,13 @@ class window:
                                      text_name, base_x, base_y)
 
     def _w_create_pair_num_edit(root, text_name, var_value, base_x, base_y, min_val=1, max_val=9999):
-        dim = window._w_create_num_input(root, var_value, min_val, max_val)
+        dim = tk_util.create_num_input(root, var_value, min_val, max_val)
         return window._w_create_pair(root, dim, text_name, base_x, base_y)
 
     def _w_create_pair_dim_edit(root, text_name, var_dim, base_x, base_y, min_val=1, max_val=9999):
         inter_frame = tkinter.Frame(root, bg=window._color_bg)
-        dim_x = window._w_create_num_input(inter_frame, var_dim.x, min_val, max_val)
-        dim_y = window._w_create_num_input(inter_frame, var_dim.y, min_val, max_val)
+        dim_x = tk_util.create_num_input(inter_frame, var_dim.x, min_val, max_val)
+        dim_y = tk_util.create_num_input(inter_frame, var_dim.y, min_val, max_val)
         sep = tkinter.Label(inter_frame, text="x", bg=window._color_bg)
         tk_util.place_in_grid(dim_x, 0, 0, nopadding=True)
         tk_util.place_in_grid(sep, 1, 0, nopadding=True)
@@ -1377,6 +1441,19 @@ class window:
     def _display_not_implemented():
         tkinter.messagebox.showerror("Error", "This function is not yet implemented.")
 
+    def _select_directory(self, directory, label_text=None):
+        file_selector = panel_pick_images(window._color_bg, directory)
+        file_selector.grab_set()
+        self.top.wait_window(file_selector)
+        if file_selector.is_ok:
+            res = self.distrib.set_input(file_selector.selected_image_files)
+            if res is not input_data_load_result.FAILURE:
+                if res is input_data_load_result.OK_NON_UNIFORM_DIMENSIONS:
+                    tkinter.messagebox.showwarning("Warning", "Some images have different dimensions than others.\n"
+                                                              "Will average the dimensions to provide an uniform grid.")
+                self.label_dir["text"] = directory if label_text is None else label_text
+                self._update_input_data()
+
     def _cmd_select_file_pptx(self):
         file_name = tkinter.filedialog.askopenfilename(filetypes=[("PowerPoint files", "*.pptx *.pptm")])
         if window._check_file_name(file_name):
@@ -1386,28 +1463,26 @@ class window:
                 self._update_pres_data()
 
     def _cmd_select_file_pdf(self):
-        # TODO
-        window._display_not_implemented()
-
-        # file_name = tkinter.filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
-        # if window._check_file_name(file_name):
-        # self.distrib.set_input(file_name)
-        # self.label_dir["text"] = file_name
+        file_name = tkinter.filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
+        if window._check_file_name(file_name):
+            extractor = pdf_extractor(file_name)
+            num_images = extractor.obtain_num_images()
+            if num_images > 0:
+                var_from = tkinter.IntVar()
+                var_to = tkinter.IntVar()
+                panel = panel_extract_pdf_options(window._color_bg, num_images, var_from, var_to, self.top)
+                panel.grab_set()
+                self.top.wait_window(panel)
+                if panel.is_ok:
+                    extractor.extract(var_from.get() - 1, var_to.get() - 1)
+                    self._select_directory(extractor.output_directory, file_name)
+            else:
+                tkinter.messagebox.showerror("Error", "There are no images in this PDF.")
 
     def _cmd_select_dir(self):
         file_name = tkinter.filedialog.askdirectory()
         if window._check_file_name(file_name):
-            file_selector = panel_pick_images(window._color_bg, file_name)
-            file_selector.grab_set()
-            self.top.wait_window(file_selector)
-            if file_selector.is_ok:
-                res = self.distrib.set_input(file_selector.selected_image_files)
-                if res is not input_data_load_result.FAILURE:
-                    if res is input_data_load_result.OK_NON_UNIFORM_DIMENSIONS:
-                        tkinter.messagebox.showwarning("Warning", "Some images have different dimensions than others.\n"
-                                                                  "Will average the dimensions to provide an uniform grid.")
-                    self.label_dir["text"] = file_name
-                    self._update_input_data()
+            self._select_directory(file_name)
 
     def _cmd_create(self):
         use_bg = self.edit_bg_color.is_enabled()
