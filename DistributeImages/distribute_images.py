@@ -19,8 +19,7 @@ import fitz
 
 
 # Known bugs:
-# - Hang when loading images
-# - Reload presentation state after slide creation.
+# - Hang when loading images - make it async?
 
 # Add possibility to drag-drop files.
 # Make program remember last used paths and parameters
