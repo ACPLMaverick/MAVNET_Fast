@@ -401,7 +401,7 @@ class distributor:
         self.image_padding = dimensions(32, 32)
 
         self.word_color = tkinter.StringVar(value="#000000")
-        self.oneslide_word_size = tkinter.IntVar(value=32)
+        self.oneslide_word_size = tkinter.IntVar(value=40)
         self.oneslide_word_padding = dimensions(32, 32)
         self.oneslide_word_active_index = tkinter.IntVar(value=0)
 
@@ -788,6 +788,8 @@ class distributor:
 
         if result:
             self.pres.save(self._pres_file_path)
+            # Reload the presentation from disk, to update all visible data.
+            self.set_pres(self._pres_file_path)
         return result
 
     def _draw_word(self, canvas):
@@ -1336,6 +1338,7 @@ class window:
         success = self.distrib.create(use_bg)
         if success:
             tkinter.messagebox.showinfo("Success", "Image distribution succeeded.")
+            self.edit_source_slide["values"] = self.distrib.slide_names
         else:
             tkinter.messagebox.showerror("Error", "An error has occured.")
 
