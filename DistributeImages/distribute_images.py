@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import math
+import random
 import glob
 from enum import Enum
 import os
@@ -394,9 +395,9 @@ class distributor:
         self.word_font = tkinter.StringVar(value="Impact")
         self.word_size = tkinter.IntVar(value=18)
         self.is_fill_x = tkinter.IntVar(value=1)
-        self.word_position = enum_var(enum_class=word_orientation, value=word_orientation.BOTTOM_LEFT)
+        self.word_position = enum_var(enum_class=word_orientation, value=word_orientation.BOTTOM_RIGHT)
         self.operation = enum_var(enum_class=mode_work_slide, value=mode_work_slide.NEW_SLIDE)
-        self.mode = enum_var(enum_class=mode_distribution, value=mode_distribution.NO_WORDS)
+        self.mode = enum_var(enum_class=mode_distribution, value=mode_distribution.ALL_MODES_COMBINED)
         self.slide_background_color = tkinter.StringVar(value="#ffffff")
         self.image_padding = dimensions(32, 32)
 
@@ -614,6 +615,12 @@ class distributor:
             return False
         return True
 
+    def _create_shuffled_image_indices(self):
+        num_indices = len(self._images)
+        randomized = list(range(num_indices))
+        random.shuffle(randomized)
+        return randomized
+
     def _create_new_slide(self):
         source_slide_layout = self.pres.slides[self._source_slide_idx].slide_layout
         return self.pres.slides.add_slide(source_slide_layout)
@@ -712,9 +719,10 @@ class distributor:
             slide.background.fill.fore_color.rgb = rgb_color
 
         if mode == mode_distribution.ONE_WORD_PER_SLIDE:
-            self._add_word_to_slide(slide, 0)
-            num_images = len(self._images)
-            for word_idx in range(1, num_images):
+            indices = self._create_shuffled_image_indices()
+            self._add_word_to_slide(slide, indices[0])
+            del indices[0]
+            for word_idx in indices:
                 new_slide = self._create_new_slide()
                 for img in self._images:
                     img.add_to_slide(new_slide)
