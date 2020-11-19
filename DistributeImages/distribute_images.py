@@ -48,8 +48,12 @@ class word_orientation(enum_enhanced):
 class mode_distribution(enum_enhanced):
     NO_WORDS = 0
     ALL_WORDS = 1,
-    ONE_WORD_PER_SLIDE = 2,
-    ALL_MODES_COMBINED = 3
+    GUESS_WHATS_WRONG = 2,
+    ONE_WORD_PER_SLIDE = 3,
+    ALL_MODES_COMBINED = 4
+
+    def is_mode_all_words(self):
+        return self == mode_distribution.ALL_WORDS or self == mode_distribution.GUESS_WHATS_WRONG
 
 
 class mode_work_slide(enum_enhanced):
@@ -219,7 +223,7 @@ class slide_image:
 
         num_rows = 1
         scale_factor = 1.0
-        text_height_per_row = text_height if mode == mode_distribution.ALL_WORDS else 0
+        text_height_per_row = text_height if mode.is_mode_all_words() else 0
         while(True):
             # Scale one image to fit exactly num_rows
             scale_factor = compute_scale_factor(num_rows)
@@ -292,7 +296,7 @@ class slide_image:
                 img.y = img_rect.y
                 img.scaled_width = img_rect.width
                 img.scaled_height = img_rect.height
-                img.is_draw_name = mode == mode_distribution.ALL_WORDS
+                img.is_draw_name = mode.is_mode_all_words()
                 img.name_font = text_font
                 img.name_size = text_height
                 img.name_color = text_color
@@ -323,7 +327,7 @@ class slide_image:
             canv_y2 += int(self.name_size * (canvas.winfo_height() / reference_height))
         return mouse_x > canv.x and mouse_x < canv_x2 and mouse_y > canv.y and mouse_y < canv_y2
 
-    def add_to_slide(self, slide):
+    def add_to_slide(self, slide, other_name=None):
         slide.shapes.add_picture(self._file_path,
                                  pptx.util.Pt(self.x),
                                  pptx.util.Pt(self.y),
@@ -340,7 +344,7 @@ class slide_image:
                                                 pptx.util.Pt(text_w),
                                                 pptx.util.Pt(text_h))
             paragraph = text_box.text_frame.paragraphs[0]
-            paragraph.text = self.name
+            paragraph.text = self.name if other_name is None else other_name
             paragraph.alignment = pptx.enum.text.PP_ALIGN.CENTER
             paragraph.font.size = pptx.util.Pt(int(self.name_size * 1.2))
             paragraph.font.color.rgb = pptx.dml.color.RGBColor.from_string(self.name_color[1:])
@@ -349,9 +353,8 @@ class slide_image:
     def init_draw(self, canvas, reference_width, reference_height):
         self._canvas_img = canvas.create_image(0, 0, image=self._img, anchor=tkinter.NW)
         self._canvas_text = canvas.create_text(0, 0, text="", anchor=tkinter.N)
-        self.draw(canvas, reference_width, reference_height)
 
-    def draw(self, canvas, reference_width, reference_height):
+    def draw(self, canvas, reference_width, reference_height, other_name=None):
         canv = rect.create_scaled_with_canvas(rect(self.x, self.y, self.scaled_width, self.scaled_height),
                                               canvas, reference_width, reference_height)
 
@@ -362,7 +365,7 @@ class slide_image:
         if self.is_draw_name:
             text_size_scale = canvas.winfo_height() / reference_height
             font_tuple = (self.name_font, str(int(self.name_size * text_size_scale)))
-            canvas.itemconfigure(self._canvas_text, text=self.name, font=font_tuple, fill=self.name_color)
+            canvas.itemconfigure(self._canvas_text, text=(self.name if other_name is None else other_name), font=font_tuple, fill=self.name_color)
             text_x = canv.x + (canv.width / 2)
             text_y = canv.y + canv.height
             canvas.coords(self._canvas_text, text_x, text_y)
@@ -403,6 +406,39 @@ class pdf_extractor:
                     img_idx += 1
 
 
+class random_pairs:
+    def __init__(self, num_pairs, set_size):
+        num_pairs = int(num_pairs)
+        set_size = int(set_size)
+        if 2 * num_pairs > set_size:
+            raise ValueError("num_pairs [{}] must not be higher than half of the set size [{}]".format(num_pairs, set_size))
+        self.num_pairs = num_pairs
+        self.set_size = set_size
+        self._indices_from = dict()
+        self._indices_to = dict()
+        self._generate()
+
+    def create_from_existing_params(existing):
+        return random_pairs(existing.num_pairs, existing.set_size)
+
+    def _generate(self):
+        num_samples = self.num_pairs * 2
+        samples = random.sample(range(self.set_size), num_samples)
+        for sample_idx in range(self.num_pairs):
+            val_a = samples[sample_idx]
+            val_b = samples[self.num_pairs + sample_idx]
+            self._indices_from[val_a] = val_b
+            self._indices_to[val_b] = val_a
+
+    def get_replacement_for_index(self, index):
+        if index in self._indices_from:
+            return self._indices_from[index]
+        elif index in self._indices_to:
+            return self._indices_to[index]
+        else:
+            return None
+
+
 class distributor:
     def __init__(self):
         self.pres = None
@@ -431,6 +467,8 @@ class distributor:
         self.oneslide_word_size = tkinter.IntVar(value=40)
         self.oneslide_word_padding = dimensions(32, 32)
         self.oneslide_word_active_index = tkinter.IntVar(value=0)
+        self.num_mistakes = tkinter.IntVar(value=4)
+        self.num_mistake_slides = tkinter.IntVar(value=1)
 
         self.screen_dims = dimensions(0, 0)
         self._pres_file_path = None
@@ -439,20 +477,9 @@ class distributor:
 
         self._canvas_word_id = 0
 
-        self._trace_image_padding = None
-        self._trace_mode = None
-        self._trace_word_position = None
-        self._trace_word_size = None
-        self._trace_is_fill_x = None
-        self._trace_word_font = None
-        self._trace_word_color = None
-        self._trace_oneslide_word_size = None
-        self._trace_oneslide_word_padding = None
-        self._trace_oneslide_word_active_index = None
+        self._mistake_pairs = None
 
-    def _extract_from_pdf(self):
-        print("TODO Implement.")
-        return ""
+        self._traces = []
 
     def _load_pres_data(self):
         self._disable_param_traces()
@@ -534,6 +561,9 @@ class distributor:
             if setup_result is False:
                 return_code = input_data_load_result.FAILURE
 
+        if self._mistake_pairs is None:
+            self._on_num_mistakes_edited()
+
         return return_code
 
     def _setup_images(self):
@@ -571,52 +601,36 @@ class distributor:
         return True
 
     def _enable_param_traces(self):
-        self._trace_image_padding = self.image_padding.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
-        self._trace_mode = self.mode.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
-        self._trace_word_position = self.word_position.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
-        self._trace_word_size = self.word_size.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
-        self._trace_is_fill_x = self.is_fill_x.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
-        self._trace_word_font = self.word_font.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
-        self._trace_word_color = self.word_color.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
-        self._trace_oneslide_word_size = self.oneslide_word_size.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
-        self._trace_oneslide_word_padding = self.oneslide_word_padding.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
-        self._trace_oneslide_word_active_index = self.oneslide_word_active_index.trace("w", lambda name, index, mode, self=self: self._on_edit_traced())
+        def add_trace(var, func=self._on_edit_traced):
+            self._traces.append((var, var.trace("w", lambda name, index, mode, self=self: func())))
+        self._traces.clear()
+        add_trace(self.image_padding)
+        add_trace(self.mode)
+        add_trace(self.word_position)
+        add_trace(self.word_size)
+        add_trace(self.is_fill_x)
+        add_trace(self.word_font)
+        add_trace(self.word_color)
+        add_trace(self.oneslide_word_size)
+        add_trace(self.oneslide_word_padding)
+        add_trace(self.oneslide_word_active_index)
+        add_trace(self.num_mistakes)
+        add_trace(self.num_mistakes, func=self._on_num_mistakes_edited)
 
     def _disable_param_traces(self):
-        if self._trace_image_padding is not None:
-            self.image_padding.trace_vdelete("w", self._trace_image_padding)
-            self._trace_image_padding = None
-        if self._trace_mode is not None:
-            self.mode.trace_vdelete("w", self._trace_mode)
-            self._trace_mode = None
-        if self._trace_word_position is not None:
-            self.word_position.trace_vdelete("w", self._trace_word_position)
-            self._trace_word_position = None
-        if self._trace_word_size is not None:
-            self.word_size.trace_vdelete("w", self._trace_word_size)
-            self._trace_word_size = None
-        if self._trace_is_fill_x is not None:
-            self.is_fill_x.trace_vdelete("w", self._trace_is_fill_x)
-            self._trace_is_fill_x = None
-        if self._trace_word_font is not None:
-            self.word_font.trace_vdelete("w", self._trace_word_font)
-            self._trace_word_font = None
-        if self._trace_word_color is not None:
-            self.word_color.trace_vdelete("w", self._trace_word_color)
-            self._trace_word_color = None
-        if self._trace_oneslide_word_size is not None:
-            self.oneslide_word_size.trace_vdelete("w", self._trace_oneslide_word_size)
-            self._trace_oneslide_word_size = None
-        if self._trace_oneslide_word_padding is not None:
-            self.oneslide_word_padding.trace_vdelete("w", self._trace_oneslide_word_padding)
-            self._trace_oneslide_word_padding = None
-        if self._trace_oneslide_word_active_index is not None:
-            self.oneslide_word_active_index.trace_vdelete("w", self._trace_oneslide_word_active_index)
-            self._trace_oneslide_word_active_index = None
+        for trace_tuple in self._traces:
+            var = trace_tuple[0]
+            trace = trace_tuple[1]
+            if trace is not None:
+                var.trace_vdelete("w", trace)
+        self._traces.clear()
 
     def _on_edit_traced(self):
         if self._setup_images():
             self.draw(self.canvas)
+
+    def _on_num_mistakes_edited(self):
+        self._mistake_pairs = random_pairs(self.num_mistakes.get() / 2, len(self._images))
 
     def _validate_vars(self):
         if not self.screen_dims.is_valid():
@@ -638,6 +652,8 @@ class distributor:
         if not self.oneslide_word_padding.is_valid():
             return False
         if not var_helper.is_var_valid(self.oneslide_word_active_index):
+            return False
+        if not var_helper.is_var_valid(self.num_mistakes):
             return False
         return True
 
@@ -733,6 +749,13 @@ class distributor:
             self.mode.set(last_mode)
             return False
 
+        next_slide = self._create_new_slide()
+        self.mode.set(mode_distribution.GUESS_WHATS_WRONG)
+        result = self._create_one_mode(next_slide, self.mode.get_enum(), use_background)
+        if result is False:
+            self.mode.set(last_mode)
+            return False
+
         self.mode.set(last_mode)
         return True
 
@@ -740,13 +763,25 @@ class distributor:
         if slide is None:
             return False
 
-        for img in self._images:
-            img.add_to_slide(slide)
+        def one_slide_step(a_slide, random_indices=self._mistake_pairs):
+            other_name = None
+            image_idx = 0
+            for img in self._images:
+                if mode == mode_distribution.GUESS_WHATS_WRONG:
+                    other_idx = random_indices.get_replacement_for_index(image_idx)
+                    if other_idx is not None:
+                        other_name = self._images[other_idx].name
+                    else:
+                        other_name = None
+                img.add_to_slide(a_slide, other_name)
+                image_idx += 1
 
-        if use_background:
-            rgb_color = pptx.dml.color.RGBColor.from_string(self.slide_background_color.get()[1:])
-            slide.background.fill.solid()
-            slide.background.fill.fore_color.rgb = rgb_color
+            if use_background:
+                rgb_color = pptx.dml.color.RGBColor.from_string(self.slide_background_color.get()[1:])
+                a_slide.background.fill.solid()
+                a_slide.background.fill.fore_color.rgb = rgb_color
+
+        one_slide_step(slide)
 
         if mode == mode_distribution.ONE_WORD_PER_SLIDE:
             indices = self._create_shuffled_image_indices()
@@ -754,12 +789,13 @@ class distributor:
             del indices[0]
             for word_idx in indices:
                 new_slide = self._create_new_slide()
-                for img in self._images:
-                    img.add_to_slide(new_slide)
-                if use_background:
-                    new_slide.background.fill.solid()
-                    new_slide.background.fill.fore_color.rgb = rgb_color
+                one_slide_step(new_slide)
                 self._add_word_to_slide(new_slide, word_idx)
+        elif mode == mode_distribution.GUESS_WHATS_WRONG:
+            for idx in range(1, int(self.num_mistake_slides.get())):
+                new_slide = self._create_new_slide()
+                indices = random_pairs.create_from_existing_params(self._mistake_pairs)
+                one_slide_step(new_slide, indices)
 
         return True
 
@@ -873,8 +909,15 @@ class distributor:
     def draw(self, canvas):
         if canvas is None:
             return
+        image_idx = 0
         for img in self._images:
-            img.draw(canvas, self.screen_dims.x.get(), self.screen_dims.y.get())
+            other_name = None
+            if self.mode.get_enum() == mode_distribution.GUESS_WHATS_WRONG:
+                other_name_idx = self._mistake_pairs.get_replacement_for_index(image_idx)
+                if other_name_idx is not None:
+                    other_name = self._images[other_name_idx].name
+            img.draw(canvas, self.screen_dims.x.get(), self.screen_dims.y.get(), other_name)
+            image_idx += 1
         self._draw_word(canvas)
 
 
@@ -882,7 +925,7 @@ class distributor:
 
 # https://stackoverflow.com/questions/51902451/how-to-enable-and-disable-frame-instead-of-individual-widgets-in-python-tkinter/52152773
 class tk_util:
-    def create_num_input(root, var_value, min_val, max_val):
+    def create_num_input(root, var_value, min_val, max_val, divisor=1):
         def validate_num_input(val, widget):
             int_val = 0
             try:
@@ -894,9 +937,11 @@ class tk_util:
                 except Exception:
                     return False
                 return False
-            return int_val >= widget["from"] and int_val <= widget["to"]
+            return int_val >= widget["from"] and int_val <= widget["to"] and int_val % divisor == 0
+        min_val = min_val + (min_val % divisor)
+        max_val = max_val + (max_val % divisor)
         sb = tkinter.Spinbox(root, textvariable=var_value, width=5,
-                             from_=min_val, to=max_val, validate="all")
+                             from_=min_val, to=max_val, increment=divisor, validate="all")
         cmd = root.register(lambda val: validate_num_input(val, sb))
         sb.configure(validatecommand=(cmd, "%P"))
         return sb
@@ -1308,11 +1353,21 @@ class window:
         self.edit_bg_color = window._w_create_pair_color_picker(self.frame_edit, "Background color:", self.distrib.slide_background_color, 2, 2)
         self.edit_font_color = window._w_create_pair_color_picker(self.frame_edit, "Font color:", self.distrib.word_color, 2, 3, False)
 
-        self.edit_is_fill_x = window._w_create_pair_checkbox(self.frame_edit, "Uniform width:", self.distrib.is_fill_x, 0, 4)
+        frame_is_fill_x_and_num_mis_slides = tkinter.Frame(self.frame_edit, bg=window._color_bg)
+        self.edit_is_fill_x = window._w_create_pair_checkbox(frame_is_fill_x_and_num_mis_slides, "Unif. width:",
+                                                             self.distrib.is_fill_x, 0, 0)
+        self.edit_num_mistake_slides = window._w_create_pair_num_edit(frame_is_fill_x_and_num_mis_slides, "Mistake slides:",
+                                                                      self.distrib.num_mistake_slides, 2, 0, 1, 128)
+        tk_util.place_in_grid(frame_is_fill_x_and_num_mis_slides, 0, 4, w=2, orientation=tkinter.W, nopadding=True)
+
         self.edit_padding = window._w_create_pair_dim_edit(self.frame_edit, "Image padding (pt):", self.distrib.image_padding, 2, 4, 1, 128)
 
-        self.edit_active_word = window._w_create_pair_num_edit(self.frame_edit, "Active word:",
-                                                               self.distrib.oneslide_word_active_index, 0, 5)
+        frame_active_word_and_num_mistakes = tkinter.Frame(self.frame_edit, bg=window._color_bg)
+        self.edit_active_word = window._w_create_pair_num_edit(frame_active_word_and_num_mistakes, "Active word:",
+                                                               self.distrib.oneslide_word_active_index, 0, 0)
+        self.edit_num_mistakes = window._w_create_pair_num_edit(frame_active_word_and_num_mistakes, "Mistakes:",
+                                                                self.distrib.num_mistakes, 2, 0, 2, 9998, 2)
+        tk_util.place_in_grid(frame_active_word_and_num_mistakes, 0, 5, w=2, orientation=tkinter.W, nopadding=True)
         self.edit_word_padding = window._w_create_pair_dim_edit(self.frame_edit, "Word padding (pt):", self.distrib.oneslide_word_padding,
                                                                 2, 5, 1, 128)
 
@@ -1351,8 +1406,10 @@ class window:
 
     def _all_set(self):
         self.edit_active_word.configure(to=len(self.distrib.get_images()))
+        self.edit_num_mistakes.configure(to=len(self.distrib.get_images()))
         self._unlock_edit()
         self.distrib.init_draw(self.canvas)
+        self.distrib.draw(self.canvas)
 
     def _configure_canvas(self):
         self.canvas.bind("<Double-Button-1>", self._canv_on_left_double_clicked)
@@ -1406,14 +1463,14 @@ class window:
         return window._w_create_pair(root, tkinter.Label(root, textvariable=var_value, bg=window._color_bg),
                                      text_name, base_x, base_y)
 
-    def _w_create_pair_num_edit(root, text_name, var_value, base_x, base_y, min_val=1, max_val=9999):
-        dim = tk_util.create_num_input(root, var_value, min_val, max_val)
+    def _w_create_pair_num_edit(root, text_name, var_value, base_x, base_y, min_val=1, max_val=9999, divisor=1):
+        dim = tk_util.create_num_input(root, var_value, min_val, max_val, divisor)
         return window._w_create_pair(root, dim, text_name, base_x, base_y)
 
-    def _w_create_pair_dim_edit(root, text_name, var_dim, base_x, base_y, min_val=1, max_val=9999):
+    def _w_create_pair_dim_edit(root, text_name, var_dim, base_x, base_y, min_val=1, max_val=9999, divisor=1):
         inter_frame = tkinter.Frame(root, bg=window._color_bg)
-        dim_x = tk_util.create_num_input(inter_frame, var_dim.x, min_val, max_val)
-        dim_y = tk_util.create_num_input(inter_frame, var_dim.y, min_val, max_val)
+        dim_x = tk_util.create_num_input(inter_frame, var_dim.x, min_val, max_val, divisor)
+        dim_y = tk_util.create_num_input(inter_frame, var_dim.y, min_val, max_val, divisor)
         sep = tkinter.Label(inter_frame, text="x", bg=window._color_bg)
         tk_util.place_in_grid(dim_x, 0, 0, nopadding=True)
         tk_util.place_in_grid(sep, 1, 0, nopadding=True)
