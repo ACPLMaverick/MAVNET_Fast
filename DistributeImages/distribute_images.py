@@ -46,11 +46,12 @@ class word_orientation(enum_enhanced):
 
 
 class mode_distribution(enum_enhanced):
-    NO_WORDS = 0
-    ALL_WORDS = 1,
-    GUESS_WHATS_WRONG = 2,
-    ONE_WORD_PER_SLIDE = 3,
-    ALL_MODES_COMBINED = 4
+    NO_WORDS_SHUFFLED = 0,
+    NO_WORDS = 1,
+    ONE_WORD_PER_SLIDE = 2,
+    ALL_WORDS = 3,
+    GUESS_WHATS_WRONG = 4,
+    ALL_MODES_COMBINED = 5
 
     def is_mode_all_words(self):
         return self == mode_distribution.ALL_WORDS or self == mode_distribution.GUESS_WHATS_WRONG
@@ -200,7 +201,7 @@ class slide_image:
     def distribute(images, screen_width, screen_height,
                    image_width, image_height,
                    padding_width, padding_height,
-                   mode, text_orientation, text_height, text_font, text_color, is_fill_x):
+                   mode, text_orientation, text_height, text_font, text_color, is_fill_x, shuffled_indices):
         # So at this point we have both presentation loaded, slide dimensions available (in points)
         # And also images loaded with their dimensions (in pixels).
         # Scaled image dimensions will be in POINTS, so they can be easily integrated in pptx.
@@ -236,6 +237,8 @@ class slide_image:
                 break
 
         num_cols = math.ceil(num_images / num_rows)
+
+        image_indices = shuffled_indices if mode is mode_distribution.NO_WORDS_SHUFFLED else range(len(images))
 
         need_another_pass = False
         pass_num = 1
@@ -291,7 +294,7 @@ class slide_image:
 
                 # print("Image:", image_idx, "Rect:", img_rect)
 
-                img = images[image_idx]
+                img = images[image_indices[image_idx]]
                 img.x = img_rect.x
                 img.y = img_rect.y
                 img.scaled_width = img_rect.width
@@ -478,6 +481,7 @@ class distributor:
         self._canvas_word_id = 0
 
         self._mistake_pairs = None
+        self._shuffled_image_indices = None
 
         self._traces = []
 
@@ -564,6 +568,9 @@ class distributor:
         if self._mistake_pairs is None:
             self._on_num_mistakes_edited()
 
+        self._shuffled_image_indices = list(range(len(self._images)))
+        random.shuffle(self._shuffled_image_indices)
+
         return return_code
 
     def _setup_images(self):
@@ -586,7 +593,7 @@ class distributor:
         result = slide_image.distribute(self._images, screen_width, screen_height, image_width, image_height,
                                         padding_width, padding_height, self.mode.get_enum(), self.word_position.get_enum(),
                                         self.word_size.get(), self.word_font.get(), self.word_color.get(),
-                                        self.is_fill_x.get() == 1)
+                                        self.is_fill_x.get() == 1, self._shuffled_image_indices)
 
         if result is False:
             self._enable_param_traces()
@@ -729,32 +736,19 @@ class distributor:
     def _create_all(self, first_slide, use_background):
         last_mode = self.mode.get_enum()
 
-        self.mode.set(mode_distribution.NO_WORDS)   # This should trigger the setup_images call.
-        result = self._create_one_mode(first_slide, self.mode.get_enum(), use_background)
-        if result is False:
-            self.mode.set(last_mode)
-            return False
-
-        next_slide = self._create_new_slide()
-        self.mode.set(mode_distribution.ONE_WORD_PER_SLIDE)
-        result = self._create_one_mode(next_slide, self.mode.get_enum(), use_background)
-        if result is False:
-            self.mode.set(last_mode)
-            return False
-
-        next_slide = self._create_new_slide()
-        self.mode.set(mode_distribution.ALL_WORDS)
-        result = self._create_one_mode(next_slide, self.mode.get_enum(), use_background)
-        if result is False:
-            self.mode.set(last_mode)
-            return False
-
-        next_slide = self._create_new_slide()
-        self.mode.set(mode_distribution.GUESS_WHATS_WRONG)
-        result = self._create_one_mode(next_slide, self.mode.get_enum(), use_background)
-        if result is False:
-            self.mode.set(last_mode)
-            return False
+        for this_mode in mode_distribution:
+            if this_mode is mode_distribution.ALL_MODES_COMBINED:
+                continue
+            slide = first_slide
+            if first_slide is not None:
+                first_slide = None
+            if slide is None:
+                slide = self._create_new_slide()
+            self.mode.set(this_mode)   # This should trigger the setup_images call.
+            result = self._create_one_mode(slide, self.mode.get_enum(), use_background)
+            if result is False:
+                self.mode.set(last_mode)
+                return False
 
         self.mode.set(last_mode)
         return True
@@ -763,27 +757,27 @@ class distributor:
         if slide is None:
             return False
 
-        def one_slide_step(a_slide, random_indices=self._mistake_pairs):
+        def one_slide_step(a_slide, random_indices=self._mistake_pairs, image_range=range(len(self._images))):
             other_name = None
-            image_idx = 0
-            for img in self._images:
+            for img_idx in image_range:
+                img = self._images[img_idx]
                 if mode == mode_distribution.GUESS_WHATS_WRONG:
-                    other_idx = random_indices.get_replacement_for_index(image_idx)
+                    other_idx = random_indices.get_replacement_for_index(img_idx)
                     if other_idx is not None:
                         other_name = self._images[other_idx].name
                     else:
                         other_name = None
                 img.add_to_slide(a_slide, other_name)
-                image_idx += 1
 
             if use_background:
                 rgb_color = pptx.dml.color.RGBColor.from_string(self.slide_background_color.get()[1:])
                 a_slide.background.fill.solid()
                 a_slide.background.fill.fore_color.rgb = rgb_color
 
-        one_slide_step(slide)
-
-        if mode == mode_distribution.ONE_WORD_PER_SLIDE:
+        if mode == mode_distribution.NO_WORDS_SHUFFLED:
+            one_slide_step(slide, image_range=self._shuffled_image_indices)
+        elif mode == mode_distribution.ONE_WORD_PER_SLIDE:
+            one_slide_step(slide)
             indices = self._create_shuffled_image_indices()
             self._add_word_to_slide(slide, indices[0])
             del indices[0]
@@ -792,10 +786,13 @@ class distributor:
                 one_slide_step(new_slide)
                 self._add_word_to_slide(new_slide, word_idx)
         elif mode == mode_distribution.GUESS_WHATS_WRONG:
+            one_slide_step(slide)
             for idx in range(1, int(self.num_mistake_slides.get())):
                 new_slide = self._create_new_slide()
                 indices = random_pairs.create_from_existing_params(self._mistake_pairs)
                 one_slide_step(new_slide, indices)
+        else:
+            one_slide_step(slide)
 
         return True
 
@@ -909,15 +906,14 @@ class distributor:
     def draw(self, canvas):
         if canvas is None:
             return
-        image_idx = 0
-        for img in self._images:
+        for image_idx in range(len(self._images)):
+            img = self._images[image_idx]
             other_name = None
             if self.mode.get_enum() == mode_distribution.GUESS_WHATS_WRONG:
                 other_name_idx = self._mistake_pairs.get_replacement_for_index(image_idx)
                 if other_name_idx is not None:
                     other_name = self._images[other_name_idx].name
             img.draw(canvas, self.screen_dims.x.get(), self.screen_dims.y.get(), other_name)
-            image_idx += 1
         self._draw_word(canvas)
 
 
