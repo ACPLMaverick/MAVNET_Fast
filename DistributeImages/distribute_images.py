@@ -923,6 +923,12 @@ class tk_util:
             y += int(rt.winfo_height() / 2)
         window.geometry("+{}+{}".format(x, y))
 
+    def bind_enter_esc(window, func_enter=None, func_esc=None):
+        if func_enter is not None:
+            window.bind("<Return>", lambda event: func_enter())
+        if func_esc is not None:
+            window.bind("<Escape>", lambda event: func_esc())
+
 
 class labelframe_disableable(tkinter.LabelFrame):
     def enable(self, status="normal"):
@@ -990,12 +996,6 @@ class color_picker(tkinter.Frame):
             self.var_color.set(self._var_color_init_val)
 
 
-class panel_extract_jpgs:
-    def __init__(self, extractor):
-        # TODO
-        pass
-
-
 class panel_edit_single_word(tkinter.Toplevel):
     def __init__(self, color_bg, text, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1005,6 +1005,7 @@ class panel_edit_single_word(tkinter.Toplevel):
         self.is_ok = False
         self.resizable(False, False)
         self.configure(bg=self.color_bg)
+        tk_util.bind_enter_esc(self, self._on_ok_clicked, self._on_cancel_clicked)
 
         self._text_var = tkinter.StringVar(value=self.text)
 
@@ -1042,6 +1043,7 @@ class panel_word_settings(tkinter.Toplevel):
         self.resizable(False, False)
         self.configure(bg=color_bg)
         self._create_widgets()
+        tk_util.bind_enter_esc(self, self._on_ok_clicked, self._on_cancel_clicked)
         if is_appear_under_cursor:
             tk_util.window_set_on_cursor(self)
         else:
@@ -1118,6 +1120,7 @@ class panel_extract_pdf_options(tkinter.Toplevel):
         self.resizable(False, False)
         self.configure(bg=color_bg)
         tk_util.window_set_on_cursor(self)
+        tk_util.bind_enter_esc(self, self._on_ok_clicked, self._on_cancel_clicked)
 
     def _on_ok_clicked(self):
         self.is_ok = True
@@ -1139,6 +1142,7 @@ class panel_pick_images(tkinter.Toplevel):
         self.resizable(False, False)
         self.configure(bg=color_bg)
         tk_util.window_set_on_root(self, orientation=tkinter.NW, offset_x=32, offset_y=32)
+        tk_util.bind_enter_esc(self, self._on_ok_clicked, self._on_cancel_clicked)
 
     def _gather_image_files(self, directory):
         self._all_image_files = glob.glob(os.path.join(directory, "*.jpg"))
@@ -1216,6 +1220,8 @@ class window:
         self.top.geometry("{}x{}".format(self.width, self.height))
         self.top.configure(bg=window._color_bg)
         # self.top.columnconfigure(0, minsize=width)
+        tk_util.bind_enter_esc(self.top, func_esc=self.conditional_exit)
+        self.top.protocol("WM_DELETE_WINDOW", self.conditional_exit)
 
     def _create_widgets(self):
         # Directory with images (TODO: PDF file for automatic extraction)
@@ -1502,6 +1508,10 @@ class window:
             self.edit_source_slide["values"] = self.distrib.slide_names
         else:
             tkinter.messagebox.showerror("Error", "An error has occured.")
+
+    def conditional_exit(self):
+        if tkinter.messagebox.askyesno("Are you sure?", "Are you sure you want to exit?"):
+            self.top.destroy()
 
     def loop(self):
         self.top.mainloop()
