@@ -560,6 +560,8 @@ class distributor:
         average_height = average_height / self.num_images.get()
         self.image_dims.set_dims(average_width, average_height)
 
+        self.num_mistakes.set(min(self.num_mistakes.get(), len(self._images)))
+
         if self.is_all_set():
             setup_result = self._setup_images()
             if setup_result is False:
