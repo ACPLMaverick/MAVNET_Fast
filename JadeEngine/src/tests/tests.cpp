@@ -16,6 +16,7 @@
 #include "math/sc.h"
 #include "math/rand.h"
 #include "math/vec.h"
+#include "math/mat.h"
 
 namespace je { namespace tests {
 
@@ -520,6 +521,17 @@ namespace je { namespace tests {
 
         vec3 test_vec_2(vec3::cross(vec3(1.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f)));
         JE_assert(vec3::is_almost_equal(test_vec_2, vec3(0.0f, 0.0f, -1.0f)));
+
+
+        // Matrices.
+        mat4x3 test_mat;
+        for(size_t i = 0; i < mat4x3::k_num_cols; ++i)
+        {
+            for(size_t j = 0; j < mat4x3::k_num_rows; ++j)
+            {
+                test_mat[i][j] = static_cast<float>(i * j + j);
+            }
+        }
 
         JE_print("Math test passed.");
     }
