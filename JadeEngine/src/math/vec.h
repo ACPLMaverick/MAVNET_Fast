@@ -14,6 +14,8 @@ namespace je { namespace math {
     template<size_t num_components>
     class vec_base
     {
+    public:
+        float* m_components;    // Essentially an array of an unknown size.
     };
 
     template<>
@@ -179,10 +181,11 @@ namespace je { namespace math {
 
         vec(const vec_base<num_components>& upper)
         {
-            // Hacky but I'll let it stay for a while.
-            float* my_ptr = get_components();
-            const float* data_ptr = reinterpret_cast<const float*>(&upper);
-            std::memcpy(my_ptr, data_ptr, sizeof(vec));
+            #pragma unroll
+            for(size_t i = 0; i < k_num_components; ++i)
+            {
+                vec_base<num_components>::m_components[i] = upper.m_components[i];
+            }
         }
 
         inline float& operator[](size_t index)

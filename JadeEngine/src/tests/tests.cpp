@@ -524,10 +524,10 @@ namespace je { namespace tests {
 
 
         // Matrices.
-        mat4x3 test_mat;
-        for(size_t i = 0; i < mat4x3::k_num_cols; ++i)
+        mat3x4 test_mat;
+        for(size_t i = 0; i < mat3x4::k_num_cols; ++i)
         {
-            for(size_t j = 0; j < mat4x3::k_num_rows; ++j)
+            for(size_t j = 0; j < mat3x4::k_num_rows; ++j)
             {
                 test_mat[i][j] = static_cast<float>(i * j + j);
             }
