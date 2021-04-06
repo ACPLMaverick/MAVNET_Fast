@@ -524,13 +524,53 @@ namespace je { namespace tests {
 
 
         // Matrices.
-        mat3x4 test_mat;
-        for(size_t i = 0; i < mat3x4::k_num_cols; ++i)
         {
-            for(size_t j = 0; j < mat3x4::k_num_rows; ++j)
+            mat<3, 2> a(0.0f);
+            mat<2, 3> b(0.0f);
+
+            a[0][0] = 1.0f;
+            a[0][1] = 4.0f;
+            a[1][0] = 2.0f;
+            a[1][1] = 5.0f;
+            a[2][0] = 3.0f;
+            a[2][1] = 6.0f;
+
+            b[0][0] = 7.0f;
+            b[0][1] = 9.0f;
+            b[0][2] = 11.0f;
+            b[1][0] = 8.0f;
+            b[1][1] = 10.0f;
+            b[1][2] = 12.0f;
+
+            mat<2, 2> c = a * b;
+
+            JE_assert
+            (
+                sc::is_almost_equal(c[0][0], 58.0f)
+                && sc::is_almost_equal(c[0][1], 139.0f)
+                && sc::is_almost_equal(c[1][0], 64.0f)
+                && sc::is_almost_equal(c[1][1], 154.0f)
+            );
+        }
+
+        {
+            mat<3, 3> matrix(0.0f);
+            for(size_t i = 0; i < matrix.k_num_cols * matrix.k_num_rows; ++i)
             {
-                test_mat[i][j] = static_cast<float>(i * j + j);
+                const size_t colIdx = i % matrix.k_num_cols;
+                const size_t rowIdx = i / matrix.k_num_cols;
+                matrix[colIdx][rowIdx] = static_cast<float>(i + 1);
             }
+
+            vec3 vector(2.0f, 1.0f, 3.0f);
+
+            vec3 multiplied = matrix * vector;
+            JE_assert
+            (
+                sc::is_almost_equal(multiplied[0], 13.0f)
+                && sc::is_almost_equal(multiplied[1], 31.0f)
+                && sc::is_almost_equal(multiplied[2], 49.0f)
+            );
         }
 
         JE_print("Math test passed.");

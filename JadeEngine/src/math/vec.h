@@ -188,6 +188,23 @@ namespace je { namespace math {
             }
         }
 
+        template<size_t other_num_components>
+        vec(const vec<other_num_components>& other, float value_to_fill = 1.0f)
+        {
+            constexpr const size_t num_to_fill = num_components > other_num_components ? (num_components - other_num_components) : 0;
+            #pragma unroll
+            for(size_t i = 0; i < num_components && i < other_num_components; ++i)
+            {
+                vec_base<num_components>::m_components[i] = other.m_components[i];
+            }
+
+            #pragma unroll
+            for(size_t i = 0; i < num_to_fill; ++i)
+            {
+                vec_base<num_components>::m_components[num_components + i] = value_to_fill;
+            }
+        }
+
         inline float& operator[](size_t index)
         {
             JE_assert(index < k_num_components, "Invalid index.");

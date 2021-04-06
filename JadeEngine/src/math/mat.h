@@ -12,12 +12,17 @@ namespace je { namespace math {
     public:
         static const constexpr size_t k_num_cols = num_cols;
         static const constexpr size_t k_num_rows = num_rows;
+    
+    protected:
+
+        // For internal use - create matrix without initializing its components.
+        mat()
+        {
+        }
 
     public:
 
-        // With default parameter creates an identity matrix. (Or identityish, if num_cols != num_rows).
-        // Otherwise creates a matrix with a N value at main diagonal.
-        mat(float n = 1.0f)
+        mat(float n)
         {
             #pragma unroll
             for(size_t i = 0; i < k_num_cols && i < k_num_rows; ++i)
@@ -33,10 +38,30 @@ namespace je { namespace math {
             return m_cols[index];
         }
 
-        vec<num_rows> operator[](size_t index) const
+        const vec<num_rows>& operator[](size_t index) const
         {
             JE_assert(index < k_num_cols, "Invalid index.");
             return m_cols[index];
+        }
+
+        // Comparison operators.
+        bool operator==(const mat& other) const
+        {
+            #pragma unroll
+            for(size_t i = 0; i < k_num_cols; ++i)
+            {
+                if(m_cols[i] != other.m_cols[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        bool operator!=(const mat& other) const
+        {
+            return (*this == other) == false;
         }
 
         // Arithmetric functions.
@@ -74,11 +99,89 @@ namespace je { namespace math {
             return newMat;
         }
 
+        mat& operator*=(float value)
+        {
+            #pragma unroll
+            for(size_t i = 0; i < k_num_cols; ++i)
+            {
+                m_cols[i] *= value;
+            }
+            return *this;
+        }
+
+        mat& operator*(float value) const
+        {
+            mat newMat(*this);
+            newMat *= value;
+            return newMat;
+        }
+
+        vec<num_rows> operator*(const vec<num_rows>& value) const
+        {
+            vec<num_rows> result(0.0f);
+
+            #pragma unroll
+            for(size_t i = 0; i < num_rows; ++i)
+            {
+                for(size_t j = 0; j < num_cols; ++j)
+                {
+                    result[i] += (*this)[j][i] * value[j];
+                }
+            }
+
+            return result;
+        }
+
+        template<size_t vec_num_components>
+        vec<vec_num_components> operator*(const vec<vec_num_components>& value) const
+        {
+            vec<num_rows> converted_value(value);
+            converted_value = *this * converted_value;
+            return vec<vec_num_components>(converted_value);
+        }
+
+        template<size_t num_common, size_t num_rows_a, size_t num_cols_b>
+        inline static mat<num_cols_b, num_rows_a> mul(const mat<num_common, num_rows_a>& a, const mat<num_cols_b, num_common>& b)
+        {
+            mat<num_cols_b, num_rows_a> result(0.0f);
+
+            #pragma unroll
+            for(size_t i = 0; i < num_cols_b; ++i)
+            {
+                #pragma unroll
+                for(size_t j = 0; j < num_rows_a; ++j)
+                {
+                    #pragma unroll
+                    for(size_t k = 0; k < num_common; ++k)
+                    {
+                        result[i][j] += a[k][j] * b[i][k];
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        mat& operator*=(const mat& other)
+        {
+            *this = mul(*this, other);
+            return *this;
+        }
+
+        template<size_t other_num_cols>
+        mat<other_num_cols, num_rows> operator*(const mat<other_num_cols, num_cols>& other) const
+        {
+            return mul(*this, other);
+        }
+
         // Transposition/inverse functions.
 
-        // Determinant functions.
-
         // Special-case creation functions.
+        inline static mat identity()
+        {
+            return mat(1.0f);
+        }
+
         static mat transform
         (
             const vec3& position,
