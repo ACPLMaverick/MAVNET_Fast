@@ -525,6 +525,35 @@ namespace je { namespace tests {
 
         // Matrices.
         {
+            // Check ctors.
+            mat3 test(2.0f);
+            for(size_t i = 0; i < test.k_num_cols; ++i)
+            {
+                for(size_t j = 0; j < test.k_num_rows; ++j)
+                {
+                    if(i == j)
+                    {
+                        JE_assert(test[i][j] == 2.0f);
+                    }
+                    else
+                    {
+                        JE_assert(test[i][j] == 0.0f);
+                    }
+                }
+            }
+
+            test = mat3(vec3(1.0f, 2.0f, 3.0f), vec3(4.0f, 5.0f, 6.0f), vec3(7.0f, 8.0f, 9.0f));
+            for(size_t i = 0; i < test.k_num_cols; ++i)
+            {
+                for(size_t j = 0; j < test.k_num_rows; ++j)
+                {
+                    size_t num = i * test.k_num_cols + j + 1;
+                    JE_assert(test[i][j] == static_cast<float>(num));
+                }
+            }
+        }
+
+        {
             mat<3, 2> a(0.0f);
             mat<2, 3> b(0.0f);
 
@@ -571,6 +600,77 @@ namespace je { namespace tests {
                 && sc::is_almost_equal(multiplied[1], 31.0f)
                 && sc::is_almost_equal(multiplied[2], 49.0f)
             );
+        }
+
+        {
+            // Inverse and transpose check.
+            mat3 test_33(
+                vec3(1.0f, 2.0f, 0.0f),
+                vec3(0.0f, 1.0f, 0.0f),
+                vec3(10.0f, 0.0f, 1.0f));
+            mat3x4 test_34(
+                vec4(1.0f, 2.0f, 0.0f, 5.0f),
+                vec4(0.0f, 1.0f, 0.0f, 0.0f),
+                vec4(10.0f, 0.0f, 1.0f, 0.0f));
+            mat4 test_44(
+                vec4(1.0f, 2.0f, 0.0f, 5.0f),
+                vec4(0.0f, 1.0f, 0.0f, 0.0f),
+                vec4(10.0f, 0.0f, 1.0f, 0.0f),
+                vec4(1.0f, 0.0f, 0.0f, 1.0f));
+
+
+            mat<4, 3> test_34_tr(test_34.transposed());
+            for(size_t i = 0; i < test_34.k_num_cols; ++i)
+            {
+                for(size_t j = 0; j < test_34.k_num_rows; ++j)
+                {
+                    JE_assert(sc::is_almost_equal(test_34[i][j], test_34_tr[j][i]));
+                }
+            }
+
+            mat3 test_33_inv(test_33.inversed());
+            mat3x4 test_34_inv(test_34.inversed());
+            mat4 test_44_inv(test_44.inversed());
+
+            JE_assert(sc::is_almost_equal(test_33_inv[0][0], 1.0f));
+            JE_assert(sc::is_almost_equal(test_33_inv[0][1], -2.0));
+            JE_assert(sc::is_almost_equal(test_33_inv[0][2], 0.0f));
+            JE_assert(sc::is_almost_equal(test_33_inv[1][0], 0.0f));
+            JE_assert(sc::is_almost_equal(test_33_inv[1][1], 1.0f));
+            JE_assert(sc::is_almost_equal(test_33_inv[1][2], 0.0f));
+            JE_assert(sc::is_almost_equal(test_33_inv[2][0], -10.0f));
+            JE_assert(sc::is_almost_equal(test_33_inv[2][1], 20.0f));
+            JE_assert(sc::is_almost_equal(test_33_inv[2][2], 1.0f));
+
+            JE_assert(sc::is_almost_equal(test_34_inv[0][0], 1.0f));
+            JE_assert(sc::is_almost_equal(test_34_inv[0][1], -2.0f));
+            JE_assert(sc::is_almost_equal(test_34_inv[0][2], 0.0f));
+            JE_assert(sc::is_almost_equal(test_34_inv[0][3], -5.0f));
+            JE_assert(sc::is_almost_equal(test_34_inv[1][0], 0.0f));
+            JE_assert(sc::is_almost_equal(test_34_inv[1][1], 1.0f));
+            JE_assert(sc::is_almost_equal(test_34_inv[1][2], 0.0f));
+            JE_assert(sc::is_almost_equal(test_34_inv[1][3], 0.0f));
+            JE_assert(sc::is_almost_equal(test_34_inv[2][0], -10.0f));
+            JE_assert(sc::is_almost_equal(test_34_inv[2][1], 20.0f));
+            JE_assert(sc::is_almost_equal(test_34_inv[2][2], 1.0f));
+            JE_assert(sc::is_almost_equal(test_34_inv[2][3], 50.0f));
+
+            JE_assert(sc::is_almost_equal(test_44_inv[0][0], -0.25f));
+            JE_assert(sc::is_almost_equal(test_44_inv[0][1], 0.5f));
+            JE_assert(sc::is_almost_equal(test_44_inv[0][2], 0.0f));
+            JE_assert(sc::is_almost_equal(test_44_inv[0][3], 1.25f));
+            JE_assert(sc::is_almost_equal(test_44_inv[1][0], 0.0f));
+            JE_assert(sc::is_almost_equal(test_44_inv[1][1], 1.0f));
+            JE_assert(sc::is_almost_equal(test_44_inv[1][2], 0.0f));
+            JE_assert(sc::is_almost_equal(test_44_inv[1][3], 0.0f));
+            JE_assert(sc::is_almost_equal(test_44_inv[2][0], 2.5f));
+            JE_assert(sc::is_almost_equal(test_44_inv[2][1], -5.0f));
+            JE_assert(sc::is_almost_equal(test_44_inv[2][2], 1.0f));
+            JE_assert(sc::is_almost_equal(test_44_inv[2][3], -12.5f));
+            JE_assert(sc::is_almost_equal(test_44_inv[3][0], 0.25));
+            JE_assert(sc::is_almost_equal(test_44_inv[3][1], -0.5f));
+            JE_assert(sc::is_almost_equal(test_44_inv[3][2], 0.0f));
+            JE_assert(sc::is_almost_equal(test_44_inv[3][3], -0.25f));
         }
 
         JE_print("Math test passed.");

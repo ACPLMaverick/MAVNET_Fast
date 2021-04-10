@@ -343,6 +343,30 @@ namespace je { namespace math {
             return *this;
         }
 
+        // Component-wise multiplication.
+        vec& operator*=(const vec& other)
+        {
+            #pragma unroll
+            for(size_t i = 0; i < k_num_components; ++i)
+            {
+                get_components()[i] *= other.get_components()[i];
+            }
+        }
+
+        // Component-wise multiplication.
+        vec operator*(const vec& other) const
+        {
+            vec value;
+
+            #pragma unroll
+            for(size_t i = 0; i < k_num_components; ++i)
+            {
+                value.get_components()[i] = get_components()[i] * other.get_components()[i];
+            }
+
+            return value;
+        }
+
         vec operator*(const float scalar) const
         {
             JE_math_check_val(scalar);

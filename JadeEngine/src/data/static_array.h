@@ -15,6 +15,17 @@ namespace je { namespace data {
         {
         }
 
+        static_array(const object_type arr[])
+        {
+            copy<num_objects>(arr);
+        }
+
+        static_array(std::initializer_list<object_type> list)
+        {
+            JE_assert(list.size() == k_num_objects);
+            copy<num_objects>(list.begin());
+        }
+
         static_array(const object_type& a_value_to_copy_over)
         {
             for(size_t i = 0; i < k_num_objects; ++i)
