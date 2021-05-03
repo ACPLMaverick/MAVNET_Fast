@@ -61,7 +61,7 @@ namespace je { namespace math {
                 float r;
                 float g;
             };
-        };  
+        };
     };
 
     template<>
@@ -422,6 +422,14 @@ namespace je { namespace math {
             return *this;
         }
 
+        // Constants definition functions. Implemented per-case.
+        static vec up();
+        static vec down();
+        static vec left();
+        static vec right();
+        static vec forward();
+        static vec backward();
+
     protected:
 
         inline float* get_components()
@@ -438,6 +446,66 @@ namespace je { namespace math {
     using vec2 = vec<2>;
     using vec3 = vec<3>;
     using vec4 = vec<4>;
+
+    template<>
+    inline vec2 vec2::up()
+    {
+        return vec2(0.0f, 1.0f);
+    }
+
+    template<>
+    inline vec2 vec2::down()
+    {
+        return vec2(0.0f, -1.0f);
+    }
+
+    template<>
+    inline vec2 vec2::left()
+    {
+        return vec2(-1.0f, 0.0f);
+    }
+
+    template<>
+    inline vec2 vec2::right()
+    {
+        return vec2(-1.0f, 0.0f);
+    }
+
+    template<>
+    inline vec3 vec3::up()
+    {
+        return vec3(0.0f, 1.0f, 0.0f);
+    }
+
+    template<>
+    inline vec3 vec3::down()
+    {
+        return vec3(0.0f, -1.0f, 0.0f);
+    }
+
+    template<>
+    inline vec3 vec3::left()
+    {
+        return vec3(-1.0f, 0.0f, 0.0f);
+    }
+
+    template<>
+    inline vec3 vec3::right()
+    {
+        return vec3(-1.0f, 0.0f, 0.0f);
+    }
+
+    template<>
+    inline vec3 vec3::forward()
+    {
+        return vec3(0.0f, 0.0f, 1.0f);
+    }
+
+    template<>
+    inline vec3 vec3::backward()
+    {
+        return vec3(0.0f, 0.0f, -1.0f);
+    }
 }}
 
 #pragma clang diagnostic pop

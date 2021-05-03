@@ -666,6 +666,14 @@ namespace je { namespace tests {
             JE_assert(sc::is_almost_equal(test_44_inv[3][3], -0.25f));
         }
 
+        {
+            mat4 view(mat4::view_target(vec3(0.0f, 0.0f, -5.0f), vec3(0.0f), vec3::up()));
+            mat4 proj_persp(mat4::projection_perspective(90.0f, 1920.0f, 1080.0f, 0.1f, 1000.0f));
+            mat4 proj_ortho(mat4::projection_ortho(640.0f, 480.0f, 0.5f, 100.0f));
+
+            mat4 view_proj = view * proj_persp;
+        }
+
         JE_print("Math test passed.");
     }
 

@@ -262,15 +262,7 @@ namespace je
                 return new_mat;
             }
 
-            mat inversed() const
-            {
-                mat new_mat;
-
-                // This gets implemented for specific matrix types.
-                JE_todo();
-
-                return new_mat;
-            }
+            mat inversed() const; // Implemented per-case.
 
             void transpose()
             {
@@ -423,39 +415,29 @@ namespace je
                 return result;
             }
 
-            static mat view_target(const vec3& view_position, const vec3& view_target_position)
-            {
-                JE_todo();
-                return mat();
-            }
-
             // Direction should be a normalized vector.
-            static mat view_direction(const vec3& view_position, const vec3& view_direction)
-            {
-                JE_todo();
-                JE_assert(sc::is_almost_equal(view_direction.get_length(), 1.0f), "view_direction is not a normalized vector.");
-                return mat();
-            }
+            static mat view_direction(
+                const vec3& view_position,
+                const vec3& view_direction,
+                const vec3& up = vec3::up());
 
+            static mat view_target(
+                const vec3& view_position,
+                const vec3& view_target_position,
+                const vec3& up = vec3::up());
+            
             static mat projection_perspective(
-                float fovY,
-                float screen_aspect_ratio,
+                float fov_y,
+                float screen_width,
+                float screen_height,
                 float near_plane,
-                float far_plane)
-            {
-                JE_todo();
-                return mat();
-            }
+                float far_plane);
 
             static mat projection_ortho(
                 float screen_width,
                 float screen_height,
                 float near_plane,
-                float far_plane)
-            {
-                JE_todo();
-                return mat();
-            }
+                float far_plane);
 
         protected:
             data::static_array<vec<k_num_rows>, k_num_cols> m_cols;
@@ -556,6 +538,111 @@ namespace je
             mat4 m4(*this);
             m4.inverse();
             return mat4x3(m4);
+        }
+
+        // Direction should be a normalized vector.
+        template<>
+        inline mat4 mat4::view_direction(
+            const vec3& view_position,
+            const vec3& view_direction,
+            const vec3& up)
+        {
+            // Builds a left-handed view matrix - forward is positive Z.
+
+            JE_assert(sc::is_almost_equal(view_direction.get_length_squared(), 1.0f), "view_direction is not a normalized vector.");
+            JE_assert(sc::is_almost_equal(up.get_length_squared(), 1.0f), "up is not a normalized vector.");
+
+            const vec3 view_right(vec3(vec3::cross(up, view_direction)).get_normalized());
+            const vec3 view_up(vec3::cross(view_direction, view_right));
+
+            mat result(mat::identity());
+            result[0][0] = view_right.x;
+            result[1][0] = view_right.y;
+            result[2][0] = view_right.z;
+            result[0][1] = view_up.x;
+            result[1][1] = view_up.y;
+            result[2][1] = view_up.z;
+            result[0][2] = view_direction.x;
+            result[1][2] = view_direction.y;
+            result[2][2] = view_direction.z;
+            result[0][3] = -vec3::dot(view_right, view_position);
+            result[1][3] = -vec3::dot(view_up, view_position);
+            result[2][3] = -vec3::dot(view_direction, view_position.z);
+            return result;
+        }
+
+        template<>
+        inline mat4 mat4::view_target(
+            const vec3& view_position,
+            const vec3& view_target_position,
+            const vec3& up)
+        {
+            JE_assert(sc::is_almost_equal(up.get_length_squared(), 1.0f), "up is not a normalized vector.");
+
+            const vec3 direction((view_target_position - view_position).get_normalized());
+            return view_direction(view_position, direction, up);
+        }
+
+        template<>
+        inline mat4 mat4::projection_perspective(
+            float fov_y,
+            float screen_width,
+            float screen_height,
+            float near_plane,
+            float far_plane)
+        {
+            // From GLM.
+            // This needs to be modified when support for other renderers is implemented.
+            // Builds a left-handed projection matrix - forward is positive Z.
+            // Builds a OpenGL clip space (-1, 1), also Z is multiplied by -1 for Vulkan purposes.
+            
+            JE_assert(fov_y > constants::k_epsilon, "fov_y is invalid.");
+            JE_assert(screen_width > constants::k_epsilon && screen_height > constants::k_epsilon, "Screen width and height are invalid.");
+            JE_assert(near_plane > constants::k_epsilon && far_plane > constants::k_epsilon && far_plane > near_plane, "Planes are invalid.");
+
+            mat result(mat::identity());
+
+            const float tan_half_fovy = tan(fov_y * 0.5f);
+            const float aspect = screen_width / screen_height;
+            const float plane_diff_rec = 1.0f / (far_plane - near_plane);
+
+            result[0][0] = 1.0f / (aspect * tan_half_fovy);
+            result[1][1] = -1.0f / (tan_half_fovy);
+            result[2][2] = (far_plane + near_plane) * plane_diff_rec;
+            result[2][3] = 1.0f;
+            result[3][2] = -(2.0f * far_plane * near_plane) * plane_diff_rec;
+
+            return result;
+        }
+
+        template<>
+        inline mat4 mat4::projection_ortho(
+            float screen_width,
+            float screen_height,
+            float near_plane,
+            float far_plane)
+        {
+            // From GLM.
+            // Builds a left-handed ortho matrix for OpenGL clip space (-1, 1), also Z is multiplied by -1 for Vulkan purposes.
+
+            JE_assert(screen_width > constants::k_epsilon && screen_height > constants::k_epsilon, "Screen width and height are invalid.");
+            JE_assert(near_plane > constants::k_epsilon && far_plane > constants::k_epsilon && far_plane > near_plane, "Planes are invalid.");
+
+            const float plane_diff_rec = 1.0f / (far_plane - near_plane);
+
+            const float right = screen_width * 0.5f;
+            const float left = -right;
+            const float top = screen_height * 0.5f;
+            const float bottom = -top;
+
+            mat result(mat::identity());
+            result[0][0] = 2.0f / (right - left);
+            result[1][1] = 2.0f / (top - bottom);
+            result[2][2] = 2.0f * plane_diff_rec;
+            result[3][0] = - (right + left) / (right - left);
+            result[3][1] = - (top + bottom) / (top - bottom);
+            result[3][2] = - (far_plane + near_plane) * plane_diff_rec;
+            return result;
         }
     }
 }
