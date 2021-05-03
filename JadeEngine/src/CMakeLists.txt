@@ -9,6 +9,7 @@ file(GLOB_RECURSE GENERAL_SOURCES
        mem/*.cpp
        tests/*.cpp
        util/*.cpp
+       window/*.cpp
 )
 
 file(GLOB PLATFORM_SOURCES_A

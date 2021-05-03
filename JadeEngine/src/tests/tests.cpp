@@ -81,6 +81,7 @@ namespace je { namespace tests {
         test_math();
         //test_thread();
         //test_object_pool();
+        test_render();
     }
 
     void tester::test_mem()
@@ -685,5 +686,10 @@ namespace je { namespace tests {
     void tester::test_object_pool()
     {
         JE_todo();
+    }
+
+    void tester::test_render()
+    {
+        engine::get_inst().run();
     }
 }}
