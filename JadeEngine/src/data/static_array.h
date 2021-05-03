@@ -4,12 +4,12 @@
 
 namespace je { namespace data {
 
-    template <typename object_type, size_t num_objects>
+    template <typename object_type, size num_objects>
     class static_array
     {
     public:
 
-        static const size_t k_num_objects = num_objects;
+        static const size k_num_objects = num_objects;
 
         static_array()
         {
@@ -28,7 +28,7 @@ namespace je { namespace data {
 
         static_array(const object_type& a_value_to_copy_over)
         {
-            for(size_t i = 0; i < k_num_objects; ++i)
+            for(size i = 0; i < k_num_objects; ++i)
             {
                 m_array[i] = a_value_to_copy_over;
             }
@@ -39,18 +39,18 @@ namespace je { namespace data {
             copy<num_objects>(a_other.get_data());
         }
 
-        template <size_t other_num_objects>
+        template <size other_num_objects>
         static_array(const static_array<object_type, other_num_objects>& a_other)
         {
             static_assert(num_objects >= other_num_objects, "Trying to copy bigger array into smaller one.");
             copy<other_num_objects>(a_other.get_data());
         }
 
-        template <size_t other_num_objects>
+        template <size other_num_objects>
         static_array(const static_array<object_type, other_num_objects>& a_other, const object_type& a_value_to_copy_over)
             : static_array(a_other)
         {
-            for(size_t i = other_num_objects; i < k_num_objects; ++i)
+            for(size i = other_num_objects; i < k_num_objects; ++i)
             {
                 m_array[i] = a_value_to_copy_over;
             }
@@ -69,13 +69,13 @@ namespace je { namespace data {
             return *this;
         }
 
-        object_type& operator[](size_t a_index)
+        object_type& operator[](size a_index)
         {
             JE_assert(a_index < k_num_objects, "Out-of-bounds index.");
             return m_array[a_index];
         }
 
-        const object_type& operator[](size_t a_index) const
+        const object_type& operator[](size a_index) const
         {
             JE_assert(a_index < k_num_objects, "Out-of-bounds index.");
             return m_array[a_index];
@@ -83,7 +83,7 @@ namespace je { namespace data {
 
     private:
 
-        template<size_t num_objects_to_copy>
+        template<size num_objects_to_copy>
         inline void copy(const object_type* a_other_array)
         {
             if(std::is_pod<object_type>())
@@ -93,7 +93,7 @@ namespace je { namespace data {
             else
             {
                 #pragma unroll
-                for(size_t i = 0; i < num_objects_to_copy; ++i)
+                for(size i = 0; i < num_objects_to_copy; ++i)
                 {
                     m_array[i] = a_other_array[i];
                 }

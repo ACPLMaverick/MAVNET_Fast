@@ -18,12 +18,12 @@ namespace je { namespace math {
     {
     public:
 
-        static inline bool is_nan(float a)
+        static inline bool is_nan(f32 a)
         {
             return std::isnan(a);
         }
 
-        static inline bool is_inf(float a)
+        static inline bool is_inf(f32 a)
         {
             return std::isinf(a);
         }
@@ -38,7 +38,7 @@ namespace je { namespace math {
 
 #if JE_MATH_CHECK_NAN
     template<>
-    inline bool check::check_val(float a)
+    inline bool check::check_val(f32 a)
     {
         const bool val = (is_nan(a) || is_inf(a)) == false;
         JE_assert(val, "Floating-point value is invalid: [%f]", a);

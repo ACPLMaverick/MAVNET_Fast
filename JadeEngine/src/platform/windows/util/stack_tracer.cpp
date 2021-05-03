@@ -70,7 +70,7 @@ namespace je { namespace util {
 
         DWORD64 displacement;
 
-        for(size_t i = 0; i < a_trace.m_num_traces; ++i)
+        for(size i = 0; i < a_trace.m_num_traces; ++i)
         {
             displacement = 0;
             if(SymFromAddr(g_symbol_data.process, reinterpret_cast<DWORD64>(a_trace.m_traces[i]), &displacement, symbol))

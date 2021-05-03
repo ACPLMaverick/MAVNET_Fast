@@ -8,7 +8,7 @@ namespace je { namespace util {
     {
     public:
 
-        enum class info_level : uint8_t
+        enum class info_level : u8
         {
             k_info = 0,
             k_warning = 1,

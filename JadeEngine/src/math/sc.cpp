@@ -2,21 +2,21 @@
 
 namespace je { namespace math {
 
-    float sc::modf(float a, float b)
+    f32 sc::modf(f32 a, f32 b)
     {
         JE_math_check_val(a);
         JE_math_check_val(b);
 
-        const float abs_y = abs(b);
+        const f32 abs_y = abs(b);
         if (abs_y <= 1.e-8f)
         {
             JE_fail("Invalid argument for modf.");
             return 0.f;
         }
-        const float div = (a / b);
+        const f32 div = (a / b);
         // All floats where abs(f) >= 2^23 (8388608) are whole numbers so do not need truncation, and avoid overflow in TruncToFloat as they get even larger.
-        const float quotient = abs(div) < constants::k_float_non_fractional ? floor(div) : div;
-        float int_portion = b * quotient;
+        const f32 quotient = abs(div) < constants::k_float_non_fractional ? floor(div) : div;
+        f32 int_portion = b * quotient;
 
         // Rounding and imprecision could cause int_portion to exceed a and cause the result to be outside the expected range.
         // For example Fmod(55.8, 9.3) would result in a very small negative value!
@@ -25,32 +25,32 @@ namespace je { namespace math {
             int_portion = a;
         }
 
-        const float result = a - int_portion;
+        const f32 result = a - int_portion;
         // Clamp to [-abs_y, abs_y] because of possible failures for very large numbers (>1e10) due to precision loss.
         // We could instead fall back to stock fmodf() for large values, however this would diverge from the SIMD VectorMod() which has no similar fallback with reasonable performance.
         return clamp(result, -abs_y, abs_y);
     }
 
-    float sc::atan2(float y, float x)
+    f32 sc::atan2(f32 y, f32 x)
     {
         // return atan2f(y,x);
         // atan2f occasionally returns NaN with perfectly valid input (possibly due to a compiler or library bug).
         // We are replacing it with a minimax approximation with a max relative error of 7.15255737e-007 compared to the C library function.
         // On PC this has been measured to be 2x faster than the std C version.
 
-        const float absX = abs(x);
-        const float absY = abs(y);
+        const f32 absX = abs(x);
+        const f32 absY = abs(y);
         const bool yAbsBigger = (absY > absX);
-        float t0 = yAbsBigger ? absY : absX; // Max(absY, absX)
-        float t1 = yAbsBigger ? absX : absY; // Min(absX, absY)
+        f32 t0 = yAbsBigger ? absY : absX; // Max(absY, absX)
+        f32 t1 = yAbsBigger ? absX : absY; // Min(absX, absY)
         
         if (t0 == 0.f)
             return 0.f;
 
-        float t3 = t1 / t0;
-        float t4 = t3 * t3;
+        f32 t3 = t1 / t0;
+        f32 t4 = t3 * t3;
 
-        static const float c[7] = {
+        static const f32 c[7] = {
             +7.2128853633444123e-03f,
             -3.5059680836411644e-02f,
             +8.1675882859940430e-02f,

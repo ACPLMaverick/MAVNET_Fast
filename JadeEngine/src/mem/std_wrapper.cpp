@@ -9,7 +9,7 @@
 
 namespace je { namespace mem {
 
-    void* std_wrapper_allocator_helper::allocate_internal(size_t a_num_bytes, size_t a_alignment)
+    void* std_wrapper_allocator_helper::allocate_internal(size a_num_bytes, size a_alignment)
     {
         return engine::get_inst().get_mem_manager()
             .allocate<std_wrapper_allocator_helper>(a_num_bytes, static_cast<je::mem::alignment>(a_alignment));

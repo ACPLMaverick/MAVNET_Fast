@@ -25,7 +25,6 @@
 // Common includes.
 
 #include <cstdlib>
-#include <cstdint>
 #include <cstring>
 #include <type_traits>
 
@@ -69,6 +68,7 @@
 
 // Project-wide includes.
 
+#include "fundamental.h"
 #include "util/assertion.h"
 #include "data/data.h"
 // TODO: thread/thread.h

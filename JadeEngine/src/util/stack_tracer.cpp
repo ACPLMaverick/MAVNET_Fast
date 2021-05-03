@@ -56,7 +56,7 @@ namespace je { namespace util {
         JE_print("There are [%zu] existing traces in the stack tracker!", get_num_remaining_traces());
         JE_print("\n");
 
-        size_t num = 1;
+        size num = 1;
         for(auto it = m_traces.begin(); it != m_traces.end(); ++it)
         {
             JE_print("Trace #%zu:\n", num);
@@ -94,7 +94,7 @@ namespace je { namespace util {
 
     void stack_tracer::init_symbol_ref()
     {
-        size_t prev_num_refs = s_symbol_reference_num++;
+        size prev_num_refs = s_symbol_reference_num++;
         if(prev_num_refs == 0)
         {
             init_symbols();
@@ -103,14 +103,14 @@ namespace je { namespace util {
 
     void stack_tracer::cleanup_symbol_ref()
     {
-        size_t prev_num_refs = s_symbol_reference_num--;
+        size prev_num_refs = s_symbol_reference_num--;
         if(prev_num_refs == 1)
         {
             cleanup_symbols();
         }
     }
 
-    std::atomic<size_t> stack_tracer::s_symbol_reference_num(0);
+    std::atomic<size> stack_tracer::s_symbol_reference_num(0);
 }}
 
 #endif

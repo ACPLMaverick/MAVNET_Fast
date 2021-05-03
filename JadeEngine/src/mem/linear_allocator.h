@@ -10,7 +10,7 @@ namespace je { namespace mem {
 
         linear_allocator(
             base_allocator& allocator_from,
-            size_t num_bytes,
+            size num_bytes,
             alignment a_alignment = k_default_alignment,
             const char* name = nullptr,
             allocator_debug_flags debug_flags = base_allocator::k_default_debug_flags);
@@ -22,8 +22,8 @@ namespace je { namespace mem {
 
     protected:
 
-        virtual mem_ptr allocate_internal(size_t num_bytes, alignment a_alignment, size_t& out_num_bytes_allocated) override final;
-        virtual bool free_internal(mem_ptr memory, size_t& out_num_bytes_freed) override final;
+        virtual mem_ptr allocate_internal(size num_bytes, alignment a_alignment, size& out_num_bytes_allocated) override final;
+        virtual bool free_internal(mem_ptr memory, size& out_num_bytes_freed) override final;
 
         void* m_memory_head;
     };

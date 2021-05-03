@@ -11,9 +11,9 @@ namespace je { namespace mem {
     public:
         
         template<typename object_type>
-        static object_type* allocate(size_t a_num_objects)
+        static object_type* allocate(size a_num_objects)
         {
-            const size_t num_bytes = a_num_objects * sizeof(object_type);
+            const size num_bytes = a_num_objects * sizeof(object_type);
             return static_cast<object_type*>(allocate_internal(num_bytes, alignof(object_type)));
         }
 
@@ -25,7 +25,7 @@ namespace je { namespace mem {
 
     private:
 
-        static void* allocate_internal(size_t num_bytes, size_t alignment);
+        static void* allocate_internal(size num_bytes, size alignment);
         static void free_internal(void* memory);
     };
 

@@ -4,7 +4,7 @@ namespace je { namespace mem {
 
     linear_allocator::linear_allocator(
             base_allocator& a_allocator_from,
-            size_t a_num_bytes,
+            size a_num_bytes,
             alignment a_alignment /*= k_default_alignment */,
             const char* a_name/* = nullptr*/,
             allocator_debug_flags a_debug_flags /*= base_allocator::k_default_debug_flags*/)
@@ -37,11 +37,11 @@ namespace je { namespace mem {
         m_memory_head = m_memory;
     }
 
-    linear_allocator::mem_ptr linear_allocator::allocate_internal(size_t a_num_bytes,
-        alignment a_alignment, size_t& a_out_num_bytes_allocated)
+    linear_allocator::mem_ptr linear_allocator::allocate_internal(size a_num_bytes,
+        alignment a_alignment, size& a_out_num_bytes_allocated)
     {
         mem_ptr aligned_head(m_memory_head, a_alignment);
-        const size_t num_bytes_left = m_memory_num_bytes - (aligned_head - mem_ptr(m_memory));
+        const size num_bytes_left = m_memory_num_bytes - (aligned_head - mem_ptr(m_memory));
 
 #if JE_DEBUG_ALLOCATIONS
         if(num_bytes_left < a_num_bytes)
@@ -59,7 +59,7 @@ namespace je { namespace mem {
         return aligned_head;
     }
     
-    bool linear_allocator::free_internal(mem_ptr a_memory, size_t& a_out_num_bytes_freed)
+    bool linear_allocator::free_internal(mem_ptr a_memory, size& a_out_num_bytes_freed)
     {
         // Does nothing and does not internally free any memory.
         a_out_num_bytes_freed = 0;

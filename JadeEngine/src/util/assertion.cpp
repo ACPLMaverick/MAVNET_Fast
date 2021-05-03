@@ -11,13 +11,13 @@
 
 namespace je { namespace util {
 
-    void assertion::create(const char* a_expression, const char* a_file, const char* a_function, size_t a_line, const char* a_message, ...)
+    void assertion::create(const char* a_expression, const char* a_file, const char* a_function, size a_line, const char* a_message, ...)
     {
         // I don't use data::string here to avoid circular dependency when some assertion
         // fires during engine initialization.
 
         static data::static_array<char, 1024> format_buf;
-        size_t num_chars = snprintf(format_buf.get_data(), format_buf.k_num_objects, 
+        size num_chars = snprintf(format_buf.get_data(), format_buf.k_num_objects, 
             "Assertion failed!\n\nExpression: [%s]\nFile: [%s]\nFunction: [%s]\nLine: [%zd]",
             a_expression, a_file, a_function, a_line);
 
@@ -59,7 +59,7 @@ namespace je { namespace util {
 #endif
     }
 
-    void assertion::create(const char* a_expression, const char* a_file, const char* a_function, size_t a_line)
+    void assertion::create(const char* a_expression, const char* a_file, const char* a_function, size a_line)
     {
         create(a_expression, a_file, a_function, a_line, nullptr);
     }

@@ -27,35 +27,35 @@ namespace je { namespace math {
     }
 
     template<>
-    float rand::generate_internal(float a_min, float a_max)
+    f32 rand::generate_internal(f32 a_min, f32 a_max)
     {
         JE_math_check_val(a_min);
         JE_math_check_val(a_max);
-        static random_float_distribution_type<float> distribution;
+        static random_float_distribution_type<f32> distribution;
         using prm_type = decltype(distribution)::param_type;
         return distribution(get_engine(), prm_type{a_min, a_max});
     }
 
     template<>
-    double rand::generate_internal(double a_min, double a_max)
+    f64 rand::generate_internal(f64 a_min, f64 a_max)
     {
         JE_math_check_val(a_min);
         JE_math_check_val(a_max);
-        static random_float_distribution_type<double> distribution;
+        static random_float_distribution_type<f64> distribution;
         using prm_type = decltype(distribution)::param_type;
         return distribution(get_engine(), prm_type{a_min, a_max});
     }
 
 #define JE_MATH_RAND_GENERATE_DECL(_type_) template _type_ rand::generate_internal(_type_, _type_)
 
-    JE_MATH_RAND_GENERATE_DECL(uint64_t);
-    JE_MATH_RAND_GENERATE_DECL(int64_t);
-    JE_MATH_RAND_GENERATE_DECL(uint32_t);
-    JE_MATH_RAND_GENERATE_DECL(int32_t);
-    JE_MATH_RAND_GENERATE_DECL(uint16_t);
-    JE_MATH_RAND_GENERATE_DECL(int16_t);
-    //JE_MATH_RAND_GENERATE_DECL(uint8_t);
-    //JE_MATH_RAND_GENERATE_DECL(int8_t);
+    JE_MATH_RAND_GENERATE_DECL(u64);
+    JE_MATH_RAND_GENERATE_DECL(i64);
+    JE_MATH_RAND_GENERATE_DECL(u32);
+    JE_MATH_RAND_GENERATE_DECL(i32);
+    JE_MATH_RAND_GENERATE_DECL(u16);
+    JE_MATH_RAND_GENERATE_DECL(i16);
+    //JE_MATH_RAND_GENERATE_DECL(u8);
+    //JE_MATH_RAND_GENERATE_DECL(i8);
 
 #undef JE_MATH_RAND_GENERATE_DECL
 }}

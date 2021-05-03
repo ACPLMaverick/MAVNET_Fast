@@ -3,13 +3,13 @@
 namespace je { namespace data {
 
     // Stores a set of flags in a sequence of bytes.
-    template <size_t num_bits>
+    template <size num_bits>
     class static_bit_array
     {
     public:
 
-        static const size_t k_num_bits = num_bits;
-        static const size_t k_num_bytes = (k_num_bits / 8) + (k_num_bits % 8 == 0 ? 0 : 1);
+        static const size k_num_bits = num_bits;
+        static const size k_num_bytes = (k_num_bits / 8) + (k_num_bits % 8 == 0 ? 0 : 1);
 
         static_bit_array()
         {
@@ -32,19 +32,19 @@ namespace je { namespace data {
             return *this;
         }
 
-        uint8_t* get_data() { return m_data; }
-        const uint8_t* get_data() const { return m_data; }
+        u8* get_data() { return m_data; }
+        const u8* get_data() const { return m_data; }
 
-        bool get(size_t a_index) const
+        bool get(size a_index) const
         {
-            size_t byte_index(0), bit_index(0);
+            size byte_index(0), bit_index(0);
             get_indices(a_index, byte_index, bit_index);
             return static_cast<bool>(m_data[byte_index] & (1 << bit_index));
         }
 
-        void set(size_t a_index, bool a_value)
+        void set(size a_index, bool a_value)
         {
-            size_t byte_index(0), bit_index(0);
+            size byte_index(0), bit_index(0);
             get_indices(a_index, byte_index, bit_index);
             if(a_value)
             {
@@ -58,7 +58,7 @@ namespace je { namespace data {
 
     protected:
 
-        void get_indices(size_t a_index, size_t& a_out_byte_index, size_t& a_out_bit_index) const
+        void get_indices(size a_index, size& a_out_byte_index, size& a_out_bit_index) const
         {
             JE_assert(a_index < k_num_bits, "Out-of-bounds index.");
             a_out_bit_index = a_index % 8;
@@ -67,23 +67,23 @@ namespace je { namespace data {
 
     private:
 
-        uint8_t m_data[k_num_bytes];
+        u8 m_data[k_num_bytes];
     };
 
 
     // Stores bitfield enum values.
-    template<typename bitfield_enum_type, size_t num_bits = static_cast<size_t>(bitfield_enum_type::k_num_bits)>
+    template<typename bitfield_enum_type, size num_bits = static_cast<size>(bitfield_enum_type::k_num_bits)>
     class static_bitfield_array : public static_bit_array<num_bits>
     {
     public:
 
-        bool get(size_t a_merged_enum) const
+        bool get(size a_merged_enum) const
         {
             check_enum(a_merged_enum);
             return get_data_as_num() & a_merged_enum;
         }
 
-        void set(size_t a_merged_enum, bool a_value)
+        void set(size a_merged_enum, bool a_value)
         {
             check_enum(a_merged_enum);
             if(a_value)
@@ -98,27 +98,27 @@ namespace je { namespace data {
 
         bool get(bitfield_enum_type a_enum) const
         {
-            return get(static_cast<size_t>(a_enum));
+            return get(static_cast<size>(a_enum));
         }
 
         void set(bitfield_enum_type a_enum, bool a_value)
         {
-            set(static_cast<size_t>(a_enum), a_value);
+            set(static_cast<size>(a_enum), a_value);
         }
 
     private:
 
-        inline const size_t& get_data_as_num() const
+        inline const size& get_data_as_num() const
         {
-            return *reinterpret_cast<const size_t*>(static_bit_array<num_bits>::get_data());
+            return *reinterpret_cast<const size*>(static_bit_array<num_bits>::get_data());
         }
 
-        inline size_t& get_data_as_num()
+        inline size& get_data_as_num()
         {
-            return *reinterpret_cast<size_t*>(static_bit_array<num_bits>::get_data());
+            return *reinterpret_cast<size*>(static_bit_array<num_bits>::get_data());
         }
 
-        static inline void check_enum(size_t a_enum)
+        static inline void check_enum(size a_enum)
         {
             JE_assert(a_enum < (1 << static_bit_array<num_bits>::k_num_bits), "Out-of-bounds index.");
         }

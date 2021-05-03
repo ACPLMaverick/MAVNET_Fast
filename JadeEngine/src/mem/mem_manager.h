@@ -22,7 +22,7 @@ namespace je { namespace mem {
         ~mem_manager();
 
         template <typename caller_type>
-        void* allocate(size_t a_num_bytes,
+        void* allocate(size a_num_bytes,
             alignment a_alignment = base_allocator::k_default_alignment)
         {
             return find_allocator<caller_type>().allocate(a_num_bytes, a_alignment);
@@ -42,21 +42,21 @@ namespace je { namespace mem {
 
         struct mem_budgets
         {
-            size_t m_total_byte_num;
-            size_t m_one_frame_byte_num;
-            size_t m_variable_byte_num;
-            size_t m_collections_byte_num;
-            size_t m_general_purpose_byte_num;
-            size_t m_object_pool_byte_num;
-            size_t m_resource_chunks_byte_num;
-            size_t m_component_chunks_byte_num;
+            size m_total_byte_num;
+            size m_one_frame_byte_num;
+            size m_variable_byte_num;
+            size m_collections_byte_num;
+            size m_general_purpose_byte_num;
+            size m_object_pool_byte_num;
+            size m_resource_chunks_byte_num;
+            size m_component_chunks_byte_num;
 
             mem_budgets();
             ~mem_budgets();
 
         private:
 
-            static size_t get_percentage_of(size_t src_byte_num, size_t percentage);
+            static size get_percentage_of(size src_byte_num, size percentage);
         };
 
         template <typename caller_type>

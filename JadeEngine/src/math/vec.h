@@ -11,11 +11,11 @@
 
 namespace je { namespace math {
 
-    template<size_t num_components>
+    template<size num_components>
     class vec_base
     {
     public:
-        float* m_components;    // Essentially an array of an unknown size.
+        f32* m_components;    // Essentially an array of an unknown size.
     };
 
     template<>
@@ -23,13 +23,13 @@ namespace je { namespace math {
     {
     public:
 
-        vec_base(float scalar = 0.0f)
+        vec_base(f32 scalar = 0.0f)
             : x(scalar)
             , y(scalar)
         {
         }
 
-        vec_base(float a_x, float a_y)
+        vec_base(f32 a_x, f32 a_y)
             : x(a_x)
             , y(a_y)
         {
@@ -41,7 +41,7 @@ namespace je { namespace math {
         {
         }
 
-        static float cross(const vec_base& a, const vec_base& b)
+        static f32 cross(const vec_base& a, const vec_base& b)
         {
             return a.x * b.y - a.y * b.x;
         }
@@ -50,16 +50,16 @@ namespace je { namespace math {
 
         union
         {
-            float m_components[2];
+            f32 m_components[2];
             struct
             {
-                float x;
-                float y;
+                f32 x;
+                f32 y;
             };
             struct
             {
-                float r;
-                float g;
+                f32 r;
+                f32 g;
             };
         };
     };
@@ -69,14 +69,14 @@ namespace je { namespace math {
     {
     public:
 
-        vec_base(float scalar = 0.0f)
+        vec_base(f32 scalar = 0.0f)
             : x(scalar)
             , y(scalar)
             , z(scalar)
         {
         }
 
-        vec_base(float a_x, float a_y, float a_z)
+        vec_base(f32 a_x, f32 a_y, f32 a_z)
             : x(a_x)
             , y(a_y)
             , z(a_z)
@@ -104,18 +104,18 @@ namespace je { namespace math {
 
         union
         {
-            float m_components[3];
+            f32 m_components[3];
             struct
             {
-                float x;
-                float y;
-                float z;
+                f32 x;
+                f32 y;
+                f32 z;
             };
             struct
             {
-                float r;
-                float g;
-                float b;
+                f32 r;
+                f32 g;
+                f32 b;
             };
         };  
     };
@@ -125,7 +125,7 @@ namespace je { namespace math {
     {
     public:
 
-        vec_base(float scalar = 0.0f)
+        vec_base(f32 scalar = 0.0f)
             : x(scalar)
             , y(scalar)
             , z(scalar)
@@ -133,7 +133,7 @@ namespace je { namespace math {
         {
         }
 
-        vec_base(float a_x, float a_y, float a_z, float a_w)
+        vec_base(f32 a_x, f32 a_y, f32 a_z, f32 a_w)
             : x(a_x)
             , y(a_y)
             , z(a_z)
@@ -153,65 +153,65 @@ namespace je { namespace math {
 
         union
         {
-            float m_components[4];
+            f32 m_components[4];
             struct
             {
-                float x;
-                float y;
-                float z;
-                float w;
+                f32 x;
+                f32 y;
+                f32 z;
+                f32 w;
             };
             struct
             {
-                float r;
-                float g;
-                float b;
-                float a;
+                f32 r;
+                f32 g;
+                f32 b;
+                f32 a;
             };
         };  
     };
 
-    template<size_t num_components>
+    template<size num_components>
     class vec : public interp<vec<num_components>>, public vec_base<num_components>
     {
     public:
-        static const constexpr size_t k_num_components = num_components;
+        static const constexpr size k_num_components = num_components;
 
         using vec_base<num_components>::vec_base;
 
         vec(const vec_base<num_components>& upper)
         {
             #pragma unroll
-            for(size_t i = 0; i < k_num_components; ++i)
+            for(size i = 0; i < k_num_components; ++i)
             {
                 vec_base<num_components>::m_components[i] = upper.m_components[i];
             }
         }
 
-        template<size_t other_num_components>
-        vec(const vec<other_num_components>& other, float value_to_fill = 1.0f)
+        template<size other_num_components>
+        vec(const vec<other_num_components>& other, f32 value_to_fill = 1.0f)
         {
-            constexpr const size_t num_to_fill = num_components > other_num_components ? (num_components - other_num_components) : 0;
+            constexpr const size num_to_fill = num_components > other_num_components ? (num_components - other_num_components) : 0;
             #pragma unroll
-            for(size_t i = 0; i < num_components && i < other_num_components; ++i)
+            for(size i = 0; i < num_components && i < other_num_components; ++i)
             {
                 vec_base<num_components>::m_components[i] = other.m_components[i];
             }
 
             #pragma unroll
-            for(size_t i = 0; i < num_to_fill; ++i)
+            for(size i = 0; i < num_to_fill; ++i)
             {
                 vec_base<num_components>::m_components[num_components + i] = value_to_fill;
             }
         }
 
-        inline float& operator[](size_t index)
+        inline f32& operator[](size index)
         {
             JE_assert(index < k_num_components, "Invalid index.");
             return get_components()[index];
         }
 
-        inline float operator[](size_t index) const
+        inline f32 operator[](size index) const
         {
             JE_assert(index < k_num_components, "Invalid index.");
             return get_components()[index];
@@ -221,29 +221,29 @@ namespace je { namespace math {
 
         // TODO add NAN checks.
 
-        float get_length_squared() const
+        f32 get_length_squared() const
         {
-            float sum = 0.0f;
+            f32 sum = 0.0f;
             #pragma unroll
-            for(size_t i = 0; i < k_num_components; ++i)
+            for(size i = 0; i < k_num_components; ++i)
             {
                 sum += get_components()[i] * get_components()[i];
             }
             return sum;
         }
 
-        float get_length() const
+        f32 get_length() const
         {
             return sc::sqrt(get_length_squared());
         }
 
         void normalize()
         {
-            const float length = get_length();
+            const f32 length = get_length();
             JE_assert(sc::is_almost_zero(length) == false, "Normalizing zero-length vector.");
 
             #pragma unroll
-            for(size_t i = 0; i < k_num_components; ++i)
+            for(size i = 0; i < k_num_components; ++i)
             {
                 get_components()[i] /= length;
             }
@@ -259,7 +259,7 @@ namespace je { namespace math {
         bool operator==(const vec& other) const
         {
             #pragma unroll
-            for(size_t i = 0; i < k_num_components; ++i)
+            for(size i = 0; i < k_num_components; ++i)
             {
                 if(get_components()[i] != other.get_components()[i])
                 {
@@ -273,7 +273,7 @@ namespace je { namespace math {
         static bool is_almost_equal(const vec& a, const vec& b)
         {
             #pragma unroll
-            for(size_t i = 0; i < k_num_components; ++i)
+            for(size i = 0; i < k_num_components; ++i)
             {
                 if(sc::is_almost_equal(a.get_components()[i], b.get_components()[i]) == false)
                 {
@@ -286,11 +286,11 @@ namespace je { namespace math {
 
         // TODO get_rotation_from_axis
 
-        static float dot(const vec& a, const vec& b)
+        static f32 dot(const vec& a, const vec& b)
         {
-            float value = 0.0f;
+            f32 value = 0.0f;
             #pragma unroll
-            for(size_t i = 0; i < k_num_components; ++i)
+            for(size i = 0; i < k_num_components; ++i)
             {
                 value += a.get_components()[i] * b.get_components()[i];
             }
@@ -302,7 +302,7 @@ namespace je { namespace math {
             vec value;
 
             #pragma unroll
-            for(size_t i = 0; i < k_num_components; ++i)
+            for(size i = 0; i < k_num_components; ++i)
             {
                 value.get_components()[i] = get_components()[i] + other.get_components()[i];
             }
@@ -315,7 +315,7 @@ namespace je { namespace math {
             vec value;
 
             #pragma unroll
-            for(size_t i = 0; i < k_num_components; ++i)
+            for(size i = 0; i < k_num_components; ++i)
             {
                 value.get_components()[i] = get_components()[i] - other.get_components()[i];
             }
@@ -326,7 +326,7 @@ namespace je { namespace math {
         vec& operator+=(const vec& other)
         {
             #pragma unroll
-            for(size_t i = 0; i < k_num_components; ++i)
+            for(size i = 0; i < k_num_components; ++i)
             {
                 get_components()[i] += other.get_components()[i];
             }
@@ -336,7 +336,7 @@ namespace je { namespace math {
         vec& operator-=(const vec& other)
         {
             #pragma unroll
-            for(size_t i = 0; i < k_num_components; ++i)
+            for(size i = 0; i < k_num_components; ++i)
             {
                 get_components()[i] -= other.get_components()[i];
             }
@@ -347,7 +347,7 @@ namespace je { namespace math {
         vec& operator*=(const vec& other)
         {
             #pragma unroll
-            for(size_t i = 0; i < k_num_components; ++i)
+            for(size i = 0; i < k_num_components; ++i)
             {
                 get_components()[i] *= other.get_components()[i];
             }
@@ -359,7 +359,7 @@ namespace je { namespace math {
             vec value;
 
             #pragma unroll
-            for(size_t i = 0; i < k_num_components; ++i)
+            for(size i = 0; i < k_num_components; ++i)
             {
                 value.get_components()[i] = get_components()[i] * other.get_components()[i];
             }
@@ -367,14 +367,14 @@ namespace je { namespace math {
             return value;
         }
 
-        vec operator*(const float scalar) const
+        vec operator*(const f32 scalar) const
         {
             JE_math_check_val(scalar);
 
             vec value;
 
             #pragma unroll
-            for(size_t i = 0; i < k_num_components; ++i)
+            for(size i = 0; i < k_num_components; ++i)
             {
                 value.get_components()[i] = get_components()[i] * scalar;
             }
@@ -382,7 +382,7 @@ namespace je { namespace math {
             return value;
         }
 
-        vec operator/(const float scalar) const
+        vec operator/(const f32 scalar) const
         {
             JE_math_check_val(scalar);
             JE_assert(sc::is_almost_zero(scalar) == false, "Zero-division.");
@@ -390,7 +390,7 @@ namespace je { namespace math {
             vec value;
 
             #pragma unroll
-            for(size_t i = 0; i < k_num_components; ++i)
+            for(size i = 0; i < k_num_components; ++i)
             {
                 value.get_components()[i] = get_components()[i] / scalar;
             }
@@ -398,24 +398,24 @@ namespace je { namespace math {
             return value;
         }
 
-        vec& operator*=(float scalar)
+        vec& operator*=(f32 scalar)
         {
             JE_math_check_val(scalar);
 
             #pragma unroll
-            for(size_t i = 0; i < k_num_components; ++i)
+            for(size i = 0; i < k_num_components; ++i)
             {
                 get_components()[i] *= scalar;
             }
             return *this;
         }
 
-        vec& operator/=(float scalar)
+        vec& operator/=(f32 scalar)
         {
             JE_math_check_val(scalar);
             JE_assert(sc::is_almost_zero(scalar) == false, "Zero-division.");
             #pragma unroll
-            for(size_t i = 0; i < k_num_components; ++i)
+            for(size i = 0; i < k_num_components; ++i)
             {
                 get_components()[i] /= scalar;
             }
@@ -432,12 +432,12 @@ namespace je { namespace math {
 
     protected:
 
-        inline float* get_components()
+        inline f32* get_components()
         {
             return vec_base<num_components>::m_components;
         }
 
-        inline const float* get_components() const
+        inline const f32* get_components() const
         {
             return vec_base<num_components>::m_components;
         }

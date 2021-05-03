@@ -24,7 +24,7 @@ namespace je { namespace mem {
 
     private:
 
-        stack_mem(stack_allocator& allocator, size_t num_bytes,
+        stack_mem(stack_allocator& allocator, size num_bytes,
             alignment a_alignment = base_allocator::k_default_alignment);
 
     public:
@@ -44,7 +44,7 @@ namespace je { namespace mem {
 
         stack_allocator(
             base_allocator& allocator_from,
-            size_t num_bytes,
+            size num_bytes,
             alignment a_alignment = k_default_alignment,
             const char* name = nullptr,
             allocator_debug_flags debug_flags = base_allocator::k_default_debug_flags);
@@ -52,7 +52,7 @@ namespace je { namespace mem {
 
         JE_disallow_copy(stack_allocator);
 
-        stack_mem allocate_stack_mem(size_t num_bytes,
+        stack_mem allocate_stack_mem(size num_bytes,
             alignment a_alignment = base_allocator::k_default_alignment);
 
     protected:
@@ -60,13 +60,13 @@ namespace je { namespace mem {
         struct control_block
         {
 #if JE_DEBUG_ALLOCATIONS_STACK_CHECK_PREV
-            size_t m_prev_block_num_bytes;
+            size m_prev_block_num_bytes;
 #endif
-            uint8_t m_alignment_num_bytes;
+            u8 m_alignment_num_bytes;
         };
 
-        virtual mem_ptr allocate_internal(size_t num_bytes, alignment a_alignment, size_t& out_num_bytes_allocated) override final;
-        virtual bool free_internal(mem_ptr memory, size_t& out_num_bytes_freed) override final;
+        virtual mem_ptr allocate_internal(size num_bytes, alignment a_alignment, size& out_num_bytes_allocated) override final;
+        virtual bool free_internal(mem_ptr memory, size& out_num_bytes_freed) override final;
 
         void* m_memory_head;
 #if JE_DEBUG_ALLOCATIONS_STACK_CHECK_PREV

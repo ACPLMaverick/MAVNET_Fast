@@ -32,8 +32,8 @@ namespace je { namespace tests {
     class mem_tester
     {
     public:
-        mem_tester(mem::base_allocator& a_allocator, size_t a_num_bytes, 
-            uint8_t a_byte_to_fill, mem::alignment a_al = mem::base_allocator::k_default_alignment)
+        mem_tester(mem::base_allocator& a_allocator, size a_num_bytes, 
+            u8 a_byte_to_fill, mem::alignment a_al = mem::base_allocator::k_default_alignment)
             : m_allocator(a_allocator)
             , m_mem(m_allocator.allocate(a_num_bytes, a_al))
             , m_num_bytes(a_num_bytes)
@@ -47,9 +47,9 @@ namespace je { namespace tests {
 
         ~mem_tester()
         {
-            uint8_t* byte_ptr = reinterpret_cast<uint8_t*>(m_mem);
+            u8* byte_ptr = reinterpret_cast<u8*>(m_mem);
 
-            for(size_t i = 0; i < m_num_bytes; ++i)
+            for(size i = 0; i < m_num_bytes; ++i)
             {
                 if(byte_ptr[i] != m_byte_to_fill)
                 {
@@ -67,8 +67,8 @@ namespace je { namespace tests {
 
         mem::base_allocator& m_allocator;
         void* m_mem;
-        size_t m_num_bytes;
-        uint8_t m_byte_to_fill;
+        size m_num_bytes;
+        u8 m_byte_to_fill;
     };
 
     void tester::run()
@@ -91,7 +91,7 @@ namespace je { namespace tests {
             {
                 mem::linear_allocator linear_allocator(allocator, 512);
 
-                size_t num_bytes = 4;
+                size num_bytes = 4;
                 while(num_bytes < 128)
                 {
                     void* memory = linear_allocator.allocate(num_bytes, mem::alignment::k_16);
@@ -143,7 +143,7 @@ namespace je { namespace tests {
             }
 
             {
-                static const size_t obj_num_bytes = 32;
+                static const size obj_num_bytes = 32;
                 mem::pool_allocator pool_allocator(allocator, obj_num_bytes, 8);
 
                 {
@@ -191,16 +191,16 @@ namespace je { namespace tests {
     {
         // Array test.
         {
-            data::static_array<int32_t, 16> small_array;
+            data::static_array<i32, 16> small_array;
             small_array[0] = 1;
             small_array[5] = 2;
-            for(size_t i = 0; i < small_array.k_num_objects; ++i)
+            for(size i = 0; i < small_array.k_num_objects; ++i)
             {
                 small_array[i] = small_array.k_num_objects - i;
             }
             //small_array[32] = 8;
 
-            data::static_array<int32_t, 32> big_array(small_array, 0);
+            data::static_array<i32, 32> big_array(small_array, 0);
 
             data::static_bit_array<6> static_bit_array;
             static_bit_array.set(1, true);
@@ -216,18 +216,18 @@ namespace je { namespace tests {
 
         // Array test
         {
-            data::array<float> float_arr;
+            data::array<f32> float_arr;
             float_arr.push_back(4.0f);
             float_arr.push_back(3.0f);
 
-            for(size_t i = 0; i < 2148; ++i)
+            for(size i = 0; i < 2148; ++i)
             {
-                float_arr.push_back(static_cast<float>(i));
+                float_arr.push_back(static_cast<f32>(i));
             }
 
-            data::array<float> float_arr_2(float_arr);
+            data::array<f32> float_arr_2(float_arr);
 
-            for(size_t i = 0; i < 512; ++i)
+            for(size i = 0; i < 512; ++i)
             {
                 float_arr_2.erase(float_arr_2.begin());
             }
@@ -235,7 +235,7 @@ namespace je { namespace tests {
             float_arr = float_arr_2;
 
             /*
-            for(const float& flt : float_arr)
+            for(const f32& flt : float_arr)
             {
                 JE_print("%f ", flt);
             }
@@ -281,10 +281,10 @@ namespace je { namespace tests {
         data::string flt_str_2(data::string::from_float(-783.123456));
         //JE_assert(flt_str_2 == "-783.123456");
 
-        const int32_t int_parsed = data::string::parse_int32("321");
+        const i32 int_parsed = data::string::parse_int32("321");
         JE_assert(int_parsed == 321);
 
-        const float flt_parsed = data::string::parse_float("0.321");
+        const f32 flt_parsed = data::string::parse_float("0.321");
         JE_assert(flt_parsed == 0.321f);
 
         data::string starts = "Starts With";
@@ -320,7 +320,7 @@ namespace je { namespace tests {
         data::string run("Run The Shop");
         run.erase(3, 6);
         JE_assert(run == "Run Shop");
-        size_t run_size = run.get_size();
+        size run_size = run.get_size();
         JE_assert(run_size == 8);
         run.erase(3);
         JE_assert(run == "Run");
@@ -400,12 +400,12 @@ namespace je { namespace tests {
             data::string str_c("c");
 
             data::array<tester> testers(50);
-            data::queue<size_t> qu;
-            for(size_t i = 0; i < 100; ++i)
+            data::queue<size> qu;
+            for(size i = 0; i < 100; ++i)
             {
                 qu.push_back(i);
             }
-            for(size_t i = 0; i < 22; ++i)
+            for(size i = 0; i < 22; ++i)
             {
                 str_c += str_c;
             }
@@ -424,15 +424,15 @@ namespace je { namespace tests {
 
         // Rands
         JE_print("Rand test begin.");
-        for(size_t i = 0; i < 32; ++i)
+        for(size i = 0; i < 32; ++i)
         {
-            uint64_t rand_uint64 = rand::generate(1, 10);
-            int64_t rand_int64 = rand::generate(-10, 10);
-            uint32_t rand_uint32 = rand::generate(1, 10);
-            int32_t rand_int32 = rand::generate(-21, 16);
-            uint8_t rand_uint8 = rand::generate(0, 1);
-            float rand_float = rand::generate_0_1<float>();
-            float rand_float2 = rand::generate(-constants::k_pi, constants::k_pi);
+            u64 rand_uint64 = rand::generate(1, 10);
+            i64 rand_int64 = rand::generate(-10, 10);
+            u32 rand_uint32 = rand::generate(1, 10);
+            i32 rand_int32 = rand::generate(-21, 16);
+            u8 rand_uint8 = rand::generate(0, 1);
+            f32 rand_float = rand::generate_0_1<f32>();
+            f32 rand_float2 = rand::generate(-constants::k_pi, constants::k_pi);
 
             JE_print("[%zd] [%zd] [%u] [%d] [%d] [%f] [%f]",
                 rand_uint64, rand_int64, rand_uint32, rand_int32, rand_uint8,
@@ -453,8 +453,8 @@ namespace je { namespace tests {
         JE_verify(sc::enlarge(-2.0f, 0.5f) == -2.5f);
         JE_verify(sc::is_almost_equal(sc::fractional(-5.35f), 0.35f));
 
-        float int_part;
-        float frac_part = sc::integral_and_fractional(-5.35f, int_part);
+        f32 int_part;
+        f32 frac_part = sc::integral_and_fractional(-5.35f, int_part);
         JE_assert(sc::is_almost_equal(frac_part, 0.35f) && sc::is_almost_equal(int_part, -5.0f));
 
         JE_verify(sc::pow2(4.0f) == 16.0f);
@@ -495,9 +495,9 @@ namespace je { namespace tests {
 
 
         // Vectors.
-        JE_assert(sizeof(vec2) == 2 * sizeof(float));
-        JE_assert(sizeof(vec3) == 3 * sizeof(float));
-        JE_assert(sizeof(vec4) == 4 * sizeof(float));
+        JE_assert(sizeof(vec2) == 2 * sizeof(f32));
+        JE_assert(sizeof(vec3) == 3 * sizeof(f32));
+        JE_assert(sizeof(vec4) == 4 * sizeof(f32));
 
         vec2 test_vec(1.0f, -2.0f);
         JE_assert(test_vec.x == 1.0f && test_vec.y == -2.0f);
@@ -516,7 +516,7 @@ namespace je { namespace tests {
         JE_assert(sc::is_almost_equal(test_vec.x, 0.514496f));
         JE_assert(sc::is_almost_equal(test_vec.y, -0.857493f));
 
-        float test_dot(vec3::dot(vec3(1.0f, 2.0f, 3.0f), vec3(-1.0f, 2.0f, -3.0f)));
+        f32 test_dot(vec3::dot(vec3(1.0f, 2.0f, 3.0f), vec3(-1.0f, 2.0f, -3.0f)));
         JE_assert(sc::is_almost_equal(test_dot, -6.0f));
 
         vec3 test_vec_2(vec3::cross(vec3(1.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f)));
@@ -527,9 +527,9 @@ namespace je { namespace tests {
         {
             // Check ctors.
             mat3 test(2.0f);
-            for(size_t i = 0; i < test.k_num_cols; ++i)
+            for(size i = 0; i < test.k_num_cols; ++i)
             {
-                for(size_t j = 0; j < test.k_num_rows; ++j)
+                for(size j = 0; j < test.k_num_rows; ++j)
                 {
                     if(i == j)
                     {
@@ -543,12 +543,12 @@ namespace je { namespace tests {
             }
 
             test = mat3(vec3(1.0f, 2.0f, 3.0f), vec3(4.0f, 5.0f, 6.0f), vec3(7.0f, 8.0f, 9.0f));
-            for(size_t i = 0; i < test.k_num_cols; ++i)
+            for(size i = 0; i < test.k_num_cols; ++i)
             {
-                for(size_t j = 0; j < test.k_num_rows; ++j)
+                for(size j = 0; j < test.k_num_rows; ++j)
                 {
-                    size_t num = i * test.k_num_cols + j + 1;
-                    JE_assert(test[i][j] == static_cast<float>(num));
+                    size num = i * test.k_num_cols + j + 1;
+                    JE_assert(test[i][j] == static_cast<f32>(num));
                 }
             }
         }
@@ -584,11 +584,11 @@ namespace je { namespace tests {
 
         {
             mat<3, 3> matrix(0.0f);
-            for(size_t i = 0; i < matrix.k_num_cols * matrix.k_num_rows; ++i)
+            for(size i = 0; i < matrix.k_num_cols * matrix.k_num_rows; ++i)
             {
-                const size_t colIdx = i % matrix.k_num_cols;
-                const size_t rowIdx = i / matrix.k_num_cols;
-                matrix[colIdx][rowIdx] = static_cast<float>(i + 1);
+                const size colIdx = i % matrix.k_num_cols;
+                const size rowIdx = i / matrix.k_num_cols;
+                matrix[colIdx][rowIdx] = static_cast<f32>(i + 1);
             }
 
             vec3 vector(2.0f, 1.0f, 3.0f);
@@ -627,9 +627,9 @@ namespace je { namespace tests {
 
 
             mat<3, 4> test_43_tr(test_43.transposed());
-            for(size_t i = 0; i < test_43.k_num_cols; ++i)
+            for(size i = 0; i < test_43.k_num_cols; ++i)
             {
-                for(size_t j = 0; j < test_43.k_num_rows; ++j)
+                for(size j = 0; j < test_43.k_num_rows; ++j)
                 {
                     JE_assert(sc::is_almost_equal(test_43[i][j], test_43_tr[j][i]));
                 }

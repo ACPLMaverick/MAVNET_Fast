@@ -4,7 +4,7 @@ namespace je { namespace mem {
 
     general_purpose_allocator::general_purpose_allocator(
         base_allocator& a_allocator_from,
-        size_t a_num_bytes,
+        size a_num_bytes,
         alignment a_alignment /*= k_default_alignment*/,
         const char* a_name/* = nullptr*/,
         allocator_debug_flags a_debug_flags /*= base_allocator::k_default_debug_flags*/)
@@ -25,7 +25,7 @@ namespace je { namespace mem {
     }
 
     general_purpose_allocator::mem_ptr general_purpose_allocator::allocate_internal(
-        size_t a_num_bytes, alignment a_alignment, size_t& a_out_num_bytes_allocated)
+        size a_num_bytes, alignment a_alignment, size& a_out_num_bytes_allocated)
     {
         free_block* prev_free_block(nullptr);
         free_block* curr_free_block(m_free_blocks);
@@ -33,8 +33,8 @@ namespace je { namespace mem {
         while(curr_free_block != nullptr)
         {
             mem_ptr aligned_memory(curr_free_block);
-            uint8_t adjustment = aligned_memory.align_adjust(a_alignment, sizeof(allocation_header));
-            size_t total_num_bytes = a_num_bytes + adjustment;
+            u8 adjustment = aligned_memory.align_adjust(a_alignment, sizeof(allocation_header));
+            size total_num_bytes = a_num_bytes + adjustment;
 
             // If allocation doesn't fit this free_block, try the next one.
             if(curr_free_block->m_num_bytes < total_num_bytes)
@@ -49,7 +49,7 @@ namespace je { namespace mem {
             // If allocations in the remaining memory will be impossible...
             if(curr_free_block->m_num_bytes - total_num_bytes <= sizeof(allocation_header))
             {
-                JE_assert(static_cast<int64_t>(curr_free_block->m_num_bytes) - static_cast<int64_t>(total_num_bytes) >= 0,
+                JE_assert(static_cast<i64>(curr_free_block->m_num_bytes) - static_cast<i64>(total_num_bytes) >= 0,
                     "We would allocate less memory than needed.");
                 // ... increase allocation size instead of creating a new free_block.
                 total_num_bytes = curr_free_block->m_num_bytes;
@@ -98,12 +98,12 @@ namespace je { namespace mem {
         return nullptr;
     }
 
-    bool general_purpose_allocator::free_internal(mem_ptr a_memory, size_t& a_out_num_bytes_freed)
+    bool general_purpose_allocator::free_internal(mem_ptr a_memory, size& a_out_num_bytes_freed)
     {
         allocation_header* header(a_memory.get_struct_ptr_before<allocation_header>());
 
         mem_ptr block_start(a_memory - header->m_adjustment_num_bytes);
-        const size_t block_num_bytes = header->m_num_bytes;
+        const size block_num_bytes = header->m_num_bytes;
         mem_ptr block_end(block_start + block_num_bytes);
 
         free_block* prev_free_block(nullptr);

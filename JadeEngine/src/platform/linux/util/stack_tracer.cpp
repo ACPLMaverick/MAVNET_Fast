@@ -30,7 +30,7 @@ namespace je { namespace util {
     {      
         // Code for translating these symbols to something meaningful took from here:
         // https://gist.github.com/fmela/591333/c64f4eb86037bb237862a8283df70cdfc25f01d3
-        for(size_t i = 0; i < a_trace.m_num_traces; ++i)
+        for(size i = 0; i < a_trace.m_num_traces; ++i)
         {
             Dl_info info;
             if(dladdr(a_trace.m_traces[i], &info))

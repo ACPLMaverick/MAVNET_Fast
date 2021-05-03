@@ -10,7 +10,7 @@ namespace je { namespace mem {
     class byte_output
     {
     public:
-        byte_output(size_t a_byte_num)
+        byte_output(size a_byte_num)
         {
             if(a_byte_num >= k_GB)
             {
@@ -41,9 +41,9 @@ namespace je { namespace mem {
         
     private:
 
-        void process_byte_num(size_t a_byte_unit, char a_unit_text, size_t& a_inout_byte_num)
+        void process_byte_num(size a_byte_unit, char a_unit_text, size& a_inout_byte_num)
         {
-            const size_t byte_num_in_unit = a_inout_byte_num / a_byte_unit;
+            const size byte_num_in_unit = a_inout_byte_num / a_byte_unit;
             m_text += std::to_string(byte_num_in_unit) + a_unit_text + " ";
             a_inout_byte_num -= (byte_num_in_unit * a_byte_unit);
         }
@@ -55,10 +55,10 @@ namespace je { namespace mem {
     {
     public:
 
-        static std::string get_allocator_summary(const base_allocator& a_allocator, size_t a_hierarchy_level)
+        static std::string get_allocator_summary(const base_allocator& a_allocator, size a_hierarchy_level)
         {
             std::string summary;
-            for(size_t i = 0; i < a_hierarchy_level; ++i)
+            for(size i = 0; i < a_hierarchy_level; ++i)
             {
                 summary.append("\t");
             }
@@ -69,12 +69,12 @@ namespace je { namespace mem {
 
             const char* format = "[%s] [%.2f%%] [capacity : %s] [used : %s] [free : %s] [allocs : %llu]\n";
 
-            static const size_t buf_size = 256;
+            static const size buf_size = 256;
             static char buf[buf_size];
 
-            const float perc = (static_cast<float>(a_allocator.get_memory_left()) / static_cast<float>(a_allocator.get_total_memory())) * 100.0f;
+            const f32 perc = (static_cast<f32>(a_allocator.get_memory_left()) / static_cast<f32>(a_allocator.get_total_memory())) * 100.0f;
 
-            const size_t size = snprintf(buf, buf_size, format, a_allocator.get_name(), perc,
+            const size size = snprintf(buf, buf_size, format, a_allocator.get_name(), perc,
                 output_capacity.as_string().c_str(), output_used.as_string().c_str(), output_free.as_string().c_str(),
                 a_allocator.get_num_allocations());
             JE_assert(size < buf_size);
@@ -118,9 +118,9 @@ namespace je { namespace mem {
     {
     }
 
-    size_t mem_manager::mem_budgets::get_percentage_of(size_t a_src_byte_num, size_t a_percentage)
+    size mem_manager::mem_budgets::get_percentage_of(size a_src_byte_num, size a_percentage)
     {
-        const size_t perc = ((a_src_byte_num * a_percentage) / 100);
+        const size perc = ((a_src_byte_num * a_percentage) / 100);
         return perc;
     }
 
@@ -130,12 +130,12 @@ namespace je { namespace mem {
         struct allocator_data
         {
             const base_allocator* allocator;
-            size_t hierarchy_level;
+            size hierarchy_level;
         };
 
-        const size_t total_memory_available = m_top_allocator.get_total_memory();
-        size_t total_memory_used = 0;
-        size_t total_num_allocations = 0;
+        const size total_memory_available = m_top_allocator.get_total_memory();
+        size total_memory_used = 0;
+        size total_num_allocations = 0;
 
         std::string summary;
 

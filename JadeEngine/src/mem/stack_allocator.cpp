@@ -4,7 +4,7 @@ namespace je { namespace mem {
 
     stack_allocator::stack_allocator(
             base_allocator& a_allocator_from,
-            size_t a_num_bytes,
+            size a_num_bytes,
             alignment a_alignment /*= k_default_alignment*/,
             const char* a_name/* = nullptr*/,
             allocator_debug_flags a_debug_flags /*= base_allocator::k_default_debug_flags*/)
@@ -22,17 +22,17 @@ namespace je { namespace mem {
         JE_assert(m_memory_head == m_memory, "Memory leak.");
     }
 
-    stack_mem stack_allocator::allocate_stack_mem(size_t a_num_bytes,
+    stack_mem stack_allocator::allocate_stack_mem(size a_num_bytes,
         alignment a_alignment /*= base_allocator::k_default_alignment*/)
     {
         return stack_mem(*this, a_num_bytes, a_alignment);
     }
 
-    stack_allocator::mem_ptr stack_allocator::allocate_internal(size_t a_num_bytes, alignment a_alignment, size_t& out_num_bytes_allocated)
+    stack_allocator::mem_ptr stack_allocator::allocate_internal(size a_num_bytes, alignment a_alignment, size& out_num_bytes_allocated)
     {
         const mem_ptr head(m_memory_head);
         mem_ptr aligned_head(m_memory_head);
-        const size_t align_adjustment = 
+        const size align_adjustment = 
             aligned_head.align_adjust(a_alignment, sizeof(control_block)); 
             // This assures that I have at least sizeof(control_block) free space before.
 
@@ -41,7 +41,7 @@ namespace je { namespace mem {
 #if JE_DEBUG_ALLOCATIONS
         if(next_head > mem_ptr(mem_ptr(m_memory) + m_memory_num_bytes))
         {
-            const size_t num_bytes_left = mem_ptr(m_memory) + m_memory_num_bytes - aligned_head;
+            const size num_bytes_left = mem_ptr(m_memory) + m_memory_num_bytes - aligned_head;
             JE_fail("Not enough memory for allocation. "
                 "Has: [%lld], Needs: [%lld], Lacks: [%lld]",
                 num_bytes_left, a_num_bytes, a_num_bytes - num_bytes_left);
@@ -63,7 +63,7 @@ namespace je { namespace mem {
         return aligned_head;
     }
 
-    bool stack_allocator::free_internal(mem_ptr a_memory, size_t& a_out_num_bytes_freed)
+    bool stack_allocator::free_internal(mem_ptr a_memory, size& a_out_num_bytes_freed)
     {
 #if JE_DEBUG_ALLOCATIONS
         if(m_memory_head == m_memory)
@@ -81,7 +81,7 @@ namespace je { namespace mem {
 #endif
 
         control_block* cb = a_memory.get_struct_ptr_before<control_block>();
-        JE_assert(cb->m_alignment_num_bytes <= static_cast<uint8_t>(alignment::k_64), "Sanity check for control block failed.");
+        JE_assert(cb->m_alignment_num_bytes <= static_cast<u8>(alignment::k_64), "Sanity check for control block failed.");
 #if JE_DEBUG_ALLOCATIONS_STACK_CHECK_PREV
         JE_assert(cb->m_prev_block_num_bytes != 0 && cb->m_prev_block_num_bytes < (8ULL * k_GB),
             "Sanity check for control block failed.");
@@ -100,7 +100,7 @@ namespace je { namespace mem {
             JE_assert(get_alignment(m_prev_head_aligned) != alignment::k_1, "Bad prev pointer alignment");
             // Check previous control block.
             control_block* pcb = reinterpret_cast<control_block*>(mem_ptr(m_prev_head_aligned) - sizeof(control_block));
-        JE_assert(pcb->m_alignment_num_bytes <= static_cast<uint8_t>(alignment::k_64), "Sanity check for control block failed.");
+        JE_assert(pcb->m_alignment_num_bytes <= static_cast<u8>(alignment::k_64), "Sanity check for control block failed.");
         JE_assert(pcb->m_prev_block_num_bytes != 0 && pcb->m_prev_block_num_bytes < (8ULL * k_GB),
             "Sanity check for control block failed.");
         }
@@ -109,7 +109,7 @@ namespace je { namespace mem {
         return true;
     }
 
-    stack_mem::stack_mem(stack_allocator& allocator, size_t a_num_bytes,
+    stack_mem::stack_mem(stack_allocator& allocator, size a_num_bytes,
         alignment a_alignment /*= base_allocator::k_default_alignment*/)
         : m_allocator(allocator)
         , m_memory(allocator.allocate(a_num_bytes, a_alignment))

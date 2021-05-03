@@ -12,14 +12,14 @@ namespace je { namespace math {
     /**
      * Scalar math.
      */
-    class sc : public interp<float>
+    class sc : public interp<f32>
     {
     public:
 
         struct sincos
         {
-            float sin;
-            float cos;
+            f32 sin;
+            f32 cos;
         };
 
         // MinMax
@@ -90,8 +90,8 @@ namespace je { namespace math {
             return a > min && a < max;
         }
 
-        static inline bool is_almost_equal(float a, float b);
-        static inline bool is_almost_zero(float a);
+        static inline bool is_almost_equal(f32 a, f32 b);
+        static inline bool is_almost_zero(f32 a);
 
         // /////////////////////////
 
@@ -118,7 +118,7 @@ namespace je { namespace math {
             return std::abs(a);
         }
 
-        static inline float abs(float a)
+        static inline f32 abs(f32 a)
         {
             JE_math_check_val(a);
             return std::fabs(a);
@@ -138,11 +138,11 @@ namespace je { namespace math {
         /**
          * Returns the fractional part of the number without sign.
          */
-        static inline float fractional(float a)
+        static inline f32 fractional(f32 a)
         {
             JE_math_check_val(a);
-            const float abs_a = fabsf(a);
-            const float rounded = floor(abs_a);
+            const f32 abs_a = fabsf(a);
+            const f32 rounded = floor(abs_a);
             return (abs_a - rounded);
         }
 
@@ -153,27 +153,27 @@ namespace je { namespace math {
          * @param out_int_part Floating point value that receives the integral part of the number.
          * @return			The fractional part of the number. This is without sign.
          */
-        static inline float integral_and_fractional(float a, float& out_int_part)
+        static inline f32 integral_and_fractional(f32 a, f32& out_int_part)
         {
             JE_math_check_val(a);
-            const float fractional = modff(a, &out_int_part);
+            const f32 fractional = modff(a, &out_int_part);
             return abs(fractional);
         }
 
-        static inline float pow(float a, float n)
+        static inline f32 pow(f32 a, f32 n)
         {
             JE_math_check_val(a);
             JE_math_check_val(n);
             return std::pow(a, n);
         }
 
-        static inline float pow2(float a)
+        static inline f32 pow2(f32 a)
         {
             JE_math_check_val(a);
             return a * a;
         }
 
-        static inline float pow3(float a)
+        static inline f32 pow3(f32 a)
         {
             JE_math_check_val(a);
             return a * a * a;
@@ -182,7 +182,7 @@ namespace je { namespace math {
         /**
          * Returns e^a.
          */
-        static inline float exp(float a)
+        static inline f32 exp(f32 a)
         {
             JE_math_check_val(a);
             return expf(a);
@@ -191,35 +191,35 @@ namespace je { namespace math {
         /**
          * Returns 2^a.
          */
-        static inline float exp2(float a)
+        static inline f32 exp2(f32 a)
         {
             return pow(2.0f, a);
         }
 
-        static inline float ln(float a)
+        static inline f32 ln(f32 a)
         {
             JE_math_check_val(a);
             return logf(a);
         }
 
-        static inline float log(float base, float a)
+        static inline f32 log(f32 base, f32 a)
         {
             return ln(a) / ln(base);
         }
 
-        static inline float log2(float a)
+        static inline f32 log2(f32 a)
         {
-            static const float inv_ln_2 = 1.0f / ln(2.0f);
+            static const f32 inv_ln_2 = 1.0f / ln(2.0f);
             return ln(a) * inv_ln_2;
         }
 
-        static inline float log10(float a)
+        static inline f32 log10(f32 a)
         {
-            static const float inv_ln_10 = 1.0f / ln(10.0f);
+            static const f32 inv_ln_10 = 1.0f / ln(10.0f);
             return ln(a) * inv_ln_10;
         }
 
-        static inline float sqrt(float a)
+        static inline f32 sqrt(f32 a)
         {
             JE_math_check_val(a);
             return sqrtf(a);
@@ -235,7 +235,7 @@ namespace je { namespace math {
          * This is forced to *NOT* inline so that divisions by constant Y does not get optimized in to an inverse sc multiply,
          * which is not consistent with the intent nor with the vectorized version.
          */
-        static float modf(float a, float b);
+        static f32 modf(f32 a, f32 b);
 
         // /////////////////////////
 
@@ -262,10 +262,10 @@ namespace je { namespace math {
             return (a >= 0) ? (a + b / 2) / b : (a - b / 2 + 1) / b;
         }
 
-        static inline float ceil(float a)
+        static inline f32 ceil(f32 a)
         {
             JE_math_check_val(a);
-            const float rounded_down = floor(a);
+            const f32 rounded_down = floor(a);
             if(is_almost_equal(a, rounded_down))
             {
                 return a;
@@ -276,10 +276,10 @@ namespace je { namespace math {
             }
         }
 
-        static inline float floor(float a)
+        static inline f32 floor(f32 a)
         {
             JE_math_check_val(a);
-            const float rounded_down = static_cast<float>(static_cast<int32_t>(a));
+            const f32 rounded_down = static_cast<f32>(static_cast<i32>(a));
             if(is_almost_equal(a, rounded_down))
             {
                 return a;
@@ -290,11 +290,11 @@ namespace je { namespace math {
             }
         }
 
-        static inline float round(float a)
+        static inline f32 round(f32 a)
         {
             JE_math_check_val(a);
-            const float rounded_down = floor(a);
-            const float rounded_down_plus_half = floor(enlarge(a, 0.5f));
+            const f32 rounded_down = floor(a);
+            const f32 rounded_down_plus_half = floor(enlarge(a, 0.5f));
             if(is_almost_equal(rounded_down, rounded_down_plus_half))
             {
                 return rounded_down;
@@ -309,12 +309,12 @@ namespace je { namespace math {
 
         // Trigonometry
 
-        static inline float sin(float a)
+        static inline f32 sin(f32 a)
         {
             return sinf(a); 
         }
         
-        static inline float asin(float a)
+        static inline f32 asin(f32 a)
         {
             return asinf( (a<-1.0f) ? -1.0f : ((a<1.0f) ? a : 1.0f) );
         }
@@ -322,51 +322,51 @@ namespace je { namespace math {
         /**
          * Borrowed from UE4.
          */
-        static inline float asin_fast(float a)
+        static inline f32 asin_fast(f32 a)
         {
             // Note:  We use FASTASIN_HALF_PI instead of HALF_PI inside of FastASin(), since it was the value that accompanied the minimax coefficients below.
             // It is important to use exactly the same value in all places inside this function to ensure that FastASin(0.0f) == 0.0f.
             // For comparison:
             //		HALF_PI				== 1.57079632679f == 0x3fC90FDB
             //		FASTASIN_HALF_PI	== 1.5707963050f  == 0x3fC90FDA
-            static const float k_fastasin_pi_2 = 1.5707963050f;
+            static const f32 k_fastasin_pi_2 = 1.5707963050f;
 
             // Clamp input to [-1,1].
             bool nonnegative = (a >= 0.0f);
-            float x = abs(a);
-            float omx = 1.0f - x;
+            f32 x = abs(a);
+            f32 omx = 1.0f - x;
             if (omx < 0.0f)
             {
                 omx = 0.0f;
             }
-            float root = sqrt(omx);
+            f32 root = sqrt(omx);
             // 7-degree minimax approximation
-            float result = ((((((-0.0012624911f * x + 0.0066700901f) * x - 0.0170881256f) * x + 0.0308918810f) * x - 0.0501743046f) * x + 0.0889789874f) * x - 0.2145988016f) * x + k_fastasin_pi_2;
+            f32 result = ((((((-0.0012624911f * x + 0.0066700901f) * x - 0.0170881256f) * x + 0.0308918810f) * x - 0.0501743046f) * x + 0.0889789874f) * x - 0.2145988016f) * x + k_fastasin_pi_2;
             result *= root;  // acos(|x|)
             // acos(x) = pi - acos(-x) when x < 0, asin(x) = pi/2 - acos(x)
             return (nonnegative ? k_fastasin_pi_2 - result : result - k_fastasin_pi_2);
         }
 
-        static inline float sinh(float a)
+        static inline f32 sinh(f32 a)
         {
             return sinhf(a);
         }
 
-        static inline float cos(float a)
+        static inline f32 cos(f32 a)
         {
             return cosf(a);
         }
-        static inline float acos(float a) 
+        static inline f32 acos(f32 a) 
         {
             return acosf( (a<-1.f) ? -1.f : ((a<1.f) ? a : 1.f) );
         }
 
-        static inline float tan(float a)
+        static inline f32 tan(f32 a)
         {
             return tanf(a);
         }
 
-        static inline float atan(float a)
+        static inline f32 atan(f32 a)
         {
             return atanf(a);
         }
@@ -374,22 +374,22 @@ namespace je { namespace math {
         /**
          * Borrowed from UE4.
          */
-        static inline sincos sin_cos(float a)
+        static inline sincos sin_cos(f32 a)
         {
             // Map Value to y in [-pi,pi], x = 2*pi*quotient + remainder.
-            float quotient = (constants::k_inv_pi_2) * a;
+            f32 quotient = (constants::k_inv_pi_2) * a;
             if (a >= 0.0f)
             {
-                quotient = (float)((int)(quotient + 0.5f));
+                quotient = (f32)((int)(quotient + 0.5f));
             }
             else
             {
-                quotient = (float)((int)(quotient - 0.5f));
+                quotient = (f32)((int)(quotient - 0.5f));
             }
-            float y = a - constants::k_2_pi * quotient;
+            f32 y = a - constants::k_2_pi * quotient;
 
             // Map y to [-pi/2,pi/2] with sin(y) = sin(a).
-            float sign;
+            f32 sign;
             if (y > constants::k_pi_2)
             {
                 y = constants::k_pi - y;
@@ -405,7 +405,7 @@ namespace je { namespace math {
                 sign = +1.0f;
             }
 
-            const float y2 = pow2(y);
+            const f32 y2 = pow2(y);
 
             sincos ret_val;
 
@@ -413,7 +413,7 @@ namespace je { namespace math {
             ret_val.sin = ( ( ( ( (-2.3889859e-08f * y2 + 2.7525562e-06f) * y2 - 0.00019840874f ) * y2 + 0.0083333310f ) * y2 - 0.16666667f ) * y2 + 1.0f ) * y;
 
             // 10-degree minimax approximation
-            const float p = ( ( ( ( -2.6051615e-07f * y2 + 2.4760495e-05f ) * y2 - 0.0013888378f ) * y2 + 0.041666638f ) * y2 - 0.5f ) * y2 + 1.0f;
+            const f32 p = ( ( ( ( -2.6051615e-07f * y2 + 2.4760495e-05f ) * y2 - 0.0013888378f ) * y2 + 0.041666638f ) * y2 - 0.5f ) * y2 + 1.0f;
             ret_val.cos = sign * p;
 
             return ret_val;
@@ -422,18 +422,18 @@ namespace je { namespace math {
         /**
          * Borrowed from UE4.
          */
-        static float atan2(float y, float x);
+        static f32 atan2(f32 y, f32 x);
 
         // /////////////////////////
 
         // Radians and angles
 
-        static float rad_to_deg(float rad)
+        static f32 rad_to_deg(f32 rad)
         {
             return rad * (180.0f / constants::k_pi);
         }
 
-        static float deg_to_rad(float deg)
+        static f32 deg_to_rad(f32 deg)
         {
             return deg * (constants::k_pi / 180.0f);
         }
@@ -441,7 +441,7 @@ namespace je { namespace math {
         /**
          * Keep the angle in degrees between -180, 180.
          */
-        static float unwind_deg(float deg)
+        static f32 unwind_deg(f32 deg)
         {
             while(deg > 180.0f)
             {
@@ -459,7 +459,7 @@ namespace je { namespace math {
         /**
          * Keep the angle in radians between -pi/2, .
          */
-        static float unwind_rad(float rad)
+        static f32 unwind_rad(f32 rad)
         {
             while(rad > constants::k_pi)
             {
@@ -478,9 +478,9 @@ namespace je { namespace math {
          * Borrowed from UE4.
          * Finds the smallest angle between two directions.
          */
-        static float find_delta_angle(float rad_a, float rad_b)
+        static f32 find_delta_angle(f32 rad_a, f32 rad_b)
         {
-            float delta = rad_b - rad_a;
+            f32 delta = rad_b - rad_a;
 
             if(delta > constants::k_pi)
             {
@@ -498,7 +498,7 @@ namespace je { namespace math {
     };
 
     template<>
-    inline bool sc::is_within(float a, float min, float max)
+    inline bool sc::is_within(f32 a, f32 min, f32 max)
     {
         JE_math_check_val(a);
         JE_math_check_val(min);
@@ -507,7 +507,7 @@ namespace je { namespace math {
     }
 
     template<>
-    inline bool sc::is_within_exclusive(float a, float min, float max)
+    inline bool sc::is_within_exclusive(f32 a, f32 min, f32 max)
     {
         JE_math_check_val(a);
         JE_math_check_val(min);
@@ -515,14 +515,14 @@ namespace je { namespace math {
         return a > min && a < max;
     }
 
-    inline bool sc::is_almost_equal(float a, float b)
+    inline bool sc::is_almost_equal(f32 a, f32 b)
     {
         JE_math_check_val(a);
         JE_math_check_val(b);
         return abs(a - b) <= constants::k_epsilon;
     }
 
-    inline bool sc::is_almost_zero(float a)
+    inline bool sc::is_almost_zero(f32 a)
     {
         JE_math_check_val(a);
         return abs(a) <= constants::k_epsilon;

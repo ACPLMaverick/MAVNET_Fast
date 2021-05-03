@@ -22,7 +22,7 @@ namespace je { namespace mem {
     base_allocator::base_allocator
     (
         base_allocator& a_allocator_from,
-        size_t a_num_bytes,
+        size a_num_bytes,
         alignment a_alignment /*= k_default_alignment */,
         const char* a_name/* = nullptr*/,
         allocator_debug_flags a_debug_flags /*= base_allocator::k_default_debug_flags*/
@@ -65,14 +65,14 @@ namespace je { namespace mem {
 #endif
     }
 
-    void* base_allocator::allocate(size_t a_num_bytes, alignment a_alignment)
+    void* base_allocator::allocate(size a_num_bytes, alignment a_alignment)
     {
         if(debug_process_before_allocate(a_num_bytes, a_alignment) == false)
         {
             return nullptr;
         }
 
-        size_t bytes_allocated = 0;
+        size bytes_allocated = 0;
         void* mem = allocate_internal(a_num_bytes, a_alignment, bytes_allocated);
 
         debug_process_after_allocate(a_num_bytes, a_alignment, mem, bytes_allocated);
@@ -87,13 +87,13 @@ namespace je { namespace mem {
             return;
         }
 
-        size_t num_bytes_freed = 0;
+        size num_bytes_freed = 0;
         const bool free_succeeded = free_internal(a_memory, num_bytes_freed);
 
         debug_process_after_free(free_succeeded, num_bytes_freed);
     }
 
-    bool base_allocator::debug_process_before_allocate(size_t a_num_bytes, alignment a_alignment)
+    bool base_allocator::debug_process_before_allocate(size a_num_bytes, alignment a_alignment)
     {
         JE_assert_bailout(a_num_bytes > 0, false,
             "Zero allocation is not possible.");
@@ -111,7 +111,7 @@ namespace je { namespace mem {
         return true;
     }
 
-    void base_allocator::debug_process_after_allocate(size_t a_num_bytes, alignment a_alignment, void* a_memory, size_t a_bytes_allocated)
+    void base_allocator::debug_process_after_allocate(size a_num_bytes, alignment a_alignment, void* a_memory, size a_bytes_allocated)
     {
 #if JE_DEBUG_ALLOCATIONS
         if(m_debug_flags & allocator_debug_flags::k_count_allocations)
@@ -159,7 +159,7 @@ namespace je { namespace mem {
 
         if(m_memory != nullptr)
         {
-            const uintptr_t memory_uint = reinterpret_cast<uintptr_t>(a_memory);
+            const uptr memory_uint = reinterpret_cast<uptr>(a_memory);
             const mem_ptr m_memory_ptr(m_memory);
             JE_assert(memory_uint >= m_memory_ptr
                 && memory_uint < m_memory_ptr + m_memory_num_bytes,
@@ -179,7 +179,7 @@ namespace je { namespace mem {
         return true;
     }
 
-    void base_allocator::debug_process_after_free(bool a_free_succeeded, size_t a_num_bytes_freed)
+    void base_allocator::debug_process_after_free(bool a_free_succeeded, size a_num_bytes_freed)
     {
 #if JE_DEBUG_ALLOCATIONS
         if(m_debug_flags & allocator_debug_flags::k_count_allocations)
@@ -263,17 +263,17 @@ namespace je { namespace mem {
         }
         else
         {
-            const uintptr_t num = *this;
-            const uintptr_t alignment_num = static_cast<uintptr_t>(a_alignment);
-            const uintptr_t all_ones = alignment_num - 1;
+            const uptr num = *this;
+            const uptr alignment_num = static_cast<uptr>(a_alignment);
+            const uptr all_ones = alignment_num - 1;
 
             *this = ((num + alignment_num) & (~all_ones));
         }
     }
 
-    size_t base_allocator::mem_ptr::align_adjust(alignment a_alignment, size_t a_additional_num_bytes)
+    size base_allocator::mem_ptr::align_adjust(alignment a_alignment, size a_additional_num_bytes)
     {
-        size_t old = *this;
+        size old = *this;
         *this += a_additional_num_bytes;
         align(a_alignment);
         return *this - old;
@@ -286,10 +286,10 @@ namespace je { namespace mem {
             return true;
         }
 
-        const uintptr_t num = *this;
-        const uintptr_t alignment_num = static_cast<uintptr_t>(a_alignment);
+        const uptr num = *this;
+        const uptr alignment_num = static_cast<uptr>(a_alignment);
 
-        const uintptr_t all_ones = alignment_num - 1;
+        const uptr all_ones = alignment_num - 1;
         return (num & all_ones) == 0;
     }
 }}

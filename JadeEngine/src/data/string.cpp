@@ -67,7 +67,7 @@ namespace je { namespace data {
         {
             // http://www.cse.yorku.ca/~oz/hash.html - djb2.
             m_value = 5381;
-            uint32_t c = 0;
+            u32 c = 0;
             while ((c = *(a_str++)) != 0)
                 m_value = ((m_value << 5) + m_value) + c; /* hash * 33 + c */
         }
@@ -90,7 +90,7 @@ namespace je { namespace data {
         create_from_str(a_str, 0);
     }
 
-    string::string(size_t a_num_chars_to_have)
+    string::string(size a_num_chars_to_have)
         : m_chars()
         , m_hash(nullptr)
     {
@@ -172,7 +172,7 @@ namespace je { namespace data {
         return str;
     }
     
-    string string::from_int64(int64_t a_value)
+    string string::from_int64(i64 a_value)
     {
         static const char_type* k_fmt = "%lld";
         const int char_num = std::snprintf(nullptr, 0, k_fmt, a_value);
@@ -190,7 +190,7 @@ namespace je { namespace data {
         }
     }
     
-    string string::from_uint64(uint64_t a_value)
+    string string::from_uint64(u64 a_value)
     {
         static const char_type* k_fmt = "%llu";
         const int char_num = std::snprintf(nullptr, 0, k_fmt, a_value);
@@ -208,7 +208,7 @@ namespace je { namespace data {
         }
     }
     
-    string string::from_int32(int32_t a_value)
+    string string::from_int32(i32 a_value)
     {
         static const char_type* k_fmt = "%d";
         const int char_num = std::snprintf(nullptr, 0, k_fmt, a_value);
@@ -226,7 +226,7 @@ namespace je { namespace data {
         }
     }
     
-    string string::from_uint32(uint32_t a_value)
+    string string::from_uint32(u32 a_value)
     {
         static const char_type* k_fmt = "%u";
         const int char_num = std::snprintf(nullptr, 0, k_fmt, a_value);
@@ -244,14 +244,14 @@ namespace je { namespace data {
         }
     }
     
-    string string::from_float(float a_value, size_t a_decimal_places/* = std::numeric_limits<size_t>::max()*/)
+    string string::from_float(f32 a_value, size a_decimal_places/* = std::numeric_limits<size>::max()*/)
     {
         static const char_type* k_fmt_base = "%f";
-        static const size_t k_fmt_dec_buf_size = 6;
+        static const size k_fmt_dec_buf_size = 6;
         static thread_local char_type k_fmt_dec_buf[k_fmt_dec_buf_size] = {};
 
         const char_type* fmt = k_fmt_base;
-        if(a_decimal_places != std::numeric_limits<size_t>::max())
+        if(a_decimal_places != std::numeric_limits<size>::max())
         {
             static const char_type* k_fmt_dec = ".%d";
             const int num_chars = std::snprintf(k_fmt_dec_buf + 1, k_fmt_dec_buf_size - 3, k_fmt_dec, a_decimal_places);
@@ -276,77 +276,77 @@ namespace je { namespace data {
         }
     }
 
-    string string::from_substring(const char_type* a_str, size_t a_idx_start, size_t a_idx_end)
+    string string::from_substring(const char_type* a_str, size a_idx_start, size a_idx_end)
     {
         return from_substring_common(a_str, std::strlen(a_str), a_idx_start, a_idx_end);
     }
 
-    string string::from_substring(const string& a_str, size_t a_idx_start, size_t a_idx_end)
+    string string::from_substring(const string& a_str, size a_idx_start, size a_idx_end)
     {
         return from_substring_common(a_str.get_data(), a_str.get_size(), a_idx_start, a_idx_end);
     }
 
-    int64_t string::parse_int64(const char_type* a_str)
+    i64 string::parse_int64(const char_type* a_str)
     {
         JE_assert(a_str != nullptr, "Passing a null c-string to parse function.");
-        int64_t val = std::strtoll(a_str, nullptr, 10);
+        i64 val = std::strtoll(a_str, nullptr, 10);
         JE_assert(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
         return val;
     }
 
-    uint64_t string::parse_uint64(const char_type* a_str)
+    u64 string::parse_uint64(const char_type* a_str)
     {
         JE_assert(a_str != nullptr, "Passing a null c-string to parse function.");
-        uint64_t val = std::strtoull(a_str, nullptr, 10);
+        u64 val = std::strtoull(a_str, nullptr, 10);
         JE_assert(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
         return val;
     }
 
-    int32_t string::parse_int32(const char_type* a_str)
+    i32 string::parse_int32(const char_type* a_str)
     {
         JE_assert(a_str != nullptr, "Passing a null c-string to parse function.");
-        int32_t val = std::strtol(a_str, nullptr, 10);
+        i32 val = std::strtol(a_str, nullptr, 10);
         JE_assert(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
         return val;
     }
 
-    uint32_t string::parse_uint32(const char_type* a_str)
+    u32 string::parse_uint32(const char_type* a_str)
     {
         JE_assert(a_str != nullptr, "Passing a null c-string to parse function.");
-        uint32_t val = std::strtoul(a_str, nullptr, 10);
+        u32 val = std::strtoul(a_str, nullptr, 10);
         JE_assert(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
         return val;
     }
 
-    float string::parse_float(const char_type* a_str)
+    f32 string::parse_float(const char_type* a_str)
     {
         JE_assert(a_str != nullptr, "Passing a null c-string to parse function.");
-        float val = std::strtof(a_str, nullptr);
+        f32 val = std::strtof(a_str, nullptr);
         JE_assert(errno != ERANGE, "Parsing a number [%s] failed.", a_str);
         return val;
     }
 
-    int64_t string::parse_int64(const string& a_str)
+    i64 string::parse_int64(const string& a_str)
     {
         return parse_int64(a_str.get_data());
     }
 
-    uint64_t string::parse_uint64(const string& a_str)
+    u64 string::parse_uint64(const string& a_str)
     {
         return parse_uint64(a_str.get_data());
     }
 
-    int32_t string::parse_int32(const string& a_str)
+    i32 string::parse_int32(const string& a_str)
     {
         return parse_int32(a_str.get_data());
     }
 
-    uint32_t string::parse_uint32(const string& a_str)
+    u32 string::parse_uint32(const string& a_str)
     {
         return parse_uint32(a_str.get_data());
     }
 
-    float string::parse_float(const string& a_str)
+    f32 string::parse_float(const string& a_str)
     {
         return parse_float(a_str.get_data());
     }
@@ -359,7 +359,7 @@ namespace je { namespace data {
         chars_have_changed();
     }
     
-    void string::resize(size_t a_num_chars, char_type a_char_to_fill/* = char_end*/)
+    void string::resize(size a_num_chars, char_type a_char_to_fill/* = char_end*/)
     {
         m_chars.resize(a_num_chars + 1);
         std::memset(m_chars.data(), static_cast<int>(a_char_to_fill), a_num_chars * sizeof(char_type));
@@ -367,13 +367,13 @@ namespace je { namespace data {
         chars_have_changed();
     }
     
-    void string::reserve(size_t a_num_chars)
+    void string::reserve(size a_num_chars)
     {
         m_chars.reserve(a_num_chars + 1);
     }
     
 
-    size_t string::get_size() const
+    size string::get_size() const
     {
         // TODO: Better idea to use strlen for this?
         JE_assert(m_chars.size() > 0, "Bad chars array size.");
@@ -389,8 +389,8 @@ namespace je { namespace data {
     {
         JE_check_str_bailout_ret(a_str, false);
 
-        const size_t my_size = get_size();
-        size_t i = 0;
+        const size my_size = get_size();
+        size i = 0;
         for(/**/; a_str[i] != char_end && i < my_size; ++i)
         {
             const char_type my_char = m_chars[i];
@@ -415,11 +415,11 @@ namespace je { namespace data {
     {
         JE_check_str_bailout_ret(a_str, false);
 
-        const size_t other_size = std::strlen(a_str);
-        const size_t my_size = get_size();
+        const size other_size = std::strlen(a_str);
+        const size my_size = get_size();
 
-        size_t io = other_size - 1;
-        size_t im = my_size - 1;
+        size io = other_size - 1;
+        size im = my_size - 1;
         for(/**/; io < other_size && im < my_size; --io, --im)
         {
             const char_type my_char = m_chars[im];
@@ -432,7 +432,7 @@ namespace je { namespace data {
 
         // If the iterator has reached 0 MY string, it means that OTHER string has the same ending but it's longer.
         // Return false in this case.
-        return im < my_size || (im == std::numeric_limits<size_t>::max() && io == std::numeric_limits<size_t>::max());
+        return im < my_size || (im == std::numeric_limits<size>::max() && io == std::numeric_limits<size>::max());
     }
     
     bool string::is_ending_with(const string& a_str) const
@@ -454,7 +454,7 @@ namespace je { namespace data {
     }
     
 
-    string::char_type string::operator[](size_t a_index) const
+    string::char_type string::operator[](size a_index) const
     {
         JE_assert(a_index < get_size(), "Invalid index.");
         return m_chars[a_index];
@@ -474,7 +474,7 @@ namespace je { namespace data {
     void string::append(const char_type* a_str)
     {
         JE_check_str_bailout(a_str);
-        const size_t num_chars = std::strlen(a_str);
+        const size num_chars = std::strlen(a_str);
         append_common(a_str, num_chars);
     }
     
@@ -514,40 +514,40 @@ namespace je { namespace data {
     }
     
     
-    void string::insert(const char_type* a_str, size_t a_idx_dest/* = invalid_idx*/,
-        size_t a_idx_src_start/* = invalid_idx*/, size_t a_idx_src_end/* = invalid_idx*/)
+    void string::insert(const char_type* a_str, size a_idx_dest/* = invalid_idx*/,
+        size a_idx_src_start/* = invalid_idx*/, size a_idx_src_end/* = invalid_idx*/)
     {
         JE_check_str_bailout(a_str);
-        const size_t num_chars = std::strlen(a_str);
+        const size num_chars = std::strlen(a_str);
         insert_common(a_str, num_chars, a_idx_dest, a_idx_src_start, a_idx_src_end);
     }
     
-    void string::insert(const string& a_str, size_t a_idx_dest/* = invalid_idx*/,
-        size_t a_idx_src_start/* = invalid_idx*/, size_t a_idx_src_end/* = invalid_idx*/)
+    void string::insert(const string& a_str, size a_idx_dest/* = invalid_idx*/,
+        size a_idx_src_start/* = invalid_idx*/, size a_idx_src_end/* = invalid_idx*/)
     {
         insert_common(a_str.get_data(), a_str.get_size(), a_idx_dest, a_idx_src_start, a_idx_src_end);
     }
     
-    void string::replace(const char_type* a_str, size_t a_idx_dest_start/* = invalid_idx*/,
-        size_t a_idx_dest_end/* = invalid_idx*/, size_t a_idx_src_start/* = invalid_idx*/,
-        size_t a_idx_src_end/* = invalid_idx*/)
+    void string::replace(const char_type* a_str, size a_idx_dest_start/* = invalid_idx*/,
+        size a_idx_dest_end/* = invalid_idx*/, size a_idx_src_start/* = invalid_idx*/,
+        size a_idx_src_end/* = invalid_idx*/)
     {
         JE_check_str_bailout(a_str);
-        const size_t num_chars = std::strlen(a_str);
+        const size num_chars = std::strlen(a_str);
         replace_common(a_str, num_chars, a_idx_dest_start, a_idx_dest_end, a_idx_src_start, a_idx_src_end);
         chars_have_changed();
     }
     
-    void string::replace(const string& a_str, size_t a_idx_dest_start/* = invalid_idx*/,
-        size_t a_idx_dest_end/* = invalid_idx*/,
-        size_t a_idx_src_start/* = invalid_idx*/, size_t a_idx_src_end/* = invalid_idx*/)
+    void string::replace(const string& a_str, size a_idx_dest_start/* = invalid_idx*/,
+        size a_idx_dest_end/* = invalid_idx*/,
+        size a_idx_src_start/* = invalid_idx*/, size a_idx_src_end/* = invalid_idx*/)
     {
         replace_common(a_str.get_data(), a_str.get_size(), a_idx_dest_start, a_idx_dest_end, a_idx_src_start, a_idx_src_end);
         chars_have_changed();
     }
 
 
-    void string::erase(size_t a_idx_start, size_t a_idx_end)
+    void string::erase(size a_idx_start, size a_idx_end)
     {
         erase_common(a_idx_start, a_idx_end);
         chars_have_changed();
@@ -559,8 +559,8 @@ namespace je { namespace data {
         JE_check_str_bailout_ret(a_str_to_find, false);
         // To_replace_it_with can be an empty string.
         JE_assert_bailout(a_str_to_replace_it_with != nullptr, false, "Null argument.");
-        const size_t num_chars_to_find = std::strlen(a_str_to_find);
-        const size_t num_chars_to_replace = std::strlen(a_str_to_replace_it_with);
+        const size num_chars_to_find = std::strlen(a_str_to_find);
+        const size num_chars_to_replace = std::strlen(a_str_to_replace_it_with);
         return find_and_replace_common(a_str_to_find, num_chars_to_find, a_str_to_replace_it_with, num_chars_to_replace);
     }
 
@@ -573,14 +573,14 @@ namespace je { namespace data {
     {
         // To_replace_it_with can be an empty string.
         JE_assert_bailout(a_str_to_replace_it_with != nullptr, false, "Null argument.");
-        const size_t num_chars_to_replace = std::strlen(a_str_to_replace_it_with);
+        const size num_chars_to_replace = std::strlen(a_str_to_replace_it_with);
         return find_and_replace_common(a_str_to_find.get_data(), a_str_to_find.get_size(), a_str_to_replace_it_with, num_chars_to_replace);
     }
 
     bool string::find_and_replace(const char_type* a_str_to_find, const string& a_str_to_replace_it_with)
     {
         JE_check_str_bailout_ret(a_str_to_find, false);
-        const size_t num_chars_to_find = std::strlen(a_str_to_find);
+        const size num_chars_to_find = std::strlen(a_str_to_find);
         return find_and_replace_common(a_str_to_find, num_chars_to_find, a_str_to_replace_it_with.get_data(), a_str_to_replace_it_with.get_size());
     }
     
@@ -592,8 +592,8 @@ namespace je { namespace data {
             return;
         }
 
-        const size_t my_char_num = m_chars.size();
-        const size_t other_char_num = a_str.m_chars.size();
+        const size my_char_num = m_chars.size();
+        const size other_char_num = a_str.m_chars.size();
 
         if(other_char_num > my_char_num)
         {
@@ -617,13 +617,13 @@ namespace je { namespace data {
     }
 
     
-    void string::substring(size_t a_idx_start, size_t a_idx_end)
+    void string::substring(size a_idx_start, size a_idx_end)
     {
         JE_assert_bailout(a_idx_start < get_size(), , "Invalid argument.");
         JE_assert_bailout(a_idx_end < get_size(), , "Invalid argument.");
         JE_assert_bailout(a_idx_end >= a_idx_start, , "Invalid argument.");
 
-        const size_t new_size = a_idx_end - a_idx_start + 1;
+        const size new_size = a_idx_end - a_idx_start + 1;
 
         // If necessary, move the substring block to the front, and then erase remaining chars.
         if(a_idx_start > 0)
@@ -639,12 +639,12 @@ namespace je { namespace data {
         chars_have_changed();
     }
     
-    void string::trim_front(size_t a_num_chars)
+    void string::trim_front(size a_num_chars)
     {
         substring(a_num_chars, get_size() - 1);
     }
     
-    void string::trim_end(size_t a_num_chars)
+    void string::trim_end(size a_num_chars)
     {
         substring(0, get_size() - (a_num_chars + 1));
     }
@@ -660,14 +660,14 @@ namespace je { namespace data {
     }
     
 
-    size_t string::find(const char_type* a_str) const
+    size string::find(const char_type* a_str) const
     {
         JE_check_str_bailout_ret(a_str, invalid_idx);
-        const size_t num_chars = std::strlen(a_str);
+        const size num_chars = std::strlen(a_str);
         return find_common(a_str, num_chars);
     }
     
-    size_t string::find(const string& a_str) const
+    size string::find(const string& a_str) const
     {
         return find_common(a_str.get_data(), a_str.get_size());
     }
@@ -686,9 +686,9 @@ namespace je { namespace data {
     void string::to_upper_case()
     {
         bool chars_changed = false;
-        const size_t my_size = get_size();
+        const size my_size = get_size();
 
-        for(size_t i = 0; i < my_size; ++i)
+        for(size i = 0; i < my_size; ++i)
         {
             if(is_lower_case(m_chars[i]))
             {
@@ -706,9 +706,9 @@ namespace je { namespace data {
     void string::to_lower_case()
     {
         bool chars_changed = false;
-        const size_t my_size = get_size();
+        const size my_size = get_size();
 
-        for(size_t i = 0; i < my_size; ++i)
+        for(size i = 0; i < my_size; ++i)
         {
             if(is_upper_case(m_chars[i]))
             {
@@ -726,10 +726,10 @@ namespace je { namespace data {
     void string::to_capitalized_case()
     {
         bool chars_changed = false;
-        const size_t my_size = get_size();
+        const size my_size = get_size();
         bool should_capitalize = true;
 
-        for(size_t i = 0; i < my_size; ++i)
+        for(size i = 0; i < my_size; ++i)
         {
             const bool is_upper = is_upper_case(m_chars[i]);
             const bool is_lower = is_lower_case(m_chars[i]);
@@ -773,8 +773,8 @@ namespace je { namespace data {
     
     bool string::is_upper_case() const
     {
-        const size_t my_size = get_size();
-        for(size_t i = 0; i < my_size; ++i)
+        const size my_size = get_size();
+        for(size i = 0; i < my_size; ++i)
         {
             if(is_lower_case(m_chars[i]))
             {
@@ -786,8 +786,8 @@ namespace je { namespace data {
     
     bool string::is_lower_case() const
     {
-        const size_t my_size = get_size();
-        for(size_t i = 0; i < my_size; ++i)
+        const size my_size = get_size();
+        for(size i = 0; i < my_size; ++i)
         {
             if(is_upper_case(m_chars[i]))
             {
@@ -798,13 +798,13 @@ namespace je { namespace data {
     }
 
 
-    inline string string::from_substring_common(const char_type* a_str, size_t a_num_chars, size_t a_idx_start, size_t a_idx_end)
+    inline string string::from_substring_common(const char_type* a_str, size a_num_chars, size a_idx_start, size a_idx_end)
     {
         JE_assert_bailout(a_idx_start < a_num_chars, string(nullptr), "Invalid argument.");
         JE_assert_bailout(a_idx_end < a_num_chars, string(nullptr), "Invalid argument.");
         JE_assert_bailout(a_idx_end >= a_idx_start, string(nullptr), "Invalid argument.");
 
-        const size_t new_size = a_idx_end - a_idx_start + 1;
+        const size new_size = a_idx_end - a_idx_start + 1;
         string new_string(new_size);
         std::memcpy(&new_string.m_chars[0], a_str + a_idx_start, new_size * sizeof(char_type));
         new_string.m_chars[new_string.m_chars.size() - 1] = char_end;
@@ -813,9 +813,9 @@ namespace je { namespace data {
         return new_string;
     }
 
-    inline void string::append_common(const char_type* a_str, size_t a_num_chars)
+    inline void string::append_common(const char_type* a_str, size a_num_chars)
     {
-        const size_t prev_zero_idx = get_size();
+        const size prev_zero_idx = get_size();
         m_chars.resize(m_chars.size() + a_num_chars);
         std::memcpy(&m_chars[prev_zero_idx], a_str, a_num_chars * sizeof(char_type));
         m_chars[m_chars.size() - 1] = char_end;
@@ -823,10 +823,10 @@ namespace je { namespace data {
         chars_have_changed();
     }
 
-    inline void string::insert_common(const char_type* a_str, size_t a_num_chars,
-        size_t a_idx_dest, size_t a_idx_src_start, size_t a_idx_src_end)
+    inline void string::insert_common(const char_type* a_str, size a_num_chars,
+        size a_idx_dest, size a_idx_src_start, size a_idx_src_end)
     {
-        const size_t my_size = get_size();
+        const size my_size = get_size();
         if(a_idx_dest == invalid_idx)
         {
             a_idx_dest = my_size;
@@ -845,16 +845,16 @@ namespace je { namespace data {
             && a_idx_src_start < a_idx_src_end,
             "Invalid indices for string operation.");
 
-        const size_t num_chars_to_insert = a_idx_src_end - a_idx_src_start + 1;
+        const size num_chars_to_insert = a_idx_src_end - a_idx_src_start + 1;
 
-        const size_t m_prev_size_with_end_char = m_chars.size();
+        const size m_prev_size_with_end_char = m_chars.size();
         m_chars.resize(m_chars.size() + num_chars_to_insert);
         char_type* place_to_insert = &m_chars[a_idx_dest];
         if(a_idx_dest != my_size)
         {
             // Want to insert chars in the middle of the string - need to move the remaining part first.
             char_type* dst = place_to_insert + num_chars_to_insert;
-            const size_t num_chars_to_move = m_prev_size_with_end_char - a_idx_dest - 1;
+            const size num_chars_to_move = m_prev_size_with_end_char - a_idx_dest - 1;
             std::memmove(dst, place_to_insert, num_chars_to_move * sizeof(char_type));
         }
 
@@ -866,10 +866,10 @@ namespace je { namespace data {
         chars_have_changed();
     }
     
-    inline void string::replace_common(const char_type* a_str, size_t a_num_chars, size_t a_idx_dest_start,
-        size_t a_idx_dest_end, size_t a_idx_src_start, size_t a_idx_src_end)
+    inline void string::replace_common(const char_type* a_str, size a_num_chars, size a_idx_dest_start,
+        size a_idx_dest_end, size a_idx_src_start, size a_idx_src_end)
     {
-        const size_t my_size = get_size();
+        const size my_size = get_size();
         if(a_idx_dest_start == invalid_idx)
         {
             a_idx_dest_start = 0;
@@ -893,13 +893,13 @@ namespace je { namespace data {
         JE_assert(a_idx_src_end < a_num_chars, "Invalid indices for string operation.");
         JE_assert(a_idx_src_start <= a_idx_src_end, "Invalid indices for string operation.");
 
-        const size_t num_chars_src = a_idx_src_end - a_idx_src_start + 1;
-        const size_t num_chars_dst = a_idx_dest_end - a_idx_dest_start + 1;
+        const size num_chars_src = a_idx_src_end - a_idx_src_start + 1;
+        const size num_chars_dst = a_idx_dest_end - a_idx_dest_start + 1;
 
         if(num_chars_dst > num_chars_src)
         {
             // We need to shrink the remaining characters.
-            const size_t diff = num_chars_dst - num_chars_src;
+            const size diff = num_chars_dst - num_chars_src;
             char_type* move_source = &m_chars[0] + a_idx_dest_end;
             char_type* move_dest = move_source - diff;
             std::memmove(move_dest, move_source, my_size - a_idx_dest_end + 1);
@@ -912,7 +912,7 @@ namespace je { namespace data {
         else
         {
             // We need to enlarge array AFTER dst and then copy.
-            const size_t diff = num_chars_src - num_chars_dst;
+            const size diff = num_chars_src - num_chars_dst;
             m_chars.resize(m_chars.size() + diff);  // Possible reallocation.
             char_type* move_source = &m_chars[0] + a_idx_dest_end + 1;
             char_type* move_dest = move_source + diff;
@@ -925,9 +925,9 @@ namespace je { namespace data {
         std::memcpy(dest, src, num_chars_src);
     }
 
-    inline void string::erase_common(size_t a_idx_start, size_t a_idx_end)
+    inline void string::erase_common(size a_idx_start, size a_idx_end)
     {
-        const size_t my_size = get_size();
+        const size my_size = get_size();
         JE_assert_bailout(a_idx_start < my_size, , "Invalid argument.");
         JE_assert_bailout(a_idx_end >= a_idx_start, , "Invalid argument.");
 
@@ -938,19 +938,19 @@ namespace je { namespace data {
 
         // We need basically to move the remainder and shrink the string by this number of chars.
 
-        const size_t move_amount = a_idx_end - a_idx_start + 1;
+        const size move_amount = a_idx_end - a_idx_start + 1;
         char_type* move_dest = &m_chars[a_idx_start];
         const char_type* move_src = move_dest + move_amount;
-        const size_t chars_to_move = &(m_chars[m_chars.size() - 1]) - move_src + 1;
+        const size chars_to_move = &(m_chars[m_chars.size() - 1]) - move_src + 1;
         std::memmove(move_dest, move_src, chars_to_move * sizeof(char_type));
 
         remove_excessive_chars_at_end(my_size - move_amount + 1);
     }
 
-    inline bool string::find_and_replace_common(const char_type* a_str_to_find, size_t a_str_to_find_num_chars,
-        const char_type* a_str_to_replace_it_with, size_t a_str_to_replace_it_with_num_chars)
+    inline bool string::find_and_replace_common(const char_type* a_str_to_find, size a_str_to_find_num_chars,
+        const char_type* a_str_to_replace_it_with, size a_str_to_replace_it_with_num_chars)
     {
-        size_t str_idx = 0;
+        size str_idx = 0;
         while((str_idx = find_common(a_str_to_find, a_str_to_find_num_chars, str_idx)) != invalid_idx)
         {
             if(a_str_to_replace_it_with_num_chars > 0)
@@ -977,15 +977,15 @@ namespace je { namespace data {
         }
     }
 
-    inline size_t string::find_common(const char_type* a_str, size_t a_num_chars, size_t a_char_to_start_from/* = 0*/) const
+    inline size string::find_common(const char_type* a_str, size a_num_chars, size a_char_to_start_from/* = 0*/) const
     {
         // Simple forward search for now.
-        size_t current_char_idx = a_char_to_start_from;
+        size current_char_idx = a_char_to_start_from;
         while(current_char_idx < (m_chars.size() - 1))
         {
             const char_type* ptr = &m_chars[current_char_idx];
             JE_unused(ptr);
-            size_t num_traversed = 0;
+            size num_traversed = 0;
             bool is_find_failed = false;
             while(num_traversed < a_num_chars)
             {
@@ -1010,16 +1010,16 @@ namespace je { namespace data {
         return invalid_idx;
     }
 
-    inline void string::split_common(const char_type* a_split_on, size_t a_split_on_num_chars, array<string>& a_out_strings) const
+    inline void string::split_common(const char_type* a_split_on, size a_split_on_num_chars, array<string>& a_out_strings) const
     {
-        size_t prev_found_idx = invalid_idx;
-        size_t curr_found_idx = 0;
+        size prev_found_idx = invalid_idx;
+        size curr_found_idx = 0;
         while((curr_found_idx = find_common(a_split_on, a_split_on_num_chars, curr_found_idx)) != invalid_idx)
         {
             // End-idx is exclusive here.
-            const size_t start_idx = (prev_found_idx != invalid_idx ? (prev_found_idx + a_split_on_num_chars) : 0);
-            const size_t end_idx = curr_found_idx;
-            const size_t part_num_chars = end_idx - start_idx;
+            const size start_idx = (prev_found_idx != invalid_idx ? (prev_found_idx + a_split_on_num_chars) : 0);
+            const size end_idx = curr_found_idx;
+            const size part_num_chars = end_idx - start_idx;
             if(part_num_chars > 0)
             {
                 string new_str(from_substring_common(get_data(), get_size(), start_idx, end_idx - 1));
@@ -1032,10 +1032,10 @@ namespace je { namespace data {
         if(prev_found_idx != 0)
         {
             // If this is different than zero, it means we need to add the last part - from this idx to the end.
-            const size_t end_idx = get_size();
+            const size end_idx = get_size();
             if(end_idx > (prev_found_idx + a_split_on_num_chars))
             {
-                const size_t last_part_num_chars = end_idx - (prev_found_idx + a_split_on_num_chars);
+                const size last_part_num_chars = end_idx - (prev_found_idx + a_split_on_num_chars);
                 if(last_part_num_chars > 0)
                 {
                     string new_str(from_substring_common(get_data(), get_size(), prev_found_idx + a_split_on_num_chars, end_idx - 1));
@@ -1045,7 +1045,7 @@ namespace je { namespace data {
         }
     }
 
-    inline void string::create_from_str(const char_type* a_str, size_t a_idx_start, size_t a_idx_end /*= invalid_idx*/)
+    inline void string::create_from_str(const char_type* a_str, size a_idx_start, size a_idx_end /*= invalid_idx*/)
     {
         JE_assert(a_idx_end >= a_idx_start, "Invalid argument.");
         if(a_str == nullptr
@@ -1063,7 +1063,7 @@ namespace je { namespace data {
             m_chars.push_back(*a_str);
         } while(*(++a_str) != char_end);
         */
-        const size_t len = (a_idx_end != invalid_idx ? a_idx_end : std::strlen(a_str)) - a_idx_start;
+        const size len = (a_idx_end != invalid_idx ? a_idx_end : std::strlen(a_str)) - a_idx_start;
         JE_assert(len > 0, "Invalid input string.");
         if(len > 0)
         {
@@ -1087,7 +1087,7 @@ namespace je { namespace data {
         m_hash.build(get_data());
     }
 
-    inline void string::remove_excessive_chars_at_end(size_t a_new_char_num)
+    inline void string::remove_excessive_chars_at_end(size a_new_char_num)
     {
         if(m_chars.size() > a_new_char_num)
         {

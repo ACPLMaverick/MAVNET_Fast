@@ -6,8 +6,8 @@
 
     pool_allocator::pool_allocator(
         base_allocator& a_allocator_from,
-        size_t a_object_num_bytes,
-        size_t a_num_objects,
+        size a_object_num_bytes,
+        size a_num_objects,
         alignment a_alignment /*= k_default_alignment*/,
         const char* a_name/* = nullptr*/,
         allocator_debug_flags a_debug_flags /*= base_allocator::k_default_debug_flags*/)
@@ -40,7 +40,7 @@
     }
 
     pool_allocator::mem_ptr pool_allocator::allocate_internal(
-        size_t a_num_bytes, alignment a_alignment, size_t& a_out_num_bytes_allocated)
+        size a_num_bytes, alignment a_alignment, size& a_out_num_bytes_allocated)
     {
 #if JE_DEBUG_ALLOCATIONS
         JE_assert(a_num_bytes == m_object_num_bytes, "Passing wrong num_bytes to allocate function of a pool!")
@@ -73,7 +73,7 @@
     }
 
     bool pool_allocator::free_internal(
-        mem_ptr a_memory, size_t& a_out_num_bytes_freed)
+        mem_ptr a_memory, size& a_out_num_bytes_freed)
     {
         free_block* this_free_block = a_memory.cast<free_block>();
         this_free_block->m_next = m_first_free_block;

@@ -7,7 +7,7 @@ namespace je { namespace mem {
     system_allocator::system_allocator(const char* a_name/* = nullptr*/, allocator_debug_flags a_debug_flags /*= base_allocator::k_default_debug_flags*/)
         : base_allocator(a_name, a_debug_flags)
     {
-        const_cast<size_t&>(m_memory_num_bytes) = std::numeric_limits<size_t>::max();
+        const_cast<size&>(m_memory_num_bytes) = std::numeric_limits<size>::max();
     }
 
     system_allocator::~system_allocator()
@@ -15,14 +15,14 @@ namespace je { namespace mem {
         conditionally_print_stack_trace();
     }
 
-    system_allocator::mem_ptr system_allocator::allocate_internal(size_t a_num_bytes,
-        alignment a_alignment, size_t& a_out_num_bytes_allocated)
+    system_allocator::mem_ptr system_allocator::allocate_internal(size a_num_bytes,
+        alignment a_alignment, size& a_out_num_bytes_allocated)
     {
         void* mem = 
 #if JE_PLATFORM_WINDOWS
-            _aligned_malloc(a_num_bytes, static_cast<size_t>(a_alignment));
+            _aligned_malloc(a_num_bytes, static_cast<size>(a_alignment));
 #elif JE_PLATFORM_LINUX || JE_PLATFORM_ANDROID
-            aligned_alloc(static_cast<size_t>(a_alignment), a_num_bytes);
+            aligned_alloc(static_cast<size>(a_alignment), a_num_bytes);
 #else
 #error "Implement allocate_internal."
             nullptr;
@@ -39,7 +39,7 @@ namespace je { namespace mem {
         return mem;
     }
 
-    bool system_allocator::free_internal(mem_ptr a_memory, size_t& a_out_num_bytes_freed)
+    bool system_allocator::free_internal(mem_ptr a_memory, size& a_out_num_bytes_freed)
     {
 #if JE_PLATFORM_WINDOWS
         _aligned_free(a_memory);

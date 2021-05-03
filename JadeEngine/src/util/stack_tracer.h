@@ -29,7 +29,7 @@ namespace je { namespace util {
         void capture_trace(key a_key);
         void remove_trace(key a_key);
 
-        size_t get_num_remaining_traces() const { return m_traces.size(); }
+        size get_num_remaining_traces() const { return m_traces.size(); }
         void print_remaining_traces();
 
         static void print_current_trace();
@@ -37,12 +37,12 @@ namespace je { namespace util {
     private:
 
         using stack_ptr = void*;
-        static const size_t k_num_frames = 64;
+        static const size k_num_frames = 64;
 
         struct stack_trace
         {
             stack_ptr m_traces[k_num_frames];
-            size_t m_num_traces;
+            size m_num_traces;
         };
 
         static void generate_trace(stack_trace& out_trace);
@@ -57,7 +57,7 @@ namespace je { namespace util {
 
         std::unordered_map<key, stack_trace> m_traces;
 
-        static std::atomic<size_t> s_symbol_reference_num;
+        static std::atomic<size> s_symbol_reference_num;
     };
 
 }}

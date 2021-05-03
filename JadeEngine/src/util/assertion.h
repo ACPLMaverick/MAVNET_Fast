@@ -12,8 +12,8 @@ namespace je { namespace util {
     class assertion
     {
     public:
-        static void create(const char* expression, const char* file, const char* function, size_t line, const char* message, ...);
-        static void create(const char* expression, const char* file, const char* function, size_t line);
+        static void create(const char* expression, const char* file, const char* function, size line, const char* message, ...);
+        static void create(const char* expression, const char* file, const char* function, size line);
 
         template<typename ptr_type> static ptr_type* check_ptr(ptr_type* ptr);
     };
