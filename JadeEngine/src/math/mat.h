@@ -23,6 +23,7 @@ namespace je
             {
             }
 
+            // This ctor creates an uninitialized object. Use with care!
             mat()
             {
             }
@@ -30,9 +31,13 @@ namespace je
             mat(float n)
             {
                 #pragma unroll
-                for (size_t i = 0; i < k_num_cols && i < k_num_rows; ++i)
+                for (size_t i = 0; i < k_num_cols; ++i)
                 {
-                    m_cols[i][i] = n;
+                    #pragma unroll
+                    for(size_t j = 0; j < k_num_rows; ++j)
+                    {
+                        m_cols[i][j] = static_cast<float>(i == j) * n;
+                    }
                 }
             }
 
@@ -182,6 +187,7 @@ namespace je
                 #pragma unroll
                 for (size_t i = 0; i < num_rows; ++i)
                 {
+                    #pragma unroll
                     for (size_t j = 0; j < num_cols; ++j)
                     {
                         result[i] += (*this)[j][i] * value[j];
@@ -198,6 +204,8 @@ namespace je
                 converted_value = *this * converted_value;
                 return vec<vec_num_components>(converted_value);
             }
+
+        protected:
 
             template <size_t num_common, size_t num_rows_a, size_t num_cols_b>
             inline static mat<num_cols_b, num_rows_a> mul(const mat<num_common, num_rows_a> &a, const mat<num_cols_b, num_common> &b)
@@ -220,6 +228,8 @@ namespace je
 
                 return result;
             }
+
+        public:
 
             mat &operator*=(const mat &other)
             {
@@ -272,29 +282,155 @@ namespace je
                 *this = inversed();
             }
 
+            // Transform functions
+            void translate(const vec3& translation)
+            {
+                static const size_t last_col = num_cols - 1;
+                m_cols[last_col][0] += translation[0];
+                m_cols[last_col][1] += translation[1];
+                m_cols[last_col][2] += translation[2];
+            }
+
+        protected:
+
+            inline static void rot(mat& matrix, float angle, const vec3& axis)
+            {
+                // From GLM.
+
+                const float a = angle;
+                const sc::sincos sin_and_cos = sc::sin_cos(a);
+                const float c = sin_and_cos.cos;
+                const float s = sin_and_cos.sin;
+
+                JE_assert(sc::is_almost_equal(axis.get_length_squared(), 1.0f), "Rotation axis must be a normalized vector.");
+                vec3 temp(axis * (1.0f - c));
+
+                mat mat_rotate;
+                mat_rotate[0][0] = c + temp[0] * axis[0];
+                mat_rotate[0][1] = temp[0] * axis[1] + s * axis[2];
+                mat_rotate[0][2] = temp[0] * axis[2] - s * axis[1];
+
+                mat_rotate[1][0] = temp[1] * axis[0] - s * axis[2];
+                mat_rotate[1][1] = c + temp[1] * axis[1];
+                mat_rotate[1][2] = temp[1] * axis[2] + s * axis[0];
+
+                mat_rotate[2][0] = temp[2] * axis[0] + s * axis[1];
+                mat_rotate[2][1] = temp[2] * axis[1] - s * axis[0];
+                mat_rotate[2][2] = c + temp[2] * axis[2];
+
+                matrix[0] = matrix[0] * mat_rotate[0][0] + matrix[1] * mat_rotate[0][1] + matrix[2] * mat_rotate[0][2];
+                matrix[1] = matrix[0] * mat_rotate[1][0] + matrix[1] * mat_rotate[1][1] + matrix[2] * mat_rotate[1][2];
+                matrix[2] = matrix[0] * mat_rotate[2][0] + matrix[1] * mat_rotate[2][1] + matrix[2] * mat_rotate[2][2];
+            }
+
+            inline static void rot_euler(mat& matrix, const vec3& euler)
+            {
+                // Definitions from https://en.wikipedia.org/wiki/Euler_angles
+                // Ordering: YXZ.
+
+                // BTW Unity has it the other way around: ZXY
+                // https://forum.unity.com/threads/rotation-order.13469/
+
+                const sc::sincos sico_x = sc::sin_cos(euler.x);
+                const sc::sincos sico_y = sc::sin_cos(euler.y);
+                const sc::sincos sico_z = sc::sin_cos(euler.z);
+
+                const float s1 = sico_x.sin;
+                const float c1 = sico_x.cos;
+                const float s2 = sico_y.sin;
+                const float c2 = sico_y.cos;
+                const float s3 = sico_z.sin;
+                const float c3 = sico_z.cos;
+
+                matrix[0][0] *= c1 * c3 + s1 * s2 * s3;
+                matrix[0][1] = c2 * s3;
+                matrix[0][2] = c1 * s2 * s3 - c3 * s1;
+                matrix[1][0] = c3 * s1 * s2 - c1 * s3;
+                matrix[1][1] *= c2 * c3;
+                matrix[1][2] = c1 * c3 * s2 + s1 * s3;
+                matrix[2][0] = c2 * s1;
+                matrix[2][1] = -s2;
+                matrix[2][2] *= c1 * c2;
+            }
+
+        public:
+
+            void rotate(float angle, const vec3& rotation_axis)
+            {
+                rot(*this, angle, rotation_axis);
+            }
+
+            void rotate(const vec3& rotation_euler)
+            {
+                rot_euler(*this, rotation_euler);
+            }
+
+            void rescale(const vec3& scale)
+            {
+                for(size_t i = 0; i < scale.k_num_components && i < num_rows && i < num_cols; ++i)
+                {
+                    m_cols[i][i] *= scale[i];
+                }
+            }
+
             // Special-case creation functions.
             inline static mat identity()
             {
                 return mat(1.0f);
             }
 
-            static mat transform(
-                const vec3 &position,
-                const vec3 &rotation = vec3(0.0f),
-                const vec3 &scale = vec3(1.0f))
+            static mat translation(const vec3& a_translation)
             {
-                JE_todo();
-                return mat();
+                mat result(identity());
+                static const size_t last_col = num_cols - 1;
+                result[last_col][0] = a_translation[0];
+                result[last_col][1] = a_translation[1];
+                result[last_col][2] = a_translation[2];
+                return result;
             }
 
-            static mat view_target(const vec3 &view_position, const vec3 &view_target_position)
+            static mat rotation(float angle, const vec3& rotation_axis)
+            {
+                mat result(identity());
+                rot(result, angle, rotation_axis);
+                return result;
+            }
+
+            static mat rotation(const vec3& a_rotation_euler)
+            {
+                mat result(identity());
+                rot_euler(result, a_rotation_euler);
+                return result;
+            }
+
+            static mat scale(const vec3& a_scale)
+            {
+                mat result(identity());
+                result[0][0] = a_scale[0];
+                result[1][1] = a_scale[1];
+                result[2][2] = a_scale[2];
+                return result;
+            }
+
+            static mat transform(
+                const vec3& a_position,
+                const vec3& a_rotation = vec3(0.0f),
+                const vec3& a_scale = vec3(1.0f))
+            {
+                mat result(scale(a_scale));
+                result.rotate(a_rotation);
+                result.translate(a_position);
+                return result;
+            }
+
+            static mat view_target(const vec3& view_position, const vec3& view_target_position)
             {
                 JE_todo();
                 return mat();
             }
 
             // Direction should be a normalized vector.
-            static mat view_direction(const vec3 &view_position, const vec3 &view_direction)
+            static mat view_direction(const vec3& view_position, const vec3& view_direction)
             {
                 JE_todo();
                 JE_assert(sc::is_almost_equal(view_direction.get_length(), 1.0f), "view_direction is not a normalized vector.");
@@ -326,7 +462,7 @@ namespace je
         };
 
         using mat4 = mat<4, 4>;
-        using mat3x4 = mat<3, 4>;
+        using mat4x3 = mat<4, 3>;
         using mat3 = mat<3, 3>;
 
         template<>
@@ -407,6 +543,7 @@ namespace je
 
             vec4 dot_0(m_cols[0] * row_0);
             float dot_1 = (dot_0.x + dot_0.y) + (dot_0.z + dot_0.w);
+            JE_assert(sc::is_almost_zero(dot_1) == false, "Inverse matrix does not exist.");
 
             float det_inv = 1.0f / dot_1;
 
@@ -414,11 +551,11 @@ namespace je
         }
 
         template<>
-        inline mat3x4 mat3x4::inversed() const
+        inline mat4x3 mat4x3::inversed() const
         {
             mat4 m4(*this);
             m4.inverse();
-            return mat3x4(m4);
+            return mat4x3(m4);
         }
     }
 }
