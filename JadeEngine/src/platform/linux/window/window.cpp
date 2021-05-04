@@ -3,6 +3,7 @@
 #if JE_PLATFORM_LINUX
 
 #include <xcb/xcb.h>
+#include <xcb/xcb_atom.h>
 
 // TODO HELPER Move elsewhere.
 namespace je {
@@ -26,17 +27,70 @@ namespace je { namespace window {
 
     bool window::poll_messages(data::array<message>& a_out_messages)
     {
-        return false;
+        /*
+        XCB_EVENT_MASK_EXPOSURE
+        XCB_EVENT_MASK_VISIBILITY_CHANGE
+        XCB_EVENT_MASK_RESIZE_REDIRECT
+        XCB_EVENT_MASK_FOCUS_CHANGE
+        XCB_EVENT_MASK_PROPERTY_CHANGE
+        */
+        a_out_messages.clear();
+
+        xcb_generic_event_t* event(nullptr);
+        xcb_connection_t* connection(load_platform_handle<xcb_connection_t*>(m_display));
+        while((event = xcb_poll_for_event(connection)) != nullptr)
+        {
+            switch (event->response_type)
+            {
+            case XCB_EXPOSE:
+                /* code */
+                break;
+            case XCB_VISIBILITY_NOTIFY:
+                break;
+            case XCB_RESIZE_REQUEST:
+                break;
+            case XCB_FOCUS_IN:
+                break;
+            case XCB_FOCUS_OUT:
+                break;
+            case XCB_PROPERTY_NOTIFY:
+                break;
+            default:
+                break;
+            }
+
+            free(event);
+        }
+
+        return a_out_messages.size() > 0;
     }
 
     void window::set_fullscreen(bool a_is_fullscreen)
     {
+        if(m_is_fullscreen == a_is_fullscreen)
+        {
+            return;
+        }
+
         JE_todo();
     }
 
     void window::resize(u16 a_new_width, u16 a_new_height)
     {
-        JE_todo();
+        if(get_width() == a_new_width || get_height() == a_new_height)
+        {
+            return;
+        }
+
+        xcb_connection_t* connection(load_platform_handle<xcb_connection_t*>(m_display));
+        xcb_window_t window(load_platform_handle<xcb_window_t>(m_window));
+
+        const i32 dims[] = { static_cast<i32>(a_new_width), static_cast<i32>(a_new_height) };
+        xcb_configure_window(connection, window, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, dims);
+        xcb_flush(connection);
+
+        m_width = a_new_width;
+        m_height = a_new_height;
     }
 
     void window::open()
@@ -91,6 +145,17 @@ namespace je { namespace window {
         JE_assert_bailout_noret(window > 0, "Could not create window ID");
         store_platform_handle(m_window, window);
 
+        // Define event mask.
+        const u32 mask(XCB_CW_EVENT_MASK);
+        const u32 events
+        (
+            XCB_EVENT_MASK_EXPOSURE
+            | XCB_EVENT_MASK_VISIBILITY_CHANGE
+            | XCB_EVENT_MASK_RESIZE_REDIRECT
+            | XCB_EVENT_MASK_FOCUS_CHANGE
+            | XCB_EVENT_MASK_PROPERTY_CHANGE
+        );
+
         xcb_create_window
         (
             connection,
@@ -104,7 +169,8 @@ namespace je { namespace window {
             0, // No border.
             XCB_WINDOW_CLASS_INPUT_OUTPUT,
             screen->root_visual,
-            0, NULL
+            mask,
+            &events
         );
         xcb_map_window(connection, window);
 
@@ -114,7 +180,19 @@ namespace je { namespace window {
         const i32 coords[] = { static_cast<i32>(pos_x), static_cast<i32>(pos_y) };
         xcb_configure_window(connection, window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, coords);
 
+        /* Set the title of the window */
+        xcb_change_property (connection, XCB_PROP_MODE_REPLACE, window,
+            XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
+            strlen (k_title), k_title);
+
+        /* Set the title of the window icon */
+        xcb_change_property (connection, XCB_PROP_MODE_REPLACE, window,
+            XCB_ATOM_WM_ICON_NAME, XCB_ATOM_STRING, 8,
+            strlen(k_icon_path), k_icon_path);
+
         xcb_flush(connection);
+
+        m_is_open = true;
     }
 
     void window::close()
@@ -122,6 +200,7 @@ namespace je { namespace window {
         xcb_connection_t* connection(load_platform_handle<xcb_connection_t*>(m_display));
         xcb_destroy_window(connection, load_platform_handle<xcb_window_t>(m_window));
         xcb_disconnect(connection);
+        m_is_open = false;
     }
 
 }}

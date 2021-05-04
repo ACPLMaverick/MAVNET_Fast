@@ -28,6 +28,9 @@ namespace je { namespace window {
         void open();
         void close();
 
+        static const char* k_title;
+        static const char* k_icon_path;
+
         u64 m_display;
         u64 m_window;
         u16 m_width;

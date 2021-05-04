@@ -27,4 +27,7 @@ namespace je { namespace window {
         m_is_open = false;
     }
 
+    const char* window::k_title = "JadeEngine";
+    const char* window::k_icon_path = "je.ico";
+
 }}
