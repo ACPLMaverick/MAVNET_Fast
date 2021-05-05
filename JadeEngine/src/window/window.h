@@ -32,7 +32,8 @@ namespace je { namespace window {
         static const char* k_icon_path;
 
         u64 m_display;
-        u64 m_window;
+        u32 m_window;
+        u32 m_atom_close;
         u16 m_width;
         u16 m_height;
         bool m_is_fullscreen;

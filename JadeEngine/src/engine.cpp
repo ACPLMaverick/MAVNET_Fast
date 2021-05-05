@@ -21,7 +21,19 @@ namespace je {
             const bool have_messages = m_window->poll_messages(messages);
             if(have_messages)
             {
-                // TODO implement.
+                for(const window::message& msg : messages)
+                {
+                    if(msg.get_type() == window::message_type::k_closed)
+                    {
+                        // Shutdown engine and destroy the window.
+                        m_is_exit = true;
+                        break;  // No point in processing other messages.
+                    }
+                    else
+                    {
+                        // TODO Implement other messages.
+                    }
+                }
                 messages.clear();
             }
             // TODO really implement.

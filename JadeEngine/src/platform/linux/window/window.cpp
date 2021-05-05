@@ -25,41 +25,113 @@ namespace je {
 
 namespace je { namespace window {
 
+    // Helpers.
+    xcb_atom_t get_atom(xcb_connection_t* a_connection, const char* a_name)
+    {
+        xcb_intern_atom_cookie_t cookie = xcb_intern_atom(a_connection, true, std::strlen(a_name), a_name);
+        xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(a_connection, cookie, nullptr);
+        JE_assert(reply != nullptr, "Could not retrieve an atom value.");
+        xcb_atom_t atom = reply->atom;
+        free(reply);
+        return atom;
+    }
+
+    xcb_atom_t get_atom_value(xcb_connection_t* a_connection, xcb_window_t a_window, xcb_atom_t a_atom)
+    {
+        xcb_get_property_cookie_t cookie = xcb_get_property(a_connection, false, a_window, a_atom, XCB_ATOM_ATOM, 0, 32);
+        xcb_get_property_reply_t* reply = xcb_get_property_reply(a_connection, cookie, nullptr);
+        JE_assert(reply != nullptr, "Could not get property value.");
+        xcb_atom_t atom = *(reinterpret_cast<xcb_atom_t*>(xcb_get_property_value(reply)));
+        free(reply);
+        return atom;
+    }
+    // ~Helpers.
+
     bool window::poll_messages(data::array<message>& a_out_messages)
     {
-        /*
-        XCB_EVENT_MASK_EXPOSURE
-        XCB_EVENT_MASK_VISIBILITY_CHANGE
-        XCB_EVENT_MASK_RESIZE_REDIRECT
-        XCB_EVENT_MASK_FOCUS_CHANGE
-        XCB_EVENT_MASK_PROPERTY_CHANGE
-        */
         a_out_messages.clear();
 
-        xcb_generic_event_t* event(nullptr);
+        xcb_generic_event_t* generic_event(nullptr);
         xcb_connection_t* connection(load_platform_handle<xcb_connection_t*>(m_display));
-        while((event = xcb_poll_for_event(connection)) != nullptr)
+        xcb_window_t window(load_platform_handle<xcb_window_t>(m_window));
+
+        while((generic_event = xcb_poll_for_event(connection)) != nullptr)
         {
-            switch (event->response_type)
+            switch (generic_event->response_type & ~0x80)
             {
-            case XCB_EXPOSE:
-                /* code */
-                break;
             case XCB_VISIBILITY_NOTIFY:
+            {
+                xcb_visibility_notify_event_t* event = reinterpret_cast<xcb_visibility_notify_event_t*>(generic_event);
+                if(event->window == window)
+                {
+                    if(event->state == XCB_VISIBILITY_UNOBSCURED)
+                    {
+                        a_out_messages.push_back(message(message_type::k_maximized));
+                    }
+                }
+            }
                 break;
             case XCB_RESIZE_REQUEST:
+            {
+                xcb_resize_request_event_t* event = reinterpret_cast<xcb_resize_request_event_t*>(generic_event);
+                if(event->width != m_width || event->height != m_height)
+                {
+                    a_out_messages.push_back(message(message_type::k_resized, event->width, event->height));
+                }
+            }
                 break;
             case XCB_FOCUS_IN:
+            {
+                a_out_messages.push_back(message(message_type::k_focus_gained));
+            }
                 break;
             case XCB_FOCUS_OUT:
+            {
+                a_out_messages.push_back(message(message_type::k_focus_lost));
+            }
                 break;
             case XCB_PROPERTY_NOTIFY:
+            {
+                xcb_property_notify_event_t* event = reinterpret_cast<xcb_property_notify_event_t*>(generic_event);
+#if 0 // Not necessary to be called but leaving it here for now.
+                xcb_get_atom_name_cookie_t atom_name_cookie = xcb_get_atom_name_unchecked(connection, event->atom);
+                xcb_get_atom_name_reply_t* atom_name_reply = xcb_get_atom_name_reply(connection, atom_name_cookie, nullptr);
+                if(atom_name_reply != nullptr)
+                {
+                    const char* atom_name = xcb_get_atom_name_name(atom_name_reply);
+                    JE_print("%s", atom_name);
+                    free(atom_name_reply);
+                }
+#endif // 0
+
+                // Check for window minimization.
+                static const xcb_atom_t k_atom_state = get_atom(connection, "_NET_WM_STATE");
+                static const xcb_atom_t k_atom_state_hidden = get_atom(connection, "_NET_WM_STATE_HIDDEN");
+                if(event->atom == k_atom_state)
+                {
+                    if(get_atom_value(connection, window, event->atom) == k_atom_state_hidden)
+                    {
+                        a_out_messages.push_back(message(message_type::k_minimized));
+                    }
+                }
+            }
+                break;
+            case XCB_CLIENT_MESSAGE:
+            {
+                // Close window.
+                xcb_client_message_event_t* event = reinterpret_cast<xcb_client_message_event_t*>(generic_event);
+                if(event->data.data32[0] == static_cast<xcb_atom_t>(m_atom_close))
+                {
+                    a_out_messages.push_back(message(message_type::k_closed));
+                }
+            }
                 break;
             default:
+                JE_print("[Window] Unknown event [%d].", generic_event->response_type);
                 break;
             }
 
-            free(event);
+            free(generic_event);
         }
 
         return a_out_messages.size() > 0;
@@ -149,8 +221,7 @@ namespace je { namespace window {
         const u32 mask(XCB_CW_EVENT_MASK);
         const u32 events
         (
-            XCB_EVENT_MASK_EXPOSURE
-            | XCB_EVENT_MASK_VISIBILITY_CHANGE
+            XCB_EVENT_MASK_VISIBILITY_CHANGE
             | XCB_EVENT_MASK_RESIZE_REDIRECT
             | XCB_EVENT_MASK_FOCUS_CHANGE
             | XCB_EVENT_MASK_PROPERTY_CHANGE
@@ -189,6 +260,15 @@ namespace je { namespace window {
         xcb_change_property (connection, XCB_PROP_MODE_REPLACE, window,
             XCB_ATOM_WM_ICON_NAME, XCB_ATOM_STRING, 8,
             strlen(k_icon_path), k_icon_path);
+
+        // Acquire the close atom.
+        // https://stackoverflow.com/questions/47453159/xcb-poll-for-event-does-not-detect-xcb-client-message-event-for-closing-window
+        xcb_intern_atom_cookie_t protocol_cookie = xcb_intern_atom_unchecked(connection, 1, 12, "WM_PROTOCOLS");
+        xcb_intern_atom_reply_t* protocol_reply = xcb_intern_atom_reply(connection, protocol_cookie, 0);
+        xcb_intern_atom_cookie_t close_cookie = xcb_intern_atom_unchecked(connection, 0, 16, "WM_DELETE_WINDOW");
+        m_atom_close = static_cast<u32>(xcb_intern_atom_reply(connection, close_cookie, 0)->atom);
+        xcb_change_property(connection, XCB_PROP_MODE_REPLACE, window, protocol_reply->atom, 4, 32, 1, static_cast<xcb_atom_t*>(&m_atom_close));
+        free(protocol_reply);
 
         xcb_flush(connection);
 

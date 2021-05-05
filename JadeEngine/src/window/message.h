@@ -9,7 +9,6 @@ namespace je { namespace window {
         k_closed,
         k_minimized,
         k_maximized,
-        k_moved,
         k_resized,
         k_focus_lost,
         k_focus_gained
