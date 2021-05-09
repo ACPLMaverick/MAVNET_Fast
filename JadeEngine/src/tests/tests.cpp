@@ -691,5 +691,6 @@ namespace je { namespace tests {
     void tester::test_render()
     {
         engine::get_inst().run();
+        JE_print("Render test passed.");
     }
 }}

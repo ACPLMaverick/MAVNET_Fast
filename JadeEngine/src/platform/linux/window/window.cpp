@@ -5,6 +5,12 @@
 #include <xcb/xcb.h>
 #include <xcb/xcb_atom.h>
 
+// ++TODO File loading.
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+// --TODO File loading.
+
 // TODO HELPER Move elsewhere.
 namespace je {
     template<typename stored_type, typename storage_type>
@@ -44,6 +50,49 @@ namespace je { namespace window {
         xcb_atom_t atom = *(reinterpret_cast<xcb_atom_t*>(xcb_get_property_value(reply)));
         free(reply);
         return atom;
+    }
+
+    void set_icon(xcb_connection_t* a_connection, xcb_window_t a_window, const char* a_icon_file_path)
+    {
+        // ++ TODO TEMP file loading until file system is implemented.
+        const i32 fd = open64(a_icon_file_path, O_RDONLY);
+        JE_assert(fd >= 0);
+        struct stat64 sb = {};
+        JE_verify(fstat64(fd, &sb) >= 0);
+        const i32 length = sb.st_size;
+        JE_assert(length > 0);
+
+        u8* buffer = static_cast<u8*>(malloc(length));
+        JE_verify(read(fd, buffer, length) == length);
+        close(fd);
+        // -- TODO TEMP file loading.
+
+        // ++ TODO TEMP TGA Decoding until Textures are implemented.
+        static const u64 tga_header_size = 18;
+        static const u64 tga_width_offset = 8 + 4;
+        static const u64 tga_height_offset = 8 + 6;
+        static const u64 tga_pixel_depth_offset = 8 + 8;
+        const u16 width = *reinterpret_cast<u16*>(buffer + tga_width_offset);
+        const u16 height = *reinterpret_cast<u16*>(buffer + tga_height_offset);
+        const u8 pixel_depth = buffer[tga_pixel_depth_offset];
+        JE_assert(width == height, "An application icon must be square.");
+        JE_assert(pixel_depth == 32, "An application icon must be in 32bit format.");
+
+        static const u64 pixmap_header_size = 2 * sizeof(u32);
+        const u32 siz = static_cast<u32>(static_cast<u64>(length) - tga_header_size);
+        std::memmove(buffer + pixmap_header_size, buffer + tga_header_size, siz);
+        *reinterpret_cast<u32*>(buffer) = width;
+        *(reinterpret_cast<u32*>(buffer) + 1) = height;
+        // -- TODO TEMP TGA Decoding.
+
+        static xcb_atom_t s_atom_icon = get_atom(a_connection, "_NET_WM_ICON");
+        static xcb_atom_t s_atom_cardinal = get_atom(a_connection, "CARDINAL");
+
+        xcb_change_property (a_connection, XCB_PROP_MODE_REPLACE, a_window,
+            s_atom_icon, s_atom_cardinal, 32,
+            siz, buffer);
+
+        free(buffer);
     }
     // ~Helpers.
 
@@ -259,7 +308,7 @@ namespace je { namespace window {
         /* Set the title of the window icon */
         xcb_change_property (connection, XCB_PROP_MODE_REPLACE, window,
             XCB_ATOM_WM_ICON_NAME, XCB_ATOM_STRING, 8,
-            strlen(k_icon_path), k_icon_path);
+            strlen(k_title), k_title);
 
         // Acquire the close atom.
         // https://stackoverflow.com/questions/47453159/xcb-poll-for-event-does-not-detect-xcb-client-message-event-for-closing-window
@@ -269,6 +318,8 @@ namespace je { namespace window {
         m_atom_close = static_cast<u32>(xcb_intern_atom_reply(connection, close_cookie, 0)->atom);
         xcb_change_property(connection, XCB_PROP_MODE_REPLACE, window, protocol_reply->atom, 4, 32, 1, static_cast<xcb_atom_t*>(&m_atom_close));
         free(protocol_reply);
+
+        set_icon(connection, window, k_icon_path);
 
         xcb_flush(connection);
 

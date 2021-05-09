@@ -28,6 +28,6 @@ namespace je { namespace window {
     }
 
     const char* window::k_title = "JadeEngine";
-    const char* window::k_icon_path = "je.ico";
+    const char* window::k_icon_path = "icon.tga";
 
 }}

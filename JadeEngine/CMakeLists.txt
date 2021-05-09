@@ -151,3 +151,11 @@ set_target_properties(${EXE_NAME}
 	LIBRARY_OUTPUT_DIRECTORY ${RUNTIME_WORK_DIR}
 	RUNTIME_OUTPUT_DIRECTORY ${RUNTIME_WORK_DIR}
 )
+
+
+# Post-build actions
+
+# Copy icon file to bin.
+add_custom_command(TARGET ${EXE_NAME} POST_BUILD
+	COMMAND cp -v -u ../resources/misc/icon.tga ${RUNTIME_WORK_DIR}
+)
