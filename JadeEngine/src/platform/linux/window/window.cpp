@@ -54,34 +54,33 @@ namespace je { namespace window {
 
     void set_icon(xcb_connection_t* a_connection, xcb_window_t a_window, const char* a_icon_file_path)
     {
-        static const i32 tga_data_offset = 18;
-        static const i32 tga_width_offset = 8 + 4;
-        static const i32 pixmap_header_size = 2 * sizeof(u32);
-
         // ++ TODO TEMP file loading until file system is implemented.
         const i32 fd = open64(a_icon_file_path, O_RDONLY);
         JE_assert(fd >= 0);
+        struct stat64 sb = {};
+        JE_verify(fstat64(fd, &sb) >= 0);
+        const i32 length = sb.st_size;
+        JE_assert(length > 0);
 
-        // Read parameters.
-        u32 param_array_size = sizeof(u16) * 2 + sizeof(u8);
-        u8* param_array = reinterpret_cast<u8*>(malloc(param_array_size));      // TODO Use internal allocator.
-        JE_verify(lseek64(fd, tga_width_offset, SEEK_SET) == tga_width_offset);
-        JE_verify(read(fd, param_array, param_array_size) == param_array_size);
-        const u16 width = *(reinterpret_cast<u16*>(param_array));
-        const u16 height = *(reinterpret_cast<u16*>(param_array) + 1);
-        const u8 pixel_depth = param_array[param_array_size - 1];
+        u8* buffer = static_cast<u8*>(malloc(length));
+        JE_verify(read(fd, buffer, length) == length);
+        close(fd);
+        // -- TODO TEMP file loading.
 
+        // ++ TODO TEMP TGA Decoding until Textures are implemented.
+        static const u64 tga_header_size = 18;
+        static const u64 tga_width_offset = 8 + 4;
+        static const u64 tga_height_offset = 8 + 6;
+        static const u64 tga_pixel_depth_offset = 8 + 8;
+        const u16 width = *reinterpret_cast<u16*>(buffer + tga_width_offset);
+        const u16 height = *reinterpret_cast<u16*>(buffer + tga_height_offset);
+        const u8 pixel_depth = buffer[tga_pixel_depth_offset];
         JE_assert(width == height, "An application icon must be square.");
         JE_assert(pixel_depth == 32, "An application icon must be in 32bit format.");
 
-        const i32 siz = width * height * (pixel_depth >> 3);
-        const i32 siz_with_header = siz + pixmap_header_size;
-
-        u8* buffer = static_cast<u8*>(malloc(siz_with_header));
-        JE_verify(lseek64(fd, tga_data_offset, SEEK_SET) == tga_data_offset);
-        JE_verify(read(fd, buffer + pixmap_header_size, siz) == siz);
-        close(fd);
-
+        static const u64 pixmap_header_size = 2 * sizeof(u32);
+        const u32 siz = static_cast<u32>(static_cast<u64>(length) - tga_header_size);
+        std::memmove(buffer + pixmap_header_size, buffer + tga_header_size, siz);
         *reinterpret_cast<u32*>(buffer) = width;
         *(reinterpret_cast<u32*>(buffer) + 1) = height;
         // -- TODO TEMP TGA Decoding.
