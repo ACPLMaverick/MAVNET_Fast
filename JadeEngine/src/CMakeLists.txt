@@ -8,6 +8,7 @@ file(GLOB_RECURSE GENERAL_SOURCES
        math/*.cpp
        mem/*.cpp
        tests/*.cpp
+       thread/*.cpp
        util/*.cpp
        window/*.cpp
 )

@@ -42,12 +42,12 @@ namespace je { namespace window {
         void resize_internal(u16 width, u16 height);
         // ~Platform-specific.
 
-        static const char* k_title;
-        static const char* k_icon_path;
-
         #include "window/window_platform.inl"
 
     protected:
+
+        static const char* k_title;
+        static const char* k_icon_path;
 
         u16 m_width;
         u16 m_height;

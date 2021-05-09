@@ -5,14 +5,10 @@
     // class window 
     // {
 
-        protected:
-
             xcb_atom_t get_atom(const char* name);
             xcb_atom_t get_atom_property_value(xcb_atom_t atom);
             void set_icon();
             void get_display_dimensions(xcb_screen_t* a_screen, u16& a_out_width, u16& a_out_height);
-
-        protected:
 
             xcb_connection_t* m_connection{nullptr};
             xcb_window_t m_window{0};

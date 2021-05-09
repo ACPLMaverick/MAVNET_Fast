@@ -2,6 +2,7 @@
 
 #include "mem/mem_manager.h"
 #include "window/window.h"
+#include "thread/thread.h"
 
 namespace je {
 
@@ -36,13 +37,8 @@ namespace je {
                 }
                 messages.clear();
             }
-            // TODO really implement.
-#if JE_PLATFORM_LINUX
-            timespec ts;
-            ts.tv_sec = 0;
-            ts.tv_nsec = 16'000'000;
-            nanosleep(&ts, nullptr);
-#endif // JE_PLATFORM_LINUX
+
+            thread::thread::sleep_ms(16.67f);
         }
     }
 
