@@ -79,10 +79,12 @@ namespace je { namespace window {
         JE_assert(pixel_depth == 32, "An application icon must be in 32bit format.");
 
         static const u64 pixmap_header_size = 2 * sizeof(u32);
-        const u32 siz = static_cast<u32>(static_cast<u64>(length) - tga_header_size);
-        std::memmove(buffer + pixmap_header_size, buffer + tga_header_size, siz);
-        *reinterpret_cast<u32*>(buffer) = width;
-        *(reinterpret_cast<u32*>(buffer) + 1) = height;
+        const u32 bytes_to_offset_buffer = (tga_header_size - pixmap_header_size);
+        const u32 siz = static_cast<u32>(static_cast<u64>(length) - bytes_to_offset_buffer);
+        u8* buffer_with_offset = buffer + bytes_to_offset_buffer;
+
+        *reinterpret_cast<u32*>(buffer_with_offset) = width;
+        *(reinterpret_cast<u32*>(buffer_with_offset) + 1) = height;
         // -- TODO TEMP TGA Decoding.
 
         static xcb_atom_t s_atom_icon = get_atom(a_connection, "_NET_WM_ICON");
@@ -90,7 +92,7 @@ namespace je { namespace window {
 
         xcb_change_property (a_connection, XCB_PROP_MODE_REPLACE, a_window,
             s_atom_icon, s_atom_cardinal, 32,
-            siz, buffer);
+            siz, buffer_with_offset);
 
         free(buffer);
     }
