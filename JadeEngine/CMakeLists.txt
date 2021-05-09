@@ -66,6 +66,10 @@ if(JE_PLATFORM STREQUAL ${PLATFORM_NAME_WINDOWS})
 		"C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.18362.0\\ucrt\\x64"
 		"C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.18362.0\\um\\x64"
 	)
+
+	target_include_directories(${EXE_NAME} PUBLIC
+		${SOURCE_DIR}/platform/windows
+	)
 # ########
 # LINUX
 elseif(JE_PLATFORM STREQUAL ${PLATFORM_NAME_LINUX})
@@ -77,6 +81,10 @@ elseif(JE_PLATFORM STREQUAL ${PLATFORM_NAME_LINUX})
 	target_link_libraries(${EXE_NAME} PUBLIC
 		xcb
 		xcb-randr
+	)
+
+	target_include_directories(${EXE_NAME} PUBLIC
+		${SOURCE_DIR}/platform/linux
 	)
 
 	if(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_DEBUG})
@@ -159,4 +167,13 @@ set_target_properties(${EXE_NAME}
 # Copy icon file to bin.
 add_custom_command(TARGET ${EXE_NAME} POST_BUILD
 	COMMAND cp -v -u ../resources/misc/icon.tga ${RUNTIME_WORK_DIR}
+)
+
+
+# Custom helper configurations.
+
+# Cleanup script
+add_custom_target(cleanup
+	COMMAND cd ..
+	COMMAND python tools/scripts/clean_build.py
 )

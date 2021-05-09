@@ -4,9 +4,11 @@
 #include "message.h"
 #include "data/data.h"
 
+#include "window/window_platform.h"
+
 namespace je { namespace window {
 
-#define JE_WINDOW_DEBUG_OUTPUT (1 && !(JE_CONFIG_RELEASE))
+#define JE_WINDOW_DEBUG_OUTPUT (1 && !(JE_CONFIG_RELEASE)) // TODO Implement
 
     class window
     {
@@ -43,9 +45,10 @@ namespace je { namespace window {
         static const char* k_title;
         static const char* k_icon_path;
 
-        u64 m_display;
-        u32 m_window;
-        u32 m_atom_close;
+        #include "window/window_platform.inl"
+
+    protected:
+
         u16 m_width;
         u16 m_height;
         u16 m_display_width;

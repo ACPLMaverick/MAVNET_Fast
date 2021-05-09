@@ -2,8 +2,6 @@
 
 #if JE_PLATFORM_LINUX
 
-#include <xcb/xcb.h>
-#include <xcb/xcb_atom.h>
 #include <xcb/randr.h>
 
 // ++TODO File loading.
@@ -12,144 +10,22 @@
 #include <unistd.h>
 // --TODO File loading.
 
-// TODO HELPER Move elsewhere.
-namespace je {
-    template<typename stored_type, typename storage_type>
-    inline void store_platform_handle(storage_type& storage, stored_type handle)
-    {
-        static_assert(sizeof(storage_type) >= sizeof(stored_type), "Platform handle does not fit in storage type.");
-        reinterpret_cast<stored_type&>(storage) = handle;
-    }
-
-    template<typename stored_type, typename storage_type>
-    inline stored_type load_platform_handle(const storage_type& storage)
-    {
-        static_assert(sizeof(storage_type) >= sizeof(stored_type), "Platform handle does not fit in storage type.");
-        return (stored_type)(storage);  // Old-style cast because cannot always differentiate between reinterpret and static cast.
-    }
-}
-// ~TODO
-
 namespace je { namespace window {
-
-    // Helpers.
-    xcb_atom_t get_atom(xcb_connection_t* a_connection, const char* a_name)
-    {
-        xcb_intern_atom_cookie_t cookie = xcb_intern_atom(a_connection, true, std::strlen(a_name), a_name);
-        xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(a_connection, cookie, nullptr);
-        JE_assert(reply != nullptr, "Could not retrieve an atom value.");
-        xcb_atom_t atom = reply->atom;
-        free(reply);
-        return atom;
-    }
-
-    xcb_atom_t get_atom_value(xcb_connection_t* a_connection, xcb_window_t a_window, xcb_atom_t a_atom)
-    {
-        xcb_get_property_cookie_t cookie = xcb_get_property(a_connection, false, a_window, a_atom, XCB_ATOM_ATOM, 0, 32);
-        xcb_get_property_reply_t* reply = xcb_get_property_reply(a_connection, cookie, nullptr);
-        JE_assert(reply != nullptr, "Could not get property value.");
-        xcb_atom_t atom = *(reinterpret_cast<xcb_atom_t*>(xcb_get_property_value(reply)));
-        free(reply);
-        return atom;
-    }
-
-    void set_icon(xcb_connection_t* a_connection, xcb_window_t a_window, const char* a_icon_file_path)
-    {
-        // ++ TODO TEMP file loading until file system is implemented.
-        const i32 fd = open64(a_icon_file_path, O_RDONLY);
-        JE_assert(fd >= 0);
-        struct stat64 sb = {};
-        JE_verify(fstat64(fd, &sb) >= 0);
-        const i32 length = sb.st_size;
-        JE_assert(length > 0);
-
-        u8* buffer = static_cast<u8*>(malloc(length));
-        JE_verify(read(fd, buffer, length) == length);
-        close(fd);
-        // -- TODO TEMP file loading.
-
-        // ++ TODO TEMP TGA Decoding until Textures are implemented.
-        static const u64 tga_header_size = 18;
-        static const u64 tga_width_offset = 8 + 4;
-        static const u64 tga_height_offset = 8 + 6;
-        static const u64 tga_pixel_depth_offset = 8 + 8;
-        const u16 width = *reinterpret_cast<u16*>(buffer + tga_width_offset);
-        const u16 height = *reinterpret_cast<u16*>(buffer + tga_height_offset);
-        const u8 pixel_depth = buffer[tga_pixel_depth_offset];
-        JE_assert(width == height, "An application icon must be square.");
-        JE_assert(pixel_depth == 32, "An application icon must be in 32bit format.");
-
-        static const u64 pixmap_header_size = 2 * sizeof(u32);
-        const u32 bytes_to_offset_buffer = (tga_header_size - pixmap_header_size);
-        const u32 siz = static_cast<u32>(static_cast<u64>(length) - bytes_to_offset_buffer);
-        u8* buffer_with_offset = buffer + bytes_to_offset_buffer;
-
-        *reinterpret_cast<u32*>(buffer_with_offset) = width;
-        *(reinterpret_cast<u32*>(buffer_with_offset) + 1) = height;
-        // -- TODO TEMP TGA Decoding.
-
-        static xcb_atom_t s_atom_icon = get_atom(a_connection, "_NET_WM_ICON");
-        static xcb_atom_t s_atom_cardinal = get_atom(a_connection, "CARDINAL");
-
-        xcb_change_property (a_connection, XCB_PROP_MODE_REPLACE, a_window,
-            s_atom_icon, s_atom_cardinal, 32,
-            siz, buffer_with_offset);
-
-        free(buffer);
-    }
-
-    void get_display_dimensions(xcb_connection_t* a_connection, xcb_screen_t* a_screen, u16& a_out_width, u16& a_out_height)
-    {
-        // https://stackoverflow.com/questions/36966900/xcb-get-all-monitors-ands-their-x-y-coordinates
-
-        xcb_randr_get_screen_resources_current_reply_t* reply
-            = xcb_randr_get_screen_resources_current_reply(a_connection,
-                xcb_randr_get_screen_resources_current(a_connection, a_screen->root), nullptr);
-
-        xcb_timestamp_t timestamp = reply->config_timestamp;
-        const i32 len = xcb_randr_get_screen_resources_current_outputs_length(reply);
-        xcb_randr_output_t* randr_outputs = xcb_randr_get_screen_resources_current_outputs(reply);
-        for (i32 i = 0; i < len; i++) {
-            xcb_randr_get_output_info_reply_t* output = xcb_randr_get_output_info_reply(
-                    a_connection, xcb_randr_get_output_info(a_connection, randr_outputs[i], timestamp), nullptr);
-            if (output == nullptr)
-                continue;
-
-            if (output->crtc == XCB_NONE || output->connection == XCB_RANDR_CONNECTION_DISCONNECTED)
-                continue;
-
-            xcb_randr_get_crtc_info_reply_t* crtc = xcb_randr_get_crtc_info_reply(a_connection,
-                    xcb_randr_get_crtc_info(a_connection, output->crtc, timestamp), nullptr);
-
-            a_out_width = crtc->width;
-            a_out_height = crtc->height;
-            
-            free(crtc);
-            free(output);
-
-            break;
-        }
-
-        free(reply);
-    }
-    // ~Helpers.
 
     bool window::poll_messages(data::array<message>& a_out_messages)
     {
         a_out_messages.clear();
 
         xcb_generic_event_t* generic_event(nullptr);
-        xcb_connection_t* connection(load_platform_handle<xcb_connection_t*>(m_display));
-        xcb_window_t window(load_platform_handle<xcb_window_t>(m_window));
 
-        while((generic_event = xcb_poll_for_event(connection)) != nullptr)
+        while((generic_event = xcb_poll_for_event(m_connection)) != nullptr)
         {
             switch (generic_event->response_type & ~0x80)
             {
             case XCB_VISIBILITY_NOTIFY:
             {
                 xcb_visibility_notify_event_t* event = reinterpret_cast<xcb_visibility_notify_event_t*>(generic_event);
-                if(event->window == window)
+                if(event->window == m_window)
                 {
                     if(event->state == XCB_VISIBILITY_UNOBSCURED)
                     {
@@ -192,11 +68,11 @@ namespace je { namespace window {
 #endif // 0
 
                 // Check for window minimization.
-                static const xcb_atom_t k_atom_state = get_atom(connection, "_NET_WM_STATE");
-                static const xcb_atom_t k_atom_state_hidden = get_atom(connection, "_NET_WM_STATE_HIDDEN");
+                static const xcb_atom_t k_atom_state = get_atom("_NET_WM_STATE");
+                static const xcb_atom_t k_atom_state_hidden = get_atom("_NET_WM_STATE_HIDDEN");
                 if(event->atom == k_atom_state)
                 {
-                    if(get_atom_value(connection, window, event->atom) == k_atom_state_hidden)
+                    if(get_atom_property_value(event->atom) == k_atom_state_hidden)
                     {
                         a_out_messages.push_back(message(message_type::k_minimized));
                     }
@@ -232,7 +108,7 @@ namespace je { namespace window {
         i32 screen_number(0);
         xcb_connection_t* connection(xcb_connect(nullptr, &screen_number));
         JE_assert_bailout_noret(connection != nullptr, "Could not create XCB connection.");
-        store_platform_handle(m_display, connection);
+        m_connection = connection;
 
         // Get first available screen. TODO - store this in config - info what screen was the window on
         // the last time it was used. And recreate it on this screen.
@@ -249,7 +125,7 @@ namespace je { namespace window {
         JE_assert_bailout_noret(screen != nullptr, "Could not find an appropriate screen.");
 
         // Get display dimensions.
-        get_display_dimensions(connection, screen, m_display_width, m_display_height);
+        get_display_dimensions(screen, m_display_width, m_display_height);
 
         // Create a window.
         // TODO - store window position in config as well to restore in the same place.
@@ -275,7 +151,7 @@ namespace je { namespace window {
 
         xcb_window_t window(xcb_generate_id(connection));
         JE_assert_bailout_noret(window > 0, "Could not create window ID");
-        store_platform_handle(m_window, window);
+        m_window = window;
 
         // Define event mask.
         const u32 mask(XCB_CW_EVENT_MASK);
@@ -330,7 +206,7 @@ namespace je { namespace window {
         xcb_change_property(connection, XCB_PROP_MODE_REPLACE, window, protocol_reply->atom, 4, 32, 1, static_cast<xcb_atom_t*>(&m_atom_close));
         free(protocol_reply);
 
-        set_icon(connection, window, k_icon_path);
+        set_icon();
 
         if(m_is_fullscreen)
         {
@@ -344,39 +220,136 @@ namespace je { namespace window {
 
     void window::close()
     {
-        xcb_connection_t* connection(load_platform_handle<xcb_connection_t*>(m_display));
-        xcb_destroy_window(connection, load_platform_handle<xcb_window_t>(m_window));
-        xcb_disconnect(connection);
+        xcb_destroy_window(m_connection, m_window);
+        xcb_disconnect(m_connection);
         m_is_open = false;
+        m_connection = nullptr;
+        m_window = 0;
+        m_atom_close = 0;
     }
 
     void window::set_fullscreen_internal(bool a_is_fullscreen)
     {
-        xcb_connection_t* connection(load_platform_handle<xcb_connection_t*>(m_display));
-        xcb_window_t window(load_platform_handle<xcb_window_t>(m_window));
-
-        xcb_atom_t atom_state = get_atom(connection,"_NET_WM_STATE");
-        xcb_atom_t atom_state_fullscreen = get_atom(connection,"_NET_WM_STATE_FULLSCREEN");
+        xcb_atom_t atom_state = get_atom("_NET_WM_STATE");
+        xcb_atom_t atom_state_fullscreen = get_atom("_NET_WM_STATE_FULLSCREEN");
 
         xcb_client_message_event_t ev{};
         ev.response_type = XCB_CLIENT_MESSAGE;
         ev.type = atom_state;
         ev.format = 32;
-        ev.window = window;
+        ev.window = m_window;
         ev.data.data32[0] = static_cast<u32>(a_is_fullscreen);
         ev.data.data32[1] = atom_state_fullscreen;
 
-        xcb_send_event(connection, true, window, XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY, reinterpret_cast<const char*>(&ev));
+        xcb_send_event(m_connection, true, m_window, XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY, reinterpret_cast<const char*>(&ev));
     }
 
     void window::resize_internal(u16 width, u16 height)
     {
-        xcb_connection_t* connection(load_platform_handle<xcb_connection_t*>(m_display));
-        xcb_window_t window(load_platform_handle<xcb_window_t>(m_window));
-
         const i32 dims[] = { static_cast<i32>(width), static_cast<i32>(height) };
-        xcb_configure_window(connection, window, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, dims);
-        xcb_flush(connection);
+        xcb_configure_window(m_connection, m_window, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, dims);
+        xcb_flush(m_connection);
+    }
+
+    xcb_atom_t window::get_atom(const char* a_name)
+    {
+        xcb_intern_atom_cookie_t cookie = xcb_intern_atom(m_connection, true, std::strlen(a_name), a_name);
+        xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(m_connection, cookie, nullptr);
+        JE_assert(reply != nullptr, "Could not retrieve an atom value.");
+        xcb_atom_t atom = reply->atom;
+        free(reply);
+        return atom;
+    }
+
+    xcb_atom_t window::get_atom_property_value(xcb_atom_t a_atom)
+    {
+        xcb_get_property_cookie_t cookie = xcb_get_property(m_connection, false, m_window, a_atom, XCB_ATOM_ATOM, 0, 32);
+        xcb_get_property_reply_t* reply = xcb_get_property_reply(m_connection, cookie, nullptr);
+        JE_assert(reply != nullptr, "Could not get property value.");
+        xcb_atom_t atom = *(reinterpret_cast<xcb_atom_t*>(xcb_get_property_value(reply)));
+        free(reply);
+        return atom;
+    }
+
+    void window::set_icon()
+    {
+        // ++ TODO TEMP file loading until file system is implemented.
+        const i32 fd = open64(k_icon_path, O_RDONLY);
+        JE_assert(fd >= 0);
+        struct stat64 sb = {};
+        JE_verify(fstat64(fd, &sb) >= 0);
+        const i32 length = sb.st_size;
+        JE_assert(length > 0);
+
+        u8* buffer = static_cast<u8*>(malloc(length));
+        JE_verify(read(fd, buffer, length) == length);
+        ::close(fd);
+        // -- TODO TEMP file loading.
+
+        // ++ TODO TEMP TGA Decoding until Textures are implemented.
+        static const u64 tga_header_size = 18;
+        static const u64 tga_width_offset = 8 + 4;
+        static const u64 tga_height_offset = 8 + 6;
+        static const u64 tga_pixel_depth_offset = 8 + 8;
+        const u16 width = *reinterpret_cast<u16*>(buffer + tga_width_offset);
+        const u16 height = *reinterpret_cast<u16*>(buffer + tga_height_offset);
+        const u8 pixel_depth = buffer[tga_pixel_depth_offset];
+        JE_assert(width == height, "An application icon must be square.");
+        JE_assert(pixel_depth == 32, "An application icon must be in 32bit format.");
+
+        static const u64 pixmap_header_size = 2 * sizeof(u32);
+        const u32 bytes_to_offset_buffer = (tga_header_size - pixmap_header_size);
+        const u32 siz = static_cast<u32>(static_cast<u64>(length) - bytes_to_offset_buffer);
+        u8* buffer_with_offset = buffer + bytes_to_offset_buffer;
+
+        *reinterpret_cast<u32*>(buffer_with_offset) = width;
+        *(reinterpret_cast<u32*>(buffer_with_offset) + 1) = height;
+        // -- TODO TEMP TGA Decoding.
+
+        static xcb_atom_t s_atom_icon = get_atom("_NET_WM_ICON");
+        static xcb_atom_t s_atom_cardinal = get_atom("CARDINAL");
+
+        xcb_change_property (m_connection, XCB_PROP_MODE_REPLACE, m_window,
+            s_atom_icon, s_atom_cardinal, 32,
+            siz, buffer_with_offset);
+
+        free(buffer);
+    }
+
+    void window::get_display_dimensions(xcb_screen_t* a_screen, u16& a_out_width, u16& a_out_height)
+    {
+        // https://stackoverflow.com/questions/36966900/xcb-get-all-monitors-ands-their-x-y-coordinates
+
+        xcb_randr_get_screen_resources_current_reply_t* reply
+            = xcb_randr_get_screen_resources_current_reply(m_connection,
+                xcb_randr_get_screen_resources_current(m_connection, a_screen->root), nullptr);
+
+        xcb_timestamp_t timestamp = reply->config_timestamp;
+        const i32 len = xcb_randr_get_screen_resources_current_outputs_length(reply);
+        xcb_randr_output_t* randr_outputs = xcb_randr_get_screen_resources_current_outputs(reply);
+        for (i32 i = 0; i < len; i++) {
+            xcb_randr_get_output_info_reply_t* output = xcb_randr_get_output_info_reply(
+                    m_connection, xcb_randr_get_output_info(m_connection, randr_outputs[i], timestamp), nullptr);
+            if (output == nullptr)
+                continue;
+
+            if (output->crtc == XCB_NONE || output->connection == XCB_RANDR_CONNECTION_DISCONNECTED)
+                continue;
+
+            xcb_randr_get_crtc_info_reply_t* crtc = xcb_randr_get_crtc_info_reply(m_connection,
+                    xcb_randr_get_crtc_info(m_connection, output->crtc, timestamp), nullptr);
+
+            // Simply take dimensions of a first available screen.
+            a_out_width = crtc->width;
+            a_out_height = crtc->height;
+            
+            free(crtc);
+            free(output);
+
+            break;
+        }
+
+        free(reply);
     }
 
 }}

@@ -2,6 +2,6 @@
 
 #if JE_PLATFORM_WINDOWS
 
-// Nothing here for now.
+#define JE_NAME_OF_PLATFORM "windows"
 
 #endif

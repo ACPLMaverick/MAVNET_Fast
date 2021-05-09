@@ -3,9 +3,7 @@
 namespace je { namespace window {
 
     window::window()
-        : m_display(0)
-        , m_window(0)
-        , m_width(0)
+        : m_width(0)
         , m_height(0)
         , m_display_width(0)
         , m_display_height(0)
@@ -16,9 +14,7 @@ namespace je { namespace window {
     }
 
     window::window(u16 a_width, u16 a_height)
-        : m_display(0)
-        , m_window(0)
-        , m_width(a_width)
+        : m_width(a_width)
         , m_height(a_height)
         , m_display_width(0)
         , m_display_height(0)
@@ -34,8 +30,6 @@ namespace je { namespace window {
         {
             close();
         }
-        m_display = 0;
-        m_window = 0;
         m_width = 0;
         m_height = 0;
         m_is_fullscreen = false;
