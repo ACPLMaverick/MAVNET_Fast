@@ -12,21 +12,33 @@ namespace je { namespace window {
     {
     public:
 
-        window(u16 width, u16 height, bool is_fullscreen);
+        // Creates a fullscreen borderless window on main display with the size of the main display.
+        window();
+        // Creates a window with a given size.
+        window(u16 width, u16 height);
         ~window();
 
-        bool poll_messages(data::array<message>& out_messages);
         void set_fullscreen(bool is_fullscreen);
+        // When doing a manual resize, fullscreen will be automatically disabled.
         void resize(u16 new_width, u16 new_height);
 
-        u16 get_width() const { return m_width; }
-        u16 get_height() const { return m_height; }
+        // Platform-specific.
+        bool poll_messages(data::array<message>& out_messages);
+        // ~Platform-specific.
+
+        u16 get_width() const { return m_is_fullscreen ? m_display_width : m_width; }
+        u16 get_height() const { return m_is_fullscreen ? m_display_height : m_height; }
         bool is_fullscreen() const { return m_is_fullscreen; }
 
     protected:
 
         void open();
         void close();
+
+        // Platform-specific.
+        void set_fullscreen_internal(bool is_fullscreen);
+        void resize_internal(u16 width, u16 height);
+        // ~Platform-specific.
 
         static const char* k_title;
         static const char* k_icon_path;
@@ -36,6 +48,8 @@ namespace je { namespace window {
         u32 m_atom_close;
         u16 m_width;
         u16 m_height;
+        u16 m_display_width;
+        u16 m_display_height;
         bool m_is_fullscreen;
         bool m_is_open;
     };

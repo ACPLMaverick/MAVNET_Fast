@@ -4,6 +4,7 @@
 
 #include <xcb/xcb.h>
 #include <xcb/xcb_atom.h>
+#include <xcb/randr.h>
 
 // ++TODO File loading.
 #include <sys/stat.h>
@@ -95,6 +96,41 @@ namespace je { namespace window {
             siz, buffer_with_offset);
 
         free(buffer);
+    }
+
+    void get_display_dimensions(xcb_connection_t* a_connection, xcb_screen_t* a_screen, u16& a_out_width, u16& a_out_height)
+    {
+        // https://stackoverflow.com/questions/36966900/xcb-get-all-monitors-ands-their-x-y-coordinates
+
+        xcb_randr_get_screen_resources_current_reply_t* reply
+            = xcb_randr_get_screen_resources_current_reply(a_connection,
+                xcb_randr_get_screen_resources_current(a_connection, a_screen->root), nullptr);
+
+        xcb_timestamp_t timestamp = reply->config_timestamp;
+        const i32 len = xcb_randr_get_screen_resources_current_outputs_length(reply);
+        xcb_randr_output_t* randr_outputs = xcb_randr_get_screen_resources_current_outputs(reply);
+        for (i32 i = 0; i < len; i++) {
+            xcb_randr_get_output_info_reply_t* output = xcb_randr_get_output_info_reply(
+                    a_connection, xcb_randr_get_output_info(a_connection, randr_outputs[i], timestamp), nullptr);
+            if (output == nullptr)
+                continue;
+
+            if (output->crtc == XCB_NONE || output->connection == XCB_RANDR_CONNECTION_DISCONNECTED)
+                continue;
+
+            xcb_randr_get_crtc_info_reply_t* crtc = xcb_randr_get_crtc_info_reply(a_connection,
+                    xcb_randr_get_crtc_info(a_connection, output->crtc, timestamp), nullptr);
+
+            a_out_width = crtc->width;
+            a_out_height = crtc->height;
+            
+            free(crtc);
+            free(output);
+
+            break;
+        }
+
+        free(reply);
     }
     // ~Helpers.
 
@@ -188,34 +224,6 @@ namespace je { namespace window {
         return a_out_messages.size() > 0;
     }
 
-    void window::set_fullscreen(bool a_is_fullscreen)
-    {
-        if(m_is_fullscreen == a_is_fullscreen)
-        {
-            return;
-        }
-
-        JE_todo();
-    }
-
-    void window::resize(u16 a_new_width, u16 a_new_height)
-    {
-        if(get_width() == a_new_width || get_height() == a_new_height)
-        {
-            return;
-        }
-
-        xcb_connection_t* connection(load_platform_handle<xcb_connection_t*>(m_display));
-        xcb_window_t window(load_platform_handle<xcb_window_t>(m_window));
-
-        const i32 dims[] = { static_cast<i32>(a_new_width), static_cast<i32>(a_new_height) };
-        xcb_configure_window(connection, window, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, dims);
-        xcb_flush(connection);
-
-        m_width = a_new_width;
-        m_height = a_new_height;
-    }
-
     void window::open()
     {
         JE_assert_bailout_noret((m_width > 0 && m_height > 0) || m_is_fullscreen, "Invalid window parameters.");
@@ -240,24 +248,25 @@ namespace je { namespace window {
 
         JE_assert_bailout_noret(screen != nullptr, "Could not find an appropriate screen.");
 
+        // Get display dimensions.
+        get_display_dimensions(connection, screen, m_display_width, m_display_height);
+
         // Create a window.
         // TODO - store window position in config as well to restore in the same place.
         i16 pos_x = 0;
         i16 pos_y = 0;
-        u16 width = screen->width_in_pixels;
-        u16 height = screen->height_in_pixels;
+        u16 width = m_display_width;
+        u16 height = m_display_height;
 
         // Check if we can/should create non-fullscreen window. Always create at the center of the screen
-        if(m_is_fullscreen == false
-            && screen->width_in_pixels > m_width
-            && screen->height_in_pixels > m_height)
+        if(m_is_fullscreen == false)
         {
             // If so, update parameters.
-#if 0   // Skip position offsetting until I figure out how to do it properly.
-        // https://stackoverflow.com/questions/36966900/xcb-get-all-monitors-ands-their-x-y-coordinates
-            pos_x = screen->width_in_pixels / 2 - m_width / 2;
-            pos_y = screen->height_in_pixels / 2 - m_height / 2;
-#endif // 0
+            if(m_display_width > m_width && m_display_height > m_height)
+            {
+                pos_x = m_display_width / 2 - m_width / 2;
+                pos_y = m_display_height / 2 - m_height / 2;
+            }
             width = m_width;
             height = m_height;
         }
@@ -323,6 +332,11 @@ namespace je { namespace window {
 
         set_icon(connection, window, k_icon_path);
 
+        if(m_is_fullscreen)
+        {
+            set_fullscreen_internal(true);
+        }
+
         xcb_flush(connection);
 
         m_is_open = true;
@@ -334,6 +348,35 @@ namespace je { namespace window {
         xcb_destroy_window(connection, load_platform_handle<xcb_window_t>(m_window));
         xcb_disconnect(connection);
         m_is_open = false;
+    }
+
+    void window::set_fullscreen_internal(bool a_is_fullscreen)
+    {
+        xcb_connection_t* connection(load_platform_handle<xcb_connection_t*>(m_display));
+        xcb_window_t window(load_platform_handle<xcb_window_t>(m_window));
+
+        xcb_atom_t atom_state = get_atom(connection,"_NET_WM_STATE");
+        xcb_atom_t atom_state_fullscreen = get_atom(connection,"_NET_WM_STATE_FULLSCREEN");
+
+        xcb_client_message_event_t ev{};
+        ev.response_type = XCB_CLIENT_MESSAGE;
+        ev.type = atom_state;
+        ev.format = 32;
+        ev.window = window;
+        ev.data.data32[0] = static_cast<u32>(a_is_fullscreen);
+        ev.data.data32[1] = atom_state_fullscreen;
+
+        xcb_send_event(connection, true, window, XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY, reinterpret_cast<const char*>(&ev));
+    }
+
+    void window::resize_internal(u16 width, u16 height)
+    {
+        xcb_connection_t* connection(load_platform_handle<xcb_connection_t*>(m_display));
+        xcb_window_t window(load_platform_handle<xcb_window_t>(m_window));
+
+        const i32 dims[] = { static_cast<i32>(width), static_cast<i32>(height) };
+        xcb_configure_window(connection, window, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, dims);
+        xcb_flush(connection);
     }
 
 }}

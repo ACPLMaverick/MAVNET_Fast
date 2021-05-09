@@ -49,7 +49,7 @@ namespace je {
     engine::engine()
         : m_is_exit(false)
         , m_mem_manager(new mem::mem_manager())
-        , m_window(new window::window(1280, 720, false))    // TODO read these from config.
+        , m_window(new window::window(1280, 720))    // TODO read these from config.
     {
 
     }

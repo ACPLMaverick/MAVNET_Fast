@@ -76,6 +76,7 @@ elseif(JE_PLATFORM STREQUAL ${PLATFORM_NAME_LINUX})
 
 	target_link_libraries(${EXE_NAME} PUBLIC
 		xcb
+		xcb-randr
 	)
 
 	if(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_DEBUG})
