@@ -411,10 +411,10 @@ namespace je { namespace tests {
                 str_c += str_c;
             }
 
-            engine::get_inst().get_mem_manager().print_memory_summary();
+            mem::mem_manager::get_inst().print_memory_summary();
         }
         JE_print("After deallocation...");
-        engine::get_inst().get_mem_manager().print_memory_summary();
+        mem::mem_manager::get_inst().print_memory_summary();
 
         JE_print("Allocator state print test passed.");
     }
@@ -690,7 +690,8 @@ namespace je { namespace tests {
 
     void tester::test_render()
     {
-        engine::get_inst().run();
-        JE_print("Render test passed.");
+        engine eng;
+        eng.run();
+        JE_print("Render test ended.");
     }
 }}

@@ -50,7 +50,11 @@ set(EXE_NAME JadeEngine_${JE_PLATFORM}_${JE_CONFIGURATION})
 
 # Build system
 add_executable(${EXE_NAME} "")
-add_subdirectory (${SOURCE_DIR})
+
+# Renderer backend definitions default values.
+set(JE_GPU_VULKAN 0)
+set(JE_GPU_GLES 0)
+set(JE_GPU_D3D12 0)
 
 # Platform-specific definitions, compiler flags, libs, etc.
 # WINDOWS
@@ -70,6 +74,9 @@ if(JE_PLATFORM STREQUAL ${PLATFORM_NAME_WINDOWS})
 	target_include_directories(${EXE_NAME} PUBLIC
 		${SOURCE_DIR}/platform/windows
 	)
+
+	set(JE_GPU_VULKAN 1)
+	set(JE_GPU_D3D12 1)
 # ########
 # LINUX
 elseif(JE_PLATFORM STREQUAL ${PLATFORM_NAME_LINUX})
@@ -96,8 +103,17 @@ elseif(JE_PLATFORM STREQUAL ${PLATFORM_NAME_LINUX})
 			-rdynamic
 		)
 	endif()
-# #######
+
+	set(JE_GPU_VULKAN 1)
 endif()
+# #######
+
+# GPU backend defines.
+target_compile_definitions(${EXE_NAME} PUBLIC
+	JE_GPU_VULKAN=${JE_GPU_VULKAN}
+	JE_GPU_GLES=${JE_GPU_GLES}
+	JE_GPU_D3D12=${JE_GPU_D3D12}
+)
 
 # Configuration-specific definitions, compiler flags, libs, etc.
 if(JE_CONFIGURATION STREQUAL ${CONFIGURATION_NAME_DEBUG})
@@ -161,6 +177,8 @@ set_target_properties(${EXE_NAME}
 	RUNTIME_OUTPUT_DIRECTORY ${RUNTIME_WORK_DIR}
 )
 
+# Sources.
+add_subdirectory (${SOURCE_DIR})
 
 # Post-build actions
 

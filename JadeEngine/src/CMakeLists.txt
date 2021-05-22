@@ -4,7 +4,6 @@ file(GLOB HERE_SOURCES
 
 file(GLOB_RECURSE GENERAL_SOURCES
        data/*.cpp
-       draw/*.cpp
        math/*.cpp
        mem/*.cpp
        tests/*.cpp
@@ -12,6 +11,35 @@ file(GLOB_RECURSE GENERAL_SOURCES
        util/*.cpp
        window/*.cpp
 )
+
+file(GLOB DRAW_SOURCES
+       draw/*.cpp
+       draw/gpu/*.cpp
+)
+
+if(JE_GPU_VULKAN EQUAL 1)
+       file(GLOB_RECURSE DRAW_GPU_VULKAN_SOURCES
+              draw/gpu/vulkan/*.cpp
+       )
+else()
+       set(DRAW_GPU_VULKAN_SOURCES )
+endif()
+
+if(JE_GPU_GLES EQUAL 1)
+       file(GLOB_RECURSE DRAW_GPU_GLES_SOURCES
+              draw/gpu/gles/*.cpp
+       )
+else()
+       set(DRAW_GPU_GLES_SOURCES )
+endif()
+
+if(JE_GPU_D3D12 EQUAL 1)
+       file(GLOB_RECURSE DRAW_GPU_D3D12_SOURCES
+              draw/gpu/d3d12/*.cpp
+       )
+else()
+       set(DRAW_GPU_D3D12_SOURCES )
+endif()
 
 file(GLOB PLATFORM_SOURCES_A
        platform/*.cpp
@@ -32,6 +60,10 @@ endif()
 target_sources(${EXE_NAME} PRIVATE 
        ${HERE_SOURCES}
        ${GENERAL_SOURCES}
+       ${DRAW_SOURCES}
+       ${DRAW_GPU_VULKAN_SOURCES}
+       ${DRAW_GPU_GLES_SOURCES}
+       ${DRAW_GPU_D3D12_SOURCES}
        ${PLATFORM_SOURCES_A}
        ${PLATFORM_SOURCES_B}
 )

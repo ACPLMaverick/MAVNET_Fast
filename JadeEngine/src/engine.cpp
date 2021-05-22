@@ -2,18 +2,29 @@
 
 #include "mem/mem_manager.h"
 #include "window/window.h"
+#include "draw/renderer.h"
 #include "thread/thread.h"
 
 namespace je {
 
-    engine& engine::get_inst()
+    engine::engine()
+        : m_is_exit(false)
     {
-        static engine s_engine;
-        return s_engine;
+        mem::mem_manager::get_inst();   // TODO No control over when mem_manager gets cleaned up.
+        m_window = new window::window(1280, 720); // TODO read these from config.
+        m_renderer = new draw::renderer(get_window());
+    }
+
+    engine::~engine()
+    {
+        JE_safe_delete(m_renderer);
+        JE_safe_delete(m_window);
     }
 
     void engine::run()
     {
+        perform_post_init_checks();
+
         data::array<window::message> messages;
 
         while(m_is_exit == false)
@@ -38,22 +49,23 @@ namespace je {
                 messages.clear();
             }
 
-            thread::thread::sleep_ms(16.67f);
+            // Kick off scene update for next frame.
+            // TODO
+
+            // Draw scene for current frame, if available.
+            m_renderer->draw();
+
+            thread::thread::sleep_ms(16.67f);   // TODO sleep remaining of assumed frame time.
         }
     }
 
-    engine::engine()
-        : m_is_exit(false)
-        , m_mem_manager(new mem::mem_manager())
-        , m_window(new window::window(1280, 720))    // TODO read these from config.
+    void engine::perform_post_init_checks()
     {
-
-    }
-
-    engine::~engine()
-    {
-        JE_safe_delete(m_window);
-        JE_safe_delete(m_mem_manager);
+        if(m_renderer->is_gpu_created() == false)
+        {
+            JE_fail("Fatal error. Could not create a GPU backend.");
+            m_is_exit = true;
+        }
     }
 
 }

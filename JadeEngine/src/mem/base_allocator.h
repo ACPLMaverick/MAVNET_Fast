@@ -64,10 +64,12 @@ namespace je { namespace mem {
 
 #if JE_DEBUG_ALLOCATIONS
         const std::vector<base_allocator*>& get_child_allocators() const { return m_child_allocators; }
-        const char* get_name() const { return m_name != nullptr ? m_name : "Unknown"; }
+        const char* get_name() const { return m_name != nullptr ? m_name : "N/A"; }
         size get_num_allocations() const { return m_num_allocations; }
         size get_used_memory() const { return m_used_num_bytes; }
         size get_memory_left() const { return get_total_memory() - get_used_memory(); }
+#else
+        const char* get_name() const { return "N/A"; }
 #endif
 
     protected:

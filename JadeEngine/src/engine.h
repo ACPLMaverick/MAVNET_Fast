@@ -12,24 +12,33 @@ namespace je {
     {
         class window;
     }
+    namespace draw
+    {
+        class renderer;
+    }
+    
 
     class engine
     {
     public:
 
-        static engine& get_inst();
-        inline mem::mem_manager& get_mem_manager() { return JE_deref(m_mem_manager); }
-        inline window::window& get_window() { return JE_deref(m_window); }
-
-        void run();
-
-    private:
         engine();
         ~engine();
 
+        void run();
+
+        inline window::window& get_window() { return JE_deref(m_window); }
+        inline draw::renderer& get_renderer() { return JE_deref(m_renderer); }
+
+    private:
+
+        void perform_post_init_checks();
+
+    private:
+
         bool m_is_exit;
-        mem::mem_manager* m_mem_manager;
         window::window* m_window;
+        draw::renderer* m_renderer;
     };
 
 }

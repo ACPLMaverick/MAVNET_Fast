@@ -3,6 +3,7 @@
 #include "global.h"
 #include "message.h"
 #include "data/data.h"
+#include "mem/allocatable.h"
 
 #include "window/window_platform.h"
 
@@ -10,7 +11,7 @@ namespace je { namespace window {
 
 #define JE_WINDOW_DEBUG_OUTPUT (1 && !(JE_CONFIG_RELEASE)) // TODO Implement
 
-    class window
+    class window : public mem::allocatable_persistent
     {
     public:
 

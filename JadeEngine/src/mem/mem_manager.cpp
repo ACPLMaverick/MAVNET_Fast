@@ -84,11 +84,18 @@ namespace je { namespace mem {
     };
 #endif
 
+    mem_manager& mem_manager::get_inst()
+    {
+        static mem_manager mgr;
+        return mgr;
+    }
+
     mem_manager::mem_manager()
         : m_mem_budgets()
         , m_system_allocator()
         , m_top_allocator(m_system_allocator, m_mem_budgets.m_total_byte_num, alignment::k_16, "Topmost")
         , m_one_frame_allocator(m_top_allocator, m_mem_budgets.m_one_frame_byte_num, alignment::k_1, "OneFrame")
+        , m_persistent_allocator(m_top_allocator, m_mem_budgets.m_persistent_byte_num, alignment::k_1, "Persistent")
         , m_variable_allocator(m_top_allocator, m_mem_budgets.m_variable_byte_num, alignment::k_1, "Variable")
         , m_collections_allocator(m_variable_allocator, m_mem_budgets.m_collections_byte_num, alignment::k_1, "Collection")
         , m_general_purpose_allocator(m_variable_allocator, m_mem_budgets.m_general_purpose_byte_num, alignment::k_1, "GenPurpose")
@@ -103,11 +110,12 @@ namespace je { namespace mem {
 
     mem_manager::mem_budgets::mem_budgets()
         : m_total_byte_num(64 * k_MB)
-        , m_one_frame_byte_num(get_percentage_of(m_total_byte_num, 10))
+        , m_one_frame_byte_num(get_percentage_of(m_total_byte_num, 5))
+        , m_persistent_byte_num(get_percentage_of(m_total_byte_num, 5))
         , m_variable_byte_num(get_percentage_of(m_total_byte_num, 40))
         , m_collections_byte_num(get_percentage_of(m_variable_byte_num, 50))
         , m_general_purpose_byte_num(m_variable_byte_num - m_collections_byte_num)
-        , m_object_pool_byte_num(m_total_byte_num - m_one_frame_byte_num - m_variable_byte_num)
+        , m_object_pool_byte_num(m_total_byte_num - m_one_frame_byte_num - m_persistent_byte_num - m_variable_byte_num)
         , m_resource_chunks_byte_num(get_percentage_of(m_object_pool_byte_num, 50))
         , m_component_chunks_byte_num(m_object_pool_byte_num - m_resource_chunks_byte_num)
     {
