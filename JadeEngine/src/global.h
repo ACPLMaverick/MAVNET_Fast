@@ -27,6 +27,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <type_traits>
+#include <limits>
 
 #if JE_CONFIG_DEBUG
 #include <cstdio>
