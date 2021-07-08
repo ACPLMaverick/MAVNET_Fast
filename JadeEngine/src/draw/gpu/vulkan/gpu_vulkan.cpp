@@ -30,6 +30,7 @@ namespace je { namespace draw {
 
     presenter* gpu_vulkan::create_presenter(const presenter_params& a_params)
     {
+        // TODO Make this creation algorithm appear only in one place.
         presenter_vulkan* pres = new presenter_vulkan(a_params);
         if(pres->init(*this, a_params.m_window))
         {
@@ -37,6 +38,7 @@ namespace je { namespace draw {
         }
         else
         {
+            pres->shutdown(*this);
             return nullptr;
         }
     }
