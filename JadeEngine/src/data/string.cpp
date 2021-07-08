@@ -351,6 +351,17 @@ namespace je { namespace data {
         return parse_float(a_str.get_data());
     }
 
+    bool string::compare(const char_type* a, const char_type* b)
+    {
+        return std::strcmp(a, b) == 0;
+    }
+
+    bool string::compare_case_insensitive(const char_type* a, const char_type* b)
+    {
+        JE_todo();
+        return false;
+    }
+
     void string::clear()
     {
         m_chars.clear();

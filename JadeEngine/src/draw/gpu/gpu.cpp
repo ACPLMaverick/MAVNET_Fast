@@ -65,4 +65,9 @@ namespace je { namespace draw {
         return device;
     }
 
+    void gpu::destroy_gpu(gpu* a_gpu)
+    {
+        JE_safe_delete(a_gpu, a_gpu->shutdown());
+    }
+
 }}

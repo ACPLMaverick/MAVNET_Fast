@@ -88,6 +88,7 @@ elseif(JE_PLATFORM STREQUAL ${PLATFORM_NAME_LINUX})
 	target_link_libraries(${EXE_NAME} PUBLIC
 		xcb
 		xcb-randr
+		vulkan
 	)
 
 	target_include_directories(${EXE_NAME} PUBLIC

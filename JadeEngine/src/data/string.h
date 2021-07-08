@@ -68,6 +68,9 @@ namespace je { namespace data {
         static u32 parse_uint32(const string& str);
         static f32 parse_float(const string& str);
 
+        static bool compare(const char_type* a, const char_type* b);
+        static bool compare_case_insensitive(const char_type* a, const char_type* b);
+
         void clear();
         void resize(size num_chars, char_type char_to_fill = char_end);
         void reserve(size num_chars);

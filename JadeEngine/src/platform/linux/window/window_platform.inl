@@ -4,6 +4,12 @@
 
     // class window 
     // {
+        public:
+
+            inline xcb_connection_t* get_connection() const { return m_connection; }
+            inline xcb_window_t get_window() const { return m_window; }
+            
+        protected:
 
             xcb_atom_t get_atom(const char* name);
             xcb_atom_t get_atom_property_value(xcb_atom_t atom);

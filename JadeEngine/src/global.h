@@ -11,9 +11,10 @@
 #define JE_disallow_copy(_type_)			    \
     _type_(const _type_&) = delete;				\
     _type_& operator=(const _type_&) = delete
-#define JE_safe_delete(_ptr_)	    \
+#define JE_safe_delete(_ptr_, ...)  \
     if (_ptr_ != nullptr)			\
     {								\
+        __VA_ARGS__;                \
         delete _ptr_;				\
         _ptr_ = nullptr;			\
     }

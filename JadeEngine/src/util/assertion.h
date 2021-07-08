@@ -33,8 +33,10 @@ namespace je { namespace util {
 #endif
 
 #define JE_fail(...) JE_assert(false, __VA_ARGS__)
-#define JE_assert_bailout(_value_, _return_type_, ...) { JE_assert(_value_, __VA_ARGS__); if(!(_value_)) { return _return_type_; } }
+#define JE_assert_bailout(_value_, _return_value_, ...) { JE_assert(_value_, __VA_ARGS__); if(!(_value_)) { return _return_value_; } }
 #define JE_assert_bailout_noret(_value_, ...) { JE_assert(_value_, __VA_ARGS__); if(!(_value_)) { return; } }
+#define JE_verify_bailout(_expr_, _return_value_, ...) { auto ret = _expr_; if(!(ret)) { JE_fail(__VA_ARGS__); return _return_value_; } }
+#define JE_verify_bailout_noret(_expr_, ...) { auto ret = _expr_; if(!(ret)) { JE_fail(__VA_ARGS__); return; } }
 #define JE_todo() JE_fail("Not implemented.")
 #define JE_deref(_ptr_) *(JE_check(_ptr_))
 
