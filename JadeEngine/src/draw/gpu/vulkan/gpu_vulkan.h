@@ -7,6 +7,13 @@ namespace je { namespace draw {
 
     class gpu_vulkan : public gpu
     {
+    public:
+
+        struct vk_queue_families
+        {
+            i32 family_indices[static_cast<size>(queue_type::k_enum_size)];
+        };
+
     protected:
 
         enum class vk_extension_layer_requirement_level : u8
@@ -23,11 +30,6 @@ namespace je { namespace draw {
             capabilities m_cap_flag_to_set = capabilities::k_none;
         };
 
-        struct vk_queue_families
-        {
-            i32 family_indices[static_cast<size>(queue_type::k_enum_size)];
-        };
-
     public:
 
         ~gpu_vulkan();
@@ -41,13 +43,15 @@ namespace je { namespace draw {
 
         // Accessor functions.
         inline VkInstance get_instance() { return m_instance; }
+        inline VkPhysicalDevice get_physical_device() { return m_physical_device; }
         inline VkDevice get_device() { return m_device; }
+        inline vk_queue_families get_queue_families() { return m_queue_families; }
         inline VkQueue get_queue(queue_type a_type) { return m_queues[static_cast<size>(a_type)]; }
         inline VkAllocationCallbacks* get_allocator() { return nullptr; } // TODO
         // //////////////////
 
         // Utility/helper functions.
-        bool is_presenting_supported_by_graphics_queue(VkSurfaceKHR surface);
+        
         // //////////////////
 
     protected:

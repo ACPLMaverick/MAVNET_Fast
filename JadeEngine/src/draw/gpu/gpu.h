@@ -62,6 +62,22 @@ namespace je { namespace draw {
 
         bool has_capabilities(capabilities a_caps) const { return (static_cast<u32>(m_capabilities) & static_cast<u32>(a_caps)) == static_cast<u32>(a_caps); }
 
+        template<class base_type, class created_type, class params_type>
+        base_type* create_gpu_object(const params_type& a_params)
+        {
+            created_type* object = new created_type(a_params);
+            if(object->init(*this, a_params))
+            {
+                return object;
+            }
+            else
+            {
+                object->shutdown(*this);
+                delete object;
+                return nullptr;
+            }
+        }
+
     protected:
 
         capabilities m_capabilities;

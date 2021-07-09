@@ -25,29 +25,9 @@ namespace je {
     {
         perform_post_init_checks();
 
-        data::array<window::message> messages;
-
         while(m_is_exit == false)
         {
-            // Process messages.
-            const bool have_messages = m_window->poll_messages(messages);
-            if(have_messages)
-            {
-                for(const window::message& msg : messages)
-                {
-                    if(msg.get_type() == window::message_type::k_closed)
-                    {
-                        // Shutdown engine and destroy the window.
-                        m_is_exit = true;
-                        break;  // No point in processing other messages.
-                    }
-                    else
-                    {
-                        // TODO Implement other messages.
-                    }
-                }
-                messages.clear();
-            }
+            process_messages();
 
             // Kick off scene update for next frame.
             // TODO
@@ -70,6 +50,29 @@ namespace je {
         {
             JE_fail("Fatal error. Could not create a swap chain.");
             m_is_exit = true;
+        }
+    }
+
+    void engine::process_messages()
+    {
+        static data::array<window::message> messages;
+        const bool have_messages = m_window->poll_messages(messages);
+        if(have_messages)
+        {
+            for(const window::message& msg : messages)
+            {
+                if(msg.get_type() == window::message_type::k_closed)
+                {
+                    // Shutdown engine and destroy the window.
+                    m_is_exit = true;
+                    break;  // No point in processing other messages.
+                }
+                else
+                {
+                    // TODO Implement other messages.
+                }
+            }
+            messages.clear();
         }
     }
 

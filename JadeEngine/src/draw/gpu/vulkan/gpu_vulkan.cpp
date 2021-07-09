@@ -30,30 +30,7 @@ namespace je { namespace draw {
 
     presenter* gpu_vulkan::create_presenter(const presenter_params& a_params)
     {
-        // TODO Make this creation algorithm appear only in one place.
-        presenter_vulkan* pres = new presenter_vulkan(a_params);
-        if(pres->init(*this, a_params.m_window))
-        {
-            return pres;
-        }
-        else
-        {
-            pres->shutdown(*this);
-            return nullptr;
-        }
-    }
-
-    bool gpu_vulkan::is_presenting_supported_by_graphics_queue(VkSurfaceKHR a_surface)
-    {
-        if(m_queue_families.family_indices[static_cast<size>(queue_type::k_graphics)] >= 0)
-        {
-            VkBool32 is_present_supported = false;
-            JE_vk_verify_bailout(vkGetPhysicalDeviceSurfaceSupportKHR(
-                m_physical_device, m_queue_families.family_indices[static_cast<size>(queue_type::k_graphics)],
-                a_surface, &is_present_supported));
-            return static_cast<bool>(is_present_supported);
-        }
-        return false;
+        return create_gpu_object<presenter, presenter_vulkan, presenter_params>(a_params);
     }
 
     bool gpu_vulkan::init(const gpu_params& a_initializer)

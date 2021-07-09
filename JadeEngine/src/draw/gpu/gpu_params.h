@@ -17,8 +17,8 @@ namespace je { namespace draw {
     {
         const window::window& m_window;
         u8 m_num_buffers;
-        bool m_is_hdr;
         bool m_is_vsync;
+        bool m_is_hdr;
     };
 
 }}

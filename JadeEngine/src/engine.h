@@ -33,6 +33,7 @@ namespace je {
     private:
 
         void perform_post_init_checks();
+        void process_messages();
 
     private:
 

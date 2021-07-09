@@ -22,7 +22,8 @@ namespace je { namespace draw {
             k_none = 0,
             k_triple_buffering = (1 << 0),
             k_vsync = (1 << 1),
-            k_hdr = (1 << 2)
+            k_immediate = (1 << 2),
+            k_hdr = (1 << 3)
         };
 
     public:
@@ -46,7 +47,7 @@ namespace je { namespace draw {
 
         presenter(const presenter_params& params);
 
-        virtual bool init(gpu& a_gpu, const window::window& a_window) = 0;
+        virtual bool init(gpu& a_gpu, const presenter_params& params) = 0;
 
     protected:
 
