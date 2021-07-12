@@ -41,14 +41,9 @@ namespace je {
 
     void engine::perform_post_init_checks()
     {
-        if(m_renderer->is_gpu_created() == false)
+        if(m_renderer->is_gpu_backend_created() == false)
         {
             JE_fail("Fatal error. Could not create a GPU backend.");
-            m_is_exit = true;
-        }
-        if(m_renderer->is_presenter_created() == false)
-        {
-            JE_fail("Fatal error. Could not create a swap chain.");
             m_is_exit = true;
         }
     }

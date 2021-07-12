@@ -3,9 +3,9 @@
 #include "draw/gpu/presenter.h"
 #include "global_vulkan.h"
 
-namespace je { namespace draw {
+namespace je { namespace draw { namespace gpu {
 
-    class gpu_vulkan;
+    class dev_vulkan;
 
     class presenter_vulkan : public presenter
     {
@@ -14,11 +14,11 @@ namespace je { namespace draw {
         ~presenter_vulkan();
 
         // Presenter interface.
-        void shutdown(gpu& a_gpu) override;
-        bool present(gpu& a_gpu/*TODO params : presented render target. Window position offset.*/) override;
+        void shutdown(dev& a_dev) override;
+        bool present(dev& a_dev/*TODO params : presented render target. Window position offset.*/) override;
         bool set_vsync(bool is_vsync) override;
         bool set_hdr(bool is_hdr) override;
-        bool recreate(gpu& a_gpu, const window::window& updated_window) override;
+        bool recreate(dev& a_dev, const window::window& updated_window) override;
         // ////////////////
 
     protected:
@@ -50,12 +50,12 @@ namespace je { namespace draw {
         presenter_vulkan(const presenter_params& params);
 
         // Presenter protected interface.
-        bool init(gpu& a_gpu, const presenter_params& params) override;
+        bool init(dev& a_dev, const presenter_params& params) override;
         // ///////////////
-        bool init_surface_platform_specific(gpu_vulkan& gpu, const window::window& a_window);
-        bool is_presenting_supported_by_graphics_queue(gpu_vulkan& gpu);
-        bool init_swapchain_and_adjust_params(gpu_vulkan& gpu, const window::window& a_window);
-        bool init_swapchain_images(gpu_vulkan& gpu);
+        bool init_surface_platform_specific(dev_vulkan& dev, const window::window& a_window);
+        bool is_presenting_supported_by_graphics_queue(dev_vulkan& dev);
+        bool init_swapchain_and_adjust_params(dev_vulkan& dev, const window::window& a_window);
+        bool init_swapchain_images(dev_vulkan& dev);
 
         image_format get_selected_image_format() const;
         VkPresentModeKHR get_selected_present_mode() const;
@@ -74,7 +74,7 @@ namespace je { namespace draw {
 
     protected:
 
-        friend class gpu;
+        friend class dev;
     };
 
-}}
+}}}

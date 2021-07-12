@@ -11,8 +11,10 @@ namespace je { namespace window {
 
 namespace je { namespace draw {
 
-    class gpu;
-    class presenter;
+    namespace gpu {
+        class dev;
+        class presenter;
+    }
 
     class renderer : public mem::allocatable_persistent
     {
@@ -23,14 +25,13 @@ namespace je { namespace draw {
 
         void draw();
 
-        inline bool is_gpu_created() const { return m_gpu != nullptr; }
-        inline bool is_presenter_created() const { return m_presenter != nullptr; }
+        inline bool is_gpu_backend_created() const { return m_dev != nullptr && m_presenter != nullptr; }
 
     protected:
 
         const window::window& m_window;
-        gpu* m_gpu;
-        presenter* m_presenter;
+        gpu::dev* m_dev;
+        gpu::presenter* m_presenter;
 
     };
 

@@ -1,15 +1,15 @@
 #include "presenter_vulkan.h"
 #include "window/window.h"
-#include "gpu_vulkan.h"
+#include "dev_vulkan.h"
 #include "math/sc.h"
 
-namespace je { namespace draw {
+namespace je { namespace draw { namespace gpu {
 
     presenter_vulkan::~presenter_vulkan()
     {
     }
 
-    void presenter_vulkan::shutdown(gpu& a_gpu)
+    void presenter_vulkan::shutdown(dev& a_dev)
     {
         if(m_old_swapchain != VK_NULL_HANDLE)
         {
@@ -18,16 +18,16 @@ namespace je { namespace draw {
         if(m_swapchain != VK_NULL_HANDLE)
         {
             m_images.clear();
-            vkDestroySwapchainKHR(JE_vk_gpu(a_gpu).get_device(), m_swapchain, JE_vk_gpu(a_gpu).get_allocator());
+            vkDestroySwapchainKHR(JE_vk_dev(a_dev).get_device(), m_swapchain, JE_vk_dev(a_dev).get_allocator());
         }
         if(m_surface != VK_NULL_HANDLE)
         {
-            vkDestroySurfaceKHR(JE_vk_gpu(a_gpu).get_instance(), m_surface, JE_vk_gpu(a_gpu).get_allocator());
+            vkDestroySurfaceKHR(JE_vk_dev(a_dev).get_instance(), m_surface, JE_vk_dev(a_dev).get_allocator());
             m_surface = VK_NULL_HANDLE;
         }
     }
 
-    bool presenter_vulkan::present(gpu& a_gpu)
+    bool presenter_vulkan::present(dev& a_dev)
     {
         JE_todo();
         return false;
@@ -45,12 +45,12 @@ namespace je { namespace draw {
         return false;
     }
 
-    bool presenter_vulkan::recreate(gpu& a_gpu, const window::window& a_updated_window)
+    bool presenter_vulkan::recreate(dev& a_dev, const window::window& a_updated_window)
     {
         m_old_swapchain = m_swapchain;
         m_images.clear();
-        JE_verify_bailout(init_swapchain_and_adjust_params(JE_vk_gpu(a_gpu), a_updated_window), false, "Failed to init swapchain.");
-        JE_verify_bailout(init_swapchain_images(JE_vk_gpu(a_gpu)), false, "Failed to obtain swapchain images.");
+        JE_verify_bailout(init_swapchain_and_adjust_params(JE_vk_dev(a_dev), a_updated_window), false, "Failed to init swapchain.");
+        JE_verify_bailout(init_swapchain_images(JE_vk_dev(a_dev)), false, "Failed to obtain swapchain images.");
         return true;
     }
 
@@ -62,16 +62,16 @@ namespace je { namespace draw {
     {
     }
 
-    bool presenter_vulkan::init(gpu& a_gpu, const presenter_params& a_params)
+    bool presenter_vulkan::init(dev& a_dev, const presenter_params& a_params)
     {
-        JE_verify_bailout(init_surface_platform_specific(JE_vk_gpu(a_gpu), a_params.m_window), false, "Failed to create a surface.");
-        JE_verify_bailout(is_presenting_supported_by_graphics_queue(JE_vk_gpu(a_gpu)), false, "Presenting is not supported by the graphics queue");
-        JE_verify_bailout(init_swapchain_and_adjust_params(JE_vk_gpu(a_gpu), a_params.m_window), false, "Failed to init swapchain.");
-        JE_verify_bailout(init_swapchain_images(JE_vk_gpu(a_gpu)), false, "Failed to obtain swapchain images.");
+        JE_verify_bailout(init_surface_platform_specific(JE_vk_dev(a_dev), a_params.m_window), false, "Failed to create a surface.");
+        JE_verify_bailout(is_presenting_supported_by_graphics_queue(JE_vk_dev(a_dev)), false, "Presenting is not supported by the graphics queue");
+        JE_verify_bailout(init_swapchain_and_adjust_params(JE_vk_dev(a_dev), a_params.m_window), false, "Failed to init swapchain.");
+        JE_verify_bailout(init_swapchain_images(JE_vk_dev(a_dev)), false, "Failed to obtain swapchain images.");
         return true;
     }
 
-    bool presenter_vulkan::init_surface_platform_specific(gpu_vulkan& a_gpu, const window::window& a_window)
+    bool presenter_vulkan::init_surface_platform_specific(dev_vulkan& a_dev, const window::window& a_window)
     {
 #if JE_PLATFORM_LINUX
         VkXcbSurfaceCreateInfoKHR create_info{ VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR };
@@ -79,7 +79,7 @@ namespace je { namespace draw {
         create_info.connection = a_window.get_connection();
         create_info.flags = 0;
 
-        JE_vk_verify_bailout(vkCreateXcbSurfaceKHR(a_gpu.get_instance(), &create_info, a_gpu.get_allocator(), &m_surface));
+        JE_vk_verify_bailout(vkCreateXcbSurfaceKHR(a_dev.get_instance(), &create_info, a_dev.get_allocator(), &m_surface));
 
 #elif JE_PLATFORM_WINDOWS
 #error TODO Implement.
@@ -92,23 +92,23 @@ namespace je { namespace draw {
         return true;
     }
 
-    bool presenter_vulkan::is_presenting_supported_by_graphics_queue(gpu_vulkan& a_gpu)
+    bool presenter_vulkan::is_presenting_supported_by_graphics_queue(dev_vulkan& a_dev)
     {
-        if(a_gpu.get_queue_families().family_indices[static_cast<size>(queue_type::k_graphics)] >= 0)
+        if(a_dev.get_queue_families().family_indices[static_cast<size>(queue_type::k_graphics)] >= 0)
         {
             VkBool32 is_present_supported = false;
             JE_vk_verify_bailout(vkGetPhysicalDeviceSurfaceSupportKHR(
-                a_gpu.get_physical_device(),
-                a_gpu.get_queue_families().family_indices[static_cast<size>(queue_type::k_graphics)],
+                a_dev.get_physical_device(),
+                a_dev.get_queue_families().family_indices[static_cast<size>(queue_type::k_graphics)],
                 m_surface, &is_present_supported));
             return static_cast<bool>(is_present_supported);
         }
         return false;
     }
 
-    bool presenter_vulkan::init_swapchain_and_adjust_params(gpu_vulkan& a_gpu, const window::window& a_window)
+    bool presenter_vulkan::init_swapchain_and_adjust_params(dev_vulkan& a_dev, const window::window& a_window)
     {
-        gpu_vulkan& gpu = JE_vk_gpu(a_gpu);
+        dev_vulkan& dev = JE_vk_dev(a_dev);
 
         // Query swapchain details.
         const VkPhysicalDeviceSurfaceInfo2KHR info
@@ -118,10 +118,10 @@ namespace je { namespace draw {
             m_surface
         };
         VkSurfaceCapabilities2KHR caps{ VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR };
-        JE_vk_verify_bailout(vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu.get_physical_device(), &info, &caps));
+        JE_vk_verify_bailout(vkGetPhysicalDeviceSurfaceCapabilities2KHR(dev.get_physical_device(), &info, &caps));
 
         u32 format_num = 0;
-        JE_vk_verify_bailout(vkGetPhysicalDeviceSurfaceFormats2KHR(gpu.get_physical_device(), &info, &format_num, nullptr));
+        JE_vk_verify_bailout(vkGetPhysicalDeviceSurfaceFormats2KHR(dev.get_physical_device(), &info, &format_num, nullptr));
 
         data::array<VkSurfaceFormat2KHR> surface_formats(format_num);
         if(format_num > 0)
@@ -130,7 +130,7 @@ namespace je { namespace draw {
             {
                 surface_formats[i].sType = VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR;
             }
-            JE_vk_verify_bailout(vkGetPhysicalDeviceSurfaceFormats2KHR(gpu.get_physical_device(), &info, &format_num, surface_formats.data()));
+            JE_vk_verify_bailout(vkGetPhysicalDeviceSurfaceFormats2KHR(dev.get_physical_device(), &info, &format_num, surface_formats.data()));
         }
         else
         {
@@ -138,11 +138,11 @@ namespace je { namespace draw {
         }
 
         u32 present_mode_num = 0;
-        JE_vk_verify_bailout(vkGetPhysicalDeviceSurfacePresentModesKHR(gpu.get_physical_device(), m_surface, &present_mode_num, nullptr));
+        JE_vk_verify_bailout(vkGetPhysicalDeviceSurfacePresentModesKHR(dev.get_physical_device(), m_surface, &present_mode_num, nullptr));
         data::array<VkPresentModeKHR> present_modes(present_mode_num);
         if(present_mode_num > 0)
         {
-            JE_vk_verify_bailout(vkGetPhysicalDeviceSurfacePresentModesKHR(gpu.get_physical_device(), m_surface, &present_mode_num, present_modes.data()));
+            JE_vk_verify_bailout(vkGetPhysicalDeviceSurfacePresentModesKHR(dev.get_physical_device(), m_surface, &present_mode_num, present_modes.data()));
         }
         else
         {
@@ -237,25 +237,25 @@ namespace je { namespace draw {
         create_info.clipped = VK_TRUE;
         create_info.oldSwapchain = m_old_swapchain;
 
-        JE_vk_verify_bailout(vkCreateSwapchainKHR(gpu.get_device(), &create_info, gpu.get_allocator(), &m_swapchain));
+        JE_vk_verify_bailout(vkCreateSwapchainKHR(dev.get_device(), &create_info, dev.get_allocator(), &m_swapchain));
 
         return true;
     }
 
-    bool presenter_vulkan::init_swapchain_images(gpu_vulkan& a_gpu)
+    bool presenter_vulkan::init_swapchain_images(dev_vulkan& a_dev)
     {
         u32 images_num = 0;
-        JE_vk_verify_bailout(vkGetSwapchainImagesKHR(JE_vk_gpu(a_gpu).get_device(), m_swapchain, &images_num, nullptr));
+        JE_vk_verify_bailout(vkGetSwapchainImagesKHR(JE_vk_dev(a_dev).get_device(), m_swapchain, &images_num, nullptr));
         JE_assert_bailout(images_num == m_num_buffers, false, "Swapchain image num differs from requested buffer num.");
         data::array<VkImage> images(images_num);
-        JE_vk_verify_bailout(vkGetSwapchainImagesKHR(JE_vk_gpu(a_gpu).get_device(), m_swapchain, &images_num, images.data()));
+        JE_vk_verify_bailout(vkGetSwapchainImagesKHR(JE_vk_dev(a_dev).get_device(), m_swapchain, &images_num, images.data()));
         
         for(VkImage vk_image : images)
         {
             swapchain_image image;
             image.m_image = vk_image; 
             
-            // Todo image view. -> these should be gpu_textures later on.
+            // Todo image view. -> these should be gpu::textures later on.
             
             // Todo synchronization elements.
 
@@ -280,4 +280,4 @@ namespace je { namespace draw {
     const VkPresentModeKHR presenter_vulkan::k_present_mode_immediate = VK_PRESENT_MODE_IMMEDIATE_KHR;
     const VkPresentModeKHR presenter_vulkan::k_present_mode_vsync = VK_PRESENT_MODE_FIFO_KHR;
 
-}}
+}}}

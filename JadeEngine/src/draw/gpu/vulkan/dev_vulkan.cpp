@@ -1,16 +1,16 @@
-#include "gpu_vulkan.h"
+#include "dev_vulkan.h"
 #include "util/misc.h"
 #include "presenter_vulkan.h"
 
-namespace je { namespace draw {
+namespace je { namespace draw { namespace gpu {
 
-    gpu_vulkan::~gpu_vulkan()
+    dev_vulkan::~dev_vulkan()
     {
 
     }
 
-    gpu_vulkan::gpu_vulkan()
-        : gpu()
+    dev_vulkan::dev_vulkan()
+        : dev()
         , m_instance(VK_NULL_HANDLE)
 #if JE_GPU_DEBUG_LAYERS
         , m_debug(VK_NULL_HANDLE)
@@ -28,12 +28,12 @@ namespace je { namespace draw {
         }
     }
 
-    presenter* gpu_vulkan::create_presenter(const presenter_params& a_params)
+    presenter* dev_vulkan::create_presenter(const presenter_params& a_params)
     {
         return create_gpu_object<presenter, presenter_vulkan, presenter_params>(a_params);
     }
 
-    bool gpu_vulkan::init(const gpu_params& a_initializer)
+    bool dev_vulkan::init(const dev_params& a_initializer)
     {
         JE_verify_bailout(init_instance(), false, "Failed to init instance.");
 
@@ -47,7 +47,7 @@ namespace je { namespace draw {
         return true;
     }
 
-    bool gpu_vulkan::shutdown()
+    bool dev_vulkan::shutdown()
     {
         for(size i = 0; i < m_queues.k_num_objects; ++i)
         {
@@ -74,7 +74,7 @@ namespace je { namespace draw {
         return true;
     }
 
-    bool gpu_vulkan::init_instance()
+    bool dev_vulkan::init_instance()
     {
         // TODO fill with meaningful info.
         VkApplicationInfo app_info{VK_STRUCTURE_TYPE_APPLICATION_INFO};
@@ -139,7 +139,7 @@ namespace je { namespace draw {
         return true;
     }
 
-    bool gpu_vulkan::init_instance_filter_extensions_and_layers
+    bool dev_vulkan::init_instance_filter_extensions_and_layers
     (
         const vk_extension_layer_definition* a_wanted_extensions,
         const size a_wanted_extensions_num,
@@ -242,7 +242,7 @@ namespace je { namespace draw {
         return true;
     }
 
-    void gpu_vulkan::init_instance_debug_output()
+    void dev_vulkan::init_instance_debug_output()
     {
 #if JE_GPU_DEBUG_LAYERS
         if(has_capabilities(capabilities::k_debug))
@@ -251,7 +251,7 @@ namespace je { namespace draw {
             VkDebugUtilsMessengerCreateInfoEXT create_info{ VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
             create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
             create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-            create_info.pfnUserCallback = &gpu_vulkan::debug_callback_static;
+            create_info.pfnUserCallback = &dev_vulkan::debug_callback_static;
             create_info.pUserData = static_cast<void*>(this);
 
             VkResult result = JE_vk_ext_func(vkCreateDebugUtilsMessengerEXT, m_instance, &create_info, get_allocator(), &m_debug);
@@ -263,7 +263,7 @@ namespace je { namespace draw {
 #endif // JE_GPU_DEBUG_LAYERS
     }
 
-    bool gpu_vulkan::init_physical_device(i8 a_forced_adapter_index, VkPhysicalDeviceFeatures2& a_out_features, vk_queue_families& a_out_queue_families)
+    bool dev_vulkan::init_physical_device(i8 a_forced_adapter_index, VkPhysicalDeviceFeatures2& a_out_features, vk_queue_families& a_out_queue_families)
     {
         m_physical_device = nullptr;
 
@@ -351,7 +351,7 @@ namespace je { namespace draw {
         return m_physical_device != nullptr;
     }
 
-    bool gpu_vulkan::init_physical_device_get_info_for_adapter(VkPhysicalDevice a_device, capabilities& a_out_caps,
+    bool dev_vulkan::init_physical_device_get_info_for_adapter(VkPhysicalDevice a_device, capabilities& a_out_caps,
         VkPhysicalDeviceFeatures2& a_out_features, vk_queue_families& a_out_queue_families)
     {
         capabilities caps = capabilities::k_none;
@@ -489,7 +489,7 @@ namespace je { namespace draw {
         return true;
     }
 
-    bool gpu_vulkan::init_device(const VkPhysicalDeviceFeatures2& a_features, const vk_queue_families& a_queue_families)
+    bool dev_vulkan::init_device(const VkPhysicalDeviceFeatures2& a_features, const vk_queue_families& a_queue_families)
     {
         // Set up queue indices for queue creation.
         data::set<u32> unique_queue_indices;
@@ -563,7 +563,7 @@ namespace je { namespace draw {
         return true;
     }
 
-    void gpu_vulkan::init_queues(const vk_queue_families& queue_families)
+    void dev_vulkan::init_queues(const vk_queue_families& queue_families)
     {
         for(size i = 0; i < static_cast<size>(queue_type::k_enum_size); ++i)
         {
@@ -572,7 +572,7 @@ namespace je { namespace draw {
         }
     }
 
-    VkBool32 gpu_vulkan::debug_callback_static
+    VkBool32 dev_vulkan::debug_callback_static
     (
         VkDebugUtilsMessageSeverityFlagBitsEXT a_message_severity,
         VkDebugUtilsMessageTypeFlagsEXT a_message_type,
@@ -580,11 +580,11 @@ namespace je { namespace draw {
         void* a_user_data
     )
     {
-        reinterpret_cast<gpu_vulkan*>(a_user_data)->debug_callback(a_message_severity, a_message_type, a_callback_data->pMessage);
+        reinterpret_cast<dev_vulkan*>(a_user_data)->debug_callback(a_message_severity, a_message_type, a_callback_data->pMessage);
         return VK_FALSE;    // Do NOT abort vulkan call that caused this message. This will not be used for now.
     }
 
-    void gpu_vulkan::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT a_message_severity,
+    void dev_vulkan::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT a_message_severity,
         VkDebugUtilsMessageTypeFlagsEXT a_message_type, const char* a_message)
     {
         static const char* k_label_verbose = "VERBOSE";
@@ -595,7 +595,7 @@ namespace je { namespace draw {
         static const char* k_reason_validation = " VALIDATION";
         static const char* k_reason_performance = " PERFORMANCE";
 
-        // TODO configure severity via config or gpu_params.
+        // TODO configure severity via config or dev_params.
         if(a_message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
         {
             const char* label = k_label_error;
@@ -636,4 +636,4 @@ namespace je { namespace draw {
         }
     }
 
-}}
+}}}

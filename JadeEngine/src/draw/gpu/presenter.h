@@ -2,15 +2,15 @@
 
 #include "global.h"
 #include "mem/allocatable.h"
-#include "gpu_params.h"
+#include "params.h"
 
 namespace je { namespace window {
     class window;
 }}
 
-namespace je { namespace draw {
+namespace je { namespace draw { namespace gpu {
 
-    class gpu;
+    class dev;
 
     // This class encapsulates whole swapchain and presentation functionality and synchronization.
     class presenter : public mem::allocatable_persistent
@@ -30,11 +30,11 @@ namespace je { namespace draw {
 
         virtual ~presenter() {}
 
-        virtual void shutdown(gpu& a_gpu) = 0;
-        virtual bool present(gpu& a_gpu/*TODO params : presented render target. Window position offset.*/) = 0;
+        virtual void shutdown(dev& a_dev) = 0;
+        virtual bool present(dev& a_dev/*TODO params : presented render target. Window position offset.*/) = 0;
         virtual bool set_vsync(bool is_vsync) = 0;
         virtual bool set_hdr(bool is_hdr) = 0;
-        virtual bool recreate(gpu& a_gpu, const window::window& updated_window);
+        virtual bool recreate(dev& a_dev, const window::window& updated_window);
 
         bool has_capabilities(capabilities a_caps) const { return (static_cast<u32>(m_capabilities) & static_cast<u32>(a_caps)) == static_cast<u32>(a_caps); }
         u16 get_width() const { return m_backbuffer_width; }
@@ -47,7 +47,7 @@ namespace je { namespace draw {
 
         presenter(const presenter_params& params);
 
-        virtual bool init(gpu& a_gpu, const presenter_params& params) = 0;
+        virtual bool init(dev& a_dev, const presenter_params& params) = 0;
 
     protected:
 
@@ -59,4 +59,4 @@ namespace je { namespace draw {
         bool m_is_hdr;
     };
     
-}}
+}}}

@@ -1,22 +1,22 @@
-#include "gpu.h"
+#include "dev.h"
 
 #if JE_GPU_D3D12
-#include "gles/gpu_d3d12.h"
+#include "gles/dev_d3d12.h"
 #endif // JE_GPU_D3D12
 #if JE_GPU_VULKAN
-#include "vulkan/gpu_vulkan.h"
+#include "vulkan/dev_vulkan.h"
 #endif // JE_GPU_VULKAN
 #if JE_GPU_GLES
-#include "gles/gpu_gles.h"
+#include "gles/dev_gles.h"
 #endif // JE_GPU_GLES
 
-namespace je { namespace draw {
+namespace je { namespace draw { namespace gpu {
 
-    gpu* gpu::create_gpu(const gpu_params& a_initializer)
+    dev* dev::create_dev(const dev_params& a_initializer)
     {
-        gpu* device = nullptr;
+        dev* device = nullptr;
 #if JE_GPU_D3D12
-        device = new gpu_d3d12();
+        device = new dev_d3d12();
         if(device->init(a_initializer))
         {
             return device;
@@ -30,7 +30,7 @@ namespace je { namespace draw {
 #endif // JE_GPU_D3D12
 
 #if JE_GPU_VULKAN
-        device = new gpu_vulkan();
+        device = new dev_vulkan();
         if(device->init(a_initializer))
         {
             return device;
@@ -44,7 +44,7 @@ namespace je { namespace draw {
 #endif // JE_GPU_VULKAN
 
 #if JE_GPU_GLES
-        device = new gpu_gles();
+        device = new dev_gles();
         if(device->init(a_initializer))
         {
             return device;
@@ -65,9 +65,9 @@ namespace je { namespace draw {
         return device;
     }
 
-    void gpu::destroy_gpu(gpu* a_gpu)
+    void dev::destroy_dev(dev* a_dev)
     {
-        JE_safe_delete(a_gpu, a_gpu->shutdown());
+        JE_safe_delete(a_dev, a_dev->shutdown());
     }
 
-}}
+}}}

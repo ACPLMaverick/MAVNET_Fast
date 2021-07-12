@@ -6,9 +6,9 @@ namespace je { namespace window {
     class window;
 }}
 
-namespace je { namespace draw {
+namespace je { namespace draw { namespace gpu {
 
-    struct gpu_params
+    struct dev_params
     {
         i8 m_forced_adapter_index;
     };
@@ -21,4 +21,4 @@ namespace je { namespace draw {
         bool m_is_hdr;
     };
 
-}}
+}}}

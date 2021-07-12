@@ -1,7 +1,7 @@
 #pragma once
 
 #include "global.h"
-#include "gpu_params.h"
+#include "params.h"
 #include "mem/allocatable.h"
 
 #define JE_GPU_DEBUG_LAYERS (JE_CONFIG_DEBUG)
@@ -11,7 +11,7 @@ namespace je { namespace window {
     class window;
 }}
 
-namespace je { namespace draw {
+namespace je { namespace draw { namespace gpu {
 
     class presenter;
 
@@ -23,7 +23,7 @@ namespace je { namespace draw {
         k_enum_size
     };
 
-    class gpu : public mem::allocatable_persistent
+    class dev : public mem::allocatable_persistent
     {
     public:
 
@@ -44,18 +44,18 @@ namespace je { namespace draw {
 
     public:
 
-        static gpu* create_gpu(const gpu_params& initializer);
-        static void destroy_gpu(gpu* a_gpu);
-        virtual ~gpu() {}
+        static dev* create_dev(const dev_params& initializer);
+        static void destroy_dev(dev* a_dev);
+        virtual ~dev() {}
 
         // Creation functions.
         virtual presenter* create_presenter(const presenter_params& params) = 0;
 
     protected:
 
-        gpu() {}
+        dev() {}
         
-        virtual bool init(const gpu_params& initializer) = 0;
+        virtual bool init(const dev_params& initializer) = 0;
         virtual bool shutdown() = 0;
 
         virtual const char* get_name() = 0;
@@ -84,4 +84,4 @@ namespace je { namespace draw {
 
     };
 
-}}
+}}}

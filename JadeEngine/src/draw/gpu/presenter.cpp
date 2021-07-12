@@ -1,7 +1,7 @@
 #include "presenter.h"
 #include "window/window.h"
 
-namespace je { namespace draw {
+namespace je { namespace draw { namespace gpu {
 
     presenter::presenter(const presenter_params& a_params)
         : m_capabilities(capabilities::k_none)
@@ -13,10 +13,10 @@ namespace je { namespace draw {
     {
     }
 
-    bool presenter::recreate(gpu& a_gpu, const window::window& a_updated_window)
+    bool presenter::recreate(dev& a_dev, const window::window& a_updated_window)
     {
-        shutdown(a_gpu);
-        return init(a_gpu, { a_updated_window, m_num_buffers, m_is_vsync, m_is_hdr });
+        shutdown(a_dev);
+        return init(a_dev, { a_updated_window, m_num_buffers, m_is_vsync, m_is_hdr });
     }
 
-}}
+}}}

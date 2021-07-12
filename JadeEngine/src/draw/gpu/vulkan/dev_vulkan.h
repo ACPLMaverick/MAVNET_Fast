@@ -1,11 +1,11 @@
 #pragma once
 
-#include "draw/gpu/gpu.h"
+#include "draw/gpu/dev.h"
 #include "global_vulkan.h"
 
-namespace je { namespace draw {
+namespace je { namespace draw { namespace gpu {
 
-    class gpu_vulkan : public gpu
+    class dev_vulkan : public dev
     {
     public:
 
@@ -32,7 +32,7 @@ namespace je { namespace draw {
 
     public:
 
-        ~gpu_vulkan();
+        ~dev_vulkan();
 
         // GPU interface.
         
@@ -56,9 +56,9 @@ namespace je { namespace draw {
 
     protected:
 
-        gpu_vulkan();
+        dev_vulkan();
 
-        bool init(const gpu_params& initializer) override;
+        bool init(const dev_params& initializer) override;
         bool shutdown() override;
         const char* get_name() override { return "Vulkan"; }
 
@@ -104,7 +104,7 @@ namespace je { namespace draw {
         data::static_array<VkQueue, static_cast<size>(queue_type::k_enum_size)> m_queues;
         vk_queue_families m_queue_families;
 
-        friend class gpu;
+        friend class dev;
     };
 
-}}
+}}}
