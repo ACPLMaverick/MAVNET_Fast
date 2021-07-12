@@ -12,6 +12,19 @@
 
 namespace je { namespace window {
 
+    void window::show()
+    {
+        xcb_map_window(m_connection, m_window);
+
+        /* For some WMs the X/Y coordinates are not taken into account
+        when passed to xcb_create_window. As a workaround we must
+        manually set the coordinates after mapping the window. */
+        const i32 coords[] = { static_cast<i32>(m_initial_pos_x), static_cast<i32>(m_initial_pos_y) };
+        xcb_configure_window(m_connection, m_window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, coords);
+
+        xcb_flush(m_connection);
+    }
+
     bool window::poll_messages(data::array<message>& a_out_messages)
     {
         a_out_messages.clear();
@@ -179,13 +192,10 @@ namespace je { namespace window {
             mask,
             &events
         );
-        xcb_map_window(connection, window);
 
-        /* For some WMs the X/Y coordinates are not taken into account
-        when passed to xcb_create_window. As a workaround we must
-        manually set the coordinates after mapping the window. */
-        const i32 coords[] = { static_cast<i32>(pos_x), static_cast<i32>(pos_y) };
-        xcb_configure_window(connection, window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, coords);
+        // Map window will happen later on, on show().
+        m_initial_pos_x = pos_x;
+        m_initial_pos_y = pos_y;
 
         /* Set the title of the window */
         xcb_change_property (connection, XCB_PROP_MODE_REPLACE, window,

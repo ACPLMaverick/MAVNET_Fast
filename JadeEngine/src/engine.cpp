@@ -24,6 +24,7 @@ namespace je {
     void engine::run()
     {
         perform_post_init_checks();
+        perform_post_init_actions();
 
         while(m_is_exit == false)
         {
@@ -46,6 +47,16 @@ namespace je {
             JE_fail("Fatal error. Could not create a GPU backend.");
             m_is_exit = true;
         }
+    }
+
+    void engine::perform_post_init_actions()
+    {
+        if(m_is_exit)
+        {
+            return;
+        }
+
+        m_window->show();
     }
 
     void engine::process_messages()

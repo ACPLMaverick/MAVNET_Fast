@@ -19,6 +19,9 @@
             xcb_connection_t* m_connection{nullptr};
             xcb_window_t m_window{0};
             xcb_atom_t m_atom_close{0};
+            // Saving these for "show window" purpose.
+            u16 m_initial_pos_x;
+            u16 m_initial_pos_y;
 
     // };
 

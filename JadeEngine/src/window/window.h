@@ -21,6 +21,8 @@ namespace je { namespace window {
         window(u16 width, u16 height);
         ~window();
 
+        // Shows a window after engine initialization has finished. This only works once.
+        void show();
         void set_fullscreen(bool is_fullscreen);
         // When doing a manual resize, fullscreen will be automatically disabled.
         void resize(u16 new_width, u16 new_height);
