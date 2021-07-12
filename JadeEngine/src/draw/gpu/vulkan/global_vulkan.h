@@ -50,4 +50,4 @@ namespace je { namespace draw {
     VkResult result = _expression_;         \
     JE_assert_bailout(result == VK_SUCCESS, false, "Vulkan function failed: [%s]", #_expression_);\
 }
-#define JE_vk_dev(_dev_) (reinterpret_cast<dev_vulkan&>(_dev_))
+#define JE_vk_device(_dev_) (reinterpret_cast<device_vulkan&>(_dev_))

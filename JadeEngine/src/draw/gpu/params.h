@@ -8,7 +8,7 @@ namespace je { namespace window {
 
 namespace je { namespace draw { namespace gpu {
 
-    struct dev_params
+    struct device_params
     {
         i8 m_forced_adapter_index;
     };

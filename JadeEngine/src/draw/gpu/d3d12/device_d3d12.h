@@ -1,24 +1,23 @@
 #pragma once
 
-#include "draw/gpu/dev.h"
+#include "draw/gpu/device.h"
 
 namespace je { namespace draw { namespace gpu {
 
-    class dev_d3d12 : public dev
+    class device_d3d12 : public device
     {
     public:
 
-        ~dev_d3d12();
-
     protected:
 
-        dev_d3d12();
+        device_d3d12();
+        ~device_d3d12();
 
-        bool init(const dev_params& initializer) override;
+        bool init(const device_params& initializer) override;
         bool shutdown() override;
         const char* get_name() override { return "Direct3D 12"; }
 
-        friend class dev;
+        friend class factory;
     };
 
 }}

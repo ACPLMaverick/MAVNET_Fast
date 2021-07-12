@@ -13,7 +13,7 @@ namespace je { namespace window {
 
 namespace je { namespace draw { namespace gpu {
 
-    class presenter;
+    class factory;
 
     enum class queue_type : u8
     {
@@ -23,7 +23,7 @@ namespace je { namespace draw { namespace gpu {
         k_enum_size
     };
 
-    class dev : public mem::allocatable_persistent
+    class device : public mem::allocatable_persistent
     {
     public:
 
@@ -44,19 +44,16 @@ namespace je { namespace draw { namespace gpu {
 
     public:
 
-        static dev* create_dev(const dev_params& initializer);
-        static void destroy_dev(dev* a_dev);
-        virtual ~dev() {}
-
-        // Creation functions.
-        virtual presenter* create_presenter(const presenter_params& params) = 0;
+        static device* create_device(const device_params& initializer);
+        static void destroy_device(device* a_device);
 
     protected:
 
-        dev() {}
+        device(const device_params& initializer) {}
+        virtual ~device() {}
         
-        virtual bool init(const dev_params& initializer) = 0;
-        virtual bool shutdown() = 0;
+        virtual bool init(const device_params& initializer) = 0;
+        virtual void shutdown() = 0;
 
         virtual const char* get_name() = 0;
 
@@ -81,6 +78,10 @@ namespace je { namespace draw { namespace gpu {
     protected:
 
         capabilities m_capabilities;
+
+    protected:
+
+        friend class factory;
 
     };
 

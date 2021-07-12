@@ -13,10 +13,10 @@ namespace je { namespace draw { namespace gpu {
     {
     }
 
-    bool presenter::recreate(dev& a_dev, const window::window& a_updated_window)
+    bool presenter::recreate(device& a_device, const window::window& a_updated_window)
     {
-        shutdown(a_dev);
-        return init(a_dev, { a_updated_window, m_num_buffers, m_is_vsync, m_is_hdr });
+        shutdown(a_device);
+        return init(a_device, { a_updated_window, m_num_buffers, m_is_vsync, m_is_hdr });
     }
 
 }}}

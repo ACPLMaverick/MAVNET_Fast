@@ -12,7 +12,7 @@ namespace je { namespace window {
 namespace je { namespace draw {
 
     namespace gpu {
-        class dev;
+        class device;
         class presenter;
     }
 
@@ -25,12 +25,12 @@ namespace je { namespace draw {
 
         void draw();
 
-        inline bool is_gpu_backend_created() const { return m_dev != nullptr && m_presenter != nullptr; }
+        inline bool is_gpu_backend_created() const { return m_device != nullptr && m_presenter != nullptr; }
 
     protected:
 
         const window::window& m_window;
-        gpu::dev* m_dev;
+        gpu::device* m_device;
         gpu::presenter* m_presenter;
 
     };

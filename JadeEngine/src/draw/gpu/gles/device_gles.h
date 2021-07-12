@@ -1,24 +1,23 @@
 #pragma once
 
-#include "draw/gpu/dev.h"
+#include "draw/gpu/device.h"
 
 namespace je { namespace draw { namespace gpu {
 
-    class dev_gles : public dev
+    class device_gles : public device
     {
     public:
 
-        ~dev_gles();
-
     protected:
 
-        dev_gles();
+        device_gles();
+        ~device_gles();
 
-        bool init(const dev_params& initializer) override;
+        bool init(const device_params& initializer) override;
         bool shutdown() override;
         const char* get_name() override { return "OpenGL ES"; }
 
-        friend class dev;
+        friend class factory;
     };
 
 }}}
