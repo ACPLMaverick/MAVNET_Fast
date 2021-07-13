@@ -8,11 +8,6 @@
 namespace je { namespace util {
 
     // Cross-platform implementations.
-    data::string misc::get_file_separator()
-    {
-        return data::string("/");
-    }
-
     data::string misc::call_system_command(const data::string& command)
     {
         FILE* fp;

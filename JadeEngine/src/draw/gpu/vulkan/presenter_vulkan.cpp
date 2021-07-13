@@ -55,6 +55,11 @@ namespace je { namespace draw { namespace gpu {
 
     void presenter_vulkan::shutdown(device& a_device)
     {
+        for(swapchain_image& image : m_images)
+        {
+            vkDestroyImageView(JE_vk_device(a_device).get_device(), image.m_image_view, JE_vk_device(a_device).get_allocator());
+        }
+
         if(m_old_swapchain != VK_NULL_HANDLE)
         {
             m_old_swapchain = VK_NULL_HANDLE;
@@ -256,6 +261,20 @@ namespace je { namespace draw { namespace gpu {
             image.m_image = vk_image; 
             
             // Todo image view. -> these should be gpu::textures later on.
+            VkImageViewCreateInfo image_view_info = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+            image_view_info.image = vk_image;
+            image_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            image_view_info.format = get_selected_image_format().m_format;
+            image_view_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            image_view_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            image_view_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            image_view_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+            image_view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            image_view_info.subresourceRange.baseMipLevel = 0;
+            image_view_info.subresourceRange.levelCount = 1;
+            image_view_info.subresourceRange.baseArrayLayer = 0;
+            image_view_info.subresourceRange.layerCount = 1;
+            JE_vk_verify_bailout(vkCreateImageView(a_device.get_device(), &image_view_info, a_device.get_allocator(), &image.m_image_view));
             
             // Todo synchronization elements.
 

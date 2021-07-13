@@ -41,6 +41,7 @@ namespace je { namespace draw { namespace gpu {
         struct swapchain_image
         {
             VkImage m_image;
+            VkImageView m_image_view;
         };
 
     protected:

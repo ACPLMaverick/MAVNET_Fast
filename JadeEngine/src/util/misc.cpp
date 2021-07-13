@@ -2,6 +2,12 @@
 
 namespace je { namespace util {
 
+    const data::string& misc::get_file_separator()
+    {
+        static data::string sep(JE_DATA_FILE_SEPARATOR);
+        return sep;
+    }
+
     const char* misc::trim_file_name(const char* a_absolute_file_name)
     {
         static const char* root_folder_name = "src";

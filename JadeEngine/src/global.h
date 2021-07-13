@@ -21,6 +21,14 @@
 
 #define JE_bitfield enum
 
+#if JE_CONFIG_DEBUG
+#define JE_NAME_OF_CONFIG "debug"
+#elif JE_CONFIG_PROFILE
+#define JE_NAME_OF_CONFIG "profile"
+#elif JE_CONFIG_RELEASE
+#define JE_NAME_OF_CONFIG "release"
+#endif
+
 // ///////////////////////
 
 // Common includes.
@@ -83,3 +91,9 @@
 #include "platform/windows/global_windows.h"
 
 // ///////////////////////
+
+// This will go to file header but I'm putting it here for now
+
+#define JE_DATA_DIR_BASE "data"
+#define JE_DATA_DIR JE_DATA_DIR_BASE "_" JE_NAME_OF_PLATFORM "_" JE_NAME_OF_CONFIG
+#define JE_DATA_EXTENSION ".jcd"

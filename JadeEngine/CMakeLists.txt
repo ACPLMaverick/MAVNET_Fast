@@ -185,7 +185,8 @@ add_subdirectory (${SOURCE_DIR})
 
 # Copy icon file to bin.
 add_custom_command(TARGET ${EXE_NAME} POST_BUILD
-	COMMAND cp -v -u ../resources/misc/icon.tga ${RUNTIME_WORK_DIR}
+	COMMAND cd ..
+	COMMAND python tools/scripts/cook.py ${JE_PLATFORM} ${JE_CONFIGURATION} Cook
 )
 
 
