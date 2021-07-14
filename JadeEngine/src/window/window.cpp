@@ -80,6 +80,6 @@ namespace je { namespace window {
     }
 
     const char* window::k_title = "JadeEngine";
-    const char* window::k_icon_path = JE_DATA_DIR JE_DATA_FILE_SEPARATOR "icon.tga" JE_DATA_EXTENSION;
+    const char* window::k_icon_path = "icon.tga" JE_DATA_EXTENSION;
 
 }}

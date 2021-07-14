@@ -47,7 +47,7 @@ namespace je {
     {
         if(fs::system::is_mounted() == false)
         {
-            JE_fail("Fatal error. Cannot mount file system.");
+            JE_fail("Fatal error. Cannot mount file system. Possibly data has not been cooked?");
             m_is_exit = true;
         }
         if(m_renderer->is_gpu_backend_created() == false)

@@ -29,7 +29,6 @@ namespace je { namespace fs {
 
         // Creates an invalid, empty file.
         file();
-        // Path provided must be relative to the data directory and without engine-specific extension.
         file(const data::string& path, options a_options);
         file(file&& other);
         ~file();
