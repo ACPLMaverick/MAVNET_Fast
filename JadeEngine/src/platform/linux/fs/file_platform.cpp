@@ -122,6 +122,11 @@ namespace je { namespace fs {
 
     bool file::read(size a_starting_position, size a_num_bytes, data_buffer& a_out_buffer, bool a_append_to_buffer)
     {
+        if(is_valid() == false)
+        {
+            return false;
+        }
+
         if(a_num_bytes == 0)
         {
             JE_fail("Cannot read 0 bytes from file.");
@@ -158,6 +163,11 @@ namespace je { namespace fs {
 
     bool file::write(const data_buffer& a_buffer, size a_starting_position)
     {
+        if(is_valid() == false)
+        {
+            return false;
+        }
+
         set_position(a_starting_position);
         const size bytes_to_write = a_buffer.size();
         if(bytes_to_write == 0)
@@ -173,6 +183,12 @@ namespace je { namespace fs {
 
     void file::set_position(size a_position)
     {
+        if(is_valid() == false)
+        {
+            JE_fail("Trying to change position on an invalid file.");
+            return;
+        }
+
         JE_assert(a_position <= m_size, "Position set falls out of file boundary. Will be clamped. [%s].", m_debug_path.get_data());
         if(a_position == m_position)
         {
@@ -185,6 +201,12 @@ namespace je { namespace fs {
 
     void file::move_position(i64 a_offset)
     {
+        if(is_valid() == false)
+        {
+            JE_fail("Trying to change position on an invalid file.");
+            return;
+        }
+
         const i64 new_pos = (i64)(get_position()) + a_offset;
         JE_assert(new_pos >= 0 && new_pos <= m_size, "Move falls out of file boundary. Will be clamped. [%s].", m_debug_path.get_data());
         if(new_pos < 0)

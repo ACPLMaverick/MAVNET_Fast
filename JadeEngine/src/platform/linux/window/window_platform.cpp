@@ -281,7 +281,11 @@ namespace je { namespace window {
         fs::data_buffer buffer;
         {
             fs::file icon_file(k_icon_path, fs::file::options::k_read);
-            JE_verify(icon_file.read_all(buffer), "Failed to read icon file: [%s].", k_icon_path);
+            if(icon_file.read_all(buffer) == false)
+            {
+                JE_fail("Failed to read icon file: [%s].", k_icon_path);
+                return;
+            }
         }
 
         // ++ TODO TEMP TGA Decoding until Textures are implemented.
