@@ -70,6 +70,7 @@ namespace je { namespace data {
 
         static bool compare(const char_type* a, const char_type* b);
         static bool compare_case_insensitive(const char_type* a, const char_type* b);
+        static size compute_size(const char_type* str);
 
         void clear();
         void resize(size num_chars, char_type char_to_fill = char_end);

@@ -362,6 +362,11 @@ namespace je { namespace data {
         return false;
     }
 
+    size string::compute_size(const char_type* str)
+    {
+        return std::strlen(str);
+    }
+
     void string::clear()
     {
         m_chars.clear();

@@ -1,5 +1,6 @@
 #include "window.h"
 #include "util/misc.h"
+#include "fs/system.h"
 
 namespace je { namespace window {
 

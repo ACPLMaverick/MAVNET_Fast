@@ -4,6 +4,7 @@
 #include "window/window.h"
 #include "draw/renderer.h"
 #include "thread/thread.h"
+#include "fs/system.h"
 
 namespace je {
 
@@ -11,6 +12,7 @@ namespace je {
         : m_is_exit(false)
     {
         mem::mem_manager::get_inst();   // TODO No control over when mem_manager gets cleaned up.
+        fs::system::mount();
         m_window = new window::window(1280, 720); // TODO read these from config.
         m_renderer = new draw::renderer(get_window());
     }
@@ -19,6 +21,7 @@ namespace je {
     {
         JE_safe_delete(m_renderer);
         JE_safe_delete(m_window);
+        fs::system::unmount();
     }
 
     void engine::run()
@@ -42,6 +45,11 @@ namespace je {
 
     void engine::perform_post_init_checks()
     {
+        if(fs::system::is_mounted() == false)
+        {
+            JE_fail("Fatal error. Cannot mount file system.");
+            m_is_exit = true;
+        }
         if(m_renderer->is_gpu_backend_created() == false)
         {
             JE_fail("Fatal error. Could not create a GPU backend.");

@@ -2,13 +2,8 @@
 
 #if JE_PLATFORM_LINUX
 
+#include "fs/file.h"
 #include <xcb/randr.h>
-
-// ++TODO File loading.
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-// --TODO File loading.
 
 namespace je { namespace window {
 
@@ -283,34 +278,27 @@ namespace je { namespace window {
 
     void window::set_icon()
     {
-        // ++ TODO TEMP file loading until file system is implemented.
-        const i32 fd = open64(k_icon_path, O_RDONLY);
-        JE_assert(fd >= 0);
-        struct stat64 sb = {};
-        JE_verify(fstat64(fd, &sb) >= 0);
-        const i32 length = sb.st_size;
-        JE_assert(length > 0);
-
-        u8* buffer = static_cast<u8*>(malloc(length));
-        JE_verify(read(fd, buffer, length) == length);
-        ::close(fd);
-        // -- TODO TEMP file loading.
+        fs::data_buffer buffer;
+        {
+            fs::file icon_file(k_icon_path, fs::file::options::k_read);
+            JE_verify(icon_file.read_all(buffer), "Failed to read icon file: [%s].", k_icon_path);
+        }
 
         // ++ TODO TEMP TGA Decoding until Textures are implemented.
         static const u64 tga_header_size = 18;
         static const u64 tga_width_offset = 8 + 4;
         static const u64 tga_height_offset = 8 + 6;
         static const u64 tga_pixel_depth_offset = 8 + 8;
-        const u16 width = *reinterpret_cast<u16*>(buffer + tga_width_offset);
-        const u16 height = *reinterpret_cast<u16*>(buffer + tga_height_offset);
+        const u16 width = *reinterpret_cast<u16*>(buffer.data() + tga_width_offset);
+        const u16 height = *reinterpret_cast<u16*>(buffer.data() + tga_height_offset);
         const u8 pixel_depth = buffer[tga_pixel_depth_offset];
         JE_assert(width == height, "An application icon must be square.");
         JE_assert(pixel_depth == 32, "An application icon must be in 32bit format.");
 
         static const u64 pixmap_header_size = 2 * sizeof(u32);
         const u32 bytes_to_offset_buffer = (tga_header_size - pixmap_header_size);
-        const u32 siz = static_cast<u32>(static_cast<u64>(length) - bytes_to_offset_buffer);
-        u8* buffer_with_offset = buffer + bytes_to_offset_buffer;
+        const u32 siz = static_cast<u32>(static_cast<u64>(buffer.size()) - bytes_to_offset_buffer);
+        u8* buffer_with_offset = buffer.data() + bytes_to_offset_buffer;
 
         *reinterpret_cast<u32*>(buffer_with_offset) = width;
         *(reinterpret_cast<u32*>(buffer_with_offset) + 1) = height;
@@ -322,8 +310,6 @@ namespace je { namespace window {
         xcb_change_property (m_connection, XCB_PROP_MODE_REPLACE, m_window,
             s_atom_icon, s_atom_cardinal, 32,
             siz, buffer_with_offset);
-
-        free(buffer);
     }
 
     void window::get_display_dimensions(xcb_screen_t* a_screen, u16& a_out_width, u16& a_out_height)

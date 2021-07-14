@@ -87,13 +87,7 @@
 
 // Platform-specific project-wide includes.
 
-#include "platform/linux/global_linux.h"
-#include "platform/windows/global_windows.h"
+#include "platform/linux/global_platform.h"
+#include "platform/windows/global_platform.h"
 
 // ///////////////////////
-
-// This will go to file header but I'm putting it here for now
-
-#define JE_DATA_DIR_BASE "data"
-#define JE_DATA_DIR JE_DATA_DIR_BASE "_" JE_NAME_OF_PLATFORM "_" JE_NAME_OF_CONFIG
-#define JE_DATA_EXTENSION ".jcd"

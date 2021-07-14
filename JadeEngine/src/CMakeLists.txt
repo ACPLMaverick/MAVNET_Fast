@@ -4,6 +4,7 @@ file(GLOB HERE_SOURCES
 
 file(GLOB_RECURSE GENERAL_SOURCES
        data/*.cpp
+       fs/*.cpp
        math/*.cpp
        mem/*.cpp
        tests/*.cpp
