@@ -6,6 +6,7 @@
 #if JE_GPU_VULKAN
 #include "vulkan/device_vulkan.h"
 #include "vulkan/presenter_vulkan.h"
+#include "vulkan/shader_vulkan.h"
 #endif // JE_GPU_VULKAN
 #if JE_GPU_GLES
 #include "gles/device_gles.h"
@@ -24,6 +25,7 @@ public:                                                             \
     factory_##_backend_(device* a_device) : factory(a_device) {}    \
                                                                     \
     JE_GPU_factory_impl_func(presenter, _backend_)                  \
+    JE_GPU_factory_impl_func(shader, _backend_)                     \
 };
 
 #if JE_GPU_D3D12

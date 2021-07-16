@@ -7,6 +7,7 @@ namespace je { namespace draw { namespace gpu {
 
     class device; struct device_params;
     class presenter; struct presenter_params;
+    class shader; struct shader_params;
 
     class factory : public mem::allocatable_persistent
     {
@@ -18,6 +19,7 @@ namespace je { namespace draw { namespace gpu {
         static void destroy();
 
         virtual presenter* create_presenter(const presenter_params& params) = 0;
+        virtual shader* create_shader(const shader_params& params) = 0;
 
         template<class destroyed_type>
         void destroy(destroyed_type* a_object)
