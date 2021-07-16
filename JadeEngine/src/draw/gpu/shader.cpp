@@ -11,6 +11,7 @@ namespace je { namespace draw { namespace gpu {
 
     shader::shader(const shader_params& a_params)
         : m_stage(a_params.m_stage)
+        , m_hash(0)
     {
     }
 
@@ -31,6 +32,9 @@ namespace je { namespace draw { namespace gpu {
         {
             return false;
         }
+
+        m_hash = file_path.get_hash();
+
         if(init_module(a_device, buffer) == false)
         {
             return false;

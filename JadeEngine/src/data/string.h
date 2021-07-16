@@ -12,8 +12,6 @@ namespace je { namespace data {
         static const char char_end = '\0';
         static const char char_space = ' ';
 
-    private:
-
         class hash
         {
         public:
@@ -77,6 +75,7 @@ namespace je { namespace data {
         void reserve(size num_chars);
 
         size get_size() const;
+        hash get_hash() const;
         bool is_empty() const;
         bool is_starting_with(const char_type* str) const;
         bool is_starting_with(const string& str) const;

@@ -23,6 +23,8 @@ namespace je { namespace draw { namespace gpu {
         k_enum_size,
     };
 
+    using shader_hash = data::string::hash;
+
     // Represents a single shader module. 
     // Used for creating a render state.
     // TODO This should be inside a "resource" managed by the Resource Manager later on.
@@ -32,6 +34,7 @@ namespace je { namespace draw { namespace gpu {
 
         bool is_valid() const;
         shader_stage get_stage() const { return m_stage; }
+        shader_hash get_hash() const { return m_hash; }
 
     protected:
 
@@ -49,6 +52,7 @@ namespace je { namespace draw { namespace gpu {
     protected:
 
         shader_stage m_stage;
+        shader_hash m_hash;
 
     protected:
 

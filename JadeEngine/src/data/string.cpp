@@ -395,6 +395,11 @@ namespace je { namespace data {
         JE_assert(m_chars.size() > 0, "Bad chars array size.");
         return m_chars.size() - 1;
     }
+
+    string::hash string::get_hash() const
+    {
+        return m_hash;
+    }
     
     bool string::is_empty() const
     {
