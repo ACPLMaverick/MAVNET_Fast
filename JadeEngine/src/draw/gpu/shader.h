@@ -1,6 +1,7 @@
 #pragma once
 
 #include "global.h"
+#include "mem/allocatable.h"
 #include "params.h"
 
 namespace je { namespace draw { namespace gpu {
@@ -28,7 +29,7 @@ namespace je { namespace draw { namespace gpu {
     // Represents a single shader module. 
     // Used for creating a render state.
     // TODO This should be inside a "resource" managed by the Resource Manager later on.
-    class shader
+    class shader : public mem::allocatable
     {
     public:
 
