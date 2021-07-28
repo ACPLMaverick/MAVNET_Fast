@@ -14,6 +14,8 @@ namespace je { namespace draw {
     namespace gpu {
         class device;
         class presenter;
+        class pass;
+        class pso;
     }
 
     class renderer : public mem::allocatable_persistent
@@ -29,9 +31,16 @@ namespace je { namespace draw {
 
     protected:
 
+        gpu::pass* create_single_pass();
+        gpu::pso* create_single_pso();
+
+    protected:
+
         const window::window& m_window;
         gpu::device* m_device;
         gpu::presenter* m_presenter;
+        gpu::pass* m_single_pass;
+        gpu::pso* m_single_pso;
 
     };
 

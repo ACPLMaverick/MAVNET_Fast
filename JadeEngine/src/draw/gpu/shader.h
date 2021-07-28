@@ -8,22 +8,6 @@ namespace je { namespace draw { namespace gpu {
 
     class device;
 
-    enum class shader_stage : u8
-    {
-        k_vertex,
-        k_tess_ctrl,
-        k_tess_eval,
-        k_geometry,
-        k_fragment,
-        k_compute,
-        k_rt_gen,   // RT Generation
-        k_rt_int,   // RT Intersection
-        k_rt_chit,  // RT Closest Hit
-        k_rt_ahit,  // RT Any Hit
-        k_rt_miss,  // RT Miss
-        k_enum_size,
-    };
-
     using shader_hash = data::string::hash;
 
     // Represents a single shader module. 

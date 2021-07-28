@@ -39,5 +39,6 @@ namespace je { namespace data {
 #endif
 
 #include "static_array.h"
+#include "static_stack.h"
 #include "static_bit_array.h"
 #include "string.h"

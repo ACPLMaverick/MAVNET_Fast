@@ -81,12 +81,14 @@ namespace je { namespace data {
             return m_array[a_index];
         }
 
-    private:
+    protected:
+
+        static const size k_copy_threshold_value_bytes = 1024;
 
         template<size num_objects_to_copy>
         inline void copy(const object_type* a_other_array)
         {
-            if(std::is_pod<object_type>())
+            if(std::is_pod<object_type>() && sizeof(object_type) * num_objects_to_copy > k_copy_threshold_value_bytes)
             {
                 std::memcpy(m_array, a_other_array, num_objects_to_copy * sizeof(object_type));
             }
@@ -94,6 +96,21 @@ namespace je { namespace data {
             {
                 #pragma unroll
                 for(size i = 0; i < num_objects_to_copy; ++i)
+                {
+                    m_array[i] = a_other_array[i];
+                }
+            }
+        }
+
+        inline void copy(const object_type* a_other_array, size a_num_objects_to_copy)
+        {
+            if(std::is_pod<object_type>() && sizeof(object_type) * a_num_objects_to_copy > k_copy_threshold_value_bytes)
+            {
+                std::memcpy(m_array, a_other_array, a_num_objects_to_copy * sizeof(object_type));
+            }
+            else
+            {
+                for(size i = 0; i < a_num_objects_to_copy; ++i)
                 {
                     m_array[i] = a_other_array[i];
                 }

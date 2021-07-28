@@ -67,7 +67,9 @@ namespace je { namespace draw { namespace gpu {
         data::static_array<shader*, static_cast<size>(shader_stage::k_enum_size)> m_shaders{nullptr};
         data::array<u8> m_push_constants_buffer;
 
-        // Fixed data. Viewport and scissor perc is stored as an integer value of (0, 100).
+        // Fixed data.
+        // Viewport and scissor perc is stored as an integer value of (0, 100).
+        // Viewport and scissor offset is stored in pixels.
         math::screen_rect m_viewport_perc_offset;
         math::screen_rect m_scissor_perc_offset;
         u8 m_stencil_value;

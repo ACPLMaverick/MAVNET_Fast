@@ -14,7 +14,9 @@
 
 #include <vulkan/vulkan.h>
 
-namespace je { namespace draw {
+namespace je { namespace draw { namespace gpu {
+
+    enum class texture_format : u8;
 
     // Utility classes.
 
@@ -39,12 +41,20 @@ namespace je { namespace draw {
         }
     };
 
+    class texture_format_vk
+    {
+    public:
+
+        static VkFormat to(texture_format format);
+        static texture_format from(VkFormat format);
+    };
+
     // ////////////////
 
-}}
+}}}
 
-#define JE_vk_ext_func(_func_, _instance_, ...) je::draw::vk_function_retriever<PFN_##_func_>::call(#_func_, _instance_, __VA_ARGS__);
-#define JE_vk_ext_func_noret(_func_, _instance_, ...) je::draw::vk_function_retriever<PFN_##_func_>::call_noret(#_func_, _instance_, __VA_ARGS__);
+#define JE_vk_ext_func(_func_, _instance_, ...) je::draw::gpu::vk_function_retriever<PFN_##_func_>::call(#_func_, _instance_, __VA_ARGS__);
+#define JE_vk_ext_func_noret(_func_, _instance_, ...) je::draw::gpu::vk_function_retriever<PFN_##_func_>::call_noret(#_func_, _instance_, __VA_ARGS__);
 #define JE_vk_verify_bailout(_expression_)  \
 {                                           \
     VkResult result = _expression_;         \

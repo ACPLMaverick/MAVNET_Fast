@@ -8,6 +8,7 @@
 #include "vulkan/presenter_vulkan.h"
 #include "vulkan/shader_vulkan.h"
 #include "vulkan/pso_vulkan.h"
+#include "vulkan/pass_vulkan.h"
 #endif // JE_GPU_VULKAN
 #if JE_GPU_GLES
 #include "gles/device_gles.h"
@@ -28,6 +29,7 @@ public:                                                             \
     JE_GPU_factory_impl_func(presenter, _backend_)                  \
     JE_GPU_factory_impl_func(shader, _backend_)                     \
     JE_GPU_factory_impl_func(pso, _backend_)                        \
+    JE_GPU_factory_impl_func(pass, _backend_)                       \
 };
 
 #if JE_GPU_D3D12
