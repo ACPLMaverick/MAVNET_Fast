@@ -44,7 +44,7 @@ namespace je { namespace draw { namespace gpu {
                 desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
                 desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
             }
-            desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // TODO ?
+            desc.initialLayout = is_depth ? VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             desc.finalLayout = info.m_is_present_surface ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR : is_depth ? VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         
             attachment_descriptions.push(desc);
@@ -149,34 +149,13 @@ namespace je { namespace draw { namespace gpu {
 
     VkImageLayout pass_vulkan::get_layout_for_rt_info(const render_target_info& a_info, bool a_is_input)
     {
-        if(a_is_input)
+        if(is_texture_format_depth(a_info.m_format))
         {
-            if(is_texture_format_depth(a_info.m_format))
-            {
-                return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-            }
-            else
-            {
-                return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            }
+            return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
         }
         else
         {
-            if(is_texture_format_depth(a_info.m_format))
-            {
-                return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-            }
-            else
-            {
-                if(a_info.m_is_present_surface)
-                {
-                    return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-                }
-                else
-                {
-                    return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                }
-            }
+            return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         }
     }
 
