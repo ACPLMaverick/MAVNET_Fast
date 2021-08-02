@@ -11,6 +11,9 @@ namespace je { namespace draw { namespace gpu {
 
         bool update_for_new_size(math::screen_size new_size) override; 
 
+        VkPipelineLayout get_pipeline_layout() const { return m_layout; }
+        VkPipeline get_pipeline() const { return m_pipeline; } 
+
     protected:
 
         pso_vulkan(const pso_params& params);
@@ -22,7 +25,7 @@ namespace je { namespace draw { namespace gpu {
     protected:
 
         VkPipelineLayout m_layout;
-        VkPipeline m_pipe;
+        VkPipeline m_pipeline;
 
         friend class factory;
     };

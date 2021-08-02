@@ -9,6 +9,7 @@
 namespace je { namespace draw { namespace gpu {
 
     class device;
+    class pass;
 
     enum class depth_test_mode : u8
     {
@@ -52,6 +53,38 @@ namespace je { namespace draw { namespace gpu {
     {
     public:
 
+        struct dynamic_data
+        {
+            dynamic_data();
+
+            data::static_array<shader*, static_cast<size>(shader_stage::k_enum_size)> m_shaders{nullptr};
+            data::array<u8> m_push_constants_buffer;
+        };
+
+        struct static_data
+        {
+            static_data();
+
+            // Viewport and scissor perc is stored as an integer value of (0, 100).
+            // Viewport and scissor offset is stored in pixels.
+            math::screen_rect m_viewport_perc_offset;
+            math::screen_rect m_scissor_perc_offset;
+            u8 m_stencil_value;
+            multisample_count m_multisample_count : 4;
+            multisample_mode_flag m_multisample_mode : 3;
+            depth_test_mode m_depth_test_mode : 2;
+            stencil_mode m_stencil_mode : 2;
+            blend_mode m_blend_mode : 2;
+            bool m_depth_write : 1;
+            bool m_shadow_depth_bias_and_clamp : 1;
+            bool m_cull_backface : 1;
+            // Fixed values (for now):
+            // - topology (always triangle list)
+            // - polygon fill mode (always fill - wireframe will use shader)
+            // - front face (always clockwise)
+            // - Blend op per attachment (will probably be changed)
+        };
+
         // Creates default render state without dynamic data assigned and viewport/scissor specified.
         render_state();
         
@@ -63,39 +96,33 @@ namespace je { namespace draw { namespace gpu {
 
     public:
 
-        // Dynamic data.
-        data::static_array<shader*, static_cast<size>(shader_stage::k_enum_size)> m_shaders{nullptr};
-        data::array<u8> m_push_constants_buffer;
-
-        // Fixed data.
-        // Viewport and scissor perc is stored as an integer value of (0, 100).
-        // Viewport and scissor offset is stored in pixels.
-        math::screen_rect m_viewport_perc_offset;
-        math::screen_rect m_scissor_perc_offset;
-        u8 m_stencil_value;
-        multisample_count m_multisample_count : 4;
-        multisample_mode_flag m_multisample_mode : 3;
-        depth_test_mode m_depth_test_mode : 2;
-        stencil_mode m_stencil_mode : 2;
-        blend_mode m_blend_mode : 2;
-        bool m_depth_write : 1;
-        bool m_shadow_depth_bias_and_clamp : 1;
-        bool m_cull_backface : 1;
-        // Fixed values (for now):
-        // - topology (always triangle list)
-        // - polygon fill mode (always fill - wireframe will use shader)
-        // - front face (always clockwise)
-        // - Blend op per attachment (will probably be changed)
+        dynamic_data m_dynamic;
+        static_data m_static;
     };
 
     struct pso_params
     {
-        render_state m_render_state = render_state();
-        math::screen_size m_source_screen_size; // TODO This will be replaced by a render pass ref.
-        class pso* m_base_pso = nullptr;
+        pso_params(const pass& a_pass, u8 a_subpass_idx, math::screen_size a_source_screen_size);
+
+        render_state m_render_state;
+        const pass& m_pass;
+        class pso* m_base_pso;
+        math::screen_size m_source_screen_size;
+        u8 m_subpass_idx;
     };
 
-    using pso_hash = util::struct_hash<render_state>;
+    class pso_hash
+    {
+    public:
+
+        pso_hash(const render_state& rs);
+        u64 get_value() const { return m_hash; }
+        operator u64() const { return get_value(); }
+
+    private:
+
+        u64 m_hash;
+    };
     
     class pso : public mem::allocatable
     {

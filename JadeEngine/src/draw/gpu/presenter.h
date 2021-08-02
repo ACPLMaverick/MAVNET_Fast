@@ -2,6 +2,7 @@
 
 #include "global.h"
 #include "mem/allocatable.h"
+#include "math/ivec.h"
 #include "params.h"
 
 namespace je { namespace window {
@@ -34,8 +35,7 @@ namespace je { namespace draw { namespace gpu {
         virtual bool recreate(device& a_device, const window::window& updated_window);
 
         bool has_capabilities(capabilities a_caps) const { return (static_cast<u32>(m_capabilities) & static_cast<u32>(a_caps)) == static_cast<u32>(a_caps); }
-        u16 get_width() const { return m_backbuffer_width; }
-        u16 get_height() const { return m_backbuffer_height; }
+        math::screen_size get_dimensions() const { return m_backbuffer_dims; }
         u16 get_num_buffers() const { return m_num_buffers; }
         bool is_vsync() const { return m_is_vsync; }
         bool is_hdr() const { return m_is_hdr; }
@@ -51,8 +51,7 @@ namespace je { namespace draw { namespace gpu {
     protected:
 
         capabilities m_capabilities;
-        u16 m_backbuffer_width;
-        u16 m_backbuffer_height;
+        math::screen_size m_backbuffer_dims;
         u8 m_num_buffers;
         bool m_is_vsync;
         bool m_is_hdr;

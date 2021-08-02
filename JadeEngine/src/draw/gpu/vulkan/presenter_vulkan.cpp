@@ -160,8 +160,8 @@ namespace je { namespace draw { namespace gpu {
             reinterpret_cast<u32&>(m_capabilities) |= static_cast<u32>(capabilities::k_triple_buffering);
         }
 
-        m_backbuffer_width = math::sc::clamp(m_backbuffer_width, (u16)caps.surfaceCapabilities.minImageExtent.width, (u16)caps.surfaceCapabilities.maxImageExtent.width);
-        m_backbuffer_height = math::sc::clamp(m_backbuffer_height, (u16)caps.surfaceCapabilities.minImageExtent.height, (u16)caps.surfaceCapabilities.maxImageExtent.height);
+        m_backbuffer_dims.x = math::sc::clamp(m_backbuffer_dims.x, (u16)caps.surfaceCapabilities.minImageExtent.width, (u16)caps.surfaceCapabilities.maxImageExtent.width);
+        m_backbuffer_dims.y = math::sc::clamp(m_backbuffer_dims.y, (u16)caps.surfaceCapabilities.minImageExtent.height, (u16)caps.surfaceCapabilities.maxImageExtent.height);
         m_num_buffers = math::sc::clamp(m_num_buffers, (u8)caps.surfaceCapabilities.minImageCount, (u8)caps.surfaceCapabilities.maxImageCount);
 
         bool is_sdr_format_available = false;
@@ -229,8 +229,8 @@ namespace je { namespace draw { namespace gpu {
         create_info.minImageCount = m_num_buffers;
         create_info.imageFormat = selected_image_format.m_format;
         create_info.imageColorSpace = selected_image_format.m_color_space;
-        create_info.imageExtent.width = m_backbuffer_width;
-        create_info.imageExtent.height = m_backbuffer_height;
+        create_info.imageExtent.width = m_backbuffer_dims.x;
+        create_info.imageExtent.height = m_backbuffer_dims.y;
         create_info.imageArrayLayers = 1;
         create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; // TODO change this to TRANSFER_DST_BIT later on.
         create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;

@@ -5,8 +5,7 @@ namespace je { namespace draw { namespace gpu {
 
     presenter::presenter(const presenter_params& a_params)
         : m_capabilities(capabilities::k_none)
-        , m_backbuffer_width(a_params.m_window.get_width())
-        , m_backbuffer_height(a_params.m_window.get_height())
+        , m_backbuffer_dims(a_params.m_window.get_width(), a_params.m_window.get_height())
         , m_num_buffers(a_params.m_num_buffers)
         , m_is_vsync(a_params.m_is_vsync)
         , m_is_hdr(a_params.m_is_hdr)

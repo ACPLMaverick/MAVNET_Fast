@@ -17,6 +17,7 @@
 namespace je { namespace draw { namespace gpu {
 
     enum class texture_format : u8;
+    enum class shader_stage : u8;
 
     // Utility classes.
 
@@ -47,6 +48,14 @@ namespace je { namespace draw { namespace gpu {
 
         static VkFormat to(texture_format format);
         static texture_format from(VkFormat format);
+    };
+
+    class shader_stage_vk
+    {
+    public:
+
+        static VkShaderStageFlagBits to(shader_stage stage);
+        static shader_stage from(VkShaderStageFlagBits stage);
     };
 
     // ////////////////

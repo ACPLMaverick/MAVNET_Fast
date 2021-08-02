@@ -63,4 +63,68 @@ namespace je { namespace draw { namespace gpu {
         }
     }
 
+    VkShaderStageFlagBits shader_stage_vk::to(shader_stage a_stage)
+    {
+        switch (a_stage)
+        {
+        case shader_stage::k_vertex:
+            return VK_SHADER_STAGE_VERTEX_BIT;
+        case shader_stage::k_tess_ctrl:
+            return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+        case shader_stage::k_tess_eval:
+            return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+        case shader_stage::k_geometry:
+            return VK_SHADER_STAGE_GEOMETRY_BIT;
+        case shader_stage::k_fragment:
+            return VK_SHADER_STAGE_FRAGMENT_BIT;
+        case shader_stage::k_compute:
+            return VK_SHADER_STAGE_COMPUTE_BIT;
+        case shader_stage::k_rt_gen:
+            return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+        case shader_stage::k_rt_int:
+            return VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
+        case shader_stage::k_rt_chit:
+            return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+        case shader_stage::k_rt_ahit:
+            return VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
+        case shader_stage::k_rt_miss:
+            return VK_SHADER_STAGE_MISS_BIT_KHR;
+        default:
+            JE_todo();
+            return VK_SHADER_STAGE_COMPUTE_BIT;
+        }
+    }
+
+    shader_stage shader_stage_vk::from(VkShaderStageFlagBits a_stage)
+    {
+        switch (a_stage)
+        {
+        case VK_SHADER_STAGE_VERTEX_BIT:
+            return shader_stage::k_vertex;
+        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+            return shader_stage::k_tess_ctrl;
+        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+            return shader_stage::k_tess_eval;
+        case VK_SHADER_STAGE_GEOMETRY_BIT:
+            return shader_stage::k_geometry;
+        case VK_SHADER_STAGE_FRAGMENT_BIT:
+            return shader_stage::k_fragment;
+        case VK_SHADER_STAGE_COMPUTE_BIT:
+            return shader_stage::k_compute;
+        case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
+            return shader_stage::k_rt_gen;
+        case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
+            return shader_stage::k_rt_int;
+        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
+            return shader_stage::k_rt_chit;
+        case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
+            return shader_stage::k_rt_ahit;
+        case VK_SHADER_STAGE_MISS_BIT_KHR:
+            return shader_stage::k_rt_miss;
+        default:
+            JE_todo();
+            return shader_stage::k_compute;
+        }
+    }
+
 }}}

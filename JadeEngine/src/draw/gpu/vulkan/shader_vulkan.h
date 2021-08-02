@@ -7,6 +7,10 @@ namespace je { namespace draw { namespace gpu {
 
     class shader_vulkan : public shader
     {
+    public:
+
+        VkShaderModule get_module() const { return m_module; }
+        
     protected:
 
         shader_vulkan(const shader_params& a_params);

@@ -14,6 +14,7 @@ namespace je { namespace draw { namespace gpu {
 
     pass::pass(const pass_params& a_params)
         : m_params(a_params)
+        , m_hash(m_params)
     {
     }
 

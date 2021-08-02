@@ -20,7 +20,7 @@ namespace je { namespace util {
             {
                 num_to_iterate = k_array_size - 1;
                 const u64 last_value = array[k_array_size - 1];
-                const u64 bitmask = (1 << k_num_redundant_bytes * 8) - 1;
+                const u64 bitmask = ((1 << k_num_redundant_bytes) * 8) - 1;
                 m_hash ^= (last_value & bitmask);
             }
 

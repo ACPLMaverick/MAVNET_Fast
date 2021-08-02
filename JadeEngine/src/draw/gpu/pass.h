@@ -3,6 +3,7 @@
 #include "global.h"
 #include "mem/allocatable.h"
 #include "params.h"
+#include "util/struct_hash.h"
 
 namespace je { namespace draw { namespace gpu {
 
@@ -10,8 +11,8 @@ namespace je { namespace draw { namespace gpu {
     {
         using inputs = data::static_stack<u32, 8>;
         using outputs = data::static_stack<u32, 8>;
-        inputs m_input_render_target_indices;
-        outputs m_output_render_target_indices;
+        inputs m_input_render_target_indices = inputs(static_cast<u32>(0));
+        outputs m_output_render_target_indices = outputs(static_cast<u32>(0));
     };
 
     struct render_target_info
@@ -37,12 +38,14 @@ namespace je { namespace draw { namespace gpu {
     {
         using render_target_infos = data::static_stack<render_target_info, 16>;
         using operations = data::static_stack<pass_operation, 8>;
-        render_target_infos m_render_target_infos;
-        operations m_ops;
+        render_target_infos m_render_target_infos = render_target_infos(render_target_info());
+        operations m_ops = operations(pass_operation());
     };
 
     class device;
     class cmd;
+
+    using pass_hash = util::struct_hash<pass_params>;
 
     // Pass is an array of sequential operation on render targets.
     // We specify what texture format will be written to in each operation.
@@ -56,6 +59,7 @@ namespace je { namespace draw { namespace gpu {
 
         const pass_params::render_target_infos& get_render_target_infos() const { return m_params.m_render_target_infos; }
         const pass_params::operations& get_operations() const { return m_params.m_ops; }
+        pass_hash get_hash() const { return m_hash; }
 
         void set(cmd& a_cmd);
         void unset(cmd& a_cmd);
@@ -71,6 +75,7 @@ namespace je { namespace draw { namespace gpu {
     protected:
 
         pass_params m_params;
+        pass_hash m_hash;
 
     protected:
 

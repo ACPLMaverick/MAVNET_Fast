@@ -42,8 +42,9 @@ namespace je { namespace draw {
 
     gpu::pso* renderer::create_single_pso()
     {
-        JE_todo();
-        return nullptr;
+        gpu::pso_params params(*m_single_pass, 0, m_presenter->get_dimensions());
+        // Do not touch render state for now - leave default.
+        return gpu::factory::get().create_pso(params);
     }
 
 }}
