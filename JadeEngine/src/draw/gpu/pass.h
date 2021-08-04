@@ -11,8 +11,8 @@ namespace je { namespace draw { namespace gpu {
     {
         using inputs = data::static_stack<u32, 8>;
         using outputs = data::static_stack<u32, 8>;
-        inputs m_input_render_target_indices = inputs(static_cast<u32>(0));
-        outputs m_output_render_target_indices = outputs(static_cast<u32>(0));
+        inputs m_input_render_target_indices;
+        outputs m_output_render_target_indices;
     };
 
     struct render_target_info
@@ -38,8 +38,8 @@ namespace je { namespace draw { namespace gpu {
     {
         using render_target_infos = data::static_stack<render_target_info, 16>;
         using operations = data::static_stack<pass_operation, 8>;
-        render_target_infos m_render_target_infos = render_target_infos(render_target_info());
-        operations m_ops = operations(pass_operation());
+        render_target_infos m_render_target_infos;
+        operations m_ops;
     };
 
     class device;

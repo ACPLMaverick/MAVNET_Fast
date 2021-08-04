@@ -35,7 +35,7 @@ namespace je { namespace draw {
     {
         gpu::pass_params params;
         params.m_render_target_infos.push(gpu::texture_format::k_bgra8, true, true);
-        gpu::pass_operation* op = params.m_ops.push_uninitialized();
+        gpu::pass_operation* op = params.m_ops.push();
         op->m_output_render_target_indices.push(0);
         return gpu::factory::get().create_pass(params);
     }
@@ -43,8 +43,20 @@ namespace je { namespace draw {
     gpu::pso* renderer::create_single_pso()
     {
         gpu::pso_params params(*m_single_pass, 0, m_presenter->get_dimensions());
-        // Do not touch render state for now - leave default.
-        return gpu::factory::get().create_pso(params);
+        
+        gpu::shader* vertex_shader = gpu::factory::get().create_shader({ "test", gpu::shader_stage::k_vertex });
+        gpu::shader* pixel_shader = gpu::factory::get().create_shader({ "test", gpu::shader_stage::k_fragment });
+        params.m_render_state.m_dynamic.bind_shader(vertex_shader);
+        params.m_render_state.m_dynamic.bind_shader(pixel_shader);
+
+        // Do not touch static render state for now - leave default.
+
+        gpu::pso* ret_pso = gpu::factory::get().create_pso(params);
+
+        gpu::factory::get().destroy(vertex_shader);
+        gpu::factory::get().destroy(pixel_shader);
+
+        return ret_pso;
     }
 
 }}

@@ -64,7 +64,8 @@ namespace je { namespace draw { namespace gpu {
 
     data::string shader::build_file_path(const data::string& file_name, shader_stage stage)
     {
-        data::string file_path(file_name);
+        data::string file_path("shaders" JE_DATA_FILE_SEPARATOR);
+        file_path.append(file_name);
         file_path.append(".");
         file_path.append(stage_to_string(stage));
         file_path.append(JE_DATA_EXTENSION);

@@ -3,9 +3,21 @@
 namespace je { namespace draw { namespace gpu {
 
     render_state::dynamic_data::dynamic_data()
-        : m_shaders{}
+        : m_shaders(static_cast<shader*>(nullptr))
         , m_push_constants_buffer()
     {
+    }
+
+    void render_state::dynamic_data::bind_shader(shader* a_shader)
+    {
+        JE_assert_bailout_noret(a_shader != nullptr, "Bound shader is not valid.");
+        JE_assert(m_shaders[static_cast<size>(a_shader->get_stage())] == nullptr, "Overwriting an existing shader. This shouldn't normally happen.");
+        m_shaders[static_cast<size>(a_shader->get_stage())] = a_shader;
+    }
+
+    void render_state::dynamic_data::clear_shader(shader_stage a_stage)
+    {
+        m_shaders[static_cast<size>(a_stage)] = nullptr;
     }
 
     render_state::static_data::static_data()
@@ -57,12 +69,12 @@ namespace je { namespace draw { namespace gpu {
             && m_static.m_multisample_mode != multisample_mode_flag::k_disabled;
     }
 
-    pso_params::pso_params(const pass& a_pass, u8 a_subpass_idx, math::screen_size a_source_screen_size)
+    pso_params::pso_params(const pass& a_pass, u8 a_operation_idx, math::screen_size a_source_screen_size)
         : m_render_state()
         , m_pass(a_pass)
         , m_base_pso(nullptr)
         , m_source_screen_size(a_source_screen_size)
-        , m_subpass_idx(a_subpass_idx)
+        , m_operation_idx(a_operation_idx)
     {
     }
 

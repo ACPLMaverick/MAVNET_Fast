@@ -12,6 +12,12 @@ namespace je { namespace data {
         using base = static_array<object_type, num_objects>;
         using base::static_array;
 
+        static_stack()
+            : base()
+            , m_current_size(0)
+        {
+        }
+
         static_stack(const object_type a_arr[])
             : base(a_arr)
             , m_current_size(base::k_num_objects)
@@ -41,42 +47,33 @@ namespace je { namespace data {
         // Can return null if stack size is exceeded.
         object_type* push_uninitialized()
         {
-            if(m_current_size < base::k_num_objects)
-            {
-                object_type* to_ret = &base::m_array[m_current_size];
-                ++m_current_size;
-                return to_ret;
-            }
-            else
-            {
-                JE_fail("Static stack max size [%zd] exceeded.", base::k_num_objects);
-                return nullptr;
-            }
+            JE_assert(std::is_trivial<object_type>(), "Should use it only for trivial types.");
+            return push_uninitialized_internal();
         }
 
-        bool push(const object_type& a_obj)
+        object_type* push(const object_type& a_obj)
         {
-            object_type* ptr = push_uninitialized();
+            object_type* ptr = push_uninitialized_internal();
             if(ptr == nullptr)
             {
-                return false;
+                return nullptr;
             }
 
             *ptr = a_obj;
-            return true;
+            return ptr;
         }
 
         template<typename... var_args>
-        bool push(var_args... a_args)
+        object_type* push(var_args... a_args)
         {
-            object_type* ptr = push_uninitialized();
+            object_type* ptr = push_uninitialized_internal();
             if(ptr == nullptr)
             {
-                return false;
+                return nullptr;
             }
 
             new (ptr) object_type(a_args...);
-            return true;
+            return ptr;
         }
 
         bool pop()
@@ -104,6 +101,21 @@ namespace je { namespace data {
         }
 
     private:
+
+        object_type* push_uninitialized_internal()
+        {
+            if(m_current_size < base::k_num_objects)
+            {
+                object_type* to_ret = &base::m_array[m_current_size];
+                ++m_current_size;
+                return to_ret;
+            }
+            else
+            {
+                JE_fail("Static stack max size [%zd] exceeded.", base::k_num_objects);
+                return nullptr;
+            }
+        }
 
         // TODO atomic.
         size m_current_size = 0;

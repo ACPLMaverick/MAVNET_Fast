@@ -189,8 +189,21 @@ namespace je { namespace draw { namespace gpu {
         VkPipelineLayoutCreateInfo layout_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
         layout_info.setLayoutCount = 0;
         layout_info.pSetLayouts = nullptr;
-        layout_info.pushConstantRangeCount = 0;
-        layout_info.pPushConstantRanges = nullptr;
+
+        VkPushConstantRange push_constant_range;
+        if(m_state.m_dynamic.m_push_constants_buffer.size() > 0)
+        {
+            layout_info.pushConstantRangeCount = 1;
+            push_constant_range.offset = 0;
+            push_constant_range.size = m_state.m_dynamic.m_push_constants_buffer.size();
+            push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT; // TODO For now...
+            layout_info.pPushConstantRanges = &push_constant_range;
+        }
+        else
+        {
+            layout_info.pushConstantRangeCount = 0;
+            layout_info.pPushConstantRanges = nullptr;
+        }
 
         JE_vk_verify_bailout(vkCreatePipelineLayout(JE_vk_device(a_device).get_device(), &layout_info, JE_vk_device(a_device).get_allocator(), &m_layout));
 
@@ -210,13 +223,11 @@ namespace je { namespace draw { namespace gpu {
                 stage_info->module = shader_module->get_module();
                 stage_info->pName = "main"; // TODO?
                 stage_info->pSpecializationInfo = nullptr;
+                stage_info->pNext = nullptr;
             }
         }
 
         JE_verify_bailout(shader_stages.get_size() > 0, false, "No shaders have been assigned to this PSO.");
-
-        // Push constants.
-
 
         VkGraphicsPipelineCreateInfo pipeline_info{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
         pipeline_info.stageCount = shader_stages.get_size();
@@ -231,7 +242,7 @@ namespace je { namespace draw { namespace gpu {
         pipeline_info.pDynamicState = &dynamic_info;
         pipeline_info.layout = m_layout;
         pipeline_info.renderPass = reinterpret_cast<const pass_vulkan&>(a_params.m_pass).get_render_pass();
-        pipeline_info.subpass = a_params.m_subpass_idx;
+        pipeline_info.subpass = a_params.m_operation_idx;
         pipeline_info.basePipelineHandle = a_params.m_base_pso != nullptr ? reinterpret_cast<pso_vulkan*>(a_params.m_base_pso)->get_pipeline() : VK_NULL_HANDLE;
         pipeline_info.basePipelineIndex = -1; // Unused.
 

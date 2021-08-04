@@ -55,9 +55,13 @@ namespace je { namespace draw { namespace gpu {
 
         struct dynamic_data
         {
-            dynamic_data();
+            using shaders = data::static_array<shader*, static_cast<size>(shader_stage::k_enum_size)>;
 
-            data::static_array<shader*, static_cast<size>(shader_stage::k_enum_size)> m_shaders{nullptr};
+            dynamic_data();
+            void bind_shader(shader* a_shader);
+            void clear_shader(shader_stage a_stage);
+
+            shaders m_shaders;
             data::array<u8> m_push_constants_buffer;
         };
 
@@ -102,13 +106,13 @@ namespace je { namespace draw { namespace gpu {
 
     struct pso_params
     {
-        pso_params(const pass& a_pass, u8 a_subpass_idx, math::screen_size a_source_screen_size);
+        pso_params(const pass& a_pass, u8 a_operation_idx, math::screen_size a_source_screen_size);
 
         render_state m_render_state;
         const pass& m_pass;
         class pso* m_base_pso;
         math::screen_size m_source_screen_size;
-        u8 m_subpass_idx;
+        u8 m_operation_idx;
     };
 
     class pso_hash
