@@ -1,6 +1,7 @@
 #include "presenter_vulkan.h"
 #include "window/window.h"
 #include "device_vulkan.h"
+#include "texture_vulkan.h"
 #include "math/sc.h"
 
 namespace je { namespace draw { namespace gpu {
@@ -26,9 +27,9 @@ namespace je { namespace draw { namespace gpu {
     bool presenter_vulkan::recreate(device& a_device, const window::window& a_updated_window)
     {
         m_old_swapchain = m_swapchain;
-        m_images.clear();
+        m_buffers.clear();
         JE_verify_bailout(init_swapchain_and_adjust_params(JE_vk_device(a_device), a_updated_window), false, "Failed to init swapchain.");
-        JE_verify_bailout(init_swapchain_images(JE_vk_device(a_device)), false, "Failed to obtain swapchain images.");
+        JE_verify_bailout(init_swapchain_buffers(JE_vk_device(a_device)), false, "Failed to obtain swapchain images.");
         return true;
     }
 
@@ -49,16 +50,18 @@ namespace je { namespace draw { namespace gpu {
         JE_verify_bailout(init_surface_platform_specific(JE_vk_device(a_device), a_params.m_window), false, "Failed to create a surface.");
         JE_verify_bailout(is_presenting_supported_by_graphics_queue(JE_vk_device(a_device)), false, "Presenting is not supported by the graphics queue");
         JE_verify_bailout(init_swapchain_and_adjust_params(JE_vk_device(a_device), a_params.m_window), false, "Failed to init swapchain.");
-        JE_verify_bailout(init_swapchain_images(JE_vk_device(a_device)), false, "Failed to obtain swapchain images.");
+        JE_verify_bailout(init_swapchain_buffers(JE_vk_device(a_device)), false, "Failed to obtain swapchain images.");
         return true;
     }
 
     void presenter_vulkan::shutdown(device& a_device)
     {
-        for(swapchain_image& image : m_images)
+        for(swapchain_buffer& image : m_buffers)
         {
-            vkDestroyImageView(JE_vk_device(a_device).get_device(), image.m_image_view, JE_vk_device(a_device).get_allocator());
+            image.m_texture->shutdown_view(a_device);
+            delete image.m_texture;
         }
+        m_buffers.clear();
 
         if(m_old_swapchain != VK_NULL_HANDLE)
         {
@@ -66,7 +69,7 @@ namespace je { namespace draw { namespace gpu {
         }
         if(m_swapchain != VK_NULL_HANDLE)
         {
-            m_images.clear();
+            m_buffers.clear();
             vkDestroySwapchainKHR(JE_vk_device(a_device).get_device(), m_swapchain, JE_vk_device(a_device).get_allocator());
         }
         if(m_surface != VK_NULL_HANDLE)
@@ -247,7 +250,7 @@ namespace je { namespace draw { namespace gpu {
         return true;
     }
 
-    bool presenter_vulkan::init_swapchain_images(device_vulkan& a_device)
+    bool presenter_vulkan::init_swapchain_buffers(device_vulkan& a_device)
     {
         u32 images_num = 0;
         JE_vk_verify_bailout(vkGetSwapchainImagesKHR(JE_vk_device(a_device).get_device(), m_swapchain, &images_num, nullptr));
@@ -257,28 +260,13 @@ namespace je { namespace draw { namespace gpu {
         
         for(VkImage vk_image : images)
         {
-            swapchain_image image;
-            image.m_image = vk_image; 
-            
-            // Todo image view. -> these should be gpu::textures later on.
-            VkImageViewCreateInfo image_view_info = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
-            image_view_info.image = vk_image;
-            image_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            image_view_info.format = get_selected_image_format().m_format;
-            image_view_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-            image_view_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-            image_view_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-            image_view_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-            image_view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            image_view_info.subresourceRange.baseMipLevel = 0;
-            image_view_info.subresourceRange.levelCount = 1;
-            image_view_info.subresourceRange.baseArrayLayer = 0;
-            image_view_info.subresourceRange.layerCount = 1;
-            JE_vk_verify_bailout(vkCreateImageView(a_device.get_device(), &image_view_info, a_device.get_allocator(), &image.m_image_view));
+            swapchain_buffer buffer;
+            buffer.m_texture = new texture_vulkan(get_dimensions(), texture_format_vk::from(get_selected_image_format().m_format), vk_image);
+            buffer.m_texture->init_view(a_device, false);
             
             // Todo synchronization elements.
 
-            m_images.push_back(image);
+            m_buffers.push_back(buffer);
         }
 
         return true;

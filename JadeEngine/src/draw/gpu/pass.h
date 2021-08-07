@@ -27,7 +27,7 @@ namespace je { namespace draw { namespace gpu {
         {
         }
 
-        texture_format m_format : 6;
+        texture_format::int_type m_format : 6;
         bool m_is_cleared : 1;
         bool m_is_present_surface : 1;
     };

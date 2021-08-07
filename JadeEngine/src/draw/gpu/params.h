@@ -58,24 +58,54 @@ namespace je { namespace draw { namespace gpu {
         int_type m_value;
     };
 
-    enum class texture_format : u8
+    class texture_format
     {
-        k_bgra8,
-        k_b10g11r11,
-        k_bgra16,
-        k_rg16,
-        k_r32,
-        k_r16,
-        k_r8,
-        k_d24s8,
-        k_d32,
-        k_d16,
-        // TODO More to come up in the future.
-        k_enum_size 
-    };
+    public:
+        using int_type = u8;
 
-    extern bool is_texture_format_depth(texture_format format);
-    extern bool is_texture_format_depth_stencil(texture_format format);
+        enum enum_type
+        {
+            k_bgra8,
+            k_bgr8,
+            k_b10g11r11,
+            k_bgra16,
+            k_rg16,
+            k_r32,
+            k_r16,
+            k_r8,
+            k_d24s8,
+            k_d32,
+            k_d16,
+            // TODO More to come up in the future.
+            k_enum_size 
+        };
+
+        texture_format()
+            : m_value(0)
+        {
+        }
+
+        texture_format(enum_type a_type)
+            : m_value(static_cast<int_type>(a_type))
+        {
+        }
+
+        texture_format(int_type a_value)
+            : m_value(a_value)
+        {
+        }
+
+        operator int_type() const
+        {
+            return m_value;
+        }
+
+        bool is_depth() const;
+        bool is_depth_stencil() const;
+        size get_pixel_num_bytes() const;
+
+        int_type m_value;
+    };
 
     // ////////////////////
 

@@ -7,6 +7,7 @@ namespace je { namespace draw { namespace gpu {
 
     class device;
     class device_vulkan;
+    class texture_vulkan;
 
     class presenter_vulkan : public presenter
     {
@@ -38,10 +39,10 @@ namespace je { namespace draw { namespace gpu {
             }
         };
 
-        struct swapchain_image
+        struct swapchain_buffer
         {
-            VkImage m_image;
-            VkImageView m_image_view;
+            texture_vulkan* m_texture;
+            // TODO synchronization params.
         };
 
     protected:
@@ -56,7 +57,7 @@ namespace je { namespace draw { namespace gpu {
         bool init_surface_platform_specific(device_vulkan& device, const window::window& a_window);
         bool is_presenting_supported_by_graphics_queue(device_vulkan& device);
         bool init_swapchain_and_adjust_params(device_vulkan& device, const window::window& a_window);
-        bool init_swapchain_images(device_vulkan& device);
+        bool init_swapchain_buffers(device_vulkan& device);
 
         image_format get_selected_image_format() const;
         VkPresentModeKHR get_selected_present_mode() const;
@@ -71,7 +72,7 @@ namespace je { namespace draw { namespace gpu {
         VkSurfaceKHR m_surface;
         VkSwapchainKHR m_swapchain;
         VkSwapchainKHR m_old_swapchain;
-        data::array<swapchain_image> m_images;
+        data::array<swapchain_buffer> m_buffers;
 
     protected:
 

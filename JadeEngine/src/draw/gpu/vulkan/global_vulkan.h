@@ -1,6 +1,7 @@
 #pragma once
 
 #include "global.h"
+#include "draw/gpu/params.h"
 
 #if JE_PLATFORM_LINUX
 #define VK_USE_PLATFORM_XCB_KHR
@@ -15,9 +16,6 @@
 #include <vulkan/vulkan.h>
 
 namespace je { namespace draw { namespace gpu {
-
-    enum class texture_format : u8;
-    enum class shader_stage : u8;
 
     // Utility classes.
 
@@ -47,6 +45,7 @@ namespace je { namespace draw { namespace gpu {
     public:
 
         static VkFormat to(texture_format format);
+        static VkFormat to(texture_format::int_type format);
         static texture_format from(VkFormat format);
     };
 

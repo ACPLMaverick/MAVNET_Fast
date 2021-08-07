@@ -26,14 +26,15 @@ namespace je { namespace draw { namespace gpu {
         for(size i = 0; i < m_params.m_render_target_infos.get_size(); ++i)
         {
             const render_target_info& info = m_params.m_render_target_infos[i];
+            const texture_format tex_format(info.m_format);
             
             VkAttachmentDescription2 desc{ VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2 };
             desc.format = texture_format_vk::to(info.m_format);
             desc.samples = VK_SAMPLE_COUNT_1_BIT;   // multisampling not supported atm.
             desc.loadOp = info.m_is_cleared ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
             desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-            const bool is_depth = is_texture_format_depth(info.m_format);
-            const bool is_stencil = is_texture_format_depth_stencil(info.m_format);
+            const bool is_depth = tex_format.is_depth();
+            const bool is_stencil = tex_format.is_depth_stencil();
             if(is_stencil)
             {
                 desc.stencilLoadOp = desc.loadOp;
@@ -79,12 +80,13 @@ namespace je { namespace draw { namespace gpu {
             {
                 const u32 rt_idx = op.m_output_render_target_indices[op_idx];
                 const render_target_info& rt_info = m_params.m_render_target_infos[rt_idx];
+                const texture_format tex_format(rt_info.m_format);                
 
                 VkAttachmentReference2 attachment_reference{ VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2 };
                 attachment_reference.attachment = rt_idx;
                 attachment_reference.layout = get_layout_for_rt_info(rt_info, false);
 
-                if(is_texture_format_depth(rt_info.m_format))
+                if(tex_format.is_depth())
                 {
                     JE_assert(depth_attachment.layout == VK_IMAGE_LAYOUT_UNDEFINED, "There can be only one depth output attachment.");
                     depth_attachment = attachment_reference;
@@ -149,7 +151,8 @@ namespace je { namespace draw { namespace gpu {
 
     VkImageLayout pass_vulkan::get_layout_for_rt_info(const render_target_info& a_info, bool a_is_input)
     {
-        if(is_texture_format_depth(a_info.m_format))
+        const texture_format tex_format(a_info.m_format);
+        if(tex_format.is_depth())
         {
             return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
         }

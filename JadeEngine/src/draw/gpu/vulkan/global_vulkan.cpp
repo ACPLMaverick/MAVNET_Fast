@@ -33,6 +33,11 @@ namespace je { namespace draw { namespace gpu {
         }
     }
 
+    VkFormat texture_format_vk::to(texture_format::int_type a_format)
+    {
+        return to(texture_format(a_format));
+    }
+
     texture_format texture_format_vk::from(VkFormat a_format)
     {
         switch (a_format)

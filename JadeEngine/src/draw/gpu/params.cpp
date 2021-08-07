@@ -69,9 +69,9 @@ namespace je { namespace draw { namespace gpu {
         return num_bytes;
     }
 
-    bool is_texture_format_depth(texture_format a_format)
+    bool texture_format::is_depth() const
     {
-        switch (a_format)
+        switch (m_value)
         {      
         case texture_format::k_d24s8:
         case texture_format::k_d32:
@@ -82,14 +82,46 @@ namespace je { namespace draw { namespace gpu {
         }
     }
 
-    bool is_texture_format_depth_stencil(texture_format a_format)
+    bool texture_format::is_depth_stencil() const
     {
-        switch (a_format)
+        switch (m_value)
         {      
         case texture_format::k_d24s8:
             return true;
         default:
             return false;
+        }
+    }
+
+    size texture_format::get_pixel_num_bytes() const
+    {
+        switch (m_value)
+        {
+        case texture_format::k_bgra8:
+            return 4;
+        case texture_format::k_bgr8:
+            return 3;
+        case texture_format::k_b10g11r11:
+            return 4;
+        case texture_format::k_bgra16:
+            return 8;
+        case texture_format::k_rg16:
+            return 4;
+        case texture_format::k_r32:
+            return 4;
+        case texture_format::k_r16:
+            return 2;
+        case texture_format::k_r8:
+            return 1;
+        case texture_format::k_d24s8:
+            return 4;
+        case texture_format::k_d32:
+            return 4;
+        case texture_format::k_d16:
+            return 2;
+        default:
+            JE_fail("Not specified texture format.");
+            return 0;
         }
     }
 
