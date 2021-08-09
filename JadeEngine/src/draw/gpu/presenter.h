@@ -12,6 +12,7 @@ namespace je { namespace window {
 namespace je { namespace draw { namespace gpu {
 
     class device;
+    class texture;
 
     // This class encapsulates whole swapchain and presentation functionality and synchronization.
     class presenter : public mem::allocatable_persistent
@@ -29,14 +30,17 @@ namespace je { namespace draw { namespace gpu {
 
     public:
 
-        virtual bool present(device& a_device/*TODO params : presented render target. Window position offset.*/) = 0;
+        virtual bool present(device& a_device) = 0;
         virtual bool set_vsync(bool is_vsync) = 0;
         virtual bool set_hdr(bool is_hdr) = 0;
         virtual bool recreate(device& a_device, const window::window& updated_window);
 
+        texture& get_current_buffer() const { return *m_buffers[m_current_buffer]; }
+        u8 get_num_buffers() const { return m_buffers.size(); }
+        void get_all_buffers(data::array<texture*>& out_buffers) const { out_buffers = m_buffers; }
+
         bool has_capabilities(capabilities a_caps) const { return (static_cast<u32>(m_capabilities) & static_cast<u32>(a_caps)) == static_cast<u32>(a_caps); }
         math::screen_size get_dimensions() const { return m_backbuffer_dims; }
-        u16 get_num_buffers() const { return m_num_buffers; }
         bool is_vsync() const { return m_is_vsync; }
         bool is_hdr() const { return m_is_hdr; }
 
@@ -50,9 +54,10 @@ namespace je { namespace draw { namespace gpu {
 
     protected:
 
+        data::array<texture*> m_buffers;
         capabilities m_capabilities;
         math::screen_size m_backbuffer_dims;
-        u8 m_num_buffers;
+        u8 m_current_buffer;
         bool m_is_vsync;
         bool m_is_hdr;
 

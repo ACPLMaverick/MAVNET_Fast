@@ -4,9 +4,10 @@
 namespace je { namespace draw { namespace gpu {
 
     presenter::presenter(const presenter_params& a_params)
-        : m_capabilities(capabilities::k_none)
+        : m_buffers()
+        , m_capabilities(capabilities::k_none)
         , m_backbuffer_dims(a_params.m_window.get_width(), a_params.m_window.get_height())
-        , m_num_buffers(a_params.m_num_buffers)
+        , m_current_buffer(0)
         , m_is_vsync(a_params.m_is_vsync)
         , m_is_hdr(a_params.m_is_hdr)
     {
@@ -15,7 +16,7 @@ namespace je { namespace draw { namespace gpu {
     bool presenter::recreate(device& a_device, const window::window& a_updated_window)
     {
         shutdown(a_device);
-        return init(a_device, { a_updated_window, m_num_buffers, m_is_vsync, m_is_hdr });
+        return init(a_device, { a_updated_window, get_num_buffers(), m_is_vsync, m_is_hdr });
     }
 
 }}}

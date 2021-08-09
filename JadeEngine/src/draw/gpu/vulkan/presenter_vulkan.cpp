@@ -28,7 +28,7 @@ namespace je { namespace draw { namespace gpu {
     {
         m_old_swapchain = m_swapchain;
         m_buffers.clear();
-        JE_verify_bailout(init_swapchain_and_adjust_params(JE_vk_device(a_device), a_updated_window), false, "Failed to init swapchain.");
+        JE_verify_bailout(init_swapchain_and_adjust_params(JE_vk_device(a_device), a_updated_window, get_num_buffers()), false, "Failed to init swapchain.");
         JE_verify_bailout(init_swapchain_buffers(JE_vk_device(a_device)), false, "Failed to obtain swapchain images.");
         return true;
     }
@@ -49,17 +49,25 @@ namespace je { namespace draw { namespace gpu {
     {
         JE_verify_bailout(init_surface_platform_specific(JE_vk_device(a_device), a_params.m_window), false, "Failed to create a surface.");
         JE_verify_bailout(is_presenting_supported_by_graphics_queue(JE_vk_device(a_device)), false, "Presenting is not supported by the graphics queue");
-        JE_verify_bailout(init_swapchain_and_adjust_params(JE_vk_device(a_device), a_params.m_window), false, "Failed to init swapchain.");
+        JE_verify_bailout(init_swapchain_and_adjust_params(JE_vk_device(a_device), a_params.m_window, a_params.m_num_buffers), false, "Failed to init swapchain.");
         JE_verify_bailout(init_swapchain_buffers(JE_vk_device(a_device)), false, "Failed to obtain swapchain images.");
         return true;
     }
 
     void presenter_vulkan::shutdown(device& a_device)
     {
-        for(swapchain_buffer& image : m_buffers)
+        for(buffer_data& buf_data : m_buffer_datas)
         {
-            image.m_texture->shutdown_view(a_device);
-            delete image.m_texture;
+            // TODO
+            JE_unused(buf_data);
+        }
+        m_buffer_datas.clear();
+
+        for(texture* tex : m_buffers)
+        {
+            texture_vulkan* tex_vk = static_cast<texture_vulkan*>(tex);
+            tex_vk->shutdown_view(a_device);
+            delete tex_vk;
         }
         m_buffers.clear();
 
@@ -114,7 +122,7 @@ namespace je { namespace draw { namespace gpu {
         return false;
     }
 
-    bool presenter_vulkan::init_swapchain_and_adjust_params(device_vulkan& a_device, const window::window& a_window)
+    bool presenter_vulkan::init_swapchain_and_adjust_params(device_vulkan& a_device, const window::window& a_window, u8 a_num_buffers)
     {
         device_vulkan& device = JE_vk_device(a_device);
 
@@ -165,7 +173,8 @@ namespace je { namespace draw { namespace gpu {
 
         m_backbuffer_dims.x = math::sc::clamp(m_backbuffer_dims.x, (u16)caps.surfaceCapabilities.minImageExtent.width, (u16)caps.surfaceCapabilities.maxImageExtent.width);
         m_backbuffer_dims.y = math::sc::clamp(m_backbuffer_dims.y, (u16)caps.surfaceCapabilities.minImageExtent.height, (u16)caps.surfaceCapabilities.maxImageExtent.height);
-        m_num_buffers = math::sc::clamp(m_num_buffers, (u8)caps.surfaceCapabilities.minImageCount, (u8)caps.surfaceCapabilities.maxImageCount);
+        const u8 num_buffers = math::sc::clamp(a_num_buffers, (u8)caps.surfaceCapabilities.minImageCount, (u8)caps.surfaceCapabilities.maxImageCount);
+        m_buffers.resize(num_buffers);
 
         bool is_sdr_format_available = false;
         bool is_hdr_format_available = false;
@@ -229,7 +238,7 @@ namespace je { namespace draw { namespace gpu {
 
         VkSwapchainCreateInfoKHR create_info{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
         create_info.surface = m_surface;
-        create_info.minImageCount = m_num_buffers;
+        create_info.minImageCount = num_buffers;
         create_info.imageFormat = selected_image_format.m_format;
         create_info.imageColorSpace = selected_image_format.m_color_space;
         create_info.imageExtent.width = m_backbuffer_dims.x;
@@ -254,19 +263,20 @@ namespace je { namespace draw { namespace gpu {
     {
         u32 images_num = 0;
         JE_vk_verify_bailout(vkGetSwapchainImagesKHR(JE_vk_device(a_device).get_device(), m_swapchain, &images_num, nullptr));
-        JE_assert_bailout(images_num == m_num_buffers, false, "Swapchain image num differs from requested buffer num.");
+        JE_assert_bailout(images_num == get_num_buffers(), false, "Swapchain image num differs from requested buffer num.");
         data::array<VkImage> images(images_num);
         JE_vk_verify_bailout(vkGetSwapchainImagesKHR(JE_vk_device(a_device).get_device(), m_swapchain, &images_num, images.data()));
         
-        for(VkImage vk_image : images)
+        for(u32 i = 0; i < images_num; ++i)
         {
-            swapchain_buffer buffer;
-            buffer.m_texture = new texture_vulkan(get_dimensions(), texture_format_vk::from(get_selected_image_format().m_format), vk_image);
-            buffer.m_texture->init_view(a_device, false);
-            
-            // Todo synchronization elements.
+            VkImage vk_image = images[i];
 
-            m_buffers.push_back(buffer);
+            texture_vulkan* buffer = new texture_vulkan(get_dimensions(), texture_format_vk::from(get_selected_image_format().m_format), vk_image);
+            buffer->init_view(a_device, false);
+
+            m_buffers[i] = buffer;
+
+            // Todo synchronization elements.
         }
 
         return true;

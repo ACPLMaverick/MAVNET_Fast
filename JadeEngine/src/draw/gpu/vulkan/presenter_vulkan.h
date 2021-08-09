@@ -39,9 +39,8 @@ namespace je { namespace draw { namespace gpu {
             }
         };
 
-        struct swapchain_buffer
+        struct buffer_data
         {
-            texture_vulkan* m_texture;
             // TODO synchronization params.
         };
 
@@ -56,7 +55,7 @@ namespace je { namespace draw { namespace gpu {
         // ///////////////
         bool init_surface_platform_specific(device_vulkan& device, const window::window& a_window);
         bool is_presenting_supported_by_graphics_queue(device_vulkan& device);
-        bool init_swapchain_and_adjust_params(device_vulkan& device, const window::window& a_window);
+        bool init_swapchain_and_adjust_params(device_vulkan& device, const window::window& a_window, u8 num_buffers);
         bool init_swapchain_buffers(device_vulkan& device);
 
         image_format get_selected_image_format() const;
@@ -72,7 +71,7 @@ namespace je { namespace draw { namespace gpu {
         VkSurfaceKHR m_surface;
         VkSwapchainKHR m_swapchain;
         VkSwapchainKHR m_old_swapchain;
-        data::array<swapchain_buffer> m_buffers;
+        data::array<buffer_data> m_buffer_datas;
 
     protected:
 
