@@ -2,6 +2,7 @@
 
 from enum import Enum
 import tkinter
+from tkinter import ttk
 
 class enum_enhanced(Enum):
     def __str__(self):
@@ -14,8 +15,61 @@ class enum_enhanced(Enum):
         return name.upper().replace(" ", "_")
 
 
+class tk_enum_var(tkinter.StringVar):
+    def __init__(self, enum_class, *args, **kwargs):
+        self.enum_class = enum_class
+        super().__init__(*args, **kwargs)
+
+    def get_enum(self):
+        return self.enum_class[self.enum_class.reconvert_name(self.get())]
+
+
 class tk_util:
-    def create_num_input(root, var_value, min_val, max_val, divisor=1):
+    def w_create_pair_label(root, text_name, var_value, base_x, base_y):
+        return tk_util._w_create_pair(root, tkinter.Label(root, textvariable=var_value),
+                                     text_name, base_x, base_y)
+
+    def w_create_pair_text_edit(root, text_name, initial_text, base_x, base_y):
+        txt = tkinter.Text(root, height=1)
+        txt.insert(1.0, initial_text)
+        return tk_util._w_create_pair(root, txt, text_name, base_x, base_y)
+
+    def w_create_pair_num_edit(root, text_name, var_value, base_x, base_y, min_val=1, max_val=9999, divisor=1):
+        dim = tk_util.w_create_num_input(root, var_value, min_val, max_val, divisor)
+        return tk_util._w_create_pair(root, dim, text_name, base_x, base_y)
+
+    def w_create_pair_dim_edit(root, text_name, var_dim, base_x, base_y, min_val=1, max_val=9999, divisor=1):
+        inter_frame = tkinter.Frame(root)
+        dim_x = tk_util.create_num_input(inter_frame, var_dim.x, min_val, max_val, divisor)
+        dim_y = tk_util.create_num_input(inter_frame, var_dim.y, min_val, max_val, divisor)
+        sep = tkinter.Label(inter_frame, text="x")
+        tk_util.place_in_grid(dim_x, 0, 0, nopadding=True)
+        tk_util.place_in_grid(sep, 1, 0, nopadding=True)
+        tk_util.place_in_grid(dim_y, 2, 0, nopadding=True)
+        return tk_util._w_create_pair(root, inter_frame, text_name, base_x, base_y)
+
+    def w_create_pair_combobox(root, text_name, options, var_value, base_x, base_y):
+        def func_validate():
+            return False
+        cmd = root.register(func_validate)
+        combo_box = ttk.Combobox(root, values=options, textvariable=var_value,
+                                 validate="key", validatecommand=cmd)
+        if(len(options) > 0):
+            if isinstance(var_value, tk_enum_var):
+                combo_box.current(var_value.get_enum().value)
+            else:
+                combo_box.current(0)
+        return tk_util._w_create_pair(root, combo_box, text_name, base_x, base_y)
+
+    def w_create_pair_checkbox(root, text_name, var_value, base_x, base_y):
+        cb = tkinter.Checkbutton(root, variable=var_value)
+        return tk_util._w_create_pair(root, cb, text_name, base_x, base_y)
+
+    def w_create_pair_color_picker(root, text_name, var_value, base_x, base_y, can_be_disabled=True):
+        picker = tk_color_picker(root, var_value, can_be_disabled=can_be_disabled)
+        return tk_util._w_create_pair(root, picker, text_name, base_x, base_y)
+
+    def w_create_num_input(root, var_value, min_val, max_val, divisor=1):
         def validate_num_input(val, widget):
             int_val = 0
             try:
@@ -63,3 +117,61 @@ class tk_util:
             window.bind("<Return>", lambda event: func_enter())
         if func_esc is not None:
             window.bind("<Escape>", lambda event: func_esc())
+
+    def check_file_name(file_name):
+        return file_name is not None and len(file_name) > 0
+
+    def _w_create_pair(root, element, text_name, base_x, base_y):
+        label_name = tkinter.Label(root, text=text_name)
+        tk_util.place_in_grid(label_name, base_x, base_y, orientation=tkinter.W)
+        tk_util.place_in_grid(element, base_x + 1, base_y, orientation=tkinter.E)
+        return element
+
+
+class tk_informative_int_label(tkinter.Label):
+    def __init__(self, master, text:str, *args) -> None:
+        self._text = text
+        self._str_var = tkinter.StringVar(master, value=self._text.format(*args))
+        super().__init__(master, textvariable=self._str_var)
+
+    def update(self, *args):
+        self._str_var.set(self._text.format(*args))
+
+
+class tk_frame_disableable(tkinter.Frame):
+    def enable(self, status="normal"):
+        def cstate(widget):
+            # Is this widget a container?
+            if widget.winfo_children:
+                # It's a container, so iterate through its children
+                for w in widget.winfo_children():
+                    if len(w.winfo_children()) == 0:
+                        w.configure(state=status)
+                    else:
+                        cstate(w)
+        cstate(self)
+
+    def disable(self):
+        self.enable(status="disabled")
+
+
+class tk_color_picker(tkinter.Frame):
+    def __init__(self, master, var_color, bg_color, width=144, height=21, command=None, can_be_disabled=True):
+        super().__init__(master, width=width, height=height, bg=bg_color)
+        self._can_be_disabled = can_be_disabled
+        width_btn = int(0.8 * width) if can_be_disabled else width
+        width_cb = width - width_btn
+        if can_be_disabled:
+            self._var_check = tkinter.IntVar(value=0)
+            self.cb = tkinter.Checkbutton(self, variable=self._var_check, width=width_cb, height=height,
+                                          bg=bg_color, highlightcolor=bg_color, activebackground=bg_color)
+        self.btn = tkinter.Button(self, command=self._on_clicked, bg=var_color.get(), fg=var_color.get())
+        if can_be_disabled:
+            self.cb.place(x=0, y=0, width=width_cb, height=height)
+        self.btn.place(x=width_cb, y=0, width=width_btn, height=height)
+        self.var_color = var_color
+        self.var_color.trace("w", lambda name, index, mode, self=self: self._on_color_changed())
+        if can_be_disabled:
+            self._var_check.trace("w", lambda name, index, mode, self=self: self._on_checkbox_changed())
+        self.command = command
+        self._var_color_init_val = self.var_color.get()

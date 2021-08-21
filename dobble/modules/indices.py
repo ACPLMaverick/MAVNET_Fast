@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
 import random
-
+from itertools import count, islice
+from math import sqrt
 
 class indices:
     def __init__(self):
@@ -35,14 +36,24 @@ class indices:
 
 
 class indices_generator:
-    def __init__(self, num_elements:int, max_shuffles:int) -> None:
+    def __init__(self, num_elements:int=0, max_shuffles:int=0) -> None:
+        self.set_num_elements(num_elements)
+        self.max_shuffles = max_shuffles
+
+    def set_num_elements(self, num_elements):
+        num_elements = indices_generator._truncate_to_prime_plus_one(num_elements)
         self.num_elements = num_elements
-        self._n = self.num_elements - 1
-        # TODO assert is prime number.
+        self._n = max(self.num_elements - 1, 0)
         self.num_series = self._n * self._n + self._n + 1
+
+    def set_max_shuffles(self, max_shuffles):
         self.max_shuffles = max_shuffles
 
     def generate(self) -> indices:
+
+        assert(self._n > 1)
+        assert(self.num_series > 1)
+        assert(self.max_shuffles > 0)
 
         # https://math.stackexchange.com/questions/1303497/what-is-the-algorithm-to-generate-the-cards-in-the-game-dobble-known-as-spo
 
@@ -84,3 +95,15 @@ class indices_generator:
         assert(len(idc.sets) == self.num_series)
 
         return idc
+
+    def _is_prime(n):
+        return n > 1 and all(n % i for i in islice(count(2), int(sqrt(n) - 1)))
+
+    def _truncate_to_prime_plus_one(num_elements):
+        if num_elements <= 1:
+            return num_elements
+
+        n = num_elements - 1
+        while indices_generator._is_prime(n) is False and n > 1:
+            n = n - 1
+        return n + 1
