@@ -57,7 +57,7 @@ class indices_calculator:
         n_approx = 0.5 * (sqrt(4.0 * float(self.wanted_num_series) - 3.0) - 1.0)
         self.n = indices_calculator._truncate_to_prime(int(n_approx))
         self.num_elements_per_serie = self.n + 1
-        self.num_series = indices_calculator._compute_num_series(self.n)
+        self.num_series = indices_calculator.compute_num_series(self.n)
         self._is_number_different_than_wanted = self.wanted_num_series != self.num_series
 
     def calculate_for_num_elements_per_serie(self, wanted_num_elements_per_serie:int):
@@ -65,22 +65,21 @@ class indices_calculator:
         self.num_elements_per_serie = indices_calculator._truncate_to_prime(wanted_num_elements_per_serie) + 1
         self._is_number_different_than_wanted = self.num_elements_per_serie != self.wanted_num_elements_per_serie
         self.n = max(self.num_elements_per_serie - 1, 0)
-        self.num_series = indices_calculator._compute_num_series(self.n)
+        self.num_series = indices_calculator.compute_num_series(self.n)
 
     def is_number_different_than_wanted(self):
         return self._is_number_different_than_wanted if self._is_number_different_than_wanted is not None else False
 
-    def _compute_num_series(n):
+    def compute_num_series(n):
         return n * n + n + 1
 
     def _is_prime(n):
         return n > 1 and all(n % i for i in islice(count(2), int(sqrt(n) - 1)))
 
-    def _truncate_to_prime(num_elements):
-        if num_elements <= 1:
-            return num_elements
+    def _truncate_to_prime(n):
+        if n <= 1:
+            return n
 
-        n = num_elements - 1
         while indices_calculator._is_prime(n) is False and n > 1:
             n = n - 1
         return n
