@@ -1,10 +1,11 @@
 #!/usr/bin/python
 
+from math import degrees
 from modules.utils import enum_enhanced
 from modules.utils import tk_util
 from modules.utils import tk_informative_int_label
 from modules.utils import tk_frame_disableable
-from modules.indices import indices
+from modules.indices import indices, indices_calculator
 from modules.indices import indices_generator
 import sys
 import os
@@ -16,7 +17,8 @@ import tkinter.colorchooser
 
 class debug_mode(enum_enhanced):
     NO_DEBUG = 0,
-    ONLY_GENERATOR = 1
+    ONLY_GENERATOR_ELEMS_PER_SERIE = 1,
+    ONLY_GENERATOR_NUM_SERIES = 2
 
 
 class builder:
@@ -144,22 +146,39 @@ class window(tkinter.Tk):
         return base.format(name_val)
 
 
-def main():
-    debug = debug_mode.NO_DEBUG
-
-    if debug == debug_mode.NO_DEBUG:
-        wnd = window()
-        wnd.mainloop()
-    elif debug == debug_mode.ONLY_GENERATOR:
+def main_debug(debug:debug_mode):
         print("Dobble!")
 
         # Like in real-life dobble set. Configurable later.
         num_elements_per_serie = 8
-        max_shuffles = 8
+        num_total_elements = 27
+        max_shuffles = 0
 
-        generator = indices_generator(num_elements_per_serie, max_shuffles)
+        calculator = indices_calculator()
+        if debug == debug_mode.ONLY_GENERATOR_ELEMS_PER_SERIE:
+            calculator.calculate_for_num_elements_per_serie(num_elements_per_serie)
+        elif debug == debug_mode.ONLY_GENERATOR_NUM_SERIES:
+            calculator.calculate_for_num_series(num_total_elements)
+
+        generator = indices_generator(calculator, max_shuffles)
         idc = generator.generate()
         idc.print()
+
+        if calculator.is_number_different_than_wanted():
+            if debug == debug_mode.ONLY_GENERATOR_ELEMS_PER_SERIE:
+                print("Number is different than wanted : ", calculator.wanted_num_elements_per_serie, "vs", calculator.num_elements_per_serie)
+            elif debug == debug_mode.ONLY_GENERATOR_NUM_SERIES:
+                print("Number is different than wanted : ", calculator.wanted_num_series, "vs", calculator.num_series)
+
+
+def main():
+    debug = debug_mode.ONLY_GENERATOR_NUM_SERIES
+
+    if debug == debug_mode.NO_DEBUG:
+        wnd = window()
+        wnd.mainloop()
+    else:
+        main_debug(debug)
 
     return 0
 
