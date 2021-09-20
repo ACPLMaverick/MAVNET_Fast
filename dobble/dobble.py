@@ -19,7 +19,8 @@ import glob
 class debug_mode(enum_enhanced):
     NO_DEBUG = 0,
     ONLY_GENERATOR_ELEMS_PER_SERIE = 1,
-    ONLY_GENERATOR_NUM_SERIES = 2
+    ONLY_GENERATOR_NUM_SERIES = 2,
+    ONLY_DISTRIBUTOR = 3
 
 
 class builder:
@@ -191,7 +192,19 @@ class window(tkinter.Tk):
         return tkinter.Label(self, text=tip_text)
 
 
-def main_debug(debug:debug_mode):
+def get_debug():
+    if len(sys.argv) < 2:
+        return None
+    arg = sys.argv[1]
+    debug_value = debug_mode.NO_DEBUG
+    try:
+        debug_value = debug_mode[arg]
+    except:
+        print("WARNING. A debug argument was provided but it wasn't recognized:", arg)
+    return debug_value
+
+
+def debug_generator(debug:debug_mode):
         print("Dobble!")
 
         # Like in real-life dobble set. Configurable later.
@@ -216,14 +229,21 @@ def main_debug(debug:debug_mode):
                 print("Number is different than wanted : ", calculator.wanted_num_series, "vs", calculator.num_series)
 
 
-def main():
-    debug = debug_mode.NO_DEBUG
+def debug_distributor():
+    # TODO
+    print("Distribute!")
 
-    if debug == debug_mode.NO_DEBUG:
+
+def main():
+    debug = get_debug()
+
+    if debug == debug_mode.ONLY_GENERATOR_ELEMS_PER_SERIE or debug == debug_mode.ONLY_GENERATOR_NUM_SERIES:
+        debug_generator(debug)
+    elif debug == debug_mode.ONLY_DISTRIBUTOR:
+        debug_distributor()
+    else:   # Normal app flow.
         wnd = window()
         wnd.mainloop()
-    else:
-        main_debug(debug)
 
     return 0
 

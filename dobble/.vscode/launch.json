@@ -5,11 +5,36 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Dobble",
+            "name": "Main App",
             "type": "python",
             "request": "launch",
             "program": "dobble.py",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "args": ["NO_DEBUG"]
+        },
+        {
+            "name": "Debug - Generator - N",
+            "type": "python",
+            "request": "launch",
+            "program": "dobble.py",
+            "console": "integratedTerminal",
+            "args": ["ONLY_GENERATOR_ELEMS_PER_SERIE"]
+        },
+        {
+            "name": "Debug - Generator - NumSeries",
+            "type": "python",
+            "request": "launch",
+            "program": "dobble.py",
+            "console": "integratedTerminal",
+            "args": ["ONLY_GENERATOR_NUM_SERIES"]
+        },
+        {
+            "name": "Debug - Distributor",
+            "type": "python",
+            "request": "launch",
+            "program": "dobble.py",
+            "console": "integratedTerminal",
+            "args": ["ONLY_DISTRIBUTOR"]
         }
     ]
 }
