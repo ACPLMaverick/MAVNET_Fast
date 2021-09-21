@@ -8,6 +8,18 @@ class indices:
     def __init__(self):
         self.sets = []
 
+    def get_num(self):
+        return len(self.sets)
+
+    def discard(self, num_to_discard:int):
+        assert(num_to_discard <= self.get_num())
+        if num_to_discard == self.get_num():
+            self.sets.clear()
+        elif num_to_discard > 0:
+            for i in range(num_to_discard):
+                random_index = random.randint(0, len(self.sets) - 1)
+                self.sets.pop(random_index)
+
     def print(self):
         set_index = 0
         global_length = -1

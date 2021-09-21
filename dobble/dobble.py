@@ -28,6 +28,7 @@ class builder:
         self._file_list = None
         self._calculator = indices_calculator()
         self._generator = indices_generator()
+        self._num_cards_to_cut_away = 0
 
     def set_file_list(self, file_list):
         self._file_list = file_list
@@ -36,8 +37,14 @@ class builder:
     def get_num_total_images(self):
         return len(self._file_list)
 
+    def set_num_cards(self, new_num_cards:int):
+        assert(new_num_cards <= self._get_num_cards())
+        if new_num_cards == self._get_num_cards():
+            return
+        self._num_cards_to_cut_away = self._get_num_cards() - new_num_cards
+
     def get_num_cards(self):
-        return self._calculator.num_series
+        return self._get_num_cards() - self._num_cards_to_cut_away
 
     def get_num_images_per_card(self):
         return self._calculator.num_elements_per_serie
@@ -55,12 +62,19 @@ class builder:
         self._generator.set_calculator(self._calculator)
         self._generator.set_max_shuffles(max_num_shuffles)
         idx = self._generator.generate()
-        if idx is None or len(idx.sets) != self.get_num_cards():
+        if idx is None or len(idx.sets) != self._get_num_cards():
             return False
         
+        # Discard requested number of sets.
+        if self._num_cards_to_cut_away > 0:
+            idx.discard(self._num_cards_to_cut_away)
+
         idx.print()
 
         return True
+
+    def _get_num_cards(self):
+        return self._calculator.num_series
 
 
 class window(tkinter.Tk):
@@ -109,7 +123,11 @@ class window(tkinter.Tk):
         self._w_edit_clear_dir = tk_util.w_create_pair_checkbox(self._w_frame_options, "Clear:", self._var_is_clear, 0, 1)
         self._var_num_cards = tkinter.IntVar(self, 0)
         self._var_max_shuffles = tkinter.IntVar(self, 3)
+
         self._w_edit_output_cards = tk_util.w_create_pair_num_edit(self._w_frame_options, "Num cards:", self._var_num_cards, 0, 2, max_val=999)
+        self._var_num_cards.trace_add("write", self._on_num_images_changed)
+        self._hack_is_var_num_cards_set_externally = False
+
         self._w_edit_max_shuffles = tk_util.w_create_pair_num_edit(self._w_frame_options, "Max shuffles:", self._var_max_shuffles, 0, 3, max_val=64)
         self._w_frame_options.disable()
 
@@ -143,18 +161,33 @@ class window(tkinter.Tk):
         if files_to_open is not None and len(files_to_open) > 0:
             self._builder.set_file_list(files_to_open)
             self._w_lbl_num_files.update(self._builder.get_num_total_images())
-            self._w_lbl_numbers.update(self._builder.get_num_cards(), self._builder.get_num_images_per_card())
-            if self._is_warning():
-                self._w_lbl_warning.update(self._builder.get_num_cards())
-                self._w_lbl_warning.grid()
-            else:
-                self._w_lbl_warning.grid_remove()
-            if self._builder.is_ready():
-                self._w_frame_options.enable()
-                self._w_btn_generate.configure(state=tkinter.NORMAL)
-            else:
-                self._w_frame_options.disable()
-                self._w_btn_generate.configure(state=tkinter.DISABLED)
+            self._update_num_cards()
+
+    def _update_num_cards(self):
+        self._w_lbl_numbers.update(self._builder.get_num_cards(), self._builder.get_num_images_per_card())
+
+        self._hack_is_var_num_cards_set_externally = True
+        self._var_num_cards.set(self._builder.get_num_cards())
+        self._w_edit_output_cards.configure(to=self._builder.get_num_cards())
+        self._hack_is_var_num_cards_set_externally = False
+
+        if self._is_warning():
+            self._w_lbl_warning.update(self._builder.get_num_cards())
+            self._w_lbl_warning.grid()
+        else:
+            self._w_lbl_warning.grid_remove()
+        if self._builder.is_ready():
+            self._w_frame_options.enable()
+            self._w_btn_generate.configure(state=tkinter.NORMAL)
+        else:
+            self._w_frame_options.disable()
+            self._w_btn_generate.configure(state=tkinter.DISABLED)
+
+    def _on_num_images_changed(self, p0:str, p1:str, p2:str):
+        if self._hack_is_var_num_cards_set_externally:
+            return
+        self._builder.set_num_cards(self._var_num_cards.get())
+        self._w_lbl_numbers.update(self._builder.get_num_cards(), self._builder.get_num_images_per_card())
 
     def _on_generate_clicked(self):
         ret_val = self._builder.build(self._get_output_name(), self._var_is_clear.get(), self._var_max_shuffles.get())
