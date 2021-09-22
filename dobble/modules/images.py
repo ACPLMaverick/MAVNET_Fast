@@ -82,6 +82,7 @@ class canvas:
 
     def _create_image(self):
         self._image = Image.new("RGB", (self.size, self.size), self.background_color)
+        # TODO Apply circle border and wheel interior as per ring biases.
     
     def _get_variation(self, variation, initial_value):
         # TODO Will apply variations after testing if everything works correctly.
