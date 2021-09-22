@@ -7,6 +7,7 @@ from modules.utils import tk_informative_int_label
 from modules.utils import tk_frame_disableable
 from modules.indices import indices, indices_calculator
 from modules.indices import indices_generator
+from modules.images import canvas, image
 import sys
 import os
 import tkinter
@@ -263,8 +264,50 @@ def debug_generator(debug:debug_mode):
 
 
 def debug_distributor():
-    # TODO
     print("Distribute!")
+    directory = "png"
+    files_to_open = glob.glob(os.path.join(directory, "*.jpg"))
+    files_to_open.extend(glob.glob(os.path.join(directory, "*.png")))
+    files_to_open.extend(glob.glob(os.path.join(directory, "*.svg")))
+    files_to_open.extend(glob.glob(os.path.join(directory, "*.tga")))
+    files_to_open.extend(glob.glob(os.path.join(directory, "*.gif")))
+    num_files = len(files_to_open)
+    
+    if num_files <= 0:
+        return
+
+    calculator = indices_calculator()
+    calculator.calculate_for_num_series(num_files)
+    generator = indices_generator(calculator, 1)
+    idc = generator.generate()
+    idc.print()
+
+    # Test only first card.
+    images = []
+    for index in idc.sets[0]:
+        images.append(image(files_to_open[index]))
+    
+    # Dummy test params.
+    canv_size = 512
+    canv_outer_bias = 0.0
+    canv_inner_bias = 0.0
+    canv_rotation_variation = 0.0
+    canv_scale_variation = 0.0
+    canv_color = 0xFFFFFF
+    canv_ordeal = 1
+    canv = canvas(canv_size, canv_outer_bias, canv_inner_bias, canv_scale_variation, canv_rotation_variation,
+                  canv_color, canv_ordeal)
+    canv.distribute_images(images)
+
+    for img in images:
+        print("Image: Size:", img.size, "Position:", img.position, "Rotation:", img.rotation, "Scale:", img.scale)
+    
+    canv.apply_images(images)
+
+    out_dir = "out"
+    os.makedirs(out_dir, exist_ok=True)
+    canv.save(out_dir)
+    canv._image.show()  # Accessing protected member only for debugging.
 
 
 def main():
