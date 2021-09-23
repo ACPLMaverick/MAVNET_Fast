@@ -20,9 +20,29 @@ class vec2:
     def compare(self, other):
         return self.x == other.x and self.y == other.y
 
+    def add(self, scalar:float):
+        self.x = int(self.x + scalar)
+        self.y = int(self.y + scalar)
+
+    def add_vec(self, other):
+        self.x = self.x + other.x
+        self.y = self.y + other.y
+
     def mul(self, scalar):
         self.x = int(self.x * scalar)
         self.y = int(self.y * scalar)
+
+    def normalize(self):
+        length = sqrt(self.x * self.x + self.y * self.y)
+        if length >= 0.0000005:
+            self.x = self.x / length
+            self.y = self.y / length
+
+    def create_normalized(self):
+        other = vec2(0, 0)
+        other.assign(self)
+        other.normalize()
+        return other
 
     def rotate_by_angle(self, angle_rad):
         # Clockwise rotation.
@@ -30,8 +50,12 @@ class vec2:
         old_y = float(self.y)
         angle_sin = sin(angle_rad)
         angle_cos = cos(angle_rad)
-        self.x = int(old_x * angle_cos + old_y * angle_sin)
-        self.y = int(-old_x * angle_sin + old_y * angle_cos)
+        self.x = (old_x * angle_cos + old_y * angle_sin)
+        self.y = (-old_x * angle_sin + old_y * angle_cos)
+
+    def truncate(self):
+        self.x = int(self.x)
+        self.y = int(self.y)
 
     def __str__(self):
         return "[{}, {}]".format(self.x, self.y)
@@ -73,24 +97,25 @@ class canvas:
         if work_area <= 0.0:
             return
         
+        # Multiply by 2 as a magic number, there will be a possibility to rescale them anyway.
         tile_size = int(sqrt(work_area) / float(num_images)) * 2
         current_position = vec2(0, int((r_outer + r_inner) * 0.5))
         angle_per_image = 2.0 * pi / float(num_images)
         current_angle = 0.0
 
-        for image in images:
-            image.size = tile_size
+        for img in images:
+            img.size = tile_size
 
-            image.position.assign(current_position)
-            image.position.x = self._create_variation(self.params.position_variation_x, image.position.x)
-            image.position.y = self._create_variation(self.params.position_variation_y, image.position.y)
-            image.position.mul(self.params.position_multiplier)
+            img.position.assign(current_position)
+            img.position.mul(self.params.position_multiplier)
+            self._create_position_variation(img.position, tile_size)
 
             # Rotate towards the center of the canvas, so (180 - angle).
-            image.rotation = self._create_variation(self.params.rotation_variation, pi / 2.0 - current_angle)
-            image.scale = self._create_variation(self.params.scale_variation, self.params.scale_multiplier)
+            img.rotation = self._create_variation(self.params.rotation_variation, pi / 2.0 - current_angle)
+            img.scale = self._create_variation(self.params.scale_variation, self.params.scale_multiplier)
 
             current_position.rotate_by_angle(angle_per_image)
+            current_position.truncate()
             current_angle += angle_per_image
 
     def apply_images(self, images):
@@ -115,7 +140,17 @@ class canvas:
             draw.ellipse(self._create_draw_bounding_box(self.params.inner_disc_bias), 
                          fill=self.params.inner_disc_color)
     
-    def _create_variation(self, variation, initial_value):
+    def _create_position_variation(self, position:vec2, tile_size:int):
+        magic_multiplier = tile_size / 4
+        unit_y = position.create_normalized()
+        unit_x = vec2(unit_y.x, unit_y.y)
+        unit_x.rotate_by_angle(pi * 0.5)
+        unit_x.mul((random.random() * 2.0 - 1.0) * self.params.position_variation_x * magic_multiplier)
+        unit_y.mul((random.random() * 2.0 - 1.0) * self.params.position_variation_y * magic_multiplier)
+        position.add_vec(unit_y)
+        position.add_vec(unit_x)
+
+    def _create_variation(self, variation:float, initial_value:float):
         if variation <= 0.0:
             return initial_value
         min_value = initial_value - initial_value * variation
@@ -123,7 +158,7 @@ class canvas:
         alpha = random.random()
         return min_value * (1.0 - alpha) + max_value * alpha
 
-    def _create_draw_bounding_box(self, size_mul):
+    def _create_draw_bounding_box(self, size_mul:float):
         size = int(float(self.size) * size_mul)
         half_size_diff = int((self.size - size) / 2)
         end = half_size_diff + size

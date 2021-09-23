@@ -292,11 +292,11 @@ def debug_distributor():
     canv_size = 512
     params.outer_ring_bias = 0.0
     params.inner_disc_bias = 0.15
-    params.rotation_variation = 0.5
+    params.rotation_variation = 0.0
     params.scale_multiplier = 1.0
-    params.scale_variation = 0.1
+    params.scale_variation = 0.0
     params.position_variation_x = 0.0
-    params.position_variation_y = 0.1
+    params.position_variation_y = 0.0
     params.position_multiplier = 1.0
     params.background_color = 0xFFFFFFFF
     params.outer_ring_color = 0xFF000000
