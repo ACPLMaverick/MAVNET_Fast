@@ -7,7 +7,7 @@ from modules.utils import tk_informative_int_label
 from modules.utils import tk_frame_disableable
 from modules.indices import indices, indices_calculator
 from modules.indices import indices_generator
-from modules.images import canvas, image
+from modules.images import canvas, canvas_params, image
 import sys
 import os
 import tkinter
@@ -288,15 +288,22 @@ def debug_distributor():
         images.append(image(files_to_open[index]))
     
     # Dummy test params.
+    params = canvas_params()
     canv_size = 512
-    canv_outer_bias = 0.0
-    canv_inner_bias = 0.0
-    canv_rotation_variation = 0.0
-    canv_scale_variation = 0.0
-    canv_color = 0xFFFFFF
+    params.outer_ring_bias = 0.0
+    params.inner_disc_bias = 0.15
+    params.rotation_variation = 0.5
+    params.scale_multiplier = 1.0
+    params.scale_variation = 0.1
+    params.position_variation_x = 0.0
+    params.position_variation_y = 0.1
+    params.position_multiplier = 1.0
+    params.background_color = 0xFFFFFFFF
+    params.outer_ring_color = 0xFF000000
+    params.inner_disc_color = 0xFF000000
+    params.outer_ring_width = 2
     canv_ordeal = 1
-    canv = canvas(canv_size, canv_outer_bias, canv_inner_bias, canv_scale_variation, canv_rotation_variation,
-                  canv_color, canv_ordeal)
+    canv = canvas(params, canv_size, canv_ordeal)
     canv.distribute_images(images)
 
     for img in images:
@@ -306,7 +313,7 @@ def debug_distributor():
 
     out_dir = "out"
     os.makedirs(out_dir, exist_ok=True)
-    canv.save(out_dir)
+    # canv.save(out_dir)
     canv._image.show()  # Accessing protected member only for debugging.
 
 
