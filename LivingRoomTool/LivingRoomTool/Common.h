@@ -1,13 +1,5 @@
 #pragma once
 
-#ifdef _DEBUG
-#ifdef NDEBUG
-#undef NDEBUG
-#endif
-#else
-#define NDEBUG
-#endif
-
 #include <cstdint>
 #include <assert.h>
 #include <vector>

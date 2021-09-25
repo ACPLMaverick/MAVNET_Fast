@@ -1,1 +1,3 @@
 LRT TODO:
+- Take care of action priorities (e.g. can't have two button combinations with the same button emitted, e.g. A and LB+A) - generally want the longest combinations
+	OR if have LB+A don't emit A (always emit full key combination)
