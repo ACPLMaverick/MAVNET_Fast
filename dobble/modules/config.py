@@ -13,15 +13,13 @@ class config_category(Enum):
 
 
 class config:
-    none_str = "none"
     default_data = {
         str(config_category.generator): {
-            "recent_files": none_str,
-            "recent_dir": none_str,
-            "recent_name": none_str,
-            "recent_num_cards": 0,
+            "name": "output",
+            "num_cards": 0,
             "is_clear": False,
-            "num_shuffles": 3
+            "max_shuffles": 3,
+            "enum_output_mode": "PNG"
         },
         str(config_category.visual): {
             "outer_ring_bias": 0.0,
@@ -48,14 +46,18 @@ class config:
     def reset(self):
         self._data = copy.copy(self._data_immutable)
 
-    def restore_default(self):
+    def restore_default(self, new_file_path:str=None):
+        if new_file_path is not None:
+            self._file_path = new_file_path
         self._data_immutable = copy.copy(config.default_data)
         self.reset()
 
-    def save(self):
+    def save(self, new_file_path:str=None):
+        if new_file_path is not None:
+            self._file_path = new_file_path
         self._data_immutable = copy.copy(self._data)
         dirs = os.path.dirname(self._file_path)
-        if not os.path.isdir(dirs):
+        if len(dirs) > 0 and not os.path.isdir(dirs):
             os.makedirs(dirs)
         with open(self._file_path, "w") as f:
             json.dump(self._data_immutable, f, indent=4)

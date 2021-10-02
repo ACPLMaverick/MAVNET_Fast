@@ -30,8 +30,11 @@ class tk_util:
                                      text_name, base_x, base_y)
 
     def w_create_pair_text_edit(root, text_name, initial_text, base_x, base_y):
-        txt = tkinter.Text(root, height=1)
-        txt.insert(1.0, initial_text)
+        txt = tkinter.Entry(root)
+        if type(initial_text) is tkinter.StringVar:
+            txt.configure(textvariable=initial_text)
+        else:
+            txt.insert(0, initial_text)
         return tk_util._w_create_pair(root, txt, text_name, base_x, base_y)
 
     def w_create_pair_num_edit(root, text_name, var_value, base_x, base_y, min_val=1, max_val=9999, divisor=1):
@@ -134,7 +137,9 @@ class tk_informative_int_label(tkinter.Label):
         self._str_var = tkinter.StringVar(master, value=self._text.format(*args))
         super().__init__(master, textvariable=self._str_var)
 
-    def update(self, *args):
+    def update(self, text=None, *args):
+        if text is not None:
+            self._text = text
         self._str_var.set(self._text.format(*args))
 
 
