@@ -91,8 +91,9 @@ class tk_dict_var_wrapper:
 
 
 class tk_control_set(tk_frame_disableable):
-    def __init__(self, data:dict, *args, **kwargs):
+    def __init__(self, data:dict, num_cols:int, *args, **kwargs):
         self._data:dict = data
+        self._num_cols = max(num_cols, 1)
         self._vars = dict() # It will be filled by build_controls.
         super().__init__(*args, **kwargs)
         self._build_controls()
@@ -102,14 +103,15 @@ class tk_control_set(tk_frame_disableable):
         coord_y = 0
         col_span = 2
         num_items = len(self._data)
-        num_cols = max(int(sqrt(num_items)), 1)
-        num_items_per_col = int(num_items / num_cols)
+        num_items_per_col = int(num_items / self._num_cols)
 
         for key, value in self._data.items():
             label = key.replace("_", " ").capitalize() + ":"
             control, var = self._create_control_and_var_for_type(label, value, coord_x, coord_y)
             assert(key not in self._vars)   # Crash on duplicates.
             self._vars[key] = tk_dict_var_wrapper(var, control, self._data, key)
+            # TODO Register for tk_dict_var_wrapper change to be able to emit our own event.
+
             coord_y = coord_y + 1
             if coord_y >= num_items_per_col:
                 coord_y = 0
@@ -145,13 +147,20 @@ class tk_control_set(tk_frame_disableable):
         return control, variable
 
 
+class tk_canvas_viewer(tkinter.Canvas):
+    def __init__(self, image_file_list:list, control_set:tk_control_set, *args, **kwargs):
+        self._image_file_list = image_file_list
+        self._control_set = control_set
+        super().__init__(*args, **kwargs)
+
+
 class app(tkinter.Tk):
     def __init__(self):
         super().__init__()
 
         # Pre-setup.
-        self._width = 800
-        self._height = 600
+        self._width = 960
+        self._height = 610
 
         self.title("Dobble Generator")
         self.resizable(False, False)
@@ -205,12 +214,20 @@ class app(tkinter.Tk):
         self._w_edit_max_shuffles = tk_util.w_create_pair_num_edit(self._w_frame_options, "Max shuffles:", self._var_max_shuffles, 0, 3, max_val=64)
         self._w_frame_options.disable()
 
-        self._w_btn_generate = tkinter.Button(self, text="Generate", command=self._on_generate_clicked, width=main_button_width)
-        tk_util.place_in_grid(self._w_btn_generate, 0, 6, w=2)
-        self._w_btn_generate.configure(state=tkinter.DISABLED)
+        visual_data = self._conf.get_category_data(config_category.visual)
+        self._w_frame_canvas_control_set = tk_control_set(data=visual_data, num_cols=1, master=self, pady=6)
+        tk_util.place_in_grid(self._w_frame_canvas_control_set, 0, 6, w=2)
 
-        self._w_frame_canvas_config = tk_control_set(data=self._conf.get_category_data(config_category.visual), master=self, pady=6)
-        tk_util.place_in_grid(self._w_frame_canvas_config, 0, 7, w=2)
+        self._w_frame_viewer = tk_frame_disableable(self, padx=0, pady=0)
+        tk_util.place_in_grid(self._w_frame_viewer, 2, 0, h=7, orientation=tkinter.N)
+        viewer_size = 512
+        self._w_canvas_viewer = tk_canvas_viewer(image_file_list=None, control_set=self._w_frame_canvas_control_set,
+                                                 master=self._w_frame_viewer, bg=visual_data["background_color"], width=viewer_size, height=viewer_size)
+        tk_util.place_in_grid(self._w_canvas_viewer, 0, 0)
+
+        self._w_btn_generate = tkinter.Button(self._w_frame_viewer, text="Generate", command=self._on_generate_clicked, padx=int(viewer_size/2)-28, pady=16)
+        tk_util.place_in_grid(self._w_btn_generate, 0, 1)
+        self._w_btn_generate.configure(state=tkinter.DISABLED)
 
 
     def _conditional_exit(self):
