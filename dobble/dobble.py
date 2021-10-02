@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
-from math import degrees
+from copy import Error
+from math import degrees, sqrt
 from modules.utils import enum_enhanced
 from modules.utils import tk_util
 from modules.utils import tk_informative_int_label
@@ -8,6 +9,7 @@ from modules.utils import tk_frame_disableable
 from modules.indices import indices, indices_calculator
 from modules.indices import indices_generator
 from modules.images import canvas, canvas_params, image
+from modules.config import config, config_category
 import sys
 import os
 import tkinter
@@ -78,18 +80,89 @@ class builder:
         return self._calculator.num_series
 
 
-class window(tkinter.Tk):
+# Makes sure changes in var are reflected in the dict itself, so we can easily save the data afterwards.
+class tk_dict_var_wrapper:
+    def __init__(self, tk_var:tkinter.Variable, tk_widget:tkinter.Widget, data:dict, key:str):
+        self._tk_var = tk_var
+        self._tk_widget = tk_widget
+        self._data = data
+        self._key = key
+        # TODO register for variable changes.
+
+
+class tk_control_set(tk_frame_disableable):
+    def __init__(self, data:dict, *args, **kwargs):
+        self._data:dict = data
+        self._vars = dict() # It will be filled by build_controls.
+        super().__init__(*args, **kwargs)
+        self._build_controls()
+
+    def _build_controls(self):
+        coord_x = 0
+        coord_y = 0
+        col_span = 2
+        num_items = len(self._data)
+        num_cols = max(int(sqrt(num_items)), 1)
+        num_items_per_col = int(num_items / num_cols)
+
+        for key, value in self._data.items():
+            label = key.replace("_", " ").capitalize() + ":"
+            control, var = self._create_control_and_var_for_type(label, value, coord_x, coord_y)
+            assert(key not in self._vars)   # Crash on duplicates.
+            self._vars[key] = tk_dict_var_wrapper(var, control, self._data, key)
+            coord_y = coord_y + 1
+            if coord_y >= num_items_per_col:
+                coord_y = 0
+                coord_x = coord_x + col_span
+            
+    def _create_control_and_var_for_type(self, label:str, data, coord_x:int, coord_y:int):
+        control = None
+        variable = None
+        data_type = type(data)
+        if data_type is int or data_type is float:
+            variable = tkinter.IntVar(self, value=data)
+            # Proceed as usual number.
+            min_val = 0
+            max_val = 99
+            divisor = 1
+            if data_type is float:
+                max_val = 5
+                divisor = 0.01
+            control = tk_util.w_create_pair_num_edit(self, label, variable, coord_x, coord_y, min_val, max_val, divisor)
+        elif data_type is str:
+            variable = tkinter.StringVar(self, value=data)
+            # HUGE HACK !!!
+            if "color" in label.lower():
+                # Make color control!
+                control = tk_util.w_create_pair_color_picker(self, label, variable, coord_x, coord_y, False)
+            else:
+                control = tk_util.w_create_pair_text_edit(self, label, variable, coord_x, coord_y)
+        elif data_type is bool:
+            variable = tkinter.BooleanVar(self, value=data)
+            control = tk_util.w_create_pair_checkbox(self, label, variable, coord_x, coord_y)
+        else:
+            raise Error("Not supported value type in config.")
+        return control, variable
+
+
+class app(tkinter.Tk):
     def __init__(self):
         super().__init__()
 
-        self._width = 640
-        self._height = 300
+        # Pre-setup.
+        self._width = 800
+        self._height = 600
 
         self.title("Dobble Generator")
         self.resizable(False, False)
         self.geometry("{}x{}".format(self._width, self._height))
         tk_util.bind_enter_esc(self, None, self._conditional_exit)
         self.protocol("WM_DELETE_WINDOW", self._conditional_exit)
+
+        # Config load.
+        self._conf = config()
+
+        # Control build.
         self._build_controls()
         tk_util.window_set_on_cursor(self)
 
@@ -120,10 +193,10 @@ class window(tkinter.Tk):
         tk_util.place_in_grid(self._w_frame_options, 0, 5, w=2)
         self._w_edit_name = tk_util.w_create_pair_text_edit(self._w_frame_options, "Name:", "", 0, 0)
         self._w_edit_name.configure(width=16)
-        self._var_is_clear = tkinter.BooleanVar(self, False)
+        self._var_is_clear = tkinter.BooleanVar(self._w_frame_options, False)
         self._w_edit_clear_dir = tk_util.w_create_pair_checkbox(self._w_frame_options, "Clear:", self._var_is_clear, 0, 1)
-        self._var_num_cards = tkinter.IntVar(self, 0)
-        self._var_max_shuffles = tkinter.IntVar(self, 3)
+        self._var_num_cards = tkinter.IntVar(self._w_frame_options, 0)
+        self._var_max_shuffles = tkinter.IntVar(self._w_frame_options, 3)
 
         self._w_edit_output_cards = tk_util.w_create_pair_num_edit(self._w_frame_options, "Num cards:", self._var_num_cards, 0, 2, max_val=999)
         self._var_num_cards.trace_add("write", self._on_num_images_changed)
@@ -135,6 +208,9 @@ class window(tkinter.Tk):
         self._w_btn_generate = tkinter.Button(self, text="Generate", command=self._on_generate_clicked, width=main_button_width)
         tk_util.place_in_grid(self._w_btn_generate, 0, 6, w=2)
         self._w_btn_generate.configure(state=tkinter.DISABLED)
+
+        self._w_frame_canvas_config = tk_control_set(data=self._conf.get_category_data(config_category.visual), master=self, pady=6)
+        tk_util.place_in_grid(self._w_frame_canvas_config, 0, 7, w=2)
 
 
     def _conditional_exit(self):
@@ -325,7 +401,7 @@ def main():
     elif debug == debug_mode.ONLY_DISTRIBUTOR:
         debug_distributor()
     else:   # Normal app flow.
-        wnd = window()
+        wnd = app()
         wnd.mainloop()
 
     return 0

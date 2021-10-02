@@ -156,15 +156,14 @@ class tk_frame_disableable(tkinter.Frame):
 
 
 class tk_color_picker(tkinter.Frame):
-    def __init__(self, master, var_color, bg_color, width=144, height=21, command=None, can_be_disabled=True):
-        super().__init__(master, width=width, height=height, bg=bg_color)
+    def __init__(self, master, var_color, width=60, height=21, command=None, can_be_disabled=True):
+        super().__init__(master, width=width, height=height)
         self._can_be_disabled = can_be_disabled
         width_btn = int(0.8 * width) if can_be_disabled else width
         width_cb = width - width_btn
         if can_be_disabled:
             self._var_check = tkinter.IntVar(value=0)
-            self.cb = tkinter.Checkbutton(self, variable=self._var_check, width=width_cb, height=height,
-                                          bg=bg_color, highlightcolor=bg_color, activebackground=bg_color)
+            self.cb = tkinter.Checkbutton(self, variable=self._var_check, width=width_cb, height=height)
         self.btn = tkinter.Button(self, command=self._on_clicked, bg=var_color.get(), fg=var_color.get())
         if can_be_disabled:
             self.cb.place(x=0, y=0, width=width_cb, height=height)
@@ -175,3 +174,30 @@ class tk_color_picker(tkinter.Frame):
             self._var_check.trace("w", lambda name, index, mode, self=self: self._on_checkbox_changed())
         self.command = command
         self._var_color_init_val = self.var_color.get()
+
+    def is_enabled(self):
+        if self._can_be_disabled:
+            return self._var_check.get() == 1
+        else:
+            return True
+
+    def _on_clicked(self):
+        new_color_tuple = tkinter.colorchooser.askcolor(self.var_color.get(), title="Select color")
+        if len(new_color_tuple) > 1:
+            new_color = new_color_tuple[1]
+            if new_color is not None and new_color != self.var_color.get():
+                self.var_color.set(new_color)
+                if self.command is not None:
+                    self.command(new_color)
+                if self._can_be_disabled:
+                    if self._var_check.get() == 0:
+                        self._var_check.set(1)
+
+    def _on_color_changed(self):
+        self.btn["bg"] = self.var_color.get()
+        self.btn["fg"] = self.var_color.get()
+
+    def _on_checkbox_changed(self):
+        if self.is_enabled() is False:
+            # Reset to default.
+            self.var_color.set(self._var_color_init_val)
