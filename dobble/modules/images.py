@@ -62,19 +62,33 @@ class vec2:
 
 
 class canvas_params:
-    def __init__(self):
-        self.outer_ring_bias = 0.0
-        self.inner_disc_bias = 0.0
-        self.scale_multiplier = 1.0
-        self.scale_variation = 0.0
-        self.rotation_variation = 0.0
-        self.position_variation_x = 0.0
-        self.position_variation_y = 0.0
-        self.position_multiplier = 1.0
-        self.background_color = 0xFFFFFFFF
-        self.outer_ring_color = 0xFF000000
-        self.inner_disc_color = 0xFF000000
-        self.outer_ring_width = 1
+    def __init__(self, config_data:dict=None):
+        if config_data is not None:
+            self.outer_ring_bias = config_data["outer_ring_bias"]
+            self.inner_disc_bias = config_data["inner_disc_bias"]
+            self.scale_multiplier = config_data["scale_multiplier"]
+            self.scale_variation = config_data["scale_variation"]
+            self.rotation_variation = config_data["rotation_variation"]
+            self.position_variation_x = config_data["position_variation_x"]
+            self.position_variation_y = config_data["position_variation_y"]
+            self.position_multiplier = config_data["position_multiplier"]
+            self.background_color = config_data["background_color"]
+            self.outer_ring_color = config_data["outer_ring_color"]
+            self.inner_disc_color = config_data["inner_disc_color"]
+            self.outer_ring_width = config_data["outer_ring_width"]
+        else:
+            self.outer_ring_bias = 0.0
+            self.inner_disc_bias = 0.0
+            self.scale_multiplier = 1.0
+            self.scale_variation = 0.0
+            self.rotation_variation = 0.0
+            self.position_variation_x = 0.0
+            self.position_variation_y = 0.0
+            self.position_multiplier = 1.0
+            self.background_color = 0xFFFFFFFF
+            self.outer_ring_color = 0xFF000000
+            self.inner_disc_color = 0xFF000000
+            self.outer_ring_width = 1
 
 
 class canvas:
@@ -125,14 +139,14 @@ class canvas:
             upper_left = (int(mimg.position.x - img.width / 2 + canv_half_size),
                           int(mimg.position.y - img.height / 2 + canv_half_size))
             # Using the same image as mask allows us to paste with regard to src alpha.
-            self._image.paste(img, upper_left, mask=img)
+            self.image.paste(img, upper_left, mask=img)
 
     def save(self, directory):
-        self._image.save(os.path.join(directory, "card_{}.png".format(self.ordeal_number)))
+        self.image.save(os.path.join(directory, "card_{}.png".format(self.ordeal_number)))
 
     def _create_image(self):
-        self._image = Image.new("RGBA", (self.size, self.size), 0)
-        draw = ImageDraw.Draw(self._image)
+        self.image = Image.new("RGBA", (self.size, self.size), 0)
+        draw = ImageDraw.Draw(self.image)
         draw.ellipse(self._create_draw_bounding_box(1.0 - self.params.outer_ring_bias),
                      outline=self.params.outer_ring_color,
                      fill=self.params.background_color, width=self.params.outer_ring_width)
@@ -170,17 +184,25 @@ class canvas:
 # Rotation - Specified in radians. CENTER of image is a pivot point.
 # Position - CENTER of image is a pivot point, so we need to offset by half size when copying.
 class image:
-    def __init__(self, file_path:str):
-        self.file_path = file_path
+    def __init__(self, file_path:str=None):
+        if file_path is not None:
+            self.img = Image.open(file_path)
+        else:
+            self.img = None
 
         self.size = 0
         self.scale = 1.0
         self.rotation = 0.0
         self.position = vec2(0, 0)
 
+    def create_copy(self):
+        new_image = image()
+        new_image.img = self.img
+        return new_image
+
     def create_transformed_image(self, canv:canvas):
-        img = Image.open(self.file_path)
-        img = self._apply_size_and_scale(img)
+        assert(self.img is not None)
+        img = self._apply_size_and_scale(self.img)
         img = self._apply_rotation(img)
         return img
 

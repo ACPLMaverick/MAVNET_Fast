@@ -10,6 +10,7 @@ from modules.images import canvas, canvas_params, image
 from modules.config import config, config_category
 from pydoc import locate
 from pathlib import Path
+from PIL import ImageTk
 import sys
 import os
 import tkinter
@@ -36,26 +37,40 @@ class output_mode(enum_enhanced):
 # To make any change in an image, we should copy it - do not modify these.
 class image_depot:
     def __init__(self):
-        self.images = []
+        self._images = []
 
     def load(self, image_file_paths:list):
-        pass
+        if self.get_num() > 0:
+            self._images.clear()
+        for file_path in image_file_paths:
+            self._images.append(image(file_path))
+
+    def get_num(self) -> int:
+        return len(self._images)
+
+    def obtain_image(self, index:int) -> image:
+        return self._images[index].create_copy()
+
+    def obtain_all_images(self) -> list:
+        copies = []
+        for img in self._images:
+            copies.append(img.create_copy())
+        return copies
 
 
 # Generates dobble indices and builds dobble cards based on them. Outputs png files.
 class builder:
-    def __init__(self):
-        self._file_list = None
+    def __init__(self, img_db:image_depot):
+        self._img_db = img_db
         self._calculator = indices_calculator()
         self._generator = indices_generator()
         self._num_cards_to_cut_away = 0
 
-    def set_file_list(self, file_list):
-        self._file_list = file_list
+    def image_db_changed(self):
         self._calculator.calculate_for_num_series(self.get_num_total_images())
 
     def get_num_total_images(self):
-        return len(self._file_list)
+        return self._img_db.get_num()
 
     def set_num_cards(self, new_num_cards:int):
         assert(new_num_cards <= self._get_num_cards())
@@ -73,7 +88,7 @@ class builder:
         return self._calculator.is_number_different_than_wanted() is False
 
     def is_ready(self):
-        return self._file_list is not None and self.get_num_cards() > 0 and self.get_num_images_per_card() > 0
+        return self.get_num_total_images() > 0 and self.get_num_cards() > 0 and self.get_num_images_per_card() > 0
 
     def build(self, name, is_clear, max_num_shuffles) -> bool:
         if self.is_ready() is False:
@@ -109,7 +124,7 @@ class tk_dict_var_wrapper:
 
 class tk_control_set(tk_frame_disableable):
     def __init__(self, data:dict, num_cols:int, *args, **kwargs):
-        self._data:dict = data
+        self.data:dict = data
         self._num_cols = max(num_cols, 1)
         self._vars = dict() # It will be filled by build_controls.
         super().__init__(*args, **kwargs)
@@ -126,13 +141,13 @@ class tk_control_set(tk_frame_disableable):
         coord_x = 0
         coord_y = 0
         col_span = 2
-        num_items = len(self._data)
+        num_items = len(self.data)
         num_items_per_col = int(num_items / self._num_cols)
 
-        for key, value in self._data.items():
+        for key, value in self.data.items():
             control, var = self._create_control_and_var_for_type(key, value, coord_x, coord_y)
             assert(key not in self._vars)   # Crash on duplicates.
-            self._vars[key] = tk_dict_var_wrapper(var, control, self._data, key)
+            self._vars[key] = tk_dict_var_wrapper(var, control, self.data, key)
             # TODO Register for tk_dict_var_wrapper change to be able to emit our own event.
 
             coord_y = coord_y + 1
@@ -183,13 +198,34 @@ class tk_control_set(tk_frame_disableable):
 
 
 class tk_canvas_viewer(tkinter.Canvas):
-    def __init__(self, image_file_list:list, control_set:tk_control_set, *args, **kwargs):
-        self._image_file_list = image_file_list
+    def __init__(self, image_db:image_depot, control_set:tk_control_set, *args, **kwargs):
+        self._image_db = image_db
+        # TODO We should auto-refresh when control set changes!
         self._control_set = control_set
+        self._canv_image_tk = None
         super().__init__(*args, **kwargs)
 
     def refresh(self):
-        pass
+        calculator = indices_calculator()
+        calculator.calculate_for_num_series(self._image_db.get_num())
+        generator = indices_generator(calculator, 1)
+        idc = generator.generate()
+
+        # Visualize only first card.
+        images = []
+        for index in idc.sets[0]:
+            images.append(self._image_db.obtain_image(index))
+        
+        canv_size = min(self.winfo_width(), self.winfo_height())
+        canv_ordeal = 1
+        params = canvas_params(self._control_set.data)
+        canv = canvas(params, canv_size, canv_ordeal)
+        canv.distribute_images(images)        
+        canv.apply_images(images)
+
+        # Copy to canvas.
+        self._canv_image_tk = ImageTk.PhotoImage(canv.image)
+        self.create_image(0, 0, image=self._canv_image_tk, anchor=tkinter.NW)
 
 
 class app(tkinter.Tk):
@@ -209,12 +245,14 @@ class app(tkinter.Tk):
         # Config load.
         self._conf = config()
 
+        # Subcomponents creation.
+        self._img_db = image_depot()
+        self._builder = builder(self._img_db)
+
         # Control build.
         self._build_top_menu()
         self._build_controls()
         tk_util.window_set_on_cursor(self)
-
-        self._builder = builder()
 
     ### Widget builds
 
@@ -284,8 +322,8 @@ class app(tkinter.Tk):
         self._w_frame_viewer = tk_frame_disableable(self, padx=0, pady=0)
         tk_util.place_in_grid(self._w_frame_viewer, 2, 0, h=7, orientation=tkinter.N)
         viewer_size = 512
-        self._w_canvas_viewer = tk_canvas_viewer(image_file_list=None, control_set=self._w_frame_canvas_control_set,
-                                                 master=self._w_frame_viewer, bg=visual_data["background_color"], width=viewer_size, height=viewer_size)
+        self._w_canvas_viewer = tk_canvas_viewer(image_db=self._img_db, control_set=self._w_frame_canvas_control_set,
+                                                 master=self._w_frame_viewer, bg="gray", width=viewer_size, height=viewer_size)
         tk_util.place_in_grid(self._w_canvas_viewer, 0, 0)
 
         self._w_btn_refresh_viewer = tkinter.Button(self._w_frame_viewer, text="Refresh", command=self._on_refresh_viewer_clicked, width=main_button_width)
@@ -341,9 +379,15 @@ class app(tkinter.Tk):
             files_to_open = tkinter.filedialog.askopenfilenames(filetypes=[("Image files", "*.jpg *.jpeg *.png *.svg *.tga *.gif")])
 
         if files_to_open is not None and len(files_to_open) > 0:
-            self._builder.set_file_list(files_to_open)
+            self._img_db.load(files_to_open)
+            self._builder.image_db_changed()
             self._w_lbl_num_files.update(None, self._builder.get_num_total_images())
             self._update_num_cards()
+            self._w_canvas_viewer.refresh()
+
+    def _on_refresh_viewer_clicked(self):
+        if self._img_db.get_num() > 0:
+            self._w_canvas_viewer.refresh()
 
     def _conditional_exit(self):
         if self._are_you_sure("exit"):
@@ -388,9 +432,6 @@ class app(tkinter.Tk):
         self._builder.set_num_cards(self._var_num_cards.tk_var.get())
         self._w_lbl_numbers.update(None, self._builder.get_num_cards(), self._builder.get_num_images_per_card())
         self._conf.get_category_data(config_category.generator)["recent_num_cards"] = self._var_num_cards.tk_var.get()
-
-    def _on_refresh_viewer_clicked(self):
-        pass
 
     def _on_generate_clicked(self):
         ret_val = self._builder.build(self._get_output_name(), self._var_is_clear.tk_var.get(), self._var_max_shuffles.tk_var.get())
@@ -518,7 +559,7 @@ def debug_distributor():
     out_dir = "out"
     os.makedirs(out_dir, exist_ok=True)
     # canv.save(out_dir)
-    canv._image.show()  # Accessing protected member only for debugging.
+    canv.image.show()  # Accessing protected member only for debugging.
 
 
 def main():
