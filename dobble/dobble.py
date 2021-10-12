@@ -119,7 +119,36 @@ class tk_dict_var_wrapper:
         self.tk_widget = tk_widget
         self._data = data
         self._key = key
-        # TODO register for variable changes.
+        self._callback_name = self.tk_var.trace_add("write", self._on_variable_changed)
+        self._trace_callback = None
+        self._trace_silent_flag = False
+
+    def __del__(self):
+        self.tk_var.trace_remove("write", self._callback_name)
+
+    def trace_add(self, callback:callable):
+        assert(self._trace_callback is None)    # Can register only one callback per wrapper!
+        self._trace_callback = callback
+
+    def trace_remove(self, object, callback:callable):
+        self._trace_callback = None
+
+    def set_var_silent(self, new_val, max_val=None):
+        if self.tk_var.get() != new_val:
+            # TODO This is so shitty...
+            self._trace_silent_flag = True
+            self.tk_var.set(new_val)
+            if max_val is not None:
+                self.tk_widget.configure(to=max_val)
+            self._trace_silent_flag = False
+
+    def _on_variable_changed(self, p0:str, p1:str, p2:str):
+        if self._trace_silent_flag:
+            return
+        new_value = self.tk_var.get()
+        self._data[self._key] = new_value
+        if self._trace_callback is not None:
+            self._trace_callback(self)
 
 
 class tk_control_set(tk_frame_disableable):
@@ -129,13 +158,28 @@ class tk_control_set(tk_frame_disableable):
         self._vars = dict() # It will be filled by build_controls.
         super().__init__(*args, **kwargs)
         self._build_controls()
+        self._trace_callback = None
+
+    def __del__(self):
+        for value in self._vars.values():
+            value.trace_remove(self._on_any_variable_changed)
+        self._num_cols = 1
+        self._vars.clear()
+        self._trace_callback = None
 
     def get_var(self, key) -> tk_dict_var_wrapper:
         return self._vars[key]
 
     def update_vars(self):
         # TODO
-        pass
+        assert(False)
+
+    def trace_add(self, callback:callable):
+        assert(self._trace_callback is None)    # Can register only one callback per wrapper!
+        self._trace_callback = callback
+
+    def trace_remove(self, callback:callable):
+        self._trace_callback = None
 
     def _build_controls(self):
         coord_x = 0
@@ -147,8 +191,9 @@ class tk_control_set(tk_frame_disableable):
         for key, value in self.data.items():
             control, var = self._create_control_and_var_for_type(key, value, coord_x, coord_y)
             assert(key not in self._vars)   # Crash on duplicates.
-            self._vars[key] = tk_dict_var_wrapper(var, control, self.data, key)
-            # TODO Register for tk_dict_var_wrapper change to be able to emit our own event.
+            wrapper = tk_dict_var_wrapper(var, control, self.data, key)
+            wrapper.trace_add(self._on_any_variable_changed)
+            self._vars[key] = wrapper
 
             coord_y = coord_y + 1
             if coord_y >= num_items_per_col:
@@ -162,14 +207,18 @@ class tk_control_set(tk_frame_disableable):
         label = self._make_label(key)
 
         if data_type is int or data_type is float:
-            variable = tkinter.IntVar(self, value=data)
+            variable = None
             # Proceed as usual number.
             min_val = 0
             max_val = 99
             divisor = 1
             if data_type is float:
-                max_val = 5
+                min_val = 0.0
+                max_val = 5.0
                 divisor = 0.01
+                variable = tkinter.DoubleVar(self, value=data)
+            else:
+                variable = tkinter.IntVar(self, value=data)
             control = tk_util.w_create_pair_num_edit(self, label, variable, coord_x, coord_y, min_val, max_val, divisor)
         elif data_type is str:
             variable = tkinter.StringVar(self, value=data)
@@ -196,14 +245,23 @@ class tk_control_set(tk_frame_disableable):
     def _make_label(self, key):
         return key.replace("_", " ").capitalize() + ":"
 
+    def _on_any_variable_changed(self, var:tk_dict_var_wrapper):
+        if self._trace_callback is not None:
+            self._trace_callback(self)
+
 
 class tk_canvas_viewer(tkinter.Canvas):
     def __init__(self, image_db:image_depot, control_set:tk_control_set, *args, **kwargs):
         self._image_db = image_db
         # TODO We should auto-refresh when control set changes!
         self._control_set = control_set
+        self._control_set.trace_add(self._on_control_set_variable_changed)
         self._canv_image_tk = None
         super().__init__(*args, **kwargs)
+
+    def __del__(self):
+        if self._control_set is not None:
+            self._control_set.trace_remove(self._on_control_set_variable_changed)
 
     def refresh(self):
         calculator = indices_calculator()
@@ -226,6 +284,9 @@ class tk_canvas_viewer(tkinter.Canvas):
         # Copy to canvas.
         self._canv_image_tk = ImageTk.PhotoImage(canv.image)
         self.create_image(0, 0, image=self._canv_image_tk, anchor=tkinter.NW)
+
+    def _on_control_set_variable_changed(self, control_set:tk_control_set):
+        self.refresh()
 
 
 class app(tkinter.Tk):
@@ -406,8 +467,7 @@ class app(tkinter.Tk):
         self._w_lbl_numbers.update(None, self._builder.get_num_cards(), self._builder.get_num_images_per_card())
 
         self._hack_is_var_num_cards_set_externally = True
-        self._var_num_cards.tk_var.set(self._builder.get_num_cards())
-        self._var_num_cards.tk_widget.configure(to=self._builder.get_num_cards())
+        self._var_num_cards.set_var_silent(self._builder.get_num_cards(), self._builder.get_num_cards())
         self._hack_is_var_num_cards_set_externally = False
 
         if self._is_warning():

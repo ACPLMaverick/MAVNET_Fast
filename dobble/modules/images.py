@@ -8,6 +8,11 @@ from math import cos, pi, sin, sqrt, degrees
 
 import PIL
 
+
+class constants:
+    image_mode = "RGBA"
+
+
 class vec2:
     def __init__(self, x:int, y:int):
         self.x = x
@@ -117,6 +122,7 @@ class canvas:
         angle_per_image = 2.0 * pi / float(num_images)
         current_angle = 0.0
 
+        # TODO This can be multi-threaded.
         for img in images:
             img.size = tile_size
 
@@ -125,7 +131,7 @@ class canvas:
             self._create_position_variation(img.position, tile_size)
 
             # Rotate towards the center of the canvas, so (180 - angle).
-            img.rotation = self._create_variation(self.params.rotation_variation, pi / 2.0 - current_angle)
+            img.rotation = self._create_variation(self.params.rotation_variation, current_angle)
             img.scale = self._create_variation(self.params.scale_variation, self.params.scale_multiplier)
 
             current_position.rotate_by_angle(angle_per_image)
@@ -145,7 +151,7 @@ class canvas:
         self.image.save(os.path.join(directory, "card_{}.png".format(self.ordeal_number)))
 
     def _create_image(self):
-        self.image = Image.new("RGBA", (self.size, self.size), 0)
+        self.image = Image.new(constants.image_mode, (self.size, self.size), 0)
         draw = ImageDraw.Draw(self.image)
         draw.ellipse(self._create_draw_bounding_box(1.0 - self.params.outer_ring_bias),
                      outline=self.params.outer_ring_color,
@@ -187,6 +193,7 @@ class image:
     def __init__(self, file_path:str=None):
         if file_path is not None:
             self.img = Image.open(file_path)
+            self._set_proper_image_mode()
         else:
             self.img = None
 
@@ -227,3 +234,7 @@ class image:
             return img.rotate(degrees(self.rotation), resample=Image.BILINEAR, expand=True)
         else:
             return img
+
+    def _set_proper_image_mode(self):
+        if self.img.mode != constants.image_mode:
+            self.img = self.img.convert(constants.image_mode)

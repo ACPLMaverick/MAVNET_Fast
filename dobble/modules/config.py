@@ -37,10 +37,10 @@ class config:
         }
     }
 
-    def __init__(self, file_path_no_ext:str="config"):
+    def __init__(self, file_path:str="config.json"):
         self._data = None
         self._data_immutable = None
-        self._file_path = file_path_no_ext + ".json"
+        self._file_path = file_path
         self._load()
 
     def reset(self):
