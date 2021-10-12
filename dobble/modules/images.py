@@ -25,6 +25,14 @@ class vec2:
     def compare(self, other):
         return self.x == other.x and self.y == other.y
 
+    def min(self, scalar:float):
+        self.x = min(self.x, scalar)
+        self.y = min(self.y, scalar)
+
+    def max(self, scalar:float):
+        self.x = max(self.x, scalar)
+        self.y = max(self.y, scalar)
+
     def add(self, scalar:float):
         self.x = int(self.x + scalar)
         self.y = int(self.y + scalar)
@@ -173,8 +181,9 @@ class canvas:
     def _create_variation(self, variation:float, initial_value:float):
         if variation <= 0.0:
             return initial_value
-        min_value = initial_value - initial_value * variation
-        max_value = initial_value + initial_value * variation
+        variation_coeff = 1.0
+        min_value = initial_value - variation_coeff * variation
+        max_value = initial_value + variation_coeff * variation
         alpha = random.random()
         return min_value * (1.0 - alpha) + max_value * alpha
 
@@ -219,11 +228,12 @@ class image:
         if dims_original.x != dims_original.y:
             if dims_original.y > dims_original.x:
                 scale_factor = dims_original.x / dims_original.y
-                dims_wanted.x = int(dims_wanted.x * scale_factor)
+                dims_wanted.x = max(int(dims_wanted.x * scale_factor), 1)
             else:
                 scale_factor = dims_original.y / dims_original.x
-                dims_wanted.y = int(dims_wanted.y * scale_factor)
+                dims_wanted.y = max(int(dims_wanted.y * scale_factor), 1)
         dims_wanted.mul(self.scale)
+        dims_wanted.max(1)
         if dims_wanted.compare(dims_original) is False:
             return img.resize((dims_wanted.x, dims_wanted.y), Image.BILINEAR)
         else:

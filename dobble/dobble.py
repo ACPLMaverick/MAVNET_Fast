@@ -145,7 +145,15 @@ class tk_dict_var_wrapper:
     def _on_variable_changed(self, p0:str, p1:str, p2:str):
         if self._trace_silent_flag:
             return
-        new_value = self.tk_var.get()
+        try:
+            new_value = self.tk_var.get()
+        except tkinter.TclError as e:
+            return
+        old_value = self._data[self._key]
+        if type(new_value) != type(old_value):
+            return
+        if new_value == old_value:
+            return
         self._data[self._key] = new_value
         if self._trace_callback is not None:
             self._trace_callback(self)
@@ -257,6 +265,9 @@ class tk_canvas_viewer(tkinter.Canvas):
         self._control_set = control_set
         self._control_set.trace_add(self._on_control_set_variable_changed)
         self._canv_image_tk = None
+        self._last_indices = None
+        self._last_image_num = 0
+        self.is_shuffle_on_refresh = False
         super().__init__(*args, **kwargs)
 
     def __del__(self):
@@ -264,10 +275,7 @@ class tk_canvas_viewer(tkinter.Canvas):
             self._control_set.trace_remove(self._on_control_set_variable_changed)
 
     def refresh(self):
-        calculator = indices_calculator()
-        calculator.calculate_for_num_series(self._image_db.get_num())
-        generator = indices_generator(calculator, 1)
-        idc = generator.generate()
+        idc = self._get_indices()
 
         # Visualize only first card.
         images = []
@@ -284,6 +292,17 @@ class tk_canvas_viewer(tkinter.Canvas):
         # Copy to canvas.
         self._canv_image_tk = ImageTk.PhotoImage(canv.image)
         self.create_image(0, 0, image=self._canv_image_tk, anchor=tkinter.NW)
+
+    def _get_indices(self) -> indices:
+        image_num = self._image_db.get_num()
+        if self._last_indices is None or self.is_shuffle_on_refresh or self._last_image_num != image_num:
+            calculator = indices_calculator()
+            calculator.calculate_for_num_series(self._image_db.get_num())
+            generator = indices_generator(calculator, 1)
+            self._last_indices = generator.generate()
+            self._last_image_num = image_num
+        return self._last_indices
+
 
     def _on_control_set_variable_changed(self, control_set:tk_control_set):
         self.refresh()
@@ -387,8 +406,13 @@ class app(tkinter.Tk):
                                                  master=self._w_frame_viewer, bg="gray", width=viewer_size, height=viewer_size)
         tk_util.place_in_grid(self._w_canvas_viewer, 0, 0)
 
-        self._w_btn_refresh_viewer = tkinter.Button(self._w_frame_viewer, text="Refresh", command=self._on_refresh_viewer_clicked, width=main_button_width)
-        tk_util.place_in_grid(self._w_btn_refresh_viewer, 0, 1)
+        self._w_frame_viewer_controls = tk_frame_disableable(self._w_frame_viewer, padx=2, pady=2)
+        tk_util.place_in_grid(self._w_frame_viewer_controls, 0, 1)
+        self._var_is_randomize_images_on_refresh = tkinter.IntVar(self, value=int(self._conf.get_category_data(config_category.viewer)["is_randomize_on_refresh"]))
+        self._var_is_randomize_images_on_refresh.trace_add("write", self._on_shuffle_on_refresh_changed)
+        self._w_cb_randomize_on_refresh = tk_util.w_create_pair_checkbox(self._w_frame_viewer_controls, "Shuffle on refresh", self._var_is_randomize_images_on_refresh, 0, 0)
+        self._w_btn_refresh_viewer = tkinter.Button(self._w_frame_viewer_controls, text="Refresh", command=self._on_refresh_viewer_clicked, width=main_button_width)
+        tk_util.place_in_grid(self._w_btn_refresh_viewer, 2, 0, w=2)
 
         self._w_frame_viewer.disable()
 
@@ -445,6 +469,13 @@ class app(tkinter.Tk):
             self._w_lbl_num_files.update(None, self._builder.get_num_total_images())
             self._update_num_cards()
             self._w_canvas_viewer.refresh()
+
+    def _on_shuffle_on_refresh_changed(self, p0:str, p1:str, p2:str):
+        current_val = self._conf.get_category_data(config_category.viewer)["is_randomize_on_refresh"]
+        new_val = bool(self._var_is_randomize_images_on_refresh.get())
+        if current_val != new_val:
+            self._conf.get_category_data(config_category.viewer)["is_randomize_on_refresh"] = new_val
+            self._w_canvas_viewer.is_shuffle_on_refresh = new_val
 
     def _on_refresh_viewer_clicked(self):
         if self._img_db.get_num() > 0:

@@ -9,7 +9,8 @@ import os
 
 class config_category(Enum):
     generator = 0,
-    visual = 1
+    visual = 1,
+    viewer = 2
 
 
 class config:
@@ -34,6 +35,9 @@ class config:
             "outer_ring_color": "#000000",
             "inner_disc_color": "#000000",
             "outer_ring_width": 2
+        },
+        str(config_category.viewer): {
+            "is_randomize_on_refresh": False
         }
     }
 
