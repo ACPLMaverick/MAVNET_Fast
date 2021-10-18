@@ -7,9 +7,8 @@ from modules.utils import tk_informative_int_label
 from modules.utils import tk_frame_disableable
 from modules.indices import indices, indices_calculator
 from modules.indices import indices_generator
-from modules.images import canvas, canvas_params, card
+from modules.images import background_shape, canvas, canvas_params, card
 from modules.config import config, config_category
-from pydoc import locate
 from pathlib import Path
 from PIL import Image, ImageTk
 import sys
@@ -328,13 +327,7 @@ class tk_control_set(tk_frame_disableable):
                 control = tk_util.w_create_pair_color_picker(self, label, variable, coord_x, coord_y, False)
             elif "enum" in label.lower():
                 enum_name = key.split("enum_")[-1]
-                prefix = Path(__file__).stem + "."
-                enum_type = locate(prefix + enum_name)
-                if enum_type is None:
-                    enum_type = locate("modules.images." + enum_name)
-                    # TODO Rework this.
-                    if enum_type is None:
-                        raise ValueError("Failed to reflect an enum specified in config: [{}].".format(enum_name))
+                enum_type = self._get_enum_for_name(enum_name)
                 variable_value = str(data)
                 variable = tk_enum_var(enum_type, self, value=variable_value)
                 values = enum_type.get_names(enum_type)
@@ -349,6 +342,17 @@ class tk_control_set(tk_frame_disableable):
             print("ERROR: Not supported value type in config.")
             assert(False)
         return control, variable
+
+    # TODO do it properly.
+    def _get_enum_for_name(self, name:str):
+        if "debug_mode" in name:
+            return debug_mode
+        elif "output_mode" in name:
+            return output_mode
+        elif "background_shape" in name:
+            return background_shape
+        else:
+            raise ValueError("Unsupported enum name. Cannot reflect: [{}].".format(name))
 
     def _make_label(self, key):
         return key.replace("_", " ").capitalize() + ":"
