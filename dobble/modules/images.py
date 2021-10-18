@@ -189,6 +189,10 @@ class canvas:
                                  n_sides=self.params.num_cards_on_canvas,
                                  outline=self.params.outer_ring_color,
                                  fill=self.params.background_color, rotation=rotation)
+            if self.params.inner_disc_bias > 0.0:
+                draw.regular_polygon(self._create_draw_circle(self.params.inner_disc_bias),
+                                 n_sides=self.params.num_cards_on_canvas,
+                                 fill=self.params.inner_disc_color, rotation=rotation)
         else:
             raise ValueError("Unsupported background shape!")
     
