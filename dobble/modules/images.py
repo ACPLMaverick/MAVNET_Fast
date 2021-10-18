@@ -111,8 +111,8 @@ class canvas:
         self.ordeal_number = ordeal_number
         self._create_image()
 
-    def distribute_images(self, images):
-        num_images = len(images)
+    def distribute_cards(self, cards:list):
+        num_images = len(cards)
         if num_images <= 0:
             return
 
@@ -131,31 +131,31 @@ class canvas:
         current_angle = 0.0
 
         # TODO This can be multi-threaded.
-        for img in images:
-            img.size = tile_size
+        for card in cards:
+            card.size = tile_size
 
-            img.position.assign(current_position)
-            img.position.mul(self.params.position_multiplier)
-            self._create_position_variation(img.position, tile_size)
+            card.position.assign(current_position)
+            card.position.mul(self.params.position_multiplier)
+            self._create_position_variation(card.position, tile_size)
 
             # Rotate towards the center of the canvas, so (180 - angle).
-            img.rotation = self._create_variation(self.params.rotation_variation, current_angle)
-            img.scale = self._create_variation(self.params.scale_variation, self.params.scale_multiplier)
+            card.rotation = self._create_variation(self.params.rotation_variation, current_angle)
+            card.scale = self._create_variation(self.params.scale_variation, self.params.scale_multiplier)
 
             current_position.rotate_by_angle(angle_per_image)
             current_position.truncate()
             current_angle += angle_per_image
 
-    def apply_images(self, images):
-        for mimg in images:
-            img = mimg.create_transformed_image(self)
+    def apply_cards(self, cards:list):
+        for card in cards:
+            img = card.create_transformed_card(self)
             canv_half_size = self.size / 2
-            upper_left = (int(mimg.position.x - img.width / 2 + canv_half_size),
-                          int(mimg.position.y - img.height / 2 + canv_half_size))
+            upper_left = (int(card.position.x - img.width / 2 + canv_half_size),
+                          int(card.position.y - img.height / 2 + canv_half_size))
             # Using the same image as mask allows us to paste with regard to src alpha.
             self.image.paste(img, upper_left, mask=img)
 
-    def save(self, directory):
+    def save(self, directory:str):
         self.image.save(os.path.join(directory, "card_{}.png".format(self.ordeal_number)))
 
     def _create_image(self):
@@ -198,7 +198,7 @@ class canvas:
 # Scale - The final dimensions will be multiplied by this value.
 # Rotation - Specified in radians. CENTER of image is a pivot point.
 # Position - CENTER of image is a pivot point, so we need to offset by half size when copying.
-class image:
+class card:
     def __init__(self, file_path:str=None):
         if file_path is not None:
             self.img = Image.open(file_path)
@@ -212,11 +212,11 @@ class image:
         self.position = vec2(0, 0)
 
     def create_copy(self):
-        new_image = image()
+        new_image = card()
         new_image.img = self.img
         return new_image
 
-    def create_transformed_image(self, canv:canvas):
+    def create_transformed_card(self, canv:canvas):
         assert(self.img is not None)
         img = self._apply_size_and_scale(self.img)
         img = self._apply_rotation(img)

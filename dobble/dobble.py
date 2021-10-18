@@ -6,7 +6,7 @@ from modules.utils import tk_informative_int_label
 from modules.utils import tk_frame_disableable
 from modules.indices import indices, indices_calculator
 from modules.indices import indices_generator
-from modules.images import canvas, canvas_params, image
+from modules.images import canvas, canvas_params, card
 from modules.config import config, config_category
 from pydoc import locate
 from pathlib import Path
@@ -18,6 +18,7 @@ import tkinter.filedialog
 import tkinter.messagebox
 import tkinter.colorchooser
 import glob
+import shutil
 
 
 class debug_mode(enum_enhanced):
@@ -33,35 +34,41 @@ class output_mode(enum_enhanced):
     PNG_PDF = 2
 
 
+# TODO Don't want to have constants in final version.
+class constants:
+    image_size = 512
+
+
 # Contains all original images, to avoid re-loading them by different system.
 # To make any change in an image, we should copy it - do not modify these.
-class image_depot:
+class card_depot:
     def __init__(self):
-        self._images = []
+        self._cards = []
 
     def load(self, image_file_paths:list):
         if self.get_num() > 0:
-            self._images.clear()
+            self._cards.clear()
         for file_path in image_file_paths:
-            self._images.append(image(file_path))
+            self._cards.append(card(file_path))
 
     def get_num(self) -> int:
-        return len(self._images)
+        return len(self._cards)
 
-    def obtain_image(self, index:int) -> image:
-        return self._images[index].create_copy()
+    def obtain_image(self, index:int) -> card:
+        return self._cards[index].create_copy()
 
     def obtain_all_images(self) -> list:
         copies = []
-        for img in self._images:
+        for img in self._cards:
             copies.append(img.create_copy())
         return copies
 
 
 # Generates dobble indices and builds dobble cards based on them. Outputs png files.
 class builder:
-    def __init__(self, img_db:image_depot):
+    def __init__(self, img_db:card_depot, data_dict:dict):
         self._img_db = img_db
+        self._data_dict = data_dict
         self._calculator = indices_calculator()
         self._generator = indices_generator()
         self._num_cards_to_cut_away = 0
@@ -90,7 +97,7 @@ class builder:
     def is_ready(self):
         return self.get_num_total_images() > 0 and self.get_num_cards() > 0 and self.get_num_images_per_card() > 0
 
-    def build(self, name, is_clear, max_num_shuffles) -> bool:
+    def build(self, mode:output_mode, name:str, is_clear:bool, max_num_shuffles:int) -> bool:
         if self.is_ready() is False:
             return False
 
@@ -104,9 +111,67 @@ class builder:
         if self._num_cards_to_cut_away > 0:
             idx.discard(self._num_cards_to_cut_away)
 
-        idx.print()
+        images = self._create_images(idx)
 
-        return True
+        should_pdf = mode == output_mode.PDF or mode == output_mode.PNG_PDF
+        should_png = mode == output_mode.PNG or mode == output_mode.PNG_PDF
+        is_success = True
+        if should_pdf:
+            is_success = is_success and self._build_pdf(name, is_clear, images)
+        if should_png:
+            is_success = is_success and self._build_png(name, is_clear, images)
+
+        return is_success
+
+    # Returns a list of PIL Images, ready to be further saved.
+    def _create_images(self, idx:indices) -> list:
+        # Create canvas params, as they're common to all canvases.
+        params = canvas_params(self._data_dict)
+        images = []
+        current_ordeal = 1
+        for index_set in idx.sets:
+            # Build image list from indices in this set.
+            cards = []
+            for index in index_set:
+                cards.append(self._img_db.obtain_image(index))
+            # Create a new canvas with proper params.
+            canv = canvas(params, constants.image_size, current_ordeal)
+            canv.distribute_cards(cards)        
+            canv.apply_cards(cards)
+            # We have an image ready to go.
+            images.append(canv.image)
+            # Increment ordeal counter.
+            current_ordeal = current_ordeal + 1
+        return images
+
+    # images -> list of PIL images.
+    def _build_png(self, name:str, is_clear:bool, images:list) -> bool:
+        ext_name = ".png"
+        ext_type = "PNG"
+        if is_clear:
+            shutil.rmtree(name)
+        os.makedirs(name, exist_ok=True)
+        image_name_format = name.split(os.path.sep)[-1] + "_{}" + ext_name
+        ordeal = 1
+        result = True
+        for image in images:
+            this_path = os.path.join(name, image_name_format.format(ordeal))
+            try:
+                image.save(this_path, ext_type)
+            except IOError as e:
+                print("Error saving", ordeal, "th card:", e)
+                result = False
+            ordeal = ordeal + 1
+        return result
+
+    # images -> list of PIL images.
+    def _build_pdf(self, name:str, is_clear:bool, images:list) -> bool:
+        name_pdf = name + ".pdf"
+        if is_clear and os.path.isfile(name_pdf):
+            os.remove(name_pdf)
+        dir_name = os.path.dirname(name)
+        os.makedirs(dir_name, exist_ok=True)
+        return False
 
     def _get_num_cards(self):
         return self._calculator.num_series
@@ -259,7 +324,7 @@ class tk_control_set(tk_frame_disableable):
 
 
 class tk_canvas_viewer(tkinter.Canvas):
-    def __init__(self, image_db:image_depot, control_set:tk_control_set, *args, **kwargs):
+    def __init__(self, image_db:card_depot, control_set:tk_control_set, *args, **kwargs):
         self._image_db = image_db
         # TODO We should auto-refresh when control set changes!
         self._control_set = control_set
@@ -286,8 +351,8 @@ class tk_canvas_viewer(tkinter.Canvas):
         canv_ordeal = 1
         params = canvas_params(self._control_set.data)
         canv = canvas(params, canv_size, canv_ordeal)
-        canv.distribute_images(images)        
-        canv.apply_images(images)
+        canv.distribute_cards(images)        
+        canv.apply_cards(images)
 
         # Copy to canvas.
         self._canv_image_tk = ImageTk.PhotoImage(canv.image)
@@ -326,13 +391,13 @@ class app(tkinter.Tk):
         self._conf = config()
 
         # Subcomponents creation.
-        self._img_db = image_depot()
-        self._builder = builder(self._img_db)
+        self._img_db = card_depot()
+        self._builder = builder(self._img_db, self._conf.get_category_data(config_category.visual))
 
         # Control build.
         self._build_top_menu()
         self._build_controls()
-        tk_util.window_set_on_cursor(self)
+        tk_util.window_set_on_cursor(self, (-self._width / 2, -self._height / 2))
 
     ### Widget builds
 
@@ -391,6 +456,7 @@ class app(tkinter.Tk):
         self._var_is_clear = self._w_frame_options.get_var("is_clear")
         self._var_num_cards = self._w_frame_options.get_var("num_cards")
         self._var_max_shuffles = self._w_frame_options.get_var("max_shuffles")
+        self._var_output_mode = self._w_frame_options.get_var("enum_output_mode")
         self._hack_is_var_num_cards_set_externally = False
         self._w_frame_options.disable()
 
@@ -401,9 +467,8 @@ class app(tkinter.Tk):
 
         self._w_frame_viewer = tk_frame_disableable(self, padx=0, pady=0)
         tk_util.place_in_grid(self._w_frame_viewer, 2, 0, h=7, orientation=tkinter.N)
-        viewer_size = 512
         self._w_canvas_viewer = tk_canvas_viewer(image_db=self._img_db, control_set=self._w_frame_canvas_control_set,
-                                                 master=self._w_frame_viewer, bg="gray", width=viewer_size, height=viewer_size)
+                                                 master=self._w_frame_viewer, bg="gray", width=constants.image_size, height=constants.image_size)
         tk_util.place_in_grid(self._w_canvas_viewer, 0, 0)
 
         self._w_frame_viewer_controls = tk_frame_disableable(self._w_frame_viewer, padx=2, pady=2)
@@ -481,6 +546,20 @@ class app(tkinter.Tk):
         if self._img_db.get_num() > 0:
             self._w_canvas_viewer.refresh()
 
+    def _on_num_images_changed(self, p0:str, p1:str, p2:str):
+        if self._hack_is_var_num_cards_set_externally:
+            return
+        self._builder.set_num_cards(self._var_num_cards.tk_var.get())
+        self._w_lbl_numbers.update(None, self._builder.get_num_cards(), self._builder.get_num_images_per_card())
+        self._conf.get_category_data(config_category.generator)["recent_num_cards"] = self._var_num_cards.tk_var.get()
+
+    def _on_generate_clicked(self):
+        ret_val = self._builder.build(output_mode[output_mode.reconvert_name(self._var_output_mode.tk_var.get())], self._get_output_name(), self._var_is_clear.tk_var.get(), self._var_max_shuffles.tk_var.get())
+        if ret_val:
+            tkinter.messagebox.showinfo("Success", "Success.")
+        else:
+            tkinter.messagebox.showerror("Failure", "Failure. Please see the console output.")
+
     def _conditional_exit(self):
         if self._are_you_sure("exit"):
             self.destroy()
@@ -516,20 +595,6 @@ class app(tkinter.Tk):
             self._w_frame_viewer.disable()
             self._w_frame_canvas_control_set.disable()
             self._w_btn_generate.configure(state=tkinter.DISABLED)
-
-    def _on_num_images_changed(self, p0:str, p1:str, p2:str):
-        if self._hack_is_var_num_cards_set_externally:
-            return
-        self._builder.set_num_cards(self._var_num_cards.tk_var.get())
-        self._w_lbl_numbers.update(None, self._builder.get_num_cards(), self._builder.get_num_images_per_card())
-        self._conf.get_category_data(config_category.generator)["recent_num_cards"] = self._var_num_cards.tk_var.get()
-
-    def _on_generate_clicked(self):
-        ret_val = self._builder.build(self._get_output_name(), self._var_is_clear.tk_var.get(), self._var_max_shuffles.tk_var.get())
-        if ret_val:
-            tkinter.messagebox.showinfo("Success", "Success.")
-        else:
-            tkinter.messagebox.showerror("Failure", "Failure. Please see the console output.")
 
     ### Helper functions.
 
@@ -621,7 +686,7 @@ def debug_distributor():
     # Test only first card.
     images = []
     for index in idc.sets[0]:
-        images.append(image(files_to_open[index]))
+        images.append(card(files_to_open[index]))
     
     # Dummy test params.
     params = canvas_params()
@@ -640,12 +705,12 @@ def debug_distributor():
     params.outer_ring_width = 2
     canv_ordeal = 1
     canv = canvas(params, canv_size, canv_ordeal)
-    canv.distribute_images(images)
+    canv.distribute_cards(images)
 
     for img in images:
         print("Image: Size:", img.size, "Position:", img.position, "Rotation:", img.rotation, "Scale:", img.scale)
     
-    canv.apply_images(images)
+    canv.apply_cards(images)
 
     out_dir = "out"
     os.makedirs(out_dir, exist_ok=True)
