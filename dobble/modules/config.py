@@ -20,7 +20,7 @@ class config:
             "num_cards": 0,
             "is_clear": False,
             "max_shuffles": 3,
-            "enum_output_mode": "PNG"
+            "enum_output_mode": "Png"
         },
         str(config_category.visual): {
             "outer_ring_bias": 0.0,
@@ -34,7 +34,9 @@ class config:
             "background_color": "#FFFFFF",
             "outer_ring_color": "#000000",
             "inner_disc_color": "#000000",
-            "outer_ring_width": 2
+            "outer_ring_width": 2,
+            "enum_background_shape": "Polygon",
+            "num_sides_override": 0
         },
         str(config_category.viewer): {
             "is_randomize_on_refresh": False

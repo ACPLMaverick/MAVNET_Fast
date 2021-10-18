@@ -1,12 +1,18 @@
 #!/usr/bin/python
 # https://pillow.readthedocs.io/en/stable/handbook/tutorial.html
 
+from .utils import enum_enhanced
 import os
 import random
 from PIL import Image, ImageDraw
 from math import cos, pi, sin, sqrt, degrees
 
 import PIL
+
+
+class background_shape(enum_enhanced):
+    CIRCLE = 0,
+    POLYGON = 1
 
 
 class constants:
@@ -75,7 +81,10 @@ class vec2:
 
 
 class canvas_params:
-    def __init__(self, config_data:dict=None):
+    min_num_cards_on_canvas = 3
+
+    def __init__(self, config_data:dict=None, num_cards_on_canvas:int=5):
+        self.num_cards_on_canvas = max(num_cards_on_canvas, canvas_params.min_num_cards_on_canvas)
         if config_data is not None:
             self.outer_ring_bias = config_data["outer_ring_bias"]
             self.inner_disc_bias = config_data["inner_disc_bias"]
@@ -89,6 +98,10 @@ class canvas_params:
             self.outer_ring_color = config_data["outer_ring_color"]
             self.inner_disc_color = config_data["inner_disc_color"]
             self.outer_ring_width = config_data["outer_ring_width"]
+            self.background_shape_type = background_shape[background_shape.reconvert_name(config_data["enum_background_shape"])]
+            num_cards_override = config_data["num_sides_override"]
+            if num_cards_override >= canvas_params.min_num_cards_on_canvas:
+                self.num_cards_on_canvas = num_cards_override
         else:
             self.outer_ring_bias = 0.0
             self.inner_disc_bias = 0.0
@@ -102,6 +115,7 @@ class canvas_params:
             self.outer_ring_color = 0xFF000000
             self.inner_disc_color = 0xFF000000
             self.outer_ring_width = 1
+            self.background_shape_type = background_shape.CIRCLE
 
 
 class canvas:
@@ -161,12 +175,22 @@ class canvas:
     def _create_image(self):
         self.image = Image.new(constants.image_mode, (self.size, self.size), 0)
         draw = ImageDraw.Draw(self.image)
-        draw.ellipse(self._create_draw_bounding_box(1.0 - self.params.outer_ring_bias),
-                     outline=self.params.outer_ring_color,
-                     fill=self.params.background_color, width=self.params.outer_ring_width)
-        if self.params.inner_disc_bias > 0.0:
-            draw.ellipse(self._create_draw_bounding_box(self.params.inner_disc_bias), 
-                         fill=self.params.inner_disc_color)
+        if self.params.background_shape_type is background_shape.CIRCLE:
+            draw.ellipse(self._create_draw_bounding_box(1.0 - self.params.outer_ring_bias),
+                        outline=self.params.outer_ring_color,
+                        fill=self.params.background_color, width=self.params.outer_ring_width)
+            if self.params.inner_disc_bias > 0.0:
+                draw.ellipse(self._create_draw_bounding_box(self.params.inner_disc_bias), 
+                            fill=self.params.inner_disc_color)
+        elif self.params.background_shape_type is background_shape.POLYGON:
+            rotation = 180.0 / self.params.num_cards_on_canvas
+            # TODO Support outline width somehow.
+            draw.regular_polygon(self._create_draw_circle(1.0 - self.params.outer_ring_bias),
+                                 n_sides=self.params.num_cards_on_canvas,
+                                 outline=self.params.outer_ring_color,
+                                 fill=self.params.background_color, rotation=rotation)
+        else:
+            raise ValueError("Unsupported background shape!")
     
     def _create_position_variation(self, position:vec2, tile_size:int):
         magic_multiplier = tile_size / 4
@@ -192,6 +216,11 @@ class canvas:
         half_size_diff = int((self.size - size) / 2)
         end = half_size_diff + size
         return (half_size_diff, half_size_diff, end, end)
+
+    def _create_draw_circle(self, size_mul:float):
+        center_point = self.size / 2
+        r = center_point * size_mul
+        return (center_point, center_point, r)
 
 
 # Dims - Initial square size of image (in pixels) that would be later transformed to final position.

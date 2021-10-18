@@ -4,21 +4,23 @@
         "num_cards": 0,
         "is_clear": false,
         "max_shuffles": 3,
-        "enum_output_mode": "PNG"
+        "enum_output_mode": "Pdf"
     },
     "config_category.visual": {
         "outer_ring_bias": 0.0,
         "inner_disc_bias": 0.15,
         "rotation_variation": 0.22,
-        "scale_multiplier": 1.0,
-        "scale_variation": 0.2,
+        "scale_multiplier": 0.7,
+        "scale_variation": 0.1,
         "position_variation_x": 0.4,
         "position_variation_y": 0.2,
         "position_multiplier": 1.0,
         "background_color": "#FFFFFF",
         "outer_ring_color": "#000000",
         "inner_disc_color": "#666666",
-        "outer_ring_width": 2
+        "outer_ring_width": 4,
+        "enum_background_shape": "Polygon",
+        "num_sides_override": 0
     },
     "config_category.viewer": {
         "is_randomize_on_refresh": false

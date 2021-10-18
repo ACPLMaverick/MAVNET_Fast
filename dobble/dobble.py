@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
-from modules.utils import enum_enhanced
+from math import ceil
+from modules.utils import enum_enhanced, tk_enum_var
 from modules.utils import tk_util
 from modules.utils import tk_informative_int_label
 from modules.utils import tk_frame_disableable
@@ -126,7 +127,7 @@ class builder:
     # Returns a list of PIL Images, ready to be further saved.
     def _create_images(self, idx:indices) -> list:
         # Create canvas params, as they're common to all canvases.
-        params = canvas_params(self._data_dict)
+        params = canvas_params(self._data_dict, len(idx.sets[0]))
         images = []
         current_ordeal = 1
         for index_set in idx.sets:
@@ -285,7 +286,7 @@ class tk_control_set(tk_frame_disableable):
         coord_y = 0
         col_span = 2
         num_items = len(self.data)
-        num_items_per_col = int(num_items / self._num_cols)
+        num_items_per_col = ceil(num_items / self._num_cols)
 
         for key, value in self.data.items():
             control, var = self._create_control_and_var_for_type(key, value, coord_x, coord_y)
@@ -320,18 +321,26 @@ class tk_control_set(tk_frame_disableable):
                 variable = tkinter.IntVar(self, value=data)
             control = tk_util.w_create_pair_num_edit(self, label, variable, coord_x, coord_y, min_val, max_val, divisor)
         elif data_type is str:
-            variable = tkinter.StringVar(self, value=data)
             # HUGE HACK !!!
             if "color" in label.lower():
+                variable = tkinter.StringVar(self, value=data)
                 # Make color control!
                 control = tk_util.w_create_pair_color_picker(self, label, variable, coord_x, coord_y, False)
             elif "enum" in label.lower():
                 enum_name = key.split("enum_")[-1]
                 prefix = Path(__file__).stem + "."
                 enum_type = locate(prefix + enum_name)
+                if enum_type is None:
+                    enum_type = locate("modules.images." + enum_name)
+                    # TODO Rework this.
+                    if enum_type is None:
+                        raise ValueError("Failed to reflect an enum specified in config: [{}].".format(enum_name))
+                variable_value = str(data)
+                variable = tk_enum_var(enum_type, self, value=variable_value)
                 values = enum_type.get_names(enum_type)
                 control = tk_util.w_create_pair_combobox(self, self._make_label(enum_name), values, variable, coord_x, coord_y)
             else:
+                variable = tkinter.StringVar(self, value=data)
                 control = tk_util.w_create_pair_text_edit(self, label, variable, coord_x, coord_y)
         elif data_type is bool:
             variable = tkinter.BooleanVar(self, value=data)
@@ -350,10 +359,11 @@ class tk_control_set(tk_frame_disableable):
 
 
 class tk_canvas_viewer(tkinter.Canvas):
-    def __init__(self, image_db:card_depot, control_set:tk_control_set, *args, **kwargs):
+    def __init__(self, image_db:card_depot, control_set:tk_control_set, num_cards_var:tkinter.IntVar, *args, **kwargs):
         self._image_db = image_db
         # TODO We should auto-refresh when control set changes!
         self._control_set = control_set
+        self._num_cards_var = num_cards_var
         self._control_set.trace_add(self._on_control_set_variable_changed)
         self._canv_image_tk = None
         self._last_indices = None
@@ -375,7 +385,10 @@ class tk_canvas_viewer(tkinter.Canvas):
         
         canv_size = min(self.winfo_width(), self.winfo_height())
         canv_ordeal = 1
-        params = canvas_params(self._control_set.data)
+        calc = indices_calculator()
+        calc.calculate_for_num_series(self._num_cards_var.tk_var.get())
+        num_images_per_card = calc.num_elements_per_serie
+        params = canvas_params(self._control_set.data, num_images_per_card)
         canv = canvas(params, canv_size, canv_ordeal)
         canv.distribute_cards(images)        
         canv.apply_cards(images)
@@ -493,7 +506,7 @@ class app(tkinter.Tk):
 
         self._w_frame_viewer = tk_frame_disableable(self, padx=0, pady=0)
         tk_util.place_in_grid(self._w_frame_viewer, 2, 0, h=7, orientation=tkinter.N)
-        self._w_canvas_viewer = tk_canvas_viewer(image_db=self._img_db, control_set=self._w_frame_canvas_control_set,
+        self._w_canvas_viewer = tk_canvas_viewer(image_db=self._img_db, control_set=self._w_frame_canvas_control_set, num_cards_var=self._var_num_cards,
                                                  master=self._w_frame_viewer, bg="gray", width=constants.image_size, height=constants.image_size)
         tk_util.place_in_grid(self._w_canvas_viewer, 0, 0)
 

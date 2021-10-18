@@ -102,8 +102,8 @@ class tk_util:
 
     def window_set_on_cursor(window, offset=(0, 0)):
         rt = window._root()
-        x = rt.winfo_pointerx() + int(offset[0])
-        y = rt.winfo_pointery() + int(offset[1])
+        x = max(rt.winfo_pointerx() + int(offset[0]), 0)
+        y = max(rt.winfo_pointery() + int(offset[1]), 0)
         window.geometry("+{}+{}".format(x, y))
 
     def window_set_on_root(window, orientation=tkinter.CENTER, offset_x=0, offset_y=0):
