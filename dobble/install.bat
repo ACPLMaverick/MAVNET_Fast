@@ -1,4 +1,4 @@
 @echo off
 call pip install wheel
 call pip install pillow
-call pip install PyPDF2
+rem call pip install PyPDF2
