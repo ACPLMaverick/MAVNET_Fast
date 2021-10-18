@@ -10,7 +10,7 @@ from modules.images import canvas, canvas_params, card
 from modules.config import config, config_category
 from pydoc import locate
 from pathlib import Path
-from PIL import ImageTk
+from PIL import Image, ImageTk
 import sys
 import os
 import tkinter
@@ -171,7 +171,33 @@ class builder:
             os.remove(name_pdf)
         dir_name = os.path.dirname(name)
         os.makedirs(dir_name, exist_ok=True)
-        return False
+
+        if len(images) == 0:
+            return False
+        else:
+            # This is so damn wasteful but as for now I don't have a better solution.
+            ref_image = images[0]
+            dummy_white_image = Image.new(ref_image.mode, ref_image.size, (255, 255, 255, 255))
+            rgb_images = []
+            for img in images:
+                converted = dummy_white_image.copy()
+                converted.paste(img, mask=img)
+                converted = converted.convert("RGB")
+                rgb_images.append(converted)
+
+            if len(rgb_images) == 1:
+                try:
+                    rgb_images[0].save(name_pdf)
+                except IOError as e:
+                    print("Error saving to PDF.", e)
+            else:
+                first_img = rgb_images.pop(0)
+                try:
+                    first_img.save(name_pdf, save_all=True, append_images=rgb_images)
+                except IOError as e:
+                    print("Error saving to PDF.", e)
+
+        return True
 
     def _get_num_cards(self):
         return self._calculator.num_series
