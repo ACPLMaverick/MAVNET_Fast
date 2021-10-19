@@ -124,6 +124,13 @@ class tk_util:
     def check_file_name(file_name):
         return file_name is not None and len(file_name) > 0
 
+    def bind_menu_command(window:tkinter.Widget, menu:tkinter.Menu, label:str, command:callable, accelerator_name:str=None, accelerator_bind:str=None):
+        if accelerator_name is not None and accelerator_bind is not None:
+            menu.add_command(label=label, command=command, accelerator=accelerator_name)
+            window.bind_all(accelerator_bind, lambda event: command(), False)
+        else:
+            menu.add_command(label=label, command=command)
+
     def _w_create_pair(root, element, text_name, base_x, base_y):
         label_name = tkinter.Label(root, text=text_name)
         tk_util.place_in_grid(label_name, base_x, base_y, orientation=tkinter.W)

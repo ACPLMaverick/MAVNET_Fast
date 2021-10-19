@@ -417,6 +417,9 @@ class tk_canvas_viewer(tkinter.Canvas):
 
 
 class app(tkinter.Tk):
+    generate_btn_text = "Generate"
+    wip_btn_text = "Working, please wait..."
+
     def __init__(self):
         super().__init__()
 
@@ -427,7 +430,7 @@ class app(tkinter.Tk):
         self.title("Dobble Generator")
         self.resizable(False, False)
         self.geometry("{}x{}".format(self._width, self._height))
-        tk_util.bind_enter_esc(self, None, self._conditional_exit)
+        tk_util.bind_enter_esc(self, self._on_generate_clicked, self._conditional_exit)
         self.protocol("WM_DELETE_WINDOW", self._conditional_exit)
 
         # Config load.
@@ -449,21 +452,21 @@ class app(tkinter.Tk):
 
         menubar = tkinter.Menu(self)  
         file = tkinter.Menu(menubar, tearoff=0)  
-        file.add_command(label="New config (CTRL+N)", command=self._on_new_config_clicked)
-        file.add_command(label="Load config (CTRL+O)", command=self._on_load_config_clicked)
-        file.add_command(label="Save config (CTRL+S)", command=self._on_save_config_clicked)
-        file.add_command(label="Save config as... (CTRL+SHIFT+S)", command=self._on_save_config_as_clicked)
-        file.add_command(label="Restore config (CTRL+R)", command=self._on_restore_config_clicked)
+        tk_util.bind_menu_command(self, file, "New config", self._on_new_config_clicked, "CTRL+N", "<Control-n>")
+        tk_util.bind_menu_command(self, file, "Load config", self._on_load_config_clicked, "CTRL+O", "<Control-o>")
+        tk_util.bind_menu_command(self, file, "Save config", self._on_save_config_clicked, "CTRL+S", "<Control-s>")
+        tk_util.bind_menu_command(self, file, "Save config as...", self._on_save_config_as_clicked, "CTRL+SHIFT+S", "<Control-S>")
+        tk_util.bind_menu_command(self, file, "Restore config", self._on_restore_config_clicked, "CTRL+R", "<Control-r>")
         file.add_separator()  
-        file.add_command(label="Open image files (CTRL+F)", command=self._on_select_files_clicked)
-        file.add_command(label="Open image directory (CTRL+D)", command=self._on_select_dir_clicked)
+        tk_util.bind_menu_command(self, file, "Open image files", self._on_select_files_clicked, "CTRL+F", "<Control-f>")
+        tk_util.bind_menu_command(self, file, "Open image directory", self._on_select_dir_clicked, "CTRL+D", "<Control-d>")
         file.add_separator()
-        file.add_command(label="Exit (Esc)", command=self._conditional_exit)
+        file.add_command(label="Exit", command=self._conditional_exit, accelerator="Esc")   # This is already bound to a key.
         menubar.add_cascade(label="File", menu=file)
 
         op = tkinter.Menu(menubar, tearoff=0)  
-        op.add_command(label="Refresh (F5)", command=self._on_refresh_viewer_clicked)
-        op.add_command(label="Generate (CTRL+G)", command=self._on_generate_clicked)
+        tk_util.bind_menu_command(self, op, "Refresh", self._on_refresh_viewer_clicked, "F5", "<F5>")
+        tk_util.bind_menu_command(self, op, "Generate", self._on_generate_clicked, "CTRL+G", "<Control-g>")
         menubar.add_cascade(label="Operation", menu=op)
 
         help = tkinter.Menu(menubar, tearoff=0)
@@ -524,7 +527,8 @@ class app(tkinter.Tk):
 
         self._w_frame_viewer.disable()
 
-        self._w_btn_generate = tkinter.Button(self, text="Generate", command=self._on_generate_clicked, width=main_button_width)
+        self._var_generate_btn_text = tkinter.StringVar(self, value=app.generate_btn_text)
+        self._w_btn_generate = tkinter.Button(self, textvariable=self._var_generate_btn_text, command=self._on_generate_clicked, width=main_button_width)
         tk_util.place_in_grid(self._w_btn_generate, 0, 7, w=4, weight_h=10)
         self._w_btn_generate.configure(state=tkinter.DISABLED)
 
@@ -546,7 +550,8 @@ class app(tkinter.Tk):
 
     def _on_save_config_as_clicked(self):
         file_to_create = tkinter.filedialog.asksaveasfilename(confirmoverwrite=True, filetypes=[("Config files", "*.json")])
-        self._conf.save(file_to_create)
+        if file_to_create is not None and len(file_to_create):
+            self._conf.save(file_to_create)
 
     def _on_restore_config_clicked(self):
         if self._are_you_sure("restore current config to saved version"):
@@ -597,7 +602,13 @@ class app(tkinter.Tk):
         self._conf.get_category_data(config_category.generator)["recent_num_cards"] = self._var_num_cards.tk_var.get()
 
     def _on_generate_clicked(self):
+        if self._builder.is_ready() is False:
+            return
+        self._var_generate_btn_text.set(app.wip_btn_text)
+        self.update()
         ret_val = self._builder.build(output_mode[output_mode.reconvert_name(self._var_output_mode.tk_var.get())], self._get_output_name(), self._var_is_clear.tk_var.get(), self._var_max_shuffles.tk_var.get())
+        self._var_generate_btn_text.set(app.generate_btn_text)
+        self.update()
         if ret_val:
             tkinter.messagebox.showinfo("Success", "Success.")
         else:
